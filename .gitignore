@@ -1,0 +1,55 @@
+# ---------------------------------------------------------------------------
+# Root .gitignore for the assemblix monorepo (backend + frontend).
+# Per-package .gitignore files (e.g. assemblix-app-api/.gitignore) still apply.
+# ---------------------------------------------------------------------------
+
+# Secrets / environment
+.env
+.env.local
+.env.*.local
+**/.env
+**/.env.local
+**/.env.*.local
+
+# Python (backend)
+**/__pycache__/
+*.py[cod]
+*$py.class
+**/.venv/
+**/venv/
+**/.pytest_cache/
+**/.mypy_cache/
+**/.ruff_cache/
+**/htmlcov/
+**/.coverage
+**/.coverage.*
+*.egg-info/
+
+# Node / Next.js (frontend)
+**/node_modules/
+**/.next/
+**/out/
+**/.turbo/
+**/dist/
+
+# IDE / OS / tooling
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+.gstack
+.claude/settings.local.json
+
+# Docs site build (MkDocs)
+/site/
+
+# Logs / databases
+*.log
+**/logs/
+*.db
+*.sqlite
+*.sqlite3
+.claude/
+.claude/worktrees/

@@ -1,0 +1,335 @@
+{
+  "name": "Ассессмент пользователя",
+  "description": null,
+  "nodes": [
+    {
+      "id": "8ebe8364-cd2f-46cf-b432-b98618022eca",
+      "type": "start",
+      "config": {},
+      "position": {
+        "x": -158.69248988295925,
+        "y": 180.82975175896158
+      }
+    },
+    {
+      "id": "ce8cfe5b-9906-4a8f-a662-9528ac0d64e9",
+      "type": "agent",
+      "config": {
+        "name": "Проверка ответа пользователя",
+        "model": "gpt-4.1-nano",
+        "tools": null,
+        "provider": "openai",
+        "temperature": 0.7,
+        "tool_choice": "auto",
+        "instructions": [
+          {
+            "role": "system",
+            "content": "Ты - ассессор знаний. Твоя задача - оценивать ответы пользователя в диалоге по теме \"{{state.theme}}\". ПРАВИЛА РАБОТЫ: - Ты НЕ задаешь вопросы - Ты ТОЛЬКО оцениваешь ответы пользователя - Каждое сообщение пользователя - это его ответ на вопрос из диалога - Ты отслеживаешь качество понимания темы на протяжении всего разговора КРИТЕРИИ ОЦЕНКИ КАЖДОГО ОТВЕТА: +5 баллов - Отличное понимание: - Ответ полный и точный - Использованы правильные термины - Приведены примеры или показано глубокое понимание - Объяснение структурировано и логично +2 балла - Базовое понимание: - Ответ частично правильный - Есть неточности, но основная идея схвачена - Термины используются с ошибками или упрощенно - Объяснение поверхностное, но не полностью неверное -1 балл - Непонимание: - Ответ неправильный или не по теме - Фундаментальные ошибки в понимании - Отсутствие связи с вопросом - Пользователь не знает ответа"
+          }
+        ],
+        "credential_id": "",
+        "response_format": "json_object",
+        "response_schema": {
+          "type": "object",
+          "title": "responseSchema",
+          "properties": {
+            "score": {
+              "type": "number",
+              "description": "Количество баллов на ответ пользователя"
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "position": {
+        "x": 317.94228795667794,
+        "y": 271.44112414496294
+      }
+    },
+    {
+      "id": "node-1768361431563-1",
+      "type": "condition",
+      "config": {
+        "conditions": [
+          {
+            "name": null,
+            "expression": "state.knowledge > 10"
+          }
+        ]
+      },
+      "position": {
+        "x": 89.8028595635,
+        "y": 151.82634377497007
+      }
+    },
+    {
+      "id": "node-1768361447589-2",
+      "type": "end",
+      "config": {
+        "name": "Успешно",
+        "properties": {
+          "status": "success"
+        },
+        "is_session_end": false
+      },
+      "position": {
+        "x": 1657.7942718320899,
+        "y": 162.73471452086022
+      }
+    },
+    {
+      "id": "node-1768361458960-3",
+      "type": "set_variable",
+      "config": {
+        "updates": [
+          {
+            "value": "state.knowledge + input.parsed_message.score",
+            "variable_name": "state.knowledge"
+          }
+        ]
+      },
+      "position": {
+        "x": 705.8337009179753,
+        "y": 273.2378697811263
+      }
+    },
+    {
+      "id": "node-1768361468013-4",
+      "type": "condition",
+      "config": {
+        "conditions": [
+          {
+            "name": null,
+            "expression": "state.knowledge > 10"
+          }
+        ]
+      },
+      "position": {
+        "x": 994.096909026699,
+        "y": 233.30306230077178
+      }
+    },
+    {
+      "id": "node-1768361872287-6",
+      "type": "agent",
+      "config": {
+        "name": "Задаем новый вопрос",
+        "model": "gpt-4.1-nano",
+        "tools": null,
+        "provider": "openai",
+        "temperature": 0.7,
+        "tool_choice": "auto",
+        "instructions": [
+          {
+            "role": "user",
+            "content": "Задай новый вопрос пользователя для проверки его знаний по теме {{state.theme}}"
+          }
+        ],
+        "credential_id": "",
+        "response_format": "text",
+        "response_schema": null
+      },
+      "position": {
+        "x": 1283.3753078407713,
+        "y": 308.44647024066467
+      }
+    },
+    {
+      "id": "node-1768361947779-7",
+      "type": "sticker",
+      "config": {
+        "text": "Добавляем переменные для агента\nВ этом примере мы добавляем\ntheme - тема тестирования (строка)\nknowledge - оценка знаний (число)\nend - флаг завершенности (true/false)"
+      },
+      "position": {
+        "x": -369.1998323827832,
+        "y": -28.971096538017548
+      }
+    },
+    {
+      "id": "node-1768362018600-8",
+      "type": "set_variable",
+      "config": {
+        "updates": []
+      },
+      "position": {
+        "x": -1069.3084894350577,
+        "y": -29.923292224723696
+      }
+    },
+    {
+      "id": "node-1768362020128-9",
+      "type": "end",
+      "config": {
+        "name": "Успешно",
+        "properties": {
+          "status": "success"
+        },
+        "is_session_end": false
+      },
+      "position": {
+        "x": -1047.3084894350577,
+        "y": -369.9232922247237
+      }
+    },
+    {
+      "id": "node-1768362020945-10",
+      "type": "sticker",
+      "config": {
+        "text": "В этом примере мы хотим показать как реализовать простого агента для тестирования навыков\nЛогика тут такая\n1) Пользователь отвечает на вопросы по заданной вами теме\n2) Далее агент оценивает ответ и увеличивает или уменьшает количество очков\n3) Как только количество очкво превысило 10, работа агента считается завершенной\n\nЭто пример стейтфул агента, который хранит состояние между вызовами."
+      },
+      "position": {
+        "x": 382.6915105649423,
+        "y": -324.1988937504145
+      }
+    },
+    {
+      "id": "node-1768362156018-12",
+      "type": "sticker",
+      "config": {
+        "text": "Проверяем значение \nпеременной knowledge"
+      },
+      "position": {
+        "x": 87.88170644685505,
+        "y": 52.16569046276438
+      }
+    },
+    {
+      "id": "node-1768362209917-13",
+      "type": "sticker",
+      "config": {
+        "text": "Проверяем еще раз на достижение 10 очков\nи после этого либо генерируем новый\nвопрос либо завершаем агента"
+      },
+      "position": {
+        "x": 1222.890101289661,
+        "y": 155.179066101734
+      }
+    },
+    {
+      "id": "node-1768362237861-14",
+      "type": "sticker",
+      "config": {
+        "text": "Делаем запрос в агента и обновляем значение переменной в зависимости от того, что прислал агент"
+      },
+      "position": {
+        "x": 354.96341452502605,
+        "y": 181.08322675843374
+      }
+    },
+    {
+      "id": "node-1768362279189-15",
+      "type": "sticker",
+      "config": {
+        "text": "Шаблон готов к работе!\nНажмите Play и отправьте сообщение\nдля тестирования агента"
+      },
+      "position": {
+        "x": 241.50208098323566,
+        "y": 381.36150748931055
+      }
+    },
+    {
+      "id": "node-1768380999260-1",
+      "type": "end",
+      "config": {
+        "name": "Успешно",
+        "properties": {
+          "status": "success"
+        },
+        "is_session_end": true
+      },
+      "position": {
+        "x": 1320.4351545205561,
+        "y": 30.710157119906334
+      }
+    },
+    {
+      "id": "node-1768381014736-2",
+      "type": "sticker",
+      "config": {
+        "text": "Заканчиваем с флагом завершения сессии"
+      },
+      "position": {
+        "x": 1296.8418455215751,
+        "y": -57.76475162627169
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "temp-node-1768361431563-1",
+      "source": "8ebe8364-cd2f-46cf-b432-b98618022eca",
+      "target": "node-1768361431563-1",
+      "source_handle": "source_8ebe8364-cd2f-46cf-b432-b98618022eca_0",
+      "target_handle": null
+    },
+    {
+      "id": "xy-edge__node-1768361431563-1source_node-1768361431563-1_1-ce8cfe5b-9906-4a8f-a662-9528ac0d64e9target_ce8cfe5b-9906-4a8f-a662-9528ac0d64e9_0",
+      "source": "node-1768361431563-1",
+      "target": "ce8cfe5b-9906-4a8f-a662-9528ac0d64e9",
+      "source_handle": "source_node-1768361431563-1_1",
+      "target_handle": "target_ce8cfe5b-9906-4a8f-a662-9528ac0d64e9_0"
+    },
+    {
+      "id": "xy-edge__ce8cfe5b-9906-4a8f-a662-9528ac0d64e9source_ce8cfe5b-9906-4a8f-a662-9528ac0d64e9_0-node-1768361458960-3target_node-1768361458960-3_0",
+      "source": "ce8cfe5b-9906-4a8f-a662-9528ac0d64e9",
+      "target": "node-1768361458960-3",
+      "source_handle": "source_ce8cfe5b-9906-4a8f-a662-9528ac0d64e9_0",
+      "target_handle": "target_node-1768361458960-3_0"
+    },
+    {
+      "id": "temp-node-1768361872287-6",
+      "source": "node-1768361468013-4",
+      "target": "node-1768361872287-6",
+      "source_handle": "source_node-1768361468013-4_1",
+      "target_handle": null
+    },
+    {
+      "id": "xy-edge__node-1768361872287-6source_node-1768361872287-6_0-node-1768361447589-2target_node-1768361447589-2_0",
+      "source": "node-1768361872287-6",
+      "target": "node-1768361447589-2",
+      "source_handle": "source_node-1768361872287-6_0",
+      "target_handle": "target_node-1768361447589-2_0"
+    },
+    {
+      "id": "xy-edge__node-1768361458960-3source_node-1768361458960-3_0-node-1768361468013-4target_node-1768361468013-4_0",
+      "source": "node-1768361458960-3",
+      "target": "node-1768361468013-4",
+      "source_handle": "source_node-1768361458960-3_0",
+      "target_handle": "target_node-1768361468013-4_0"
+    },
+    {
+      "id": "temp-node-1768380999260-1",
+      "source": "node-1768361468013-4",
+      "target": "node-1768380999260-1",
+      "source_handle": "source_node-1768361468013-4_0",
+      "target_handle": null
+    },
+    {
+      "id": "xy-edge__node-1768361431563-1source_node-1768361431563-1_0-node-1768380999260-1target_node-1768380999260-1_0",
+      "source": "node-1768361431563-1",
+      "target": "node-1768380999260-1",
+      "source_handle": "source_node-1768361431563-1_0",
+      "target_handle": "target_node-1768380999260-1_0"
+    }
+  ],
+  "state": [
+    {
+      "name": "knowledge",
+      "type": "number",
+      "default_value": 0,
+      "isProjectVariable": false
+    },
+    {
+      "name": "theme",
+      "type": "string",
+      "default_value": "",
+      "isProjectVariable": false
+    },
+    {
+      "name": "end",
+      "type": "boolean",
+      "default_value": false,
+      "isProjectVariable": false
+    }
+  ],
+  "webhook_url": null
+}

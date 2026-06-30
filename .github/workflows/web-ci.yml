@@ -1,0 +1,56 @@
+name: Web CI
+
+on:
+  push:
+    branches: ['**']
+    paths:
+      - 'assemblix-app-web/**'
+      - '.github/workflows/web-ci.yml'
+  pull_request:
+    paths:
+      - 'assemblix-app-web/**'
+      - '.github/workflows/web-ci.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: web-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Type-check & build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: assemblix-app-web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: yarn
+          cache-dependency-path: assemblix-app-web/yarn.lock
+      - run: yarn install --frozen-lockfile
+      # Blocking gate: TypeScript type-check (tsc -b) + production build.
+      - run: yarn build
+
+  lint:
+    name: Lint (eslint)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: assemblix-app-web
+    # Non-blocking for now: the codebase has pre-existing react-hooks violations.
+    # Drop continue-on-error once they're cleaned up so lint becomes a hard gate.
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: yarn
+          cache-dependency-path: assemblix-app-web/yarn.lock
+      - run: yarn install --frozen-lockfile
+      - run: yarn lint

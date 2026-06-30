@@ -1,0 +1,244 @@
+{
+  "name": "Request Routing",
+  "description": null,
+  "nodes": [
+    {
+      "id": "8b5d61ac-cb83-41cb-9967-43cb7724d696",
+      "type": "start",
+      "config": {},
+      "position": {
+        "x": -11.439315629814104,
+        "y": 200.00000000000003
+      }
+    },
+    {
+      "id": "0562b26a-504b-44d9-b6b0-80c34bd711c1",
+      "type": "agent",
+      "config": {
+        "name": "Categorize Request",
+        "model": "gpt-4.1-nano",
+        "tools": null,
+        "provider": "openai",
+        "tool_choice": "auto",
+        "instructions": [
+          {
+            "role": "system",
+            "content": "You are a customer request classifier. Your task is to determine the type of request and respond with ONLY one word. Analyze the tone and content of the message: NEGATIVE - complaints, claims, dissatisfaction, problems, criticism POSITIVE - thank-yous, praise, enthusiasm, positive reviews PASSIVE - neutral questions, suggestions, general information OTHER - everything else that does not fall into the above categories"
+          }
+        ],
+        "credential_id": "",
+        "response_format": "json_object",
+        "response_schema": {
+          "type": "object",
+          "title": "responseSchema",
+          "properties": {
+            "category": {
+              "enum": [
+                "positive",
+                "negative",
+                "question",
+                "other"
+              ],
+              "type": "string",
+              "description": "User request category"
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "position": {
+        "x": 179.62230240163458,
+        "y": 198.33672663239082
+      }
+    },
+    {
+      "id": "93cf9ece-a0ea-416f-993a-52b9bc6fe52b",
+      "type": "end",
+      "config": {
+        "name": "Result",
+        "properties": {},
+        "is_session_end": false
+      },
+      "position": {
+        "x": 1318.6555482181147,
+        "y": 234.35933030968027
+      }
+    },
+    {
+      "id": "node-1768366863444-16",
+      "type": "condition",
+      "config": {
+        "conditions": [
+          {
+            "name": null,
+            "expression": "input.parsed_message.category == \"positive\""
+          },
+          {
+            "name": null,
+            "branch": "",
+            "expression": "input.parsed_message.category == \"negative\""
+          },
+          {
+            "name": null,
+            "branch": "",
+            "expression": "input.parsed_message.category == \"passive\""
+          }
+        ]
+      },
+      "position": {
+        "x": 528.952012809759,
+        "y": 123.39899231852277
+      }
+    },
+    {
+      "id": "node-1768366915669-17",
+      "type": "agent",
+      "config": {
+        "name": "Handle Positive Response",
+        "model": "gpt-4.1-nano",
+        "tools": null,
+        "provider": "openai",
+        "tool_choice": "auto",
+        "instructions": [
+          {
+            "role": "user",
+            "content": "The customer left a positive review. Your task is to motivate further action.\n\nAlgorithm:\n\n1. Thank sincerely and personally (mention what specifically was appreciated)\n\n2. Delicately ask to share the review publicly (if not yet shared)\n\n3. Suggest 1-2 simple next steps:\n\n   - Leave a review on a platform (specify where)\n\n   - Tell friends/colleagues\n\n   - Subscribe to updates\n\nTone: grateful, friendly, not pushy\n\nFormat: short response (3-5 sentences)\n\nDo NOT be overly enthusiastic. Be warmly professional."
+          }
+        ],
+        "credential_id": "",
+        "response_format": "text",
+        "response_schema": null
+      },
+      "position": {
+        "x": 902.0243516322744,
+        "y": 94.67259474844269
+      }
+    },
+    {
+      "id": "node-1768367074328-18",
+      "type": "agent",
+      "config": {
+        "name": "Handle Negative Response",
+        "model": "gpt-4.1-nano",
+        "tools": null,
+        "provider": "openai",
+        "tool_choice": "auto",
+        "instructions": [
+          {
+            "role": "user",
+            "content": "You are an empathetic support specialist. The customer has expressed dissatisfaction. Your task: 1. Express sincere regret and understanding 2. Ask 2-3 clarifying questions to understand the root of the problem 3. Be specific - ask for details (when it happened, what exactly is not working, what steps were taken) Tone: professional, empathetic, but not overly formal Style: short sentences, clear questions Do NOT suggest solutions at this stage - only gather information. Show that you genuinely want to help resolve the issue."
+          }
+        ],
+        "credential_id": "",
+        "response_format": "text",
+        "response_schema": null
+      },
+      "position": {
+        "x": 904.2410826199957,
+        "y": 191.10039271431964
+      }
+    },
+    {
+      "id": "node-1768367084960-19",
+      "type": "agent",
+      "config": {
+        "name": "Handle Other Responses",
+        "model": "gpt-4.1-nano",
+        "tools": null,
+        "provider": "openai",
+        "tool_choice": "auto",
+        "instructions": [
+          {
+            "role": "user",
+            "content": "You are an attentive consultant. The customer asked a neutral question or made a suggestion.\n\nYour task:\n\n1. Confirm understanding of the request (paraphrase in your own words)\n\n2. Ask 1-2 clarifying questions to give the most relevant answer\n\n3. If it is a suggestion - clarify the context and motivation\n\nStyle: friendly-professional, concise\n\nQuestions should be open-ended, helping to uncover the need\n\nDo NOT overload with questions - maximum 2 questions.\n\nShow that you are interested in helping with exactly what the customer needs."
+          }
+        ],
+        "credential_id": "",
+        "response_format": "text",
+        "response_schema": null
+      },
+      "position": {
+        "x": 917.5414685463237,
+        "y": 289.744921667918
+      }
+    },
+    {
+      "id": "node-1768367160135-20",
+      "type": "sticker",
+      "config": {
+        "text": "The simplest agent variant - receives a user request and simply categorizes it. Depending on the category, it passes it to the corresponding agent node."
+      },
+      "position": {
+        "x": 574.7978239415974,
+        "y": -261.34584925839624
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge_8b5d61ac-cb83-41cb-9967-43cb7724d696_0562b26a-504b-44d9-b6b0-80c34bd711c1",
+      "source": "8b5d61ac-cb83-41cb-9967-43cb7724d696",
+      "target": "0562b26a-504b-44d9-b6b0-80c34bd711c1",
+      "source_handle": "source_8b5d61ac-cb83-41cb-9967-43cb7724d696_0",
+      "target_handle": "target_0562b26a-504b-44d9-b6b0-80c34bd711c1_0"
+    },
+    {
+      "id": "temp-node-1768366863444-16",
+      "source": "0562b26a-504b-44d9-b6b0-80c34bd711c1",
+      "target": "node-1768366863444-16",
+      "source_handle": "source_0562b26a-504b-44d9-b6b0-80c34bd711c1_0",
+      "target_handle": null
+    },
+    {
+      "id": "temp-node-1768366915669-17",
+      "source": "node-1768366863444-16",
+      "target": "node-1768366915669-17",
+      "source_handle": "source_node-1768366863444-16_0",
+      "target_handle": null
+    },
+    {
+      "id": "temp-node-1768367074328-18",
+      "source": "node-1768366863444-16",
+      "target": "node-1768367074328-18",
+      "source_handle": "source_node-1768366863444-16_1",
+      "target_handle": null
+    },
+    {
+      "id": "temp-node-1768367084960-19",
+      "source": "node-1768366863444-16",
+      "target": "node-1768367084960-19",
+      "source_handle": "source_node-1768366863444-16_2",
+      "target_handle": null
+    },
+    {
+      "id": "xy-edge__node-1768366915669-17source_node-1768366915669-17_0-93cf9ece-a0ea-416f-993a-52b9bc6fe52btarget_93cf9ece-a0ea-416f-993a-52b9bc6fe52b_0",
+      "source": "node-1768366915669-17",
+      "target": "93cf9ece-a0ea-416f-993a-52b9bc6fe52b",
+      "source_handle": "source_node-1768366915669-17_0",
+      "target_handle": "target_93cf9ece-a0ea-416f-993a-52b9bc6fe52b_0"
+    },
+    {
+      "id": "xy-edge__node-1768367074328-18source_node-1768367074328-18_0-93cf9ece-a0ea-416f-993a-52b9bc6fe52btarget_93cf9ece-a0ea-416f-993a-52b9bc6fe52b_0",
+      "source": "node-1768367074328-18",
+      "target": "93cf9ece-a0ea-416f-993a-52b9bc6fe52b",
+      "source_handle": "source_node-1768367074328-18_0",
+      "target_handle": "target_93cf9ece-a0ea-416f-993a-52b9bc6fe52b_0"
+    },
+    {
+      "id": "xy-edge__node-1768367084960-19source_node-1768367084960-19_0-93cf9ece-a0ea-416f-993a-52b9bc6fe52btarget_93cf9ece-a0ea-416f-993a-52b9bc6fe52b_0",
+      "source": "node-1768367084960-19",
+      "target": "93cf9ece-a0ea-416f-993a-52b9bc6fe52b",
+      "source_handle": "source_node-1768367084960-19_0",
+      "target_handle": "target_93cf9ece-a0ea-416f-993a-52b9bc6fe52b_0"
+    },
+    {
+      "id": "xy-edge__node-1768366863444-16source_node-1768366863444-16_3-node-1768367084960-19target_node-1768367084960-19_0",
+      "source": "node-1768366863444-16",
+      "target": "node-1768367084960-19",
+      "source_handle": "source_node-1768366863444-16_3",
+      "target_handle": "target_node-1768367084960-19_0"
+    }
+  ],
+  "state": [],
+  "webhook_url": null
+}

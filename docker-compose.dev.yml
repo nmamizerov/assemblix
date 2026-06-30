@@ -1,0 +1,101 @@
+# ============================================================================
+# Assemblix — DEVELOPMENT stack.
+#
+#   docker compose -f docker-compose.dev.yml up --build
+#
+# Brings up the WHOLE stack with live reload, so you just `up` and develop:
+#   postgres + redis + api (fastapi dev) + web (vite HMR) + worker (arq --watch)
+#
+# Source is bind-mounted, so edits on the host reload inside the containers.
+# Every service runs by default (no profiles). Want just one service?
+#   docker compose -f docker-compose.dev.yml up postgres
+#
+# Config comes from the single root `.env`. DATABASE_URL / REDIS_URL are
+# overridden here to the in-network service hosts, and the Redis-backed
+# features are turned on so the full api<->worker path is exercised locally.
+# ============================================================================
+
+name: assemblix-dev
+
+x-api-build: &api-build
+  context: ./assemblix-app-api
+  target: dev
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: assemblix-dev-postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-assemblix}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-assemblix}
+      POSTGRES_DB: ${POSTGRES_DB:-assemblix}
+    volumes:
+      - assemblix-dev-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-assemblix} -d ${POSTGRES_DB:-assemblix}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    container_name: assemblix-dev-redis
+    # No published port — only in-compose services use Redis (via `redis` host).
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  api:
+    build: *api-build
+    image: assemblix-api:dev
+    command: ["fastapi", "dev", "assemblix_api/main.py", "--host", "0.0.0.0"]
+    env_file: .env
+    environment:
+      # The dev api applies migrations on start (no separate migrate service).
+      RUN_MIGRATIONS: "true"
+    volumes:
+      # Bind-mount source for hot reload; keep the container-built venv.
+      - ./assemblix-app-api:/app
+      - /app/.venv
+    ports:
+      - "${API_PORT:-8000}:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  web:
+    image: node:22-alpine
+    working_dir: /app
+    command: sh -c "yarn install && yarn dev --host --port 5173"
+    env_file: .env
+    environment:
+      # Vite proxies /api to the in-network api service (not localhost).
+      DEV_PROXY_TARGET: http://api:8000
+    volumes:
+      - ./assemblix-app-web:/app
+      - /app/node_modules
+    ports:
+      - "5173:5173"
+    depends_on:
+      - api
+
+  worker:
+    build: *api-build
+    image: assemblix-api:dev
+    command: ["arq", "assemblix_api.queue.worker.WorkerSettings", "--watch", "assemblix_api"]
+    env_file: .env
+    volumes:
+      - ./assemblix-app-api:/app
+      - /app/.venv
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+volumes:
+  assemblix-dev-pgdata:

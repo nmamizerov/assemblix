@@ -1,0 +1,82 @@
+{
+  "name": "Простой чат-бот",
+  "description": null,
+  "nodes": [
+    {
+      "id": "start-node-simple",
+      "type": "start",
+      "config": {},
+      "position": {
+        "x": 100,
+        "y": 200
+      }
+    },
+    {
+      "id": "agent-node-simple",
+      "type": "agent",
+      "config": {
+        "name": "Чат-бот",
+        "model": "gpt-4.1-nano",
+        "tools": null,
+        "provider": "openai",
+        "temperature": 0.7,
+        "tool_choice": "auto",
+        "instructions": [
+          {
+            "role": "system",
+            "content": "Ты - дружелюбный помощник. Отвечай на вопросы пользователя кратко и по делу."
+          }
+        ],
+        "credential_id": "",
+        "response_format": "text",
+        "response_schema": null
+      },
+      "position": {
+        "x": 400,
+        "y": 200
+      }
+    },
+    {
+      "id": "end-node-simple",
+      "type": "end",
+      "config": {
+        "name": "Результат",
+        "properties": {},
+        "is_session_end": false
+      },
+      "position": {
+        "x": 700,
+        "y": 200
+      }
+    },
+    {
+      "id": "sticker-node-simple",
+      "type": "sticker",
+      "config": {
+        "text": "Простейший агент для начала работы\n\nНажмите Play и отправьте сообщение\nчтобы увидеть агента в действии!"
+      },
+      "position": {
+        "x": 350,
+        "y": 50
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge-start-agent",
+      "source": "start-node-simple",
+      "target": "agent-node-simple",
+      "source_handle": "source_start-node-simple_0",
+      "target_handle": "target_agent-node-simple_0"
+    },
+    {
+      "id": "edge-agent-end",
+      "source": "agent-node-simple",
+      "target": "end-node-simple",
+      "source_handle": "source_agent-node-simple_0",
+      "target_handle": "target_end-node-simple_0"
+    }
+  ],
+  "state": [],
+  "webhook_url": null
+}

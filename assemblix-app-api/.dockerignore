@@ -1,0 +1,27 @@
+# Build context exclusions for the backend image.
+.venv/
+venv/
+env/
+**/__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+htmlcov/
+.coverage
+.coverage.*
+*.egg-info/
+
+# Never bake env files or local compose into the image.
+.env
+.env.*
+docker-compose*.yml
+
+# VCS / editor / OS noise.
+.git/
+.gitignore
+*.swp
+*.swo
+*~
+.DS_Store

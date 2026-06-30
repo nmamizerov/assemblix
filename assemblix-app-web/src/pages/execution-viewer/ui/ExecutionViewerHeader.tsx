@@ -1,0 +1,149 @@
+import { ArrowLeft, Clock, DollarSign } from "lucide-react";
+import { useNavigate, useLocation, useParams } from "react-router-dom";
+import { useTranslation } from "react-i18next";
+import { Button } from "@/shared/ui/button";
+import { cn } from "@/shared/lib/utils";
+import { useFormatDate } from "@/shared/lib/format-date";
+import type { ExecutionDetailResponse } from "@/entities/execution";
+import {
+  getStatusIcon,
+  getExecutionStatusLabel,
+  getExecutionStatusColor,
+} from "../lib/execution-status-utils.tsx";
+
+interface ExecutionViewerHeaderProps {
+  execution: ExecutionDetailResponse;
+}
+
+export const ExecutionViewerHeader = ({
+  execution,
+}: ExecutionViewerHeaderProps) => {
+  const { t } = useTranslation();
+  const { formatDateTime, formatNumber } = useFormatDate();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { projectId } = useParams();
+
+  const formatDuration = (ms: number) => {
+    if (ms < 1000) return `${ms}ms`;
+    if (ms < 60000) return `${(ms / 1000).toFixed(1)}s`;
+    return `${Math.floor(ms / 60000)}m ${Math.floor((ms % 60000) / 1000)}s`;
+  };
+
+  const handleBack = () => {
+    // Проверяем, есть ли сохраненный referrer в state
+    const from = (location.state as { from?: string })?.from;
+
+    if (from) {
+      // Если есть информация откуда пришли, возвращаемся туда
+      navigate(from);
+    } else if (window.history.length > 2) {
+      // Если есть история браузера, возвращаемся назад
+      navigate(-1);
+    } else {
+      // По умолчанию возвращаемся на страницу вызовов
+      navigate(`/projects/${projectId}/sessions`);
+    }
+  };
+
+  return (
+    <div className="w-full shrink-0">
+      <div className="bg-card border-b border-border shadow-sm">
+        <div className="px-6 py-4">
+          <div className="flex items-center justify-between">
+            {/* Левая часть - название и кнопка назад */}
+            <div className="flex items-center gap-4">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleBack}
+                className="shrink-0"
+              >
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                {t("executionViewer.back")}
+              </Button>
+              <div className="flex flex-col">
+                <h1 className="text-xl font-semibold text-foreground">
+                  {execution.workflow.name}
+                </h1>
+                <p className="text-sm text-muted-foreground">
+                  {t("executionViewer.executionFrom")}{" "}
+                  {formatDateTime(execution.startedAt)}
+                </p>
+              </div>
+            </div>
+
+            {/* Правая часть - статус и метрики */}
+            <div className="flex items-center gap-6">
+              {/* Статус */}
+              <div
+                className={cn(
+                  "flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium border",
+                  getExecutionStatusColor(execution.status)
+                )}
+              >
+                {getStatusIcon(execution.status)}
+                {getExecutionStatusLabel(execution.status)}
+              </div>
+
+              {/* Метрики */}
+              <div className="flex items-center gap-6">
+                <div className="flex items-center gap-2">
+                  <Clock className="h-4 w-4 text-muted-foreground" />
+                  <div>
+                    <p className="text-xs text-muted-foreground">
+                      {t("executionViewer.duration")}
+                    </p>
+                    <p className="text-sm font-medium">
+                      {formatDuration(execution.durationMs)}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <DollarSign className="h-4 w-4 text-muted-foreground" />
+                  <div>
+                    <p className="text-xs text-muted-foreground">
+                      {t("executionViewer.credits")}
+                    </p>
+                    <p className="text-sm font-medium">
+                      {formatNumber(execution.totalCredits ?? 0)}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <div>
+                    <p className="text-xs text-muted-foreground">
+                      {t("executionViewer.steps")}
+                    </p>
+                    <p className="text-sm font-medium">
+                      {execution.stepsCount}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Сообщение об ошибке */}
+          {execution.status === "failed" && execution.errorMessage && (
+            <div className="mt-3 p-3 rounded-lg border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-950/30">
+              <p className="text-sm font-medium text-red-900 dark:text-red-100">
+                {t("executionViewer.errorExecution")}
+              </p>
+              <p className="text-sm text-red-700 dark:text-red-300 mt-1">
+                {execution.errorMessage}
+              </p>
+              {execution.failedNodeId && (
+                <p className="text-xs text-red-600 dark:text-red-400 mt-1">
+                  {t("executionViewer.errorInNode")} {execution.failedNodeId}
+                </p>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};

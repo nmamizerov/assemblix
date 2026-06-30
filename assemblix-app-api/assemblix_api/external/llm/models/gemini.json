@@ -1,0 +1,174 @@
+{
+  "paramSchema": [
+    {
+      "name": "temperature",
+      "label": "Temperature",
+      "type": "number",
+      "default": 1,
+      "min": 0,
+      "max": 2,
+      "description": "Controls randomness. Gemini 3.x: keep at 1.0 — Google warns that lowering can cause reasoning loops."
+    },
+    {
+      "name": "max_tokens",
+      "label": "Max Tokens",
+      "type": "number",
+      "default": 8192,
+      "min": 1,
+      "description": "Maximum output tokens, INCLUDING thinking tokens. Mapped to Gemini's `max_output_tokens` internally. Reserve generous budget for thinking models (Pro: ≥2000)."
+    },
+    {
+      "name": "response_format",
+      "label": "Response Format",
+      "type": "select",
+      "default": "text",
+      "options": [
+        {
+          "label": "Text",
+          "value": "text"
+        },
+        {
+          "label": "JSON object",
+          "value": "json_object"
+        }
+      ],
+      "description": "Force the model to return plain text or JSON. JSON mode maps to response_mime_type=application/json."
+    },
+    {
+      "name": "top_p",
+      "label": "Top P",
+      "type": "number",
+      "default": 0.95,
+      "min": 0,
+      "max": 1,
+      "advanced": true,
+      "description": "Nucleus sampling cutoff. Tune this OR temperature, not both."
+    },
+    {
+      "name": "seed",
+      "label": "Seed",
+      "type": "number",
+      "min": 0,
+      "advanced": true,
+      "description": "Best-effort deterministic sampling. On 2.5 Pro determinism can be unstable."
+    },
+    {
+      "name": "thinking_budget",
+      "label": "Thinking Budget",
+      "type": "number",
+      "min": -1,
+      "advanced": true,
+      "hide": {
+        "capability": [
+          "gen3"
+        ]
+      },
+      "description": "Reasoning token budget. -1 = dynamic, 0 = disable (Flash only). Gemini 2.5 Pro: range 128–32 768 (cannot disable). Gemini 2.5 Flash: 0–24 576."
+    },
+    {
+      "name": "thinking_level",
+      "label": "Thinking Level",
+      "type": "select",
+      "options": [
+        {
+          "label": "Minimal",
+          "value": "minimal"
+        },
+        {
+          "label": "Low",
+          "value": "low"
+        },
+        {
+          "label": "Medium",
+          "value": "medium"
+        },
+        {
+          "label": "High",
+          "value": "high"
+        }
+      ],
+      "advanced": true,
+      "show": {
+        "capability": [
+          "gen3"
+        ]
+      },
+      "description": "Reasoning depth on Gemini 3+. Pro variants reject `minimal` (use low/medium/high). Flash variants default to `minimal`."
+    }
+  ],
+  "models": [
+    {
+      "id": "gemini-3.5-flash",
+      "label": "Gemini 3.5 Flash",
+      "contextWindow": 1000000,
+      "maxOutputTokens": 65536,
+      "inputCostPerMillion": 1.5,
+      "outputCostPerMillion": 9.0,
+      "capabilities": {
+        "gen3": true
+      }
+    },
+    {
+      "id": "gemini-3.1-pro-preview",
+      "label": "Gemini 3.1 Pro",
+      "contextWindow": 2000000,
+      "maxOutputTokens": 65536,
+      "inputCostPerMillion": 2.5,
+      "outputCostPerMillion": 15.0,
+      "capabilities": {
+        "gen3": true
+      }
+    },
+    {
+      "id": "gemini-3.1-flash-lite",
+      "label": "Gemini 3.1 Flash Lite",
+      "contextWindow": 1000000,
+      "maxOutputTokens": 65536,
+      "inputCostPerMillion": 0.1,
+      "outputCostPerMillion": 0.4,
+      "capabilities": {
+        "gen3": true
+      }
+    },
+    {
+      "id": "gemini-3-pro-preview",
+      "label": "Gemini 3 Pro",
+      "contextWindow": 2000000,
+      "maxOutputTokens": 65536,
+      "inputCostPerMillion": 2.5,
+      "outputCostPerMillion": 15.0,
+      "capabilities": {
+        "gen3": true
+      }
+    },
+    {
+      "id": "gemini-3-flash-preview",
+      "label": "Gemini 3 Flash",
+      "contextWindow": 1000000,
+      "maxOutputTokens": 65536,
+      "inputCostPerMillion": 0.3,
+      "outputCostPerMillion": 1.2,
+      "capabilities": {
+        "gen3": true
+      }
+    },
+    {
+      "id": "gemini-2.5-pro",
+      "label": "Gemini 2.5 Pro",
+      "contextWindow": 2000000,
+      "maxOutputTokens": 65536,
+      "inputCostPerMillion": 1.25,
+      "outputCostPerMillion": 10.0,
+      "capabilities": {}
+    },
+    {
+      "id": "gemini-2.5-flash",
+      "label": "Gemini 2.5 Flash",
+      "contextWindow": 1000000,
+      "maxOutputTokens": 65536,
+      "inputCostPerMillion": 0.3,
+      "outputCostPerMillion": 1.2,
+      "capabilities": {}
+    }
+  ]
+}

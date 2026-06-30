@@ -1,0 +1,15 @@
+# Default owner for everything in the repo.
+* @nmamizerov
+
+# Enterprise-licensed payment + billing code (see LICENSE_EE.md).
+/assemblix-app-api/assemblix_api/external/payments/ @nmamizerov
+/assemblix-app-api/assemblix_api/api/rest/payments.py @nmamizerov
+/assemblix-app-api/assemblix_api/api/rest/billing.py @nmamizerov
+/assemblix-app-api/assemblix_api/billing/ @nmamizerov
+/assemblix-app-api/assemblix_api/dto/responses/billing.py @nmamizerov
+/assemblix-app-api/assemblix_api/database/models/credit_transaction.py @nmamizerov
+/assemblix-app-web/src/entities/billing/ @nmamizerov
+/assemblix-app-web/src/app/providers/PaddleProvider.tsx @nmamizerov
+/assemblix-app-web/src/shared/lib/paddle.ts @nmamizerov
+/assemblix-app-web/src/pages/payment-success/ @nmamizerov
+/assemblix-app-web/src/pages/pricing/ @nmamizerov

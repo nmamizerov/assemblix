@@ -1,0 +1,107 @@
+{
+  "paramSchema": [
+    {
+      "name": "temperature",
+      "label": "Temperature",
+      "type": "number",
+      "default": 0.7,
+      "min": 0,
+      "max": 2,
+      "hide": {
+        "capability": [
+          "reasoning"
+        ]
+      },
+      "description": "Controls randomness of the output."
+    },
+    {
+      "name": "max_tokens",
+      "label": "Max Tokens",
+      "type": "number",
+      "default": 4096,
+      "min": 1,
+      "description": "Maximum number of tokens to generate."
+    },
+    {
+      "name": "top_p",
+      "label": "Top P",
+      "type": "number",
+      "default": 1,
+      "min": 0,
+      "max": 1,
+      "advanced": true,
+      "hide": {
+        "capability": [
+          "reasoning"
+        ]
+      },
+      "description": "Nucleus sampling cutoff."
+    },
+    {
+      "name": "frequency_penalty",
+      "label": "Frequency Penalty",
+      "type": "number",
+      "default": 0,
+      "min": -2,
+      "max": 2,
+      "advanced": true,
+      "hide": {
+        "capability": [
+          "reasoning"
+        ]
+      },
+      "description": "Reduces repetition of frequent tokens."
+    },
+    {
+      "name": "response_format",
+      "label": "Response Format",
+      "type": "select",
+      "default": "text",
+      "options": [
+        {
+          "label": "Text",
+          "value": "text"
+        },
+        {
+          "label": "JSON object",
+          "value": "json_object"
+        }
+      ],
+      "description": "Force the model to return plain text or JSON."
+    }
+  ],
+  "models": [
+    {
+      "id": "deepseek-chat",
+      "label": "DeepSeek Chat",
+      "description": "DeepSeek-V3 generic chat model.",
+      "contextWindow": 64000,
+      "maxOutputTokens": 8192,
+      "inputCostPerMillion": 0.27,
+      "outputCostPerMillion": 1.1,
+      "capabilities": {}
+    },
+    {
+      "id": "deepseek-reasoner",
+      "label": "DeepSeek Reasoner",
+      "description": "DeepSeek-R1 reasoning model with chain-of-thought.",
+      "contextWindow": 64000,
+      "maxOutputTokens": 8192,
+      "inputCostPerMillion": 0.55,
+      "outputCostPerMillion": 2.19,
+      "capabilities": {
+        "reasoning": true
+      }
+    },
+    {
+      "id": "deepseek-coder",
+      "label": "DeepSeek Coder",
+      "description": "Code-focused DeepSeek model.",
+      "contextWindow": 16000,
+      "maxOutputTokens": 8192,
+      "inputCostPerMillion": 0.27,
+      "outputCostPerMillion": 1.1,
+      "capabilities": {}
+    }
+  ]
+}

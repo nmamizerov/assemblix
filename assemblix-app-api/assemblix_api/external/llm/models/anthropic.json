@@ -1,0 +1,192 @@
+{
+  "paramSchema": [
+    {
+      "name": "temperature",
+      "label": "Temperature",
+      "type": "number",
+      "default": 1.0,
+      "min": 0,
+      "max": 1,
+      "description": "Controls randomness (Anthropic recommends 0–1)."
+    },
+    {
+      "name": "max_tokens",
+      "label": "Max Tokens",
+      "type": "number",
+      "default": 4096,
+      "min": 1,
+      "description": "Maximum number of tokens to generate."
+    },
+    {
+      "name": "top_p",
+      "label": "Top P",
+      "type": "number",
+      "default": 1,
+      "min": 0,
+      "max": 1,
+      "advanced": true,
+      "description": "Nucleus sampling cutoff."
+    },
+    {
+      "name": "top_k",
+      "label": "Top K",
+      "type": "number",
+      "min": 1,
+      "advanced": true,
+      "description": "Restrict sampling to the top K tokens."
+    },
+    {
+      "name": "thinking_budget",
+      "label": "Thinking Budget",
+      "type": "number",
+      "default": 2048,
+      "min": 1024,
+      "advanced": true,
+      "show": {
+        "capability": [
+          "thinking"
+        ]
+      },
+      "description": "Token budget reserved for extended thinking. Available on Claude 4 thinking-capable models."
+    },
+    {
+      "name": "response_format",
+      "label": "Response Format",
+      "type": "select",
+      "default": "text",
+      "options": [
+        {
+          "label": "Text",
+          "value": "text"
+        },
+        {
+          "label": "JSON object",
+          "value": "json_object"
+        }
+      ],
+      "description": "Force the model to return plain text or JSON."
+    }
+  ],
+  "models": [
+    {
+      "id": "claude-opus-4-7",
+      "label": "Claude Opus 4.7",
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000,
+      "inputCostPerMillion": 15.0,
+      "outputCostPerMillion": 75.0,
+      "capabilities": {
+        "thinking": true
+      }
+    },
+    {
+      "id": "claude-sonnet-4-6",
+      "label": "Claude Sonnet 4.6",
+      "contextWindow": 1000000,
+      "maxOutputTokens": 64000,
+      "inputCostPerMillion": 3.0,
+      "outputCostPerMillion": 15.0,
+      "capabilities": {
+        "thinking": true
+      }
+    },
+    {
+      "id": "claude-haiku-4-5",
+      "label": "Claude Haiku 4.5",
+      "contextWindow": 200000,
+      "maxOutputTokens": 8192,
+      "inputCostPerMillion": 1.0,
+      "outputCostPerMillion": 5.0,
+      "capabilities": {}
+    },
+    {
+      "id": "claude-opus-4-6",
+      "label": "Claude Opus 4.6",
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000,
+      "inputCostPerMillion": 15.0,
+      "outputCostPerMillion": 75.0,
+      "capabilities": {
+        "thinking": true
+      }
+    },
+    {
+      "id": "claude-opus-4-5",
+      "label": "Claude Opus 4.5",
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000,
+      "inputCostPerMillion": 15.0,
+      "outputCostPerMillion": 75.0,
+      "capabilities": {
+        "thinking": true
+      }
+    },
+    {
+      "id": "claude-sonnet-4-5",
+      "label": "Claude Sonnet 4.5",
+      "contextWindow": 200000,
+      "maxOutputTokens": 64000,
+      "inputCostPerMillion": 3.0,
+      "outputCostPerMillion": 15.0,
+      "capabilities": {
+        "thinking": true
+      }
+    },
+    {
+      "id": "claude-opus-4-1",
+      "label": "Claude Opus 4.1",
+      "contextWindow": 200000,
+      "maxOutputTokens": 32000,
+      "inputCostPerMillion": 15.0,
+      "outputCostPerMillion": 75.0,
+      "capabilities": {
+        "thinking": true
+      }
+    },
+    {
+      "id": "claude-3-5-sonnet-20241022",
+      "label": "Claude 3.5 Sonnet",
+      "contextWindow": 200000,
+      "maxOutputTokens": 8192,
+      "inputCostPerMillion": 3.0,
+      "outputCostPerMillion": 15.0,
+      "capabilities": {}
+    },
+    {
+      "id": "claude-3-5-haiku-20241022",
+      "label": "Claude 3.5 Haiku",
+      "contextWindow": 200000,
+      "maxOutputTokens": 8192,
+      "inputCostPerMillion": 1.0,
+      "outputCostPerMillion": 5.0,
+      "capabilities": {}
+    },
+    {
+      "id": "claude-3-opus-20240229",
+      "label": "Claude 3 Opus",
+      "contextWindow": 200000,
+      "maxOutputTokens": 4096,
+      "inputCostPerMillion": 15.0,
+      "outputCostPerMillion": 75.0,
+      "capabilities": {}
+    },
+    {
+      "id": "claude-3-sonnet-20240229",
+      "label": "Claude 3 Sonnet",
+      "contextWindow": 200000,
+      "maxOutputTokens": 4096,
+      "inputCostPerMillion": 3.0,
+      "outputCostPerMillion": 15.0,
+      "capabilities": {}
+    },
+    {
+      "id": "claude-3-haiku-20240307",
+      "label": "Claude 3 Haiku",
+      "contextWindow": 200000,
+      "maxOutputTokens": 4096,
+      "inputCostPerMillion": 0.25,
+      "outputCostPerMillion": 1.25,
+      "capabilities": {}
+    }
+  ]
+}

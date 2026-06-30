@@ -1,0 +1,535 @@
+@import "tailwindcss";
+@plugin "@tailwindcss/typography";
+
+@custom-variant dark (&:is(.dark *));
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+  --radius-3xl: calc(var(--radius) + 12px);
+  --radius-4xl: calc(var(--radius) + 16px);
+
+  /* Базовые цвета */
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+
+  /* Основные акценты */
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+
+  /* Статусы */
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-info: var(--info);
+  --color-info-foreground: var(--info-foreground);
+
+  /* Границы и inputs */
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  /* Canvas */
+  --color-canvas: var(--canvas);
+
+  /* Layout colors */
+  --color-sidebar: var(--sidebar);
+  --color-header: var(--header);
+  --color-content: var(--content);
+
+  /* Цвета для нод (workflow nodes) */
+  --color-node-start: var(--node-start);
+  --color-node-start-foreground: var(--node-start-foreground);
+  --color-node-llm: var(--node-llm);
+  --color-node-llm-foreground: var(--node-llm-foreground);
+  --color-node-sticker: var(--node-sticker);
+  --color-node-sticker-foreground: var(--node-sticker-foreground);
+  --color-node-tool: var(--node-tool);
+  --color-node-tool-foreground: var(--node-tool-foreground);
+  --color-node-logic: var(--node-logic);
+  --color-node-logic-foreground: var(--node-logic-foreground);
+  --color-node-data: var(--node-data);
+  --color-node-data-foreground: var(--node-data-foreground);
+  --color-node-http: var(--node-http);
+  --color-node-http-foreground: var(--node-http-foreground);
+
+  /* panel */
+  --color-panel: var(--panel);
+  --color-panel-foreground: var(--panel-foreground);
+  --color-panel-primary: var(--panel-primary);
+  --color-panel-primary-foreground: var(--panel-primary-foreground);
+  --color-panel-accent: var(--panel-accent);
+  --color-panel-accent-foreground: var(--panel-accent-foreground);
+  --color-panel-border: var(--panel-border);
+  --color-panel-ring: var(--panel-ring);
+}
+
+/* ==================== СВЕТЛАЯ ТЕМА ==================== */
+:root {
+  --radius: 0.5rem;
+
+  /* Фоны */
+  --background: #ffffff;
+  --foreground: #09090b;
+  --card: #ffffff;
+  --card-foreground: #09090b;
+  --popover: #ffffff;
+  --popover-foreground: #09090b;
+  --canvas: #f4f4f5;
+
+  /* Layout */
+  --sidebar: #fafafa;
+  --header: #fafafa;
+  --content: #ffffff;
+
+  /* Основной акцент - индиго #6366f1 */
+  --primary: #6366f1;
+  --primary-foreground: #ffffff;
+
+  /* Вторичные - с оттенком индиго */
+  --secondary: #eef2ff;
+  --secondary-foreground: #18181b;
+  --muted: #f4f4f5;
+  --muted-foreground: #71717a;
+  --accent: #e0e7ff;
+  --accent-foreground: #18181b;
+
+  /* Статусы */
+  --destructive: #ef4444;
+  --destructive-foreground: #ffffff;
+  --success: #10b981;
+  --success-foreground: #ffffff;
+  --warning: #f59e0b;
+  --warning-foreground: #18181b;
+  --info: #3b82f6;
+  --info-foreground: #ffffff;
+
+  /* Границы */
+  --border: #e4e4e7;
+  --input: #e4e4e7;
+  --ring: #6366f1;
+
+  /* Цвета нод */
+  --node-start: #10b981;
+  --node-start-foreground: #ffffff;
+  --node-llm: #8b5cf6;
+  --node-llm-foreground: #ffffff;
+  --node-sticker: #8b5cf6;
+  --node-sticker-foreground: #ffffff;
+  --node-tool: #14b8a6;
+  --node-tool-foreground: #ffffff;
+  --node-logic: #f59e0b;
+  --node-logic-foreground: #18181b;
+  --node-data: #3b82f6;
+  --node-data-foreground: #ffffff;
+  --node-http: #f97316;
+  --node-http-foreground: #ffffff;
+
+  /* panel */
+  --panel: #ffffff;
+  --panel-foreground: #09090b;
+  --panel-primary: #6366f1;
+  --panel-primary-foreground: #ffffff;
+  --panel-accent: #eef2ff;
+  --panel-accent-foreground: #18181b;
+  --panel-border: #e4e4e7;
+  --panel-ring: #6366f1;
+}
+
+/* ==================== ТЕМНАЯ ТЕМА ==================== */
+.dark {
+  /* Фоны */
+  --background: #09090b;
+  --foreground: #fafafa;
+  --card: #18181b;
+  --card-foreground: #fafafa;
+  --popover: #18181b;
+  --popover-foreground: #fafafa;
+  --canvas: #0f0f12;
+
+  /* Layout */
+  --sidebar: #18181b;
+  --header: #18181b;
+  --content: #09090b;
+
+  /* Основной акцент - более яркий индиго для темной темы */
+  --primary: #818cf8;
+  --primary-foreground: #ffffff;
+
+  /* Вторичные - с оттенком индиго */
+  --secondary: #1e1b4b;
+  --secondary-foreground: #fafafa;
+  --muted: #27272a;
+  --muted-foreground: #a1a1aa;
+  --accent: #312e81;
+  --accent-foreground: #fafafa;
+
+  /* Статусы */
+  --destructive: #f87171;
+  --destructive-foreground: #ffffff;
+  --success: #34d399;
+  --success-foreground: #ffffff;
+  --warning: #fbbf24;
+  --warning-foreground: #18181b;
+  --info: #60a5fa;
+  --info-foreground: #ffffff;
+
+  /* Границы */
+  --border: #27272a;
+  --input: #27272a;
+  --ring: #818cf8;
+
+  /* Цвета нод */
+  --node-start: #34d399;
+  --node-start-foreground: #ffffff;
+  --node-llm: #a78bfa;
+  --node-llm-foreground: #ffffff;
+  --node-sticker: #a78bfa;
+  --node-sticker-foreground: #ffffff;
+  --node-tool: #2dd4bf;
+  --node-tool-foreground: #ffffff;
+  --node-logic: #fbbf24;
+  --node-logic-foreground: #18181b;
+  --node-data: #60a5fa;
+  --node-data-foreground: #ffffff;
+  --node-http: #fb923c;
+  --node-http-foreground: #ffffff;
+
+  /* panel */
+  --panel: #18181b;
+  --panel-foreground: #fafafa;
+  --panel-primary: #818cf8;
+  --panel-primary-foreground: #ffffff;
+  --panel-accent: #312e81;
+  --panel-accent-foreground: #fafafa;
+  --panel-border: #27272a;
+  --panel-ring: #818cf8;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+/* CEL Input styles */
+.cel-variable {
+  color: rgb(59 130 246);
+  /* indigo-500 */
+  font-weight: 500;
+}
+
+.dark .cel-variable {
+  color: rgb(96 165 250);
+  /* indigo-400 */
+}
+
+/* CEL строки и числа */
+.cel-string {
+  color: rgb(168 85 247);
+  /* purple-500 */
+  font-weight: 500;
+}
+
+.dark .cel-string {
+  color: rgb(192 132 252);
+  /* purple-400 */
+}
+
+.cel-number {
+  color: rgb(168 85 247);
+  /* purple-500 */
+  font-weight: 500;
+}
+
+.dark .cel-number {
+  color: rgb(192 132 252);
+  /* purple-400 */
+}
+
+/* CEL ошибки */
+.cel-error {
+  color: rgb(239 68 68);
+  /* red-500 */
+  font-weight: 500;
+}
+
+.dark .cel-error {
+  color: rgb(248 113 113);
+  /* red-400 */
+  text-decoration-color: rgb(248 113 113);
+}
+
+/* CEL фигурные скобки */
+.cel-braces {
+  color: rgb(59 130 246);
+  font-weight: 600;
+}
+
+.dark .cel-braces {
+  color: rgb(59 130 246);
+}
+
+.cel-input-container {
+  position: relative;
+  width: 100%;
+  cursor: text;
+  scrollbar-width: none;
+  /* Firefox */
+  -ms-overflow-style: none;
+  /* IE and Edge */
+}
+
+.cel-input-container::-webkit-scrollbar {
+  display: none;
+  /* Chrome, Safari, Opera */
+}
+
+.cel-input-container .ProseMirror {
+  outline: none;
+  white-space: nowrap;
+  min-width: 0;
+  line-height: 1.75rem;
+  cursor: text;
+}
+
+.cel-input-container .ProseMirror p {
+  margin: 0;
+  white-space: nowrap;
+  display: inline-block;
+  line-height: 1.75rem;
+}
+
+.cel-input-container .ProseMirror .is-editor-empty:first-child {
+  position: relative;
+}
+
+.cel-input-container .ProseMirror p.is-editor-empty:first-child::before {
+  color: hsl(var(--muted-foreground) / 0.5);
+  content: attr(data-placeholder);
+  pointer-events: none;
+  position: absolute;
+  left: 0;
+  white-space: nowrap;
+  line-height: 1.75rem;
+}
+
+.cel-input-container .tiptap {
+  min-height: 100%;
+  cursor: inherit;
+}
+
+@media (min-width: 768px) {
+  .cel-input-container .ProseMirror {
+    line-height: 1.5rem;
+  }
+
+  .cel-input-container .ProseMirror p {
+    line-height: 1.5rem;
+  }
+
+  .cel-input-container .ProseMirror p.is-editor-empty:first-child::before {
+    line-height: 1.5rem;
+  }
+}
+
+/* CEL Textarea styles */
+.cel-textarea-container .ProseMirror {
+  outline: none;
+}
+
+.cel-textarea-container .ProseMirror p {
+  margin: 0;
+}
+
+.cel-textarea-container .ProseMirror p.is-editor-empty:first-child::before {
+  color: #a89a9a;
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  pointer-events: none;
+}
+
+/* Node status animations for debug mode */
+
+/* Неактивные ноды в debug режиме (серые) */
+.node-debug-inactive {
+  opacity: 0.65;
+  filter: grayscale(0.8) brightness(1.05);
+}
+
+.node-debug-inactive * {
+  color: rgb(107, 114, 128) !important;
+  /* gray-500 - темнее для лучшей видимости */
+  background-color: rgb(243, 244, 246) !important;
+  /* gray-100 - светлее */
+}
+
+.dark .node-debug-inactive * {
+  color: rgb(156, 163, 175) !important;
+  /* gray-400 - светлее */
+  background-color: rgb(75, 85, 99) !important;
+  /* gray-600 - светлее */
+}
+
+.node-running {
+  animation: node-pulse 2s ease-in-out infinite;
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.3) !important;
+  opacity: 1 !important;
+  filter: none !important;
+  border-radius: 16px;
+}
+
+.dark .node-running {
+  box-shadow: 0 0 0 4px rgba(96, 165, 250, 0.4) !important;
+  border-radius: 16px;
+}
+
+.node-completed {
+  box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.3) !important;
+  opacity: 1 !important;
+  filter: none !important;
+  border-radius: 16px;
+}
+
+.dark .node-completed {
+  box-shadow: 0 0 0 4px rgba(52, 211, 153, 0.4) !important;
+}
+
+.node-error {
+  box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.3) !important;
+  opacity: 1 !important;
+  filter: none !important;
+  border-radius: 16px;
+}
+
+/* Shake the inner content, not the React Flow wrapper — animating transform
+   on the wrapper overrides React Flow's positioning transform and snaps the
+   node to the canvas origin for the animation's duration. */
+.node-error > * {
+  animation: node-shake 0.5s ease-in-out;
+}
+
+.dark .node-error {
+  box-shadow: 0 0 0 4px rgba(248, 113, 113, 0.4) !important;
+}
+
+@keyframes node-pulse {
+
+  0%,
+  100% {
+    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.3);
+  }
+
+  50% {
+    box-shadow: 0 0 0 8px rgba(59, 130, 246, 0.5);
+  }
+}
+
+@keyframes node-shake {
+
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+
+  25% {
+    transform: translateX(-4px);
+  }
+
+  75% {
+    transform: translateX(4px);
+  }
+}
+
+/* Flash подсветка изменившейся переменной state в дебаг-режиме */
+@keyframes state-flash {
+  0% {
+    background-color: rgba(250, 204, 21, 0.45);
+    box-shadow: 0 0 0 1px rgba(250, 204, 21, 0.6);
+  }
+
+  100% {
+    background-color: transparent;
+    box-shadow: 0 0 0 1px transparent;
+  }
+}
+
+.animate-state-flash {
+  animation: state-flash 1.5s ease-out;
+}
+
+.dark .animate-state-flash {
+  animation-name: state-flash-dark;
+}
+
+@keyframes state-flash-dark {
+  0% {
+    background-color: rgba(250, 204, 21, 0.25);
+    box-shadow: 0 0 0 1px rgba(250, 204, 21, 0.4);
+  }
+
+  100% {
+    background-color: transparent;
+    box-shadow: 0 0 0 1px transparent;
+  }
+}
+
+/* Driver.js кастомизация для поддержки темной/светлой темы */
+.driver-popover {
+  --driver-theme-bg-color: hsl(var(--card));
+  --driver-theme-text-color: hsl(var(--foreground));
+  --driver-theme-border-color: hsl(var(--border));
+}
+
+.driver-popover-title {
+  color: hsl(var(--foreground));
+  font-weight: 600;
+}
+
+.driver-popover-description {
+  color: hsl(var(--muted-foreground));
+}
+
+.driver-popover-progress-text {
+  color: hsl(var(--muted-foreground));
+}
+
+/* Пульсация для кнопки создания агента */
+@keyframes pulse-glow {
+
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 hsl(var(--primary) / 0.4);
+  }
+
+  50% {
+    box-shadow: 0 0 20px 10px hsl(var(--primary) / 0.15);
+  }
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 2s ease-in-out infinite;
+}

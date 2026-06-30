@@ -1,0 +1,1333 @@
+{
+  "footer": {
+    "terms": "Terms of Service",
+    "privacy": "Privacy Policy",
+    "refund": "Refund Policy",
+    "contact": "Contact Us"
+  },
+  "notFoundPage": {
+    "title": "Looks like you hit a dead end",
+    "subtitle": "This page doesn’t exist — the path stopped at a 404. Let’s get you back on track.",
+    "home": "Go home",
+    "back": "Go back"
+  },
+  "common": {
+    "save": "Save",
+    "update": "Update",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "create": "Create",
+    "edit": "Edit",
+    "close": "Close",
+    "confirm": "Confirm",
+    "loading": "Loading...",
+    "yes": "Yes",
+    "no": "No",
+    "back": "Back",
+    "next": "Next",
+    "search": "Search",
+    "actions": "Actions",
+    "status": "Status",
+    "name": "Name",
+    "type": "Type",
+    "value": "Value",
+    "description": "Description",
+    "createdAt": "Created",
+    "updatedAt": "Updated",
+    "optional": "optional",
+    "required": "required",
+    "total": "Total",
+    "showMore": "Show more",
+    "showLess": "Show less",
+    "or": "or",
+    "locale": "en"
+  },
+  "auth": {
+    "login": "Login",
+    "register": "Register",
+    "logout": "Logout",
+    "email": "Email",
+    "password": "Password",
+    "confirmPassword": "Confirm Password",
+    "fullName": "Full Name",
+    "name": "Name",
+    "forgotPassword": "Forgot password?",
+    "signIn": "Sign In",
+    "signUp": "Sign Up",
+    "createAccount": "Create Account",
+    "enterCredentials": "Enter your credentials to sign in",
+    "registerDescription": "Create an account to get started with Assemblix",
+    "user": "User",
+    "emailValidation": "Please enter a valid email address.",
+    "emailPlaceholder": "your@email.com",
+    "namePlaceholder": "Your name",
+    "passwordMinLength": "Password must contain at least 3 characters.",
+    "passwordsNotMatch": "Passwords do not match",
+    "nameMinLength": "Name must contain at least 2 characters.",
+    "loginError": "Login error",
+    "registerError": "Registration error",
+    "registerErrorDescription": "Please try again later or use a different email",
+    "invalidCredentials": "Invalid email or password",
+    "noAccount": "Don't have an account?",
+    "hasAccount": "Already have an account?",
+    "oauth": {
+      "continueWithGoogle": "Continue with Google",
+      "continueWithGitHub": "Continue with GitHub",
+      "continueWithYandex": "Continue with Yandex",
+      "googleError": "Google sign-in error",
+      "googleErrorDescription": "Failed to sign in with Google. Please try again.",
+      "githubError": "GitHub sign-in error",
+      "githubErrorDescription": "Failed to sign in with GitHub. Please try again.",
+      "githubProcessing": "Completing GitHub sign-in...",
+      "githubStateMismatch": "Invalid state parameter — please sign in again",
+      "emailAlreadyRegistered": "Email already registered",
+      "emailAlreadyRegisteredDescription": "This email is already registered with a password. Please sign in through the login form or reset your password.",
+      "emailNotVerified": "Email not verified",
+      "emailNotVerifiedDescription": "Please verify your email in your Google account.",
+      "cancelled": "Sign-in cancelled by user"
+    }
+  },
+  "header": {
+    "appName": "Assemblix",
+    "lightTheme": "Light Theme",
+    "darkTheme": "Dark Theme",
+    "language": "Language",
+    "help": "Help",
+    "organizationSettings": "Organization settings"
+  },
+  "sidebar": {
+    "agents": "Agents",
+    "agentSessions": "Agent Calls",
+    "apiKeys": "API Keys",
+    "knowledgeBases": "Knowledge Bases",
+    "organization": "Organization",
+    "credentials": "Credentials",
+    "clientSessions": "Client Sessions",
+    "projectSettings": "Project Settings",
+    "settings": "Settings",
+    "community": "Community",
+    "sections": {
+      "creation": "Create",
+      "monitoring": "Monitoring"
+    }
+  },
+  "home": {
+    "title": "Create Your Agent",
+    "subtitle": "Create and manage your AI agents with a visual editor",
+    "createAgent": "Create New Agent"
+  },
+  "sessions": {
+    "title": "Agent Calls",
+    "subtitle": "History of chats and executions of your agents",
+    "tabs": {
+      "chats": "Chats",
+      "executions": "Executions"
+    },
+    "showTestSessions": "Show test sessions"
+  },
+  "agents": {
+    "title": "Agents",
+    "createAgent": "Create Agent",
+    "noAgents": "You don't have any agents yet",
+    "createFirstAgent": "Create your first agent to get started",
+    "lastModified": "Last Modified",
+    "published": "Published",
+    "draft": "Draft",
+    "selectProject": "Select Project",
+    "createError": "Error creating agent",
+    "publishSuccess": "Agent published successfully",
+    "publishError": "Error publishing agent",
+    "deleteSuccess": "Agent deleted",
+    "deleteError": "Error deleting agent",
+    "renameSuccess": "Agent renamed",
+    "renameError": "Error renaming agent"
+  },
+  "workflow": {
+    "nodes": {
+      "start": "Start",
+      "agent": "Agent",
+      "sticker": "Sticker",
+      "condition": "Condition",
+      "setVariable": "Set Variable",
+      "end": "End",
+      "httpRequest": "HTTP Request",
+      "newElement": "New Element"
+    },
+    "nodeDefaults": {
+      "agentName": "New Agent",
+      "endName": "Success"
+    },
+    "nodeDescriptions": {
+      "start": "Workflow entry point",
+      "agent": "LLM call with parameters",
+      "sticker": "Add sticker",
+      "condition": "Logical condition check",
+      "setVariable": "Assign value to variable",
+      "end": "End of workflow execution",
+      "httpRequest": "HTTP request to external API"
+    },
+    "categories": {
+      "main": "Main",
+      "logic": "Logic",
+      "data": "Data",
+      "integrations": "Integrations"
+    },
+    "sidebar": {
+      "selectNodeType": "Select node type",
+      "clickToSelect": "Click on the desired element below"
+    },
+    "stateSidebar": {
+      "title": "State Management",
+      "agentState": "Agent State",
+      "projectState": "Project State",
+      "live": "LIVE",
+      "noVariables": "No state variables",
+      "readOnlyHint": "Workflow is running — editing disabled"
+    },
+    "header": {
+      "debug": "Debug",
+      "publish": "Publish",
+      "published": "Published",
+      "debugMode": "Debug Mode",
+      "exitDebug": "Exit Debug",
+      "editMode": "Edit Mode",
+      "workMode": "Work Mode",
+      "publishError": "Failed to publish workflow",
+      "agentCalls": "Agent Calls"
+    },
+    "agentCalls": {
+      "title": "Agent Calls",
+      "executions": "Executions",
+      "chats": "Chats",
+      "noExecutions": "No executions for this agent",
+      "noChats": "No chats for this agent",
+      "selectChat": "Select a chat to view"
+    },
+    "bulkInstructions": {
+      "title": "Agent Instructions",
+      "openTooltip": "Edit instructions for all agents",
+      "emptyTooltip": "No agent nodes in this workflow",
+      "searchPlaceholder": "Search agent...",
+      "unnamedAgent": "Agent #{{index}}",
+      "noAgentsFound": "No agents found",
+      "selectAgentHint": "Select an agent on the left to edit its instructions",
+      "emptyState": "This workflow has no agent nodes yet. Add an agent to the canvas to start editing instructions.",
+      "addInstruction": "Add instruction"
+    },
+    "rename": {
+      "title": "Rename Agent",
+      "namePlaceholder": "Agent name",
+      "nameRequired": "Name is required",
+      "nameMinLength": "Name must contain at least 3 characters"
+    },
+    "publish": {
+      "title": "Agent Published",
+      "description": "Your agent has been successfully published and is ready to use",
+      "close": "Close"
+    },
+    "versions": {
+      "draft": "Draft",
+      "version": "Version",
+      "current": "Current"
+    },
+    "editor": {
+      "nodeEditor": "Node Editor",
+      "unknownNodeType": "Unknown node type",
+      "loadingNodeTypes": "Loading node types…",
+      "data": "Data"
+    },
+    "details": {
+      "loadingError": "Loading Error",
+      "loadingErrorDescription": "Failed to load agent data. It may have been deleted or you may not have access.",
+      "backToList": "Back to List",
+      "versionLoadError": "Error",
+      "versionLoadErrorDescription": "Failed to load version"
+    },
+    "node": {
+      "agent": {
+        "warnings": {
+          "modelNotSelected": "Model not selected"
+        }
+      }
+    }
+  },
+  "provider": {
+    "openai": "OpenAI",
+    "gemini": "Gemini",
+    "deepseek": "DeepSeek",
+    "gigachat": "GigaChat",
+    "temperature": "Temperature",
+    "temperatureHelp": "Controls randomness of responses (0-2)"
+  },
+  "credentials": {
+    "title": "Manage Credentials",
+    "subtitle": "Add and edit API keys for use in workflows",
+    "addCredential": "Add Credential",
+    "addFirstCredential": "Add First Credential",
+    "noCredentials": "You don't have any saved credentials yet",
+    "type": "Type",
+    "selectType": "Select Type",
+    "name": "Name",
+    "namePlaceholder": "My API Key",
+    "nameMinLength": "Name must contain at least 3 characters",
+    "value": "Value",
+    "newValue": "New Value (optional)",
+    "valuePlaceholder": "sk-...",
+    "newValuePlaceholder": "Enter new value or leave empty",
+    "valueRequired": "Value is required",
+    "createSuccess": "Credential created",
+    "createError": "Failed to create credential",
+    "updateSuccess": "Credential updated",
+    "updateError": "Failed to update credential",
+    "deleteSuccess": "Credential deleted",
+    "deleteError": "Failed to delete credential",
+    "deleteConfirm": "Delete credential?",
+    "deleteWarning": "Are you sure you want to delete \"{{name}}\"? This action cannot be undone.",
+    "untitled": "Untitled",
+    "selectCredentialType": "Please select a credential type",
+    "select": {
+      "placeholder": "Select credential",
+      "title": "Credentials",
+      "description": "Select a credential to use",
+      "noKeys": "No available keys. Add your first credential.",
+      "add": "Add credential"
+    },
+    "systemToken": {
+      "name": "Assemblix System Token",
+      "description": "Use our tokens for quick start. Credits are charged for LLM usage."
+    }
+  },
+  "apiKeys": {
+    "title": "API Keys",
+    "subtitle": "Manage API keys for authentication in your application",
+    "createKey": "Create API Key",
+    "createFirstKey": "Create First Key",
+    "noKeys": "You don't have any API keys yet",
+    "noKeysDescription": "Create your first API key to start working with the API",
+    "name": "Name",
+    "key": "Key",
+    "created": "Created",
+    "lastUsed": "Last Used",
+    "requests": "Requests",
+    "neverUsed": "Never Used",
+    "totalKeys": "Total Keys",
+    "createSuccess": "API key created successfully",
+    "createError": "Error creating API key",
+    "deleteSuccess": "API key deleted successfully",
+    "deleteError": "Error deleting API key",
+    "copySuccess": "Key copied to clipboard",
+    "copyError": "Failed to copy key",
+    "copyKey": "Copy Key",
+    "justNow": "just now",
+    "minutesAgo": "{{count}} min. ago",
+    "hoursAgo": "{{count}} h. ago",
+    "daysAgo": "{{count}} d. ago",
+    "deleteConfirm": "Delete API key?",
+    "deleteWarning": "Are you sure you want to delete \"{{name}}\"? The key will stop working immediately and this action cannot be undone.",
+    "enterKeyName": "Enter key name",
+    "selectProject": "Select project",
+    "modal": {
+      "createTitle": "Create API Key",
+      "createDescription": "Enter a name for the new API key. This will help you identify the key later.",
+      "saveTitle": "Save Your API Key",
+      "saveWarning": "Important! Copy and save this key in a secure place.",
+      "saveDescription": "It will not be shown again. If you lose it, you will need to create a new key.",
+      "yourKey": "Your API Key",
+      "namePlaceholder": "e.g., Production API Key",
+      "creating": "Creating...",
+      "done": "Done, I've saved the key",
+      "useInHeader": "Use this key in the Authorization header:"
+    },
+    "delete": {
+      "title": "Delete API Key?",
+      "description": "Are you sure you want to delete key",
+      "warning": "The key will stop working immediately and this action cannot be undone.",
+      "deleting": "Deleting..."
+    }
+  },
+  "chats": {
+    "title": "Chats",
+    "noChats": "You don't have any chats yet",
+    "noChatsDescription": "Chats will appear here after they are created",
+    "agent": "Agent",
+    "messages": "messages",
+    "lastMessage": "Last Message",
+    "active": "Active",
+    "inactive": "Inactive",
+    "credits": "Credits:",
+    "infoBanner": {
+      "title": "📬 Your agent chats will appear here",
+      "description": "When you run an agent with the create_session: true parameter, a chat session with full conversation history and statistics will appear here."
+    },
+    "rename": "Rename",
+    "delete": "Delete",
+    "deleteTitle": "Delete session",
+    "deleteDescription": "This will permanently delete the session and all messages. This action cannot be undone.",
+    "renameLabel": "Session name",
+    "renamePlaceholder": "Enter session name...",
+    "cancel": "Cancel"
+  },
+  "chatDetails": {
+    "title": "Chat from",
+    "sendMessage": "Send Message",
+    "typePlaceholder": "Type a message...",
+    "agent": "Agent",
+    "user": "User",
+    "notFound": "Chat not found",
+    "noMessages": "No messages in this chat",
+    "goToExecution": "Go to execution",
+    "credits": "credits"
+  },
+  "executions": {
+    "title": "Executions",
+    "noExecutions": "You don't have any executions yet",
+    "noExecutionsDescription": "Agent execution history will appear here",
+    "agent": "Agent",
+    "status": "Status",
+    "started": "Started",
+    "duration": "Duration",
+    "steps": "Steps:",
+    "credits": "Credits:",
+    "clientSession": "Client Session",
+    "filterByClientId": "Filter by Client ID...",
+    "statuses": {
+      "running": "Running",
+      "completed": "Completed",
+      "failed": "Failed",
+      "pending": "Pending"
+    },
+    "infoBanner": {
+      "title": "🚀 Your agent executions will appear here",
+      "description": "Each run of a published agent creates a record in the execution history. You'll see execution details, tokens used, cost, and results."
+    }
+  },
+  "executionViewer": {
+    "title": "Execution Viewer",
+    "step": "Step",
+    "stepNumber": "Step #",
+    "input": "Input Data",
+    "output": "Output Data",
+    "error": "Error",
+    "errorMessage": "Error Message",
+    "errorExecution": "Execution Error",
+    "errorInNode": "Error in node:",
+    "logs": "Logs",
+    "backToExecutions": "Back to Executions",
+    "back": "Back",
+    "duration": "Duration",
+    "credits": "Credits",
+    "steps": "Steps",
+    "executionFrom": "Execution from",
+    "model": "Model",
+    "stateBefore": "State Before",
+    "stateAfter": "State After",
+    "celEvaluations": "CEL Evaluations",
+    "currentState": "State",
+    "stateAfterStep": "State after step",
+    "stateChanges": "Changes",
+    "fullState": "Full state",
+    "noChanges": "This node made no state changes",
+    "loadingError": "Loading Error",
+    "loadingErrorDescription": "Failed to load execution data. It may have been deleted or you may not have access."
+  },
+  "organization": {
+    "title": "Organization Settings",
+    "subtitle": "Manage basic settings and organization members",
+    "members": "Members",
+    "membersCount_one": "member",
+    "membersCount_other": "members",
+    "projects": "Projects",
+    "addMember": "Add Member",
+    "removeMember": "Remove Member",
+    "email": "Email",
+    "role": "Role",
+    "actions": "Actions",
+    "member": "Member",
+    "joinedDate": "Join Date",
+    "noMembers": "No members",
+    "noMembersDescription": "Add the first member to the organization",
+    "noName": "No name",
+    "selectOrganization": "Select Organization",
+    "selectProject": "Select Project",
+    "createProject": "Create Project",
+    "addOrganization": "Add Organization",
+    "addProject": "Add Project",
+    "createOrganization": "Create Organization",
+    "organizationName": "Organization Name",
+    "organizationNamePlaceholder": "e.g. My Team",
+    "projectName": "Project Name",
+    "projectNamePlaceholder": "e.g. Production",
+    "enterOrganizationName": "Enter organization name",
+    "enterProjectName": "Enter a name for the new project",
+    "organizationCreated": "Organization created",
+    "projectCreated": "Project created",
+    "organizationCreateError": "Failed to create organization",
+    "projectCreateError": "Failed to create project",
+    "creating": "Creating...",
+    "saving": "Saving...",
+    "enterName": "Enter organization name",
+    "enterProjectNameError": "Enter project name",
+    "selectOrganizationFirst": "Select an organization",
+    "nameNotChanged": "Name has not changed",
+    "nameUpdated": "Organization name updated",
+    "nameUpdateError": "Error updating name",
+    "onlyOwnerCanEdit": "Only owner can change organization name",
+    "basicSettings": "Basic Settings",
+    "organizationInfo": "Organization Information",
+    "roles": {
+      "owner": "Owner",
+      "admin": "Admin",
+      "member": "Member"
+    },
+    "addMemberModal": {
+      "title": "Add Member",
+      "description": "Enter the email of a user who is already registered in the system.",
+      "emailPlaceholder": "user@example.com",
+      "selectRole": "Select Role",
+      "isOwner": "Organization Owner",
+      "isOwnerDescription": "Owners can add and remove members",
+      "addSuccess": "Member successfully added",
+      "addError": "Error adding member",
+      "userNotFound": "User with this email not found",
+      "userAlreadyMember": "User is already a member of the organization",
+      "noPermission": "Insufficient permissions to add members",
+      "enterEmail": "Enter member email",
+      "enterValidEmail": "Enter a valid email",
+      "adding": "Adding..."
+    },
+    "removeMemberModal": {
+      "title": "Remove member?",
+      "description": "Are you sure you want to remove",
+      "fromOrganization": "from the organization?",
+      "warning": "The member will lose access to all projects and resources of the organization. This action can be undone by adding the member again.",
+      "removeSuccess": "Member removed from organization",
+      "removeError": "Error removing member",
+      "cannotRemoveOwner": "Cannot remove organization owner",
+      "noPermission": "Insufficient permissions to remove members",
+      "deleting": "Deleting..."
+    }
+  },
+  "settings": {
+    "title": "Settings",
+    "subtitle": "Color palette used in the system",
+    "theme": "Theme",
+    "lightTheme": "Light",
+    "darkTheme": "Dark",
+    "systemTheme": "System",
+    "tabs": {
+      "general": "General",
+      "apiKeys": "API keys",
+      "credentials": "Credentials",
+      "notifications": "Notifications"
+    },
+    "colorCategories": {
+      "basic": "Basic Colors",
+      "accents": "Accents",
+      "statuses": "Statuses",
+      "workflowNodes": "Workflow Nodes",
+      "borders": "Borders and Elements",
+      "sidebar": "Sidebar"
+    }
+  },
+  "notifications": {
+    "title": "Notifications",
+    "subtitle": "Channels that receive alerts about technical workflow execution failures. Applies to all workflows in the project.",
+    "empty": "No notification channels configured yet",
+    "addFirst": "Add first channel",
+    "add": "Add channel",
+    "untitled": "Untitled",
+    "disabled": "Disabled",
+    "enabled": "Channel enabled",
+    "type": "Source type",
+    "name": "Name",
+    "namePlaceholder": "e.g. Prod alerts",
+    "botToken": "Bot token",
+    "botTokenPlaceholder": "123456:ABC-DEF...",
+    "botTokenEditPlaceholder": "Leave empty to keep current",
+    "botTokenRequired": "Bot token is required",
+    "chatId": "Chat ID",
+    "chatIdPlaceholder": "-1001234567890",
+    "chatIdRequired": "Chat ID is required",
+    "test": "Test",
+    "testSuccess": "Test message sent",
+    "testError": "Failed to send test message",
+    "createSuccess": "Channel created",
+    "createError": "Failed to create channel",
+    "updateSuccess": "Channel updated",
+    "updateError": "Failed to update channel",
+    "deleteConfirm": "Delete channel?",
+    "deleteWarning": "Channel \"{{name}}\" will be permanently deleted.",
+    "deleteSuccess": "Channel deleted",
+    "deleteError": "Failed to delete channel"
+  },
+  "errors": {
+    "generic": "An error occurred",
+    "networkError": "Network error",
+    "unauthorized": "Authorization required",
+    "forbidden": "Access denied",
+    "notFound": "Not found",
+    "serverError": "Server error"
+  },
+  "variables": {
+    "title": "Variables",
+    "addVariable": "Add Variable",
+    "noVariables": "No available variables",
+    "availableVariables": "Available Variables",
+    "state": "State",
+    "input": "Input"
+  },
+  "nodeForms": {
+    "start": {
+      "title": "Start",
+      "firstPhrase": "First phrase",
+      "firstPhraseHint": "Assistant greeting added to the history as the first message when a new session starts.",
+      "firstPhrasePlaceholder": "Hi! How can I help you?",
+      "inputVariables": "Input Variables",
+      "projectVariables": "Project Variables",
+      "projectVariablesNote": "These variables are defined at the project level and available in all workflows",
+      "stateVariables": "State Variables",
+      "add": "Add",
+      "variableUpdateError": "Error updating variable",
+      "variableAddError": "Error adding variable",
+      "variableUpdated": "Variable \"{{name}}\" updated",
+      "variableAdded": "Variable \"{{name}}\" added",
+      "variableDeleteError": "Error deleting variable",
+      "variableDeleted": "Variable deleted"
+    },
+    "end": {
+      "title": "End",
+      "endpointPlaceholder": "e.g., Success, Error",
+      "isSessionEnd": "End session",
+      "sessionEndDescription": "The session will become inactive. Use as an indicator of dialog completion.",
+      "isError": "Business error",
+      "isErrorDescription": "Mark completion as deliberate agent refusal (ERROR status instead of COMPLETED)",
+      "errorMessage": "Error message",
+      "errorMessagePlaceholder": "{{state.error_reason}}",
+      "advancedSettings": "Advanced settings",
+      "outputSource": "Output source",
+      "outputModeLastAgent": "Last agent",
+      "outputModeSpecificAgent": "Specific agent",
+      "outputModeCustom": "Fixed message",
+      "selectAgent": "Select agent",
+      "agentLabel": "Agent",
+      "goToAgent": "Go to agent",
+      "customMessage": "Message",
+      "customMessagePlaceholder": "{{input.message}} or fixed text",
+      "dataFiltering": "Data filtering",
+      "stateFilter": "State variables",
+      "projectFilter": "Project variables",
+      "filterAll": "All",
+      "filterNone": "Don't return",
+      "filterSelected": "Selected",
+      "selectVariables": "Select variables",
+      "noAgents": "No agents available",
+      "properties": "Properties (JSON)",
+      "propertiesPlaceholder": "{\n  \"status\": \"success\",\n  \"message\": \"Workflow completed\"\n}",
+      "invalidJSON": "⚠️ Invalid JSON. Must be an object.",
+      "propertiesHelp": "Enter a JSON object with additional properties for the end node",
+      "preview": "Preview:"
+    },
+    "sticker": {
+      "title": "Sticker",
+      "text": "Sticker Text",
+      "placeholder": "Write your note..."
+    },
+    "condition": {
+      "title": "Condition",
+      "conditions": "Conditions",
+      "expression": "Expression {{number}}",
+      "expressionPlaceholder": "state.counter > 10",
+      "branchName": "Branch Name",
+      "branchPlaceholder": "e.g., high_count",
+      "add": "Add Condition",
+      "defaultBranch": "Default",
+      "defaultBranchPlaceholder": "default",
+      "namePlaceholder": "Enter condition name"
+    },
+    "setVariable": {
+      "title": "Set Variable",
+      "updates": "Variable Updates",
+      "variable": "Variable {{number}}",
+      "selectVariable": "Select Variable",
+      "value": "Value",
+      "valuePlaceholder": "state.counter + 1",
+      "add": "Add Update",
+      "advancedUsage": "Advanced usage",
+      "merges": "Smart Merge",
+      "merge": "Merge {{number}}",
+      "addMerge": "Add merge",
+      "mergeSource": "Source",
+      "mergeSourcePlaceholder": "input.parsed_message",
+      "mergeTargetKey": "State variable",
+      "mergeTargetKeyAll": "Entire state",
+      "mergeTarget": "Target",
+      "mergeTargetState": "State",
+      "mergeTargetProject": "Project",
+      "mergeOperation": "Operation",
+      "mergeOperationAdd": "Add (+)",
+      "mergeOperationSubtract": "Subtract (−)",
+      "mergeOperationOverwrite": "Overwrite (=)"
+    },
+    "agent": {
+      "title": "Agent",
+      "name": "Name",
+      "namePlaceholder": "Enter agent name",
+      "provider": "Provider",
+      "selectProvider": "Select provider",
+      "model": "Model",
+      "modelPlaceholder": "gpt-4, gemini-pro, etc.",
+      "selectModel": "Select model",
+      "advancedSettings": "Advanced settings",
+      "maxRetries": "Retries on transient errors",
+      "maxRetriesPlaceholder": "Default",
+      "timeout": "Timeout, seconds",
+      "timeoutPlaceholder": "Default",
+      "fallbackModels": "Fallback models",
+      "fallbackModelsHint": "Tried in order when the main model keeps failing with transient errors (rate limits, 5xx).",
+      "addFallbackModel": "Add model",
+      "searchModel": "Search model...",
+      "loadingModels": "Loading models...",
+      "modelsError": "Error loading models",
+      "noModels": "No models available",
+      "noModelsFound": "No models found",
+      "credential": "Access Key",
+      "selectCredential": "Select key",
+      "selectCredentialFirst": "Select access key first",
+      "instructions": "Instructions",
+      "role": "Role",
+      "selectRole": "Select role",
+      "roleUser": "User",
+      "roleAssistant": "Assistant",
+      "contentPlaceholder": "Enter instruction content",
+      "expandInstruction": "Expand prompt",
+      "promptModalTitle": "Edit instruction",
+      "promptModalLabel": "Instruction",
+      "additionalSettings": "Additional Settings",
+      "tools": "Tools",
+      "allToolsAdded": "All added",
+      "addTool": "Add Tool",
+      "responseFormat": "Response Format",
+      "selectFormat": "Select format",
+      "formatText": "Text",
+      "formatJSON": "JSON Object",
+      "schemaBuilder": "JSON Schema Builder",
+      "schemaDescription": "Create JSON response structure for LLM model",
+      "cancel": "Cancel",
+      "save": "Save",
+      "includeChatHistory": "Chat history",
+      "includeChatHistoryTooltip": "When enabled, the full session dialogue history will be sent to the LLM. When disabled, only the node instructions and the current user message will be sent",
+      "knowledgeBases": "Knowledge Bases",
+      "selectKnowledgeBases": "Add knowledge base",
+      "noKnowledgeBases": "No knowledge bases",
+      "noKnowledgeBasesFound": "Knowledge bases not found",
+      "loadingKnowledgeBases": "Loading knowledge bases...",
+      "searchKnowledgeBases": "Search knowledge base...",
+      "modelSettings": "Model Settings",
+      "modelSettingsTooltip": "Advanced LLM call parameters: temperature, penalties, response format, reasoning, and other model-dependent options",
+      "modelSettingsModalTitle": "Model Settings",
+      "modelSettingsModalDescription": "Fine-tune LLM call parameters. Available fields depend on the selected model.",
+      "close": "Close"
+    },
+    "generic": {
+      "jsonPlaceholder": "{ \"key\": \"value\" }"
+    },
+    "httpRequest": {
+      "title": "HTTP Request",
+      "method": "Method",
+      "selectMethod": "Select method",
+      "url": "URL",
+      "urlPlaceholder": "https://api.example.com/endpoint",
+      "headers": "Headers",
+      "headerKey": "Key",
+      "headerValue": "Value",
+      "queryParams": "Query Parameters",
+      "paramKey": "Key",
+      "paramValue": "Value",
+      "body": "Request Body",
+      "bodyPlaceholder": "{\"key\": \"value\"}",
+      "timeout": "Timeout (sec)"
+    }
+  },
+  "debug": {
+    "title": "Debug Chat",
+    "running": "Running",
+    "clearHistory": "Clear history and start new session",
+    "noMessages": "No messages",
+    "noMessagesHelp": "Enter a message below and run the workflow",
+    "userMessage": "You:",
+    "error": "Error:",
+    "inputPlaceholder": "For example: Hello! How are you?",
+    "execute": "Execute",
+    "stop": "Stop",
+    "executing": "Executing...",
+    "step": "Step {{number}}:",
+    "completed": "Completed",
+    "failed": "Failed",
+    "input": "Input",
+    "output": "Output",
+    "duration": "{{ms}}ms",
+    "executionResult": "Execution Result",
+    "inputData": "Input Data",
+    "outputData": "Output Data",
+    "stateBefore": "State Before",
+    "stateAfter": "State After",
+    "projectStateAfter": "Project State After",
+    "noData": "No data",
+    "creditsUsed": "Credits",
+    "ownKeyCost": "Own key",
+    "totalCost": "Total",
+    "executionError": "Execution completed with error",
+    "sessionClosed": "Session closed",
+    "sessionClosedDesc": "Agent closed the session. You can continue or start a new session",
+    "continueSession": "Continue session",
+    "startNewSession": "Start new session",
+    "stateManagement": "State Management",
+    "agentState": "Agent State",
+    "projectState": "Project State",
+    "noStateVariables": "No state variables",
+    "noProjectVariables": "No project variables",
+    "invalidJson": "Invalid JSON format",
+    "resetToDefault": "Reset"
+  },
+  "nodes": {
+    "condition": {
+      "else": "Else"
+    },
+    "placeholder": {
+      "newElement": "New Element",
+      "selectTypeInSidebar": "Select type in sidebar"
+    }
+  },
+  "stateVariables": {
+    "noVariablesText": "No variables. Add your first variable.",
+    "selectTitle": "State Variables",
+    "selectDescription": "Select variable to update",
+    "selectPlaceholder": "Select variable",
+    "noAvailableVariables": "No available variables. Create the first variable.",
+    "addVariable": "Add Variable",
+    "defaultValueLabel": "default value"
+  },
+  "availableVariables": {
+    "operators": {
+      "comparison": {
+        "equal": "Equal",
+        "notEqual": "Not equal",
+        "less": "Less than",
+        "greater": "Greater than",
+        "lessOrEqual": "Less or equal",
+        "greaterOrEqual": "Greater or equal"
+      },
+      "logical": {
+        "ternary": "Ternary operator",
+        "or": "Logical OR",
+        "and": "Logical AND"
+      },
+      "comparisonTitle": "Comparison",
+      "logicalTitle": "Logic",
+      "notFound": "No operators found",
+      "noAvailable": "No available operators"
+    },
+    "variablesNotFound": "No variables found",
+    "noAvailableVariables": "No available variables",
+    "groups": {
+      "input": "Input Data",
+      "state": "State",
+      "project": "Project",
+      "workflow": "Agent",
+      "metadata": "Metadata"
+    }
+  },
+  "workflowCard": {
+    "noDescription": "No description"
+  },
+  "versionsDropdown": {
+    "draft": "Draft",
+    "error": "Error",
+    "loadVersionError": "Failed to load version"
+  },
+  "workflowActions": {
+    "additionalActions": "Additional Actions",
+    "rename": "Rename",
+    "renameAgent": "Rename Agent",
+    "renameDescription": "Enter new name for the agent",
+    "nameLabel": "Name",
+    "namePlaceholder": "Agent name",
+    "nameMinLength": "Name must contain at least 3 characters",
+    "cancel": "Cancel",
+    "save": "Save",
+    "renamed": "Workflow renamed",
+    "renameError": "Failed to rename agent",
+    "duplicate": "Duplicate",
+    "duplicateSuccess": "Agent successfully duplicated",
+    "duplicateError": "Failed to duplicate agent",
+    "delete": "Delete",
+    "deleteAgent": "Delete Agent",
+    "deleteDescription": "Are you sure you want to delete agent \"{{name}}\"?",
+    "deleteWarning": "This action cannot be undone. The agent will be permanently deleted.",
+    "deleteConfirm": "Delete",
+    "deleted": "Agent successfully deleted",
+    "deleteError": "Failed to delete agent",
+    "move": "Move",
+    "moveAgent": "Move Agent",
+    "moveDescription": "Select the project to move the agent to",
+    "moveProjectLabel": "Project",
+    "moveProjectPlaceholder": "Select project",
+    "moveSuccess": "Agent successfully moved",
+    "moveError": "Failed to move agent",
+    "moveConfirm": "Move"
+  },
+  "publishSuccess": {
+    "title": "Agent published",
+    "version": "Version v{{version}}",
+    "workflowIdLabel": "Workflow ID",
+    "apiKeyLabel": "API key",
+    "apiKeyAutoCreated": "We created an API key for this integration — save it now, it won't be shown again.",
+    "apiKeyHint": "We can't reveal existing keys. Use one you already have, or create a new one.",
+    "apiKeyCreate": "Create integration key",
+    "apiKeyCreating": "Creating…",
+    "apiKeyCreateError": "Couldn't create the API key",
+    "examplesLabel": "Integration examples",
+    "supportPrompt": "Got questions? Email us:",
+    "copySuccess": "Copied",
+    "close": "Done"
+  },
+  "clientSessions": {
+    "title": "Client Sessions",
+    "subtitle": "Manage client data and session history",
+    "noSessions": "No client sessions yet",
+    "clientId": "Client ID",
+    "lastActivity": "Last Activity",
+    "executions": "Executions",
+    "credits": "Credits",
+    "status": "Status",
+    "active": "Active",
+    "inactive": "Inactive",
+    "never": "Never",
+    "onlyActive": "Only active",
+    "showTestSessions": "Show test sessions",
+    "searchPlaceholder": "Search by Client ID...",
+    "deactivate": "Deactivate",
+    "deactivateConfirm": "Deactivate client session?",
+    "deactivateWarning": "This will mark the client session as inactive. The session data will be preserved.",
+    "deactivateSuccess": "Client session deactivated",
+    "deactivateError": "Failed to deactivate client session",
+    "details": "Client Session Details",
+    "information": "Information",
+    "createdAt": "Created At",
+    "updatedAt": "Updated At",
+    "projectState": "Project State",
+    "metadata": "Metadata",
+    "editMetadata": "Edit Metadata",
+    "editMetadataDescription": "Edit metadata as JSON",
+    "metadataUpdated": "Metadata updated successfully",
+    "updateError": "Failed to update metadata",
+    "invalidJson": "Invalid JSON format",
+    "noExecutions": "No executions for this client",
+    "noChatSessions": "No chat sessions for this client",
+    "tabs": {
+      "overview": "Overview",
+      "state": "State",
+      "metadata": "Metadata",
+      "executions": "Executions",
+      "chatSessions": "Chat Sessions"
+    }
+  },
+  "projectSettings": {
+    "title": "Project Settings",
+    "subtitle": "Manage project configuration and state schema",
+    "projectInfo": "Project Information",
+    "projectInfoDescription": "Basic information about the project",
+    "stateSchema": "Project Variables",
+    "stateSchemaDescription": "Securely store API keys, secrets, and client state. Pass client_id to access shared data across all agents in the project.",
+    "addVariable": "Add Variable",
+    "variableName": "Variable Name",
+    "variableType": "Type",
+    "defaultValue": "Default Value",
+    "noVariables": "No project variables defined",
+    "noVariablesDescription": "Create variables to store API keys, secrets, and client state. Use client_id to share data between agents.",
+    "addVariableDescription": "Create a new project variable",
+    "nameRequired": "Variable name is required",
+    "duplicateName": "Variable with this name already exists",
+    "variableAdded": "Variable added successfully",
+    "addError": "Failed to add variable",
+    "deleteVariable": "Delete Variable?",
+    "deleteVariableWarning": "Are you sure you want to delete this variable? This may affect workflows that use it.",
+    "variableDeleted": "Variable deleted successfully",
+    "deleteError": "Failed to delete variable"
+  },
+  "onboarding": {
+    "progress": "{{current}} of {{total}}",
+    "steps": {
+      "sidebar": {
+        "title": "Your Builder",
+        "description": "Drag blocks onto the canvas to build your agent's logic. Start with an agent node — it handles LLM communication"
+      },
+      "agentNode": {
+        "title": "AI Agent — The Heart of Your Workflow",
+        "description": "Drag this block onto the canvas — it becomes the brain of your agent. Uses LLM to understand requests and generate responses. Works out of the box with our system keys — just start testing!"
+      },
+      "debug": {
+        "title": "Test on the fly",
+        "description": "Hit Play and test your agent right now. You already have starter credits — send messages and watch how the agent thinks and responds at each step"
+      },
+      "credits": {
+        "title": "Credits & Savings",
+        "description": "Every agent run consumes credits from your balance. Want to spend less? Connect your own API keys from OpenAI, GigaChat, or other providers — then only 1 credit per request instead of LLM call cost. Available on PRO and BUSINESS plans"
+      },
+      "publish": {
+        "title": "Ready for production?",
+        "description": "When your agent is ready — publish it. After that, you can call it via API from any application"
+      },
+      "final": {
+        "title": "Great! Let's test it",
+        "description": "The debug chat will open automatically. Send a message and see your agent in action. You already have starter credits!",
+        "telegramButton": "Join Discord",
+        "startButton": "Start Building"
+      }
+    }
+  },
+  "billing": {
+    "unlimited": "Unlimited",
+    "upgrade": "Upgrade",
+    "upgradePlan": "Upgrade plan",
+    "upgradeToPlan": "Upgrade to {{plan}}",
+    "availableInPlan": "Available in {{plan}}",
+    "viewPlans": "View plans",
+    "highUsage": "You have high resource usage",
+    "criticalUsage": "You've reached critical usage level",
+    "nextReset": "Limits will reset on {{date}}",
+    "section": {
+      "title": "Billing & Usage",
+      "subtitle": "Manage your billing plan and track resource usage"
+    },
+    "usage": {
+      "agents": "Agents",
+      "credits": "Credits"
+    },
+    "pricing": {
+      "title": "Choose your plan",
+      "subtitle": "Select a plan that fits your project needs",
+      "popular": "Popular",
+      "perMonth": "mo",
+      "currentPlan": "Current plan",
+      "getStarted": "Get started for free",
+      "contactSales": "Contact us",
+      "subscribe": "Subscribe",
+      "business": {
+        "price": "On request",
+        "description": "Individual conditions for large companies",
+        "features": {
+          "consulting": "Expert consulting and process audit",
+          "integration": "Turnkey integration and implementation support",
+          "sla": "Personal SLA and dedicated manager",
+          "onpremise": "On-Premise deployment option"
+        }
+      },
+      "agents_one": "{{count}} agent",
+      "agents_other": "{{count}} agents",
+      "unlimitedAgents": "Unlimited agents",
+      "agentsDesc": "Create AI agents",
+      "creditsPerMonth": "credits/month",
+      "creditsDesc": "Use to run agents",
+      "rpmLimit_one": "{{count}} request/min",
+      "rpmLimit_other": "{{count}} requests/min",
+      "rpmDesc": "Maximum API request rate",
+      "unlimitedRequests": "Unlimited requests with your keys",
+      "unlimitedRequestsDesc": "0 credits when using your own API keys",
+      "ownApiKeys": "Own API keys",
+      "ownApiKeysDesc": "Use your own LLM provider keys",
+      "projectVariables": "Project variables",
+      "projectVariablesDesc": "Store secrets and client state with client_id",
+      "support": {
+        "community": "Community support",
+        "email_24h": "Email support (24h)",
+        "priority_4h_slack": "Priority support (4h) + Slack"
+      },
+      "supportDesc": {
+        "community": "Help through community forum",
+        "email_24h": "Response within 24 hours",
+        "priority_4h_slack": "Fast response and direct channel"
+      },
+      "allPlansInclude": "All plans include:",
+      "commonFeatures": {
+        "allProviders": "All AI providers",
+        "visualBuilder": "Visual builder",
+        "apiAccess": "API access",
+        "sessionManagement": "Session management",
+        "logsMonitoring": "Logs and monitoring"
+      },
+      "note": "Contact us to upgrade to a paid plan or get an enterprise solution"
+    },
+    "features": {
+      "projectVariables": {
+        "name": "Project variables",
+        "description": "Store API keys, secrets, and client state. Pass client_id — and all agents get access to shared data without losing context between conversations."
+      }
+    },
+    "errors": {
+      "limitReached": "Usage limit reached",
+      "agentsLimitReached": "Time to scale up! 🚀",
+      "agentsLimitReachedHint": "You've hit your agent limit on the current plan. Upgrade to PRO or BUSINESS — get more agents, unlimited requests, and project variables for complex scenarios.",
+      "creditsLimitReached": "Out of credits 💳",
+      "creditsInsufficient": "Insufficient credits to run",
+      "creditsInsfficientHint": "Connect your own API keys (PRO+ plan) and pay just 1 credit per request. Or upgrade to a plan with more credits.",
+      "featureNotAvailable": "This feature is not available on your current plan",
+      "rateLimitExceeded": "Rate limit exceeded",
+      "rateLimitHint": "You have exceeded the limit of {{rpm}} requests per minute. Slow down requests or upgrade your plan."
+    },
+    "limitWarning": {
+      "warning": {
+        "agents": {
+          "title": "You'll need more agents soon",
+          "description": "Used {{current}} of {{limit}} agents ({{percentage}}%). Consider upgrading to scale your projects."
+        },
+        "credits": {
+          "title": "Credits running low",
+          "description": "{{current}} of {{limit}} credits remaining ({{percentage}}%). Connect your own API keys or upgrade to a plan with more credits."
+        }
+      },
+      "critical": {
+        "agents": {
+          "title": "Time to upgrade! 🚀",
+          "description": "Used {{current}} of {{limit}} agents ({{percentage}}%). Upgrade to PRO or BUSINESS now to keep building."
+        },
+        "credits": {
+          "title": "Almost out of credits! 💳",
+          "description": "{{current}} of {{limit}} credits remaining ({{percentage}}%). Upgrade your plan or connect API keys to save costs."
+        }
+      }
+    },
+    "credits": {
+      "balance": "Credit balance",
+      "current": "Current balance",
+      "used": "Used",
+      "remaining": "Remaining",
+      "nextRefill": "Next refill",
+      "refillIn": "Refill in",
+      "dateUnknown": "Date unknown",
+      "transactions": "Transaction history",
+      "totalTransactions": "Total transactions",
+      "noTransactions": "No transactions",
+      "viewAll": "View all",
+      "transactionTypes": {
+        "plan_grant": "Plan grant",
+        "llm_usage": "LLM usage",
+        "request_fee": "Request fee",
+        "manual_topup": "Manual top-up",
+        "refund": "Refund"
+      },
+      "filters": {
+        "all": "All types",
+        "type": "Transaction type",
+        "period": "Period"
+      }
+    },
+    "systemKeys": {
+      "title": "System API keys",
+      "description": "Using system LLM provider keys",
+      "upgradeMessage": "Own API keys are available on STARTER, PRO and BUSINESS plans",
+      "benefit": "When using your own keys, no credits are charged for requests"
+    },
+    "payments": {
+      "confirmDialog": {
+        "title": "Subscribe to plan",
+        "subtitle": "You are upgrading to {{plan}} plan",
+        "price": "Price",
+        "autoRenewal": "Enable card for auto-renewal",
+        "autoRenewalHint": "Money will be charged automatically every month",
+        "cancel": "Cancel",
+        "submit": "Proceed to payment",
+        "loading": "Creating payment...",
+        "error": "Failed to create payment. Please try again."
+      },
+      "successPage": {
+        "checking": "Checking payment status...",
+        "checkingHint": "This will take a few seconds",
+        "success": "Subscription activated!",
+        "successHint": "You now have access to all {{plan}} plan features",
+        "goToAgents": "Go to agents",
+        "error": "Payment failed",
+        "errorHint": "Please try again or contact support",
+        "retry": "Try again",
+        "timeout": "Unable to verify status",
+        "timeoutHint": "If money was charged, the plan will be activated automatically"
+      }
+    }
+  },
+  "variableForm": {
+    "name": "Name",
+    "namePlaceholder": "Enter variable name",
+    "nameRequired": "Variable name cannot be empty",
+    "duplicateName": "A variable with this name already exists",
+    "defaultValue": "Default value",
+    "optional": "(optional)",
+    "stringPlaceholder": "Enter value",
+    "numberPlaceholder": "Enter number",
+    "booleanPlaceholder": "Select value",
+    "projectVariable": "Project Variable",
+    "projectVariableDescription": "Available to all workflows in the project",
+    "projectVariableUpgradeRequired": "Upgrade to Pro plan to use project variables",
+    "objectPlaceholder": "Enter JSON object, e.g. {\"key\": \"value\"}",
+    "invalidJson": "Invalid JSON format",
+    "objectMustBeObject": "Value must be a JSON object",
+    "editObjectValue": "Edit",
+    "objectEmpty": "Empty object",
+    "objectSummary": "{{count}} keys"
+  },
+  "objectValueEditor": {
+    "title": "Default value",
+    "description": "Set the object value — via constructor or JSON.",
+    "tabConstructor": "Constructor",
+    "tabJson": "JSON",
+    "addKey": "Add key",
+    "keyPlaceholder": "key",
+    "valuePlaceholder": "value",
+    "emptyObject": "Empty. Add your first key.",
+    "invalidJson": "Invalid JSON",
+    "mustBeObject": "Value must be an object"
+  },
+  "nodeTemplates": {
+    "templates": "Templates",
+    "saveAsTemplate": "Save as template",
+    "edit": "Edit",
+    "duplicate": "Duplicate",
+    "modal": {
+      "title": "Save as template",
+      "description": "Create a reusable template from this node",
+      "name": "Name",
+      "namePlaceholder": "My template",
+      "nameRequired": "Name is required",
+      "nameMaxLength": "Name must not exceed 255 characters",
+      "templateDescription": "Description",
+      "descriptionPlaceholder": "Template description (optional)",
+      "descriptionMaxLength": "Description must not exceed 1000 characters"
+    },
+    "editModal": {
+      "title": "Edit template",
+      "description": "Change template name and description"
+    },
+    "duplicateModal": {
+      "title": "Duplicate template",
+      "description": "Select project to copy the template to",
+      "selectProject": "Select project",
+      "noOtherProjects": "No other projects available for copying"
+    },
+    "createSuccess": "Template created successfully",
+    "createError": "Failed to create template",
+    "updateSuccess": "Template updated",
+    "updateError": "Failed to update template",
+    "duplicateSuccess": "Template duplicated",
+    "duplicateError": "Failed to duplicate template",
+    "deleteSuccess": "Template deleted",
+    "deleteError": "Failed to delete template",
+    "deleteConfirm": "Delete template?",
+    "deleteWarning": "Are you sure you want to delete \"{{name}}\"?",
+    "noTemplates": "No saved templates",
+    "noTemplatesDescription": "Save a node as template for quick reuse"
+  },
+  "knowledgeBases": {
+    "title": "Knowledge Bases",
+    "subtitle": "Manage knowledge bases for your agents",
+    "create": "Create Knowledge Base",
+    "empty": "No knowledge bases",
+    "emptyDescription": "Create a knowledge base so agents can use your documents",
+    "columns": {
+      "name": "Name",
+      "description": "Description",
+      "documents": "Documents",
+      "characters": "Characters",
+      "createdAt": "Created",
+      "actions": "Actions"
+    },
+    "createModal": {
+      "title": "Create Knowledge Base",
+      "editTitle": "Edit Knowledge Base",
+      "nameLabel": "Name",
+      "namePlaceholder": "Enter knowledge base name",
+      "descriptionLabel": "Description",
+      "descriptionPlaceholder": "Optional description",
+      "nameRequired": "Name is required"
+    },
+    "deleteDialog": {
+      "title": "Delete Knowledge Base",
+      "description": "Are you sure you want to delete the knowledge base \"{{name}}\"? All documents will be permanently deleted."
+    },
+    "createSuccess": "Knowledge base created",
+    "createError": "Failed to create knowledge base",
+    "updateSuccess": "Knowledge base updated",
+    "updateError": "Failed to update knowledge base",
+    "deleteSuccess": "Knowledge base deleted",
+    "deleteError": "Failed to delete knowledge base"
+  },
+  "knowledgeBaseDetails": {
+    "backToList": "Knowledge Bases",
+    "usage": "{{used}} / {{max}} characters used",
+    "addText": "Add Text",
+    "uploadPDF": "Upload PDF",
+    "documentsTitle": "Documents",
+    "empty": "No documents",
+    "emptyDescription": "Add text or upload a PDF to populate the knowledge base",
+    "columns": {
+      "name": "Name",
+      "type": "Type",
+      "characters": "Characters",
+      "createdAt": "Added",
+      "actions": "Actions"
+    },
+    "docType": {
+      "text": "Text",
+      "pdf": "PDF"
+    },
+    "addTextModal": {
+      "title": "Add Text",
+      "nameLabel": "Document Name",
+      "namePlaceholder": "Enter document name",
+      "contentLabel": "Content",
+      "contentPlaceholder": "Paste your text here...",
+      "nameRequired": "Name is required",
+      "contentRequired": "Content is required"
+    },
+    "uploadPDFModal": {
+      "title": "Upload PDF",
+      "nameLabel": "Document Name",
+      "namePlaceholder": "Enter document name",
+      "fileLabel": "PDF File",
+      "filePlaceholder": "Select PDF file",
+      "uploading": "Uploading...",
+      "nameRequired": "Name is required",
+      "fileRequired": "Please select a PDF file"
+    },
+    "viewDocumentModal": {
+      "title": "Document Content"
+    },
+    "deleteDialog": {
+      "title": "Delete Document",
+      "description": "Are you sure you want to delete the document \"{{name}}\"?"
+    },
+    "addSuccess": "Document added",
+    "addError": "Failed to add document",
+    "uploadSuccess": "PDF uploaded",
+    "uploadError": "Failed to upload PDF",
+    "deleteSuccess": "Document deleted",
+    "deleteError": "Failed to delete document",
+    "errorDuplicate": "A document with this content already exists",
+    "errorNoText": "PDF contains no text (scanned document without OCR)"
+  },
+  "schemaBuilder": {
+    "title": "Structured output (JSON)",
+    "description": "The model will generate a JSON object matching this schema",
+    "simpleMode": "Visual",
+    "advancedMode": "JSON",
+    "schemaName": "Name",
+    "properties": "Properties",
+    "noProperties": "No properties. Add the first property.",
+    "addProperty": "Add property",
+    "jsonSyntaxError": "Invalid JSON syntax",
+    "jsonMustBeObject": "Schema must be a JSON object"
+  },
+  "meta": {
+    "title": "Assemblix - Visual AI Agent Builder",
+    "description": "Build smart AI agents without code using the Assemblix visual builder. Automate business processes, create chatbots and workflows.",
+    "keywords": "AI agents, agent builder, visual editor, workflow builder, automation, chatbots, artificial intelligence, no-code, low-code, Assemblix"
+  }
+}

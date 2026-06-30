@@ -1,0 +1,35 @@
+name: Feature request
+description: Suggest an idea or enhancement for Assemblix
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem / motivation
+      description: What are you trying to do, and what's missing or painful today?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: What would you like to see? Include rough UX/API shape if relevant.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Backend (API / execution engine)
+        - Frontend (canvas / UI)
+        - New workflow node
+        - Docker / deployment
+        - Docs
+        - Other
+    validations:
+      required: true

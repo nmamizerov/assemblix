@@ -1,0 +1,216 @@
+{
+  "name": "Conversational Agent with CRM Upload",
+  "description": null,
+  "nodes": [
+    {
+      "id": "e091618d-5b13-400c-86b5-24deb014a8c9",
+      "type": "start",
+      "config": {},
+      "position": {
+        "x": 45.67172253028595,
+        "y": 204.4349614260991
+      }
+    },
+    {
+      "id": "c4b517a4-7d24-4190-8ca8-4ed66d62be3c",
+      "type": "agent",
+      "config": {
+        "name": "Evaluate User Response",
+        "model": "gpt-4.1-nano",
+        "tools": null,
+        "provider": "openai",
+        "tool_choice": "auto",
+        "instructions": [
+          {
+            "role": "system",
+            "content": "You are a real-time lead temperature scoring system. You analyze EACH customer message and return a score from 0 to 10.\n\nYOUR TASK:\n\nEvaluate the current message and return a score from 0 to 10.\n\nCRITERIA FOR ADDING POINTS:\n\n8 to 10 POINTS (strong interest signals):\n\n- Questions about price, plans, costs\n\n- Specific timeframes: \"need it by Monday\", \"urgent\", \"this week\"\n\n- Request for demo, presentation, call with manager\n\n- Plan comparison: \"what's the difference between plan X and Y?\"\n\n- Direct purchase intent: \"want to buy\", \"ready to pay\", \"let's proceed\"\n\n- Request for details, contract, invoice\n\n- \"When can we start?\", \"how quickly can you connect us?\"\n\n5 to 7 POINTS (medium interest signals):\n\n- Detailed questions about functionality\n\n- Describes a specific business task or pain point\n\n- Questions about integrations with specific systems\n\n- Mentions company, role, team size\n\n- Compares with competitors: \"how are you different from X?\"\n\n1 to 4 POINTS (weak signals):\n\n- Clarifying questions about features\n\n- Asks for usage examples, case studies\n\n- Interested in general capabilities\n\n- Positive reaction: \"sounds interesting\", \"that's what I need\"\n\n- Questions about free trial, demo version\n\n0 POINTS (neutral):\n\n- Greetings: \"hi\", \"hello\", \"good day\"\n\n- General questions: \"what do you do?\", \"tell me about the product\"\n\n- Re-asking due to misunderstanding\n\n- Thank-yous: \"thanks\", \"understood\""
+          }
+        ],
+        "credential_id": "",
+        "response_format": "json_object",
+        "response_schema": {
+          "type": "object",
+          "title": "responseSchema",
+          "properties": {
+            "score": {
+              "type": "number",
+              "description": "Score from 0 to 10"
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "position": {
+        "x": 244.77635008653124,
+        "y": 200
+      }
+    },
+    {
+      "id": "4811b280-21e1-4dfb-a05a-2712437df66a",
+      "type": "end",
+      "config": {
+        "name": "Result",
+        "properties": {},
+        "is_session_end": false
+      },
+      "position": {
+        "x": 1580.4055152687272,
+        "y": 233.71539922982225
+      }
+    },
+    {
+      "id": "node-1768367648023-24",
+      "type": "sticker",
+      "config": {
+        "text": "This is a lead classifier — its task is to converse with the user until they become a warm lead, and then we send them to the CRM system."
+      },
+      "position": {
+        "x": 420.27653190003696,
+        "y": -230.23934574608887
+      }
+    },
+    {
+      "id": "node-1768368061040-25",
+      "type": "set_variable",
+      "config": {
+        "updates": [
+          {
+            "value": "state.temperature + input.parsed_message.score",
+            "variable_name": "state.temperature"
+          }
+        ]
+      },
+      "position": {
+        "x": 564.1324963560473,
+        "y": 204.681612241495
+      }
+    },
+    {
+      "id": "node-1768368083704-26",
+      "type": "http_request",
+      "config": {
+        "url": "",
+        "body": "{\"lead\": workflow.sessionId, \"temperature\":state.temperature}",
+        "method": "POST",
+        "headers": {},
+        "timeout": 30,
+        "query_params": {}
+      },
+      "position": {
+        "x": 1164.9963612652643,
+        "y": 153.09741234612125
+      }
+    },
+    {
+      "id": "node-1768368182473-27",
+      "type": "condition",
+      "config": {
+        "conditions": [
+          {
+            "name": null,
+            "expression": "state.temperature > 10"
+          }
+        ]
+      },
+      "position": {
+        "x": 862.1056190879495,
+        "y": 169.99746716991984
+      }
+    },
+    {
+      "id": "node-1768368203307-28",
+      "type": "agent",
+      "config": {
+        "name": "Generate New Question",
+        "model": "gpt-4.1-nano",
+        "tools": null,
+        "provider": "openai",
+        "tool_choice": "auto",
+        "instructions": [
+          {
+            "role": "user",
+            "content": "You are an experienced sales consultant conducting a natural dialogue with a potential customer. Your goal is to uncover the real need through questions and help the person realize how the product solves their problem. YOUR STYLE: - Speak simply and friendly, without formality - Ask open-ended questions that make people think - Listen carefully and adapt questions based on answers - Do NOT pressure the person, but genuinely help them understand WARM-UP STRATEGY (sequence of questions): STAGE 1 - CONTEXT DISCOVERY (if the person is cold): Goal: understand who they are and why they came Example questions: - \"Tell me, what do you do? What's your business/project?\" - \"What's working well for you right now, and what would you like to improve?\" - \"How are you currently handling [task related to the product]?\" STAGE 2 - PAIN DISCOVERY (if context is clear): Goal: find the real problem or inefficiency Example questions: - \"How much time does it take you/your team for [process]?\" - \"What bothers you most about the current approach?\" - \"Have you tried changing anything? What didn't work?\" - \"If you could improve one thing right now - what would it be?\" STAGE 3 - PROBLEM QUANTIFICATION (if pain is found): Goal: help assess the scale of the problem in money/time/resources Example questions: - \"How much does this cost the company in money/time?\" - \"If this problem were solved - what would change in your work?\" - \"How critical is it to solve this? Are there deadlines?\" - \"What happens if you leave it as is?\" STAGE 4 - SOLUTION VISION (if problem is assessed): Goal: show how the product addresses this specific pain Example questions: - \"Imagine the ideal scenario - how should this work?\" - \"What would be the perfect solution for you?\" - \"Have you already looked for solutions? What did you consider?\" STAGE 5 - CALL TO ACTION (if the person sees value): Goal: nudge toward a specific next step Example questions/suggestions: - \"Want me to look at your situation and show you specifically how it can help?\" - \"Can I show you a demo based on your task - interested?\" - \"Let's jump on a 15-minute call, I'll show you how it works?\" - \"What format works best for you - demo, trial, or call?\" DIALOGUE RULES: 1. ADAPTABILITY: - If the person already mentioned their pain - skip basic questions, go deeper immediately - If they gave a short answer - ask a follow-up question - If the person is active and writes a lot - match their pace 2. NO MORE THAN 2 QUESTIONS at a time: - One main question - One follow-up at most - Don't overload the person 3. SHOW UNDERSTANDING: - Before the question, summarize what you understood: \"Got it, you're currently [situation]. And [question]?\" - Use the interlocutor's own words 4. TRIGGERS FOR MOVING TO THE NEXT STAGE: - Stage 1→2: person described their work/project - Stage 2→3: mentioned a problem or inconvenience - Stage 3→4: acknowledged the problem is significant - Stage 4→5: expressed interest in a solution 5. RED FLAGS (when NOT to push): - Person is clearly not ready (\"just browsing\", \"still exploring\") - Non-target audience - Aggression or irritation → In these cases, offer useful material and leave the door open"
+          }
+        ],
+        "credential_id": "",
+        "response_format": "text",
+        "response_schema": null
+      },
+      "position": {
+        "x": 1139.5627874946501,
+        "y": 327.6642141353371
+      }
+    },
+    {
+      "id": "node-1768368324613-29",
+      "type": "sticker",
+      "config": {
+        "text": "Here you can fill in the HTTP request details and send requests anywhere.\nFrom your CRM system to a Telegram chatbot"
+      },
+      "position": {
+        "x": 1044.8044179874878,
+        "y": 4.754418046705837
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge_e091618d-5b13-400c-86b5-24deb014a8c9_c4b517a4-7d24-4190-8ca8-4ed66d62be3c",
+      "source": "e091618d-5b13-400c-86b5-24deb014a8c9",
+      "target": "c4b517a4-7d24-4190-8ca8-4ed66d62be3c",
+      "source_handle": "source_e091618d-5b13-400c-86b5-24deb014a8c9_0",
+      "target_handle": "target_c4b517a4-7d24-4190-8ca8-4ed66d62be3c_0"
+    },
+    {
+      "id": "temp-node-1768368061040-25",
+      "source": "c4b517a4-7d24-4190-8ca8-4ed66d62be3c",
+      "target": "node-1768368061040-25",
+      "source_handle": "source_c4b517a4-7d24-4190-8ca8-4ed66d62be3c_0",
+      "target_handle": null
+    },
+    {
+      "id": "temp-node-1768368182473-27",
+      "source": "node-1768368061040-25",
+      "target": "node-1768368182473-27",
+      "source_handle": "source_node-1768368061040-25_0",
+      "target_handle": null
+    },
+    {
+      "id": "xy-edge__node-1768368182473-27source_node-1768368182473-27_0-node-1768368083704-26target_node-1768368083704-26_0",
+      "source": "node-1768368182473-27",
+      "target": "node-1768368083704-26",
+      "source_handle": "source_node-1768368182473-27_0",
+      "target_handle": "target_node-1768368083704-26_0"
+    },
+    {
+      "id": "temp-node-1768368203307-28",
+      "source": "node-1768368182473-27",
+      "target": "node-1768368203307-28",
+      "source_handle": "source_node-1768368182473-27_1",
+      "target_handle": null
+    },
+    {
+      "id": "xy-edge__node-1768368203307-28source_node-1768368203307-28_0-4811b280-21e1-4dfb-a05a-2712437df66atarget_4811b280-21e1-4dfb-a05a-2712437df66a_0",
+      "source": "node-1768368203307-28",
+      "target": "4811b280-21e1-4dfb-a05a-2712437df66a",
+      "source_handle": "source_node-1768368203307-28_0",
+      "target_handle": "target_4811b280-21e1-4dfb-a05a-2712437df66a_0"
+    },
+    {
+      "id": "xy-edge__node-1768368083704-26source_node-1768368083704-26_0-4811b280-21e1-4dfb-a05a-2712437df66atarget_4811b280-21e1-4dfb-a05a-2712437df66a_0",
+      "source": "node-1768368083704-26",
+      "target": "4811b280-21e1-4dfb-a05a-2712437df66a",
+      "source_handle": "source_node-1768368083704-26_0",
+      "target_handle": "target_4811b280-21e1-4dfb-a05a-2712437df66a_0"
+    }
+  ],
+  "state": [
+    {
+      "name": "temperature",
+      "type": "number",
+      "default_value": 0,
+      "isProjectVariable": false
+    }
+  ],
+  "webhook_url": null
+}

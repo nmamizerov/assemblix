@@ -1,0 +1,50 @@
+Assemblix
+Copyright (c) 2026 Nikita Mamizerov
+
+This product is source-available under the MIT License with the Commons Clause
+restriction (see LICENSE.md), EXCEPT for files marked with the header
+"SPDX-License-Identifier: LicenseRef-Assemblix-EE", which are part of Assemblix
+Enterprise and are governed by LICENSE_EE.md.
+
+-------------------------------------------------------------------------------
+Third-party components
+
+This software depends on third-party open-source packages, each distributed under
+its own license. The list below is not exhaustive; see the lockfiles
+(assemblix-app-api/uv.lock, assemblix-app-web/yarn.lock) for the complete set and
+exact versions.
+
+Backend (Python):
+  - FastAPI / Starlette ........ BSD-3-Clause
+  - Uvicorn .................... BSD-3-Clause
+  - SQLAlchemy ................. MIT
+  - Alembic ................... MIT
+  - Pydantic / pydantic-settings  MIT
+  - PyJWT ..................... MIT
+  - cryptography .............. Apache-2.0 / BSD-3-Clause
+  - LiteLLM ................... MIT
+  - openai (SDK) .............. Apache-2.0
+  - google-genai / google-auth  Apache-2.0
+  - httpx ..................... BSD-3-Clause
+  - structlog ................. Apache-2.0 / MIT
+  - tenacity .................. Apache-2.0
+  - redis-py / arq ............ MIT
+  - prometheus-client ......... Apache-2.0
+  - pdfplumber ................ MIT
+  - cel-python ................ Apache-2.0
+
+Frontend (JavaScript/TypeScript):
+  - React / React DOM ......... MIT
+  - Redux Toolkit / React-Redux  MIT
+  - @xyflow/react (React Flow)  MIT
+  - Radix UI .................. MIT
+  - Tailwind CSS .............. MIT
+  - Vite ...................... MIT
+  - i18next / react-i18next ... MIT
+  - TipTap .................... MIT
+  - Zod ....................... MIT
+  - Framer Motion ............. MIT
+  - lucide-react .............. ISC
+
+All third-party licenses are compatible with redistribution of this source-available
+build. No GPL/AGPL copyleft dependencies are included in the declared dependency set.

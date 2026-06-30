@@ -1,0 +1,56 @@
+name: Bug report
+description: Report a problem with Assemblix
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for filing a bug! Please **do not** report security vulnerabilities here —
+        follow [SECURITY.md](../../SECURITY.md) instead.
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: A clear description of the bug and what you expected instead.
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. ...
+        2. ...
+        3. ...
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Backend (API / execution engine)
+        - Frontend (canvas / UI)
+        - Docker / deployment
+        - Docs
+        - Not sure
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: How are you running it, and with which non-default settings?
+      placeholder: |
+        - Deployment: docker compose / native
+        - Commit or version:
+        - BILLING_ENABLED / queue tier (COMPOSE_PROFILES):
+        - OS / browser (for frontend):
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant logs
+      description: Paste any relevant log output (redact secrets).
+      render: shell

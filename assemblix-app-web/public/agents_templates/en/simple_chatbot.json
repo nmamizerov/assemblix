@@ -1,0 +1,82 @@
+{
+  "name": "Simple Chatbot",
+  "description": null,
+  "nodes": [
+    {
+      "id": "start-node-simple",
+      "type": "start",
+      "config": {},
+      "position": {
+        "x": 100,
+        "y": 200
+      }
+    },
+    {
+      "id": "agent-node-simple",
+      "type": "agent",
+      "config": {
+        "name": "Chatbot",
+        "model": "gpt-4.1-nano",
+        "tools": null,
+        "provider": "openai",
+        "temperature": 0.7,
+        "tool_choice": "auto",
+        "instructions": [
+          {
+            "role": "system",
+            "content": "You are a friendly assistant. Answer user questions concisely and to the point."
+          }
+        ],
+        "credential_id": "",
+        "response_format": "text",
+        "response_schema": null
+      },
+      "position": {
+        "x": 400,
+        "y": 200
+      }
+    },
+    {
+      "id": "end-node-simple",
+      "type": "end",
+      "config": {
+        "name": "Result",
+        "properties": {},
+        "is_session_end": false
+      },
+      "position": {
+        "x": 700,
+        "y": 200
+      }
+    },
+    {
+      "id": "sticker-node-simple",
+      "type": "sticker",
+      "config": {
+        "text": "The simplest agent to get started\n\nPress Play and send a message\nto see the agent in action!"
+      },
+      "position": {
+        "x": 350,
+        "y": 50
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge-start-agent",
+      "source": "start-node-simple",
+      "target": "agent-node-simple",
+      "source_handle": "source_start-node-simple_0",
+      "target_handle": "target_agent-node-simple_0"
+    },
+    {
+      "id": "edge-agent-end",
+      "source": "agent-node-simple",
+      "target": "end-node-simple",
+      "source_handle": "source_agent-node-simple_0",
+      "target_handle": "target_end-node-simple_0"
+    }
+  ],
+  "state": [],
+  "webhook_url": null
+}

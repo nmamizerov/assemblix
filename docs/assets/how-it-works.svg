@@ -1,0 +1,95 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 712" font-family="'Helvetica Neue', Arial, sans-serif">
+  <defs>
+    <filter id="shadow" x="-30%" y="-30%" width="160%" height="180%">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="12"/>
+      <feOffset dx="0" dy="10" result="off"/>
+      <feComponentTransfer in="off" result="sh">
+        <feFuncA type="linear" slope="0.22"/>
+      </feComponentTransfer>
+      <feMerge>
+        <feMergeNode in="sh"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#6366F1"/>
+    </marker>
+    <marker id="arrowEnd" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M0 0 L10 5 L0 10 z" fill="#94A3B8"/>
+    </marker>
+  </defs>
+
+  <rect width="1600" height="712" fill="#EBEEF5"/>
+
+  <!-- ============ TOP ROW ============ -->
+
+  <!-- REST connector -->
+  <line x1="628" y1="190" x2="968" y2="190" stroke="#6366F1" stroke-width="3"
+        marker-start="url(#arrow)" marker-end="url(#arrow)"/>
+  <text x="798" y="168" text-anchor="middle" font-size="26" font-weight="700" fill="#6366F1">REST /api</text>
+  <text x="798" y="222" text-anchor="middle" font-size="20" fill="#94A3B8">DTOs · camelCase on the wire</text>
+
+  <!-- WEB card -->
+  <g filter="url(#shadow)">
+    <rect x="92" y="78" width="536" height="226" rx="22" fill="#FFFFFF" stroke="#CBD4E6" stroke-width="2"/>
+  </g>
+  <circle cx="128" cy="116" r="7" fill="#F87171"/>
+  <circle cx="152" cy="116" r="7" fill="#FBBF24"/>
+  <circle cx="176" cy="116" r="7" fill="#34D399"/>
+  <text x="128" y="172" font-size="34" font-weight="800" fill="#1E293B">Web<tspan font-size="22" font-weight="600" fill="#64748B" dx="14">React 19</tspan></text>
+  <text x="128" y="214" font-size="23" font-weight="600" fill="#334155">React Flow canvas</text>
+  <text x="128" y="252" font-size="21" fill="#64748B">nodes + edges JSON</text>
+  <!-- mini node chips -->
+  <circle cx="138" cy="278" r="9" fill="#34D399"/>
+  <circle cx="172" cy="278" r="9" fill="#6366F1"/>
+  <circle cx="206" cy="278" r="9" fill="#FBBF24"/>
+  <line x1="147" y1="278" x2="163" y2="278" stroke="#CBD5E1" stroke-width="3"/>
+  <line x1="181" y1="278" x2="197" y2="278" stroke="#CBD5E1" stroke-width="3"/>
+
+  <!-- API card -->
+  <g filter="url(#shadow)">
+    <rect x="968" y="78" width="540" height="226" rx="22" fill="#FFFFFF" stroke="#CBD4E6" stroke-width="2"/>
+  </g>
+  <rect x="1004" y="100" width="40" height="40" rx="10" fill="#EEF0FF"/>
+  <path d="M1014 120 h20 M1024 110 v20" stroke="#6366F1" stroke-width="3" stroke-linecap="round"/>
+  <text x="1062" y="132" font-size="34" font-weight="800" fill="#1E293B">API<tspan font-size="22" font-weight="600" fill="#64748B" dx="16">FastAPI · Python 3.13</tspan></text>
+  <text x="1004" y="200" font-size="23" font-weight="600" fill="#334155">WorkflowExecutor</text>
+  <text x="1004" y="238" font-size="21" fill="#64748B">GraphNavigator · Agents · source of truth</text>
+
+  <!-- ============ BRANCHES ============ -->
+  <path d="M1238 304 C 1238 360, 320 360, 320 470" fill="none" stroke="#94A3B8" stroke-width="3" marker-end="url(#arrowEnd)"/>
+  <path d="M1238 304 C 1238 380, 800 380, 800 470" fill="none" stroke="#94A3B8" stroke-width="3" marker-end="url(#arrowEnd)"/>
+  <path d="M1238 304 C 1238 360, 1280 360, 1280 470" fill="none" stroke="#94A3B8" stroke-width="3" marker-end="url(#arrowEnd)"/>
+
+  <!-- ============ BOTTOM ROW ============ -->
+  <!-- PostgreSQL -->
+  <g filter="url(#shadow)">
+    <rect x="90" y="478" width="460" height="180" rx="22" fill="#FFFFFF" stroke="#CBD4E6" stroke-width="2"/>
+  </g>
+  <rect x="124" y="512" width="44" height="44" rx="11" fill="#EEF0FF"/>
+  <ellipse cx="146" cy="524" rx="13" ry="6" fill="none" stroke="#6366F1" stroke-width="3"/>
+  <path d="M133 524 v18 a13 6 0 0 0 26 0 v-18" fill="none" stroke="#6366F1" stroke-width="3"/>
+  <text x="188" y="532" font-size="28" font-weight="800" fill="#1E293B">PostgreSQL</text>
+  <text x="124" y="610" font-size="21" fill="#64748B">Source of truth · graph schema</text>
+
+  <!-- LLM providers -->
+  <g filter="url(#shadow)">
+    <rect x="570" y="478" width="460" height="180" rx="22" fill="#FFFFFF" stroke="#CBD4E6" stroke-width="2"/>
+  </g>
+  <rect x="604" y="512" width="44" height="44" rx="11" fill="#EEF0FF"/>
+  <circle cx="626" cy="534" r="13" fill="none" stroke="#6366F1" stroke-width="3"/>
+  <circle cx="626" cy="534" r="4" fill="#6366F1"/>
+  <text x="668" y="532" font-size="28" font-weight="800" fill="#1E293B">LLM providers</text>
+  <text x="604" y="600" font-size="20" fill="#64748B">OpenAI · Gemini</text>
+  <text x="604" y="628" font-size="20" fill="#64748B">DeepSeek · GigaChat</text>
+
+  <!-- Redis + Arq -->
+  <g filter="url(#shadow)">
+    <rect x="1050" y="478" width="460" height="180" rx="22" fill="#FFFFFF" stroke="#CBD4E6" stroke-width="2"/>
+  </g>
+  <rect x="1084" y="512" width="44" height="44" rx="11" fill="#EEF0FF"/>
+  <path d="M1095 524 l11 -7 l11 7 v14 l-11 7 l-11 -7 z" fill="none" stroke="#6366F1" stroke-width="3" stroke-linejoin="round"/>
+  <text x="1148" y="532" font-size="28" font-weight="800" fill="#1E293B">Redis + Arq</text>
+  <text x="1084" y="600" font-size="20" fill="#64748B">Optional queue tier</text>
+  <text x="1084" y="628" font-size="20" fill="#94A3B8">off by default · self-host</text>
+</svg>

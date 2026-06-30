@@ -1,0 +1,17 @@
+# Build context exclusions for the web image.
+node_modules/
+dist/
+.turbo/
+.vite/
+
+# Never bake env files into the image.
+.env
+.env.*
+
+# VCS / editor / OS noise.
+.git/
+.gitignore
+*.swp
+*.swo
+*~
+.DS_Store

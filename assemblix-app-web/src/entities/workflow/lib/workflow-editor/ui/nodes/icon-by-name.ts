@@ -1,0 +1,52 @@
+import {
+  Timer,
+  Zap,
+  Box,
+  Cpu,
+  Settings,
+  Globe,
+  Database,
+  Code2,
+  Mail,
+  Bell,
+  FileText,
+  Search,
+  Filter,
+  Shuffle,
+  Clock,
+  Send,
+  Download,
+  Upload,
+  RefreshCw,
+  AlertCircle,
+  CheckCircle2,
+  type LucideIcon,
+} from "lucide-react";
+
+/**
+ * Minimal lookup: Lucide icon name string (from NodeDescriptor.icon) → component.
+ * Extend this map as new plugin nodes ship new icon names.
+ */
+export const iconByName: Record<string, LucideIcon> = {
+  Timer,
+  Zap,
+  Box,
+  Cpu,
+  Settings,
+  Globe,
+  Database,
+  Code2,
+  Mail,
+  Bell,
+  FileText,
+  Search,
+  Filter,
+  Shuffle,
+  Clock,
+  Send,
+  Download,
+  Upload,
+  RefreshCw,
+  AlertCircle,
+  CheckCircle2,
+};

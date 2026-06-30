@@ -1,0 +1,185 @@
+# ============================================================================
+# Assemblix — PRODUCTION stack.
+#
+#   docker compose up -d --build
+#
+# Default (self-host) services: postgres + migrate + api + web. The Redis + Arq
+# worker "queue" tier is OPT-IN — enable it by setting in .env:
+#
+#   COMPOSE_PROFILES=queue
+#   REDIS_URL=redis://redis:6379/0
+#   EXECUTION_QUEUE_ENABLED=true
+#
+# (or pass `--profile queue` on the command line). Core services have no
+# profile, so they always start; redis/worker sit behind the `queue` profile.
+#
+# All config comes from the single root `.env`. DATABASE_URL is overridden here
+# to the in-network `postgres` host (the .env value is the host-dev one).
+# ============================================================================
+
+name: assemblix
+
+# Shared env overrides for the Python image (api / worker).
+# DB_TARGET_HOST/PORT default to the in-network postgres (NOT the host-published
+# POSTGRES_PORT). On the `scale` tier set DB_TARGET_HOST=pgbouncer and
+# DB_TARGET_PORT=6432 (+ DB_DISABLE_STATEMENT_CACHE=true) so api/worker connect
+# through the transaction-mode pooler instead of directly.
+x-api-env: &api-env
+  DATABASE_URL: postgresql://${POSTGRES_USER:-assemblix}:${POSTGRES_PASSWORD:-assemblix}@${DB_TARGET_HOST:-postgres}:${DB_TARGET_PORT:-5432}/${POSTGRES_DB:-assemblix}
+
+# Migrations must hit Postgres directly (DDL + prepared statements are unsafe through
+# a transaction-mode pooler), regardless of the POSTGRES_HOST indirection above.
+x-migrate-env: &migrate-env
+  DATABASE_URL: postgresql://${POSTGRES_USER:-assemblix}:${POSTGRES_PASSWORD:-assemblix}@postgres:5432/${POSTGRES_DB:-assemblix}
+
+# Shared build definition for the Python image.
+x-api-build: &api-build
+  context: ./assemblix-app-api
+  target: prod
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: assemblix-postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-assemblix}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-assemblix}
+      POSTGRES_DB: ${POSTGRES_DB:-assemblix}
+    # No published port: the DB is reached only over the internal network
+    # (api/migrate/worker connect via the `postgres` hostname).
+    volumes:
+      - assemblix-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-assemblix} -d ${POSTGRES_DB:-assemblix}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  # One-shot migration runner: applies alembic, then exits 0. The api waits for
+  # it to complete so migrations never race across replicas.
+  migrate:
+    build: *api-build
+    image: assemblix-api:latest
+    command: ["alembic", "upgrade", "head"]
+    env_file: .env
+    environment:
+      <<: *migrate-env
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: "no"
+
+  api:
+    build: *api-build
+    image: assemblix-api:latest
+    env_file: .env
+    environment:
+      <<: *api-env
+    ports:
+      - "${API_PORT:-8000}:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://localhost:8000/health').status==200 else 1)"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    restart: unless-stopped
+
+  web:
+    build:
+      context: ./assemblix-app-web
+      args:
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-/api}
+        VITE_APP_VERSION: ${VITE_APP_VERSION:-1.0.0}
+        VITE_LANGS: ${VITE_LANGS:-ru,en}
+        VITE_DEFAULT_LANGUAGE: ${VITE_DEFAULT_LANGUAGE:-ru}
+        VITE_SUPPORTED_LANGUAGES: ${VITE_SUPPORTED_LANGUAGES:-ru,en}
+        VITE_GOOGLE_CLIENT_ID: ${VITE_GOOGLE_CLIENT_ID:-}
+        VITE_GITHUB_CLIENT_ID: ${VITE_GITHUB_CLIENT_ID:-}
+        VITE_YANDEX_CLIENT_ID: ${VITE_YANDEX_CLIENT_ID:-}
+        VITE_PADDLE_CLIENT_TOKEN: ${VITE_PADDLE_CLIENT_TOKEN:-}
+        VITE_PADDLE_ENVIRONMENT: ${VITE_PADDLE_ENVIRONMENT:-production}
+    image: assemblix-web:latest
+    ports:
+      - "${WEB_PORT:-8080}:80"
+    depends_on:
+      - api
+    restart: unless-stopped
+
+  # --- Queue tier (opt-in via `COMPOSE_PROFILES=queue`) ---------------------
+  redis:
+    image: redis:7-alpine
+    container_name: assemblix-redis
+    profiles: ["queue"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
+  worker:
+    build: *api-build
+    image: assemblix-api:latest
+    profiles: ["queue"]
+    command: ["arq", "assemblix_api.queue.worker.WorkerSettings"]
+    env_file: .env
+    environment:
+      <<: *api-env
+      # Falls back to the in-network redis even if REDIS_URL is unset in .env.
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
+    # Scale execution throughput horizontally: WORKER_REPLICAS processes, each running
+    # WORKER_MAX_JOBS concurrent jobs (env, default 10). Set WORKER_METRICS_ENABLED=false
+    # in .env when running >1 replica on one host (avoids METRICS_PORT bind collisions).
+    deploy:
+      replicas: ${WORKER_REPLICAS:-1}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # --- Connection pooler (opt-in via `COMPOSE_PROFILES=scale`) ---------------
+  # Transaction-mode PgBouncer in front of Postgres. Needed once you run several
+  # api/worker replicas: it caps real Postgres connections at MAX_DB_CONNECTIONS
+  # instead of (replicas × pool_size). To use it, set in .env:
+  #   COMPOSE_PROFILES=queue,scale
+  #   DB_TARGET_HOST=pgbouncer          # route api/worker through the pooler (x-api-env)
+  #   DB_TARGET_PORT=6432               # NOT POSTGRES_PORT — that's the host-published port
+  #   DB_DISABLE_STATEMENT_CACHE=true   # asyncpg-safe behind transaction pooling
+  pgbouncer:
+    image: edoburu/pgbouncer:latest
+    container_name: assemblix-pgbouncer
+    profiles: ["scale"]
+    environment:
+      DB_HOST: postgres
+      DB_PORT: "5432"
+      DB_USER: ${POSTGRES_USER:-assemblix}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-assemblix}
+      DB_NAME: ${POSTGRES_DB:-assemblix}
+      POOL_MODE: transaction
+      # Real backend connections to Postgres — keep below Postgres max_connections.
+      MAX_DB_CONNECTIONS: ${PGBOUNCER_MAX_DB_CONNECTIONS:-50}
+      # Client-side connections the pooler accepts from api/worker replicas (high).
+      MAX_CLIENT_CONN: ${PGBOUNCER_MAX_CLIENT_CONN:-1000}
+      DEFAULT_POOL_SIZE: ${PGBOUNCER_DEFAULT_POOL_SIZE:-25}
+      AUTH_TYPE: scram-sha-256
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -p 6432 -U ${POSTGRES_USER:-assemblix}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+volumes:
+  assemblix-pgdata:

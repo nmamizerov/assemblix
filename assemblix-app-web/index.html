@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="%HTML_LANG%">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=5.0"
+    />
+
+    <!-- Primary Meta Tags -->
+    <title>%HTML_TITLE%</title>
+    <meta
+      name="title"
+      content="%HTML_TITLE%"
+    />
+    <meta
+      name="description"
+      content="%HTML_DESCRIPTION%"
+    />
+    <meta
+      name="keywords"
+      content="%HTML_KEYWORDS%"
+    />
+    <meta name="author" content="Assemblix" />
+    <meta name="robots" content="index, follow" />
+    <meta name="language" content="%HTML_LANGUAGE%" />
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="/logo.svg" />
+    <link rel="apple-touch-icon" href="/logo.svg" />
+
+    <!-- Theme Color -->
+    <meta name="theme-color" content="#000000" />
+    <meta name="msapplication-TileColor" content="#000000" />
+
+    <!-- Canonical URL -->
+    <link rel="canonical" href="https://assemblix.com" />
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://assemblix.com" />
+    <meta
+      property="og:title"
+      content="%HTML_TITLE%"
+    />
+    <meta
+      property="og:description"
+      content="%HTML_DESCRIPTION%"
+    />
+    <meta property="og:image" content="https://assemblix.com/logo.svg" />
+    <meta property="og:locale" content="%HTML_LOCALE%" />
+    <meta property="og:site_name" content="Assemblix" />
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:url" content="https://assemblix.com" />
+    <meta
+      name="twitter:title"
+      content="%HTML_TITLE%"
+    />
+    <meta
+      name="twitter:description"
+      content="%HTML_DESCRIPTION%"
+    />
+    <meta name="twitter:image" content="https://assemblix.com/logo.svg" />
+
+    <!-- Structured Data (JSON-LD) -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "SoftwareApplication",
+        "name": "Assemblix",
+        "applicationCategory": "DeveloperApplication",
+        "operatingSystem": "Web",
+        "description": "%HTML_STRUCTURED_APP_DESCRIPTION%",
+        "offers": {
+          "@type": "Offer",
+          "price": "0",
+          "priceCurrency": "USD"
+        },
+        "aggregateRating": {
+          "@type": "AggregateRating",
+          "ratingValue": "5",
+          "ratingCount": "1"
+        }
+      }
+    </script>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "Organization",
+        "name": "Assemblix",
+        "url": "https://assemblix.com",
+        "logo": "https://assemblix.com/logo.svg",
+        "description": "%HTML_STRUCTURED_ORG_DESCRIPTION%"
+      }
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

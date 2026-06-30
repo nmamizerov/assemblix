@@ -1,0 +1,42 @@
+Generic single-database configuration for Alembic migrations.
+
+## Quick Start
+
+### Create a new migration
+
+```bash
+alembic revision --autogenerate -m "Description of changes"
+```
+
+### Apply migrations
+
+```bash
+# Apply all pending migrations
+alembic upgrade head
+
+# Apply next migration
+alembic upgrade +1
+
+# Rollback one migration
+alembic downgrade -1
+```
+
+### Check current state
+
+```bash
+# Show current revision
+alembic current
+
+# Show migration history
+alembic history --verbose
+```
+
+## Configuration
+
+Database URL is automatically loaded from `.env` file via `assemblix_api.core.settings`.
+
+Make sure your `.env` file contains:
+```
+DATABASE_URL=postgresql://user:password@localhost:5432/dbname
+```
+

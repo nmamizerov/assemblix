@@ -1,0 +1,244 @@
+{
+  "name": "Роутинг запросов",
+  "description": null,
+  "nodes": [
+    {
+      "id": "8b5d61ac-cb83-41cb-9967-43cb7724d696",
+      "type": "start",
+      "config": {},
+      "position": {
+        "x": -11.439315629814104,
+        "y": 200.00000000000003
+      }
+    },
+    {
+      "id": "0562b26a-504b-44d9-b6b0-80c34bd711c1",
+      "type": "agent",
+      "config": {
+        "name": "Категоризация вопроса",
+        "model": "gpt-4.1-nano",
+        "tools": null,
+        "provider": "openai",
+        "tool_choice": "auto",
+        "instructions": [
+          {
+            "role": "system",
+            "content": "Ты - классификатор обращений клиентов. Твоя задача - определить тип запроса и ответить ТОЛЬКО одним словом. Анализируй тональность и содержание сообщения: НЕГАТИВНЫЙ - жалобы, претензии, недовольство, проблемы, критика ПОЗИТИВНЫЙ - благодарности, похвала, восторг, положительные отзывы ПАССИВНЫЙ - нейтральные вопросы, предложения, общая информация ПРОЧЕЕ - все остальное, что не попадает в категории вышеРаскажи шутку"
+          }
+        ],
+        "credential_id": "",
+        "response_format": "json_object",
+        "response_schema": {
+          "type": "object",
+          "title": "responseSchema",
+          "properties": {
+            "category": {
+              "enum": [
+                "positive",
+                "negative",
+                "question",
+                "other"
+              ],
+              "type": "string",
+              "description": "Категория запроса пользователя"
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "position": {
+        "x": 179.62230240163458,
+        "y": 198.33672663239082
+      }
+    },
+    {
+      "id": "93cf9ece-a0ea-416f-993a-52b9bc6fe52b",
+      "type": "end",
+      "config": {
+        "name": "Результат",
+        "properties": {},
+        "is_session_end": false
+      },
+      "position": {
+        "x": 1318.6555482181147,
+        "y": 234.35933030968027
+      }
+    },
+    {
+      "id": "node-1768366863444-16",
+      "type": "condition",
+      "config": {
+        "conditions": [
+          {
+            "name": null,
+            "expression": "input.parsed_message.category == \"positive\""
+          },
+          {
+            "name": null,
+            "branch": "",
+            "expression": "input.parsed_message.category == \"negative\""
+          },
+          {
+            "name": null,
+            "branch": "",
+            "expression": "input.parsed_message.category == \"passive\""
+          }
+        ]
+      },
+      "position": {
+        "x": 528.952012809759,
+        "y": 123.39899231852277
+      }
+    },
+    {
+      "id": "node-1768366915669-17",
+      "type": "agent",
+      "config": {
+        "name": "Обработка позитивного ответа",
+        "model": "gpt-4.1-nano",
+        "tools": null,
+        "provider": "openai",
+        "tool_choice": "auto",
+        "instructions": [
+          {
+            "role": "user",
+            "content": "Клиент оставил позитивный отзыв. Твоя задача - мотивировать к дальнейшему действию.\n\nАлгоритм:\n\n1. Поблагодари искренне и персонализированно (упомяни, что именно понравилось)\n\n2. Деликатно попроси поделиться отзывом публично (если еще не поделился)\n\n3. Предложи 1-2 простых варианта действия:\n\n   - Оставить отзыв на платформе (указать где)\n\n   - Рассказать друзьям/коллегам\n\n   - Подписаться на обновления\n\nТон: благодарный, дружелюбный, не навязчивый\n\nФормат: короткий ответ (3-5 предложений)\n\nНЕ будь излишне восторженным. Будь тепло-профессиональным."
+          }
+        ],
+        "credential_id": "",
+        "response_format": "text",
+        "response_schema": null
+      },
+      "position": {
+        "x": 902.0243516322744,
+        "y": 94.67259474844269
+      }
+    },
+    {
+      "id": "node-1768367074328-18",
+      "type": "agent",
+      "config": {
+        "name": "Обработка негативного овтета",
+        "model": "gpt-4.1-nano",
+        "tools": null,
+        "provider": "openai",
+        "tool_choice": "auto",
+        "instructions": [
+          {
+            "role": "user",
+            "content": "Ты - эмпатичный специалист службы поддержки. Клиент выразил недовольство. Твоя задача: 1. Выразить искреннее сожаление и понимание 2. Задать 2-3 уточняющих вопроса для понимания сути проблемы 3. Быть конкретным - спрашивай детали (когда произошло, что именно не работает, какие действия предпринимал) Тон: профессиональный, сочувствующий, но без излишней формальности Стиль: короткие предложения, четкие вопросы НЕ предлагай решения на этом этапе - только собирай информацию. Покажи, что ты действительно хочешь помочь разобраться."
+          }
+        ],
+        "credential_id": "",
+        "response_format": "text",
+        "response_schema": null
+      },
+      "position": {
+        "x": 904.2410826199957,
+        "y": 191.10039271431964
+      }
+    },
+    {
+      "id": "node-1768367084960-19",
+      "type": "agent",
+      "config": {
+        "name": "Обработка остальных овтетов",
+        "model": "gpt-4.1-nano",
+        "tools": null,
+        "provider": "openai",
+        "tool_choice": "auto",
+        "instructions": [
+          {
+            "role": "user",
+            "content": "Ты - внимательный консультант. Клиент задал нейтральный вопрос или предложение.\n\nТвоя задача:\n\n1. Подтвердить понимание запроса (перефразируй своими словами)\n\n2. Задать 1-2 уточняющих вопроса, чтобы дать максимально релевантный ответ\n\n3. Если это предложение - уточнить контекст и мотивацию\n\nСтиль: дружелюбно-профессиональный, лаконичный\n\nВопросы должны быть открытыми, помогающими раскрыть потребность\n\nНЕ перегружай вопросами - максимум 2 вопроса.\n\nПокажи, что ты заинтересован помочь именно с тем, что нужно клиенту."
+          }
+        ],
+        "credential_id": "",
+        "response_format": "text",
+        "response_schema": null
+      },
+      "position": {
+        "x": 917.5414685463237,
+        "y": 289.744921667918
+      }
+    },
+    {
+      "id": "node-1768367160135-20",
+      "type": "sticker",
+      "config": {
+        "text": "Самый простой вариант агента - получает запрос пользователя и просто категоризирует его. В зависимости от категории передает его в соответствующую ноду агентскую."
+      },
+      "position": {
+        "x": 574.7978239415974,
+        "y": -261.34584925839624
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge_8b5d61ac-cb83-41cb-9967-43cb7724d696_0562b26a-504b-44d9-b6b0-80c34bd711c1",
+      "source": "8b5d61ac-cb83-41cb-9967-43cb7724d696",
+      "target": "0562b26a-504b-44d9-b6b0-80c34bd711c1",
+      "source_handle": "source_8b5d61ac-cb83-41cb-9967-43cb7724d696_0",
+      "target_handle": "target_0562b26a-504b-44d9-b6b0-80c34bd711c1_0"
+    },
+    {
+      "id": "temp-node-1768366863444-16",
+      "source": "0562b26a-504b-44d9-b6b0-80c34bd711c1",
+      "target": "node-1768366863444-16",
+      "source_handle": "source_0562b26a-504b-44d9-b6b0-80c34bd711c1_0",
+      "target_handle": null
+    },
+    {
+      "id": "temp-node-1768366915669-17",
+      "source": "node-1768366863444-16",
+      "target": "node-1768366915669-17",
+      "source_handle": "source_node-1768366863444-16_0",
+      "target_handle": null
+    },
+    {
+      "id": "temp-node-1768367074328-18",
+      "source": "node-1768366863444-16",
+      "target": "node-1768367074328-18",
+      "source_handle": "source_node-1768366863444-16_1",
+      "target_handle": null
+    },
+    {
+      "id": "temp-node-1768367084960-19",
+      "source": "node-1768366863444-16",
+      "target": "node-1768367084960-19",
+      "source_handle": "source_node-1768366863444-16_2",
+      "target_handle": null
+    },
+    {
+      "id": "xy-edge__node-1768366915669-17source_node-1768366915669-17_0-93cf9ece-a0ea-416f-993a-52b9bc6fe52btarget_93cf9ece-a0ea-416f-993a-52b9bc6fe52b_0",
+      "source": "node-1768366915669-17",
+      "target": "93cf9ece-a0ea-416f-993a-52b9bc6fe52b",
+      "source_handle": "source_node-1768366915669-17_0",
+      "target_handle": "target_93cf9ece-a0ea-416f-993a-52b9bc6fe52b_0"
+    },
+    {
+      "id": "xy-edge__node-1768367074328-18source_node-1768367074328-18_0-93cf9ece-a0ea-416f-993a-52b9bc6fe52btarget_93cf9ece-a0ea-416f-993a-52b9bc6fe52b_0",
+      "source": "node-1768367074328-18",
+      "target": "93cf9ece-a0ea-416f-993a-52b9bc6fe52b",
+      "source_handle": "source_node-1768367074328-18_0",
+      "target_handle": "target_93cf9ece-a0ea-416f-993a-52b9bc6fe52b_0"
+    },
+    {
+      "id": "xy-edge__node-1768367084960-19source_node-1768367084960-19_0-93cf9ece-a0ea-416f-993a-52b9bc6fe52btarget_93cf9ece-a0ea-416f-993a-52b9bc6fe52b_0",
+      "source": "node-1768367084960-19",
+      "target": "93cf9ece-a0ea-416f-993a-52b9bc6fe52b",
+      "source_handle": "source_node-1768367084960-19_0",
+      "target_handle": "target_93cf9ece-a0ea-416f-993a-52b9bc6fe52b_0"
+    },
+    {
+      "id": "xy-edge__node-1768366863444-16source_node-1768366863444-16_3-node-1768367084960-19target_node-1768367084960-19_0",
+      "source": "node-1768366863444-16",
+      "target": "node-1768367084960-19",
+      "source_handle": "source_node-1768366863444-16_3",
+      "target_handle": "target_node-1768367084960-19_0"
+    }
+  ],
+  "state": [],
+  "webhook_url": null
+}

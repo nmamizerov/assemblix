@@ -1,0 +1,47 @@
+site_name: Assemblix
+site_description: Visual AI agent / workflow automation platform — self-hosting & developer docs
+repo_url: https://github.com/nmamizerov/assemblix
+repo_name: nmamizerov/assemblix
+docs_dir: docs
+edit_uri: edit/main/docs/
+
+theme:
+  name: material
+  palette:
+    - scheme: default
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - scheme: slate
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  features:
+    - navigation.sections
+    - navigation.top
+    - content.code.copy
+    - search.suggest
+
+markdown_extensions:
+  - admonition
+  - tables
+  - toc:
+      permalink: true
+  - pymdownx.highlight
+  - pymdownx.superfences
+  - pymdownx.details
+
+nav:
+  - Home: index.md
+  - Getting started: getting-started.md
+  - Self-hosting: self-hosting.md
+  - Configuration: configuration.md
+  - Architecture: architecture.md
+  - Git & releases: git-workflow.md
+  - Workflow nodes: CONTRIBUTING_NODES.md
+  - Observability: observability.md
+  - Troubleshooting: troubleshooting.md

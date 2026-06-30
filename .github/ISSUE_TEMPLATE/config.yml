@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security vulnerability
+    url: https://github.com/nmamizerov/assemblix/security/advisories/new
+    about: Please report security issues privately — do not open a public issue.
+  - name: Questions & discussion
+    url: https://github.com/nmamizerov/assemblix/discussions
+    about: Ask questions and discuss ideas with the community.
