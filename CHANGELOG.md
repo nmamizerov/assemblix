@@ -5,6 +5,13 @@ All notable changes to this project are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.13](https://github.com/nmamizerov/assemblix/compare/v0.1.12...v0.1.13) (2026-06-30)
+
+
+### Bug Fixes
+
+* **web:** gate the Assemblix system-key option, not the provider list ([4e8f1ec](https://github.com/nmamizerov/assemblix/commit/4e8f1ec618dec69b3869be754479511c2a5ec308))
+
 ## [0.1.12](https://github.com/nmamizerov/assemblix/compare/v0.1.11...v0.1.12) (2026-06-25)
 
 
