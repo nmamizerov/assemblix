@@ -25,6 +25,5 @@ class PaymentProviderFactory:
             )
 
         raise ValueError(
-            f"Unknown payment provider: {settings.payment_provider}. "
-            "Supported providers: paddle"
+            f"Unknown payment provider: {settings.payment_provider}. Supported providers: paddle"
         )

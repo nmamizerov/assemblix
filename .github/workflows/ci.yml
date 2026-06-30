@@ -62,13 +62,22 @@ jobs:
   secret-scan:
     name: Secret scan (gitleaks)
     runs-on: ubuntu-latest
+    env:
+      GITLEAKS_VERSION: 8.24.3
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - uses: gitleaks/gitleaks-action@v2
-        env:
-          GITLEAKS_CONFIG: ${{ github.workspace }}/.gitleaks.toml
+      # Run gitleaks directly instead of gitleaks/gitleaks-action: the action
+      # diffs `<first-pushed-commit>^..<last>`, which fails when a push includes
+      # the repo's root commit (no parent). Scanning the full history is robust
+      # for every push/PR and keeps this a hard gate.
+      - name: Install gitleaks
+        run: |
+          curl -sSfL "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz" \
+            | tar -xz -C /usr/local/bin gitleaks
+      - name: Scan git history for secrets
+        run: gitleaks git . --config .gitleaks.toml --redact -v
 
   test:
     name: Tests + coverage
