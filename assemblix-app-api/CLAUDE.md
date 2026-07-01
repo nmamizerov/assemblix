@@ -91,7 +91,7 @@ Config (incl. `DATABASE_URL`, `JWT_SECRET_KEY`, `ENCRYPTION_KEY`) is read from t
 
 - Python 3.13, FastAPI, SQLAlchemy (async with asyncpg), Alembic
 - PostgreSQL, Pydantic/pydantic-settings
-- LLM integration via LiteLLM (OpenAI, Gemini, GigaChat, DeepSeek)
+- LLM integration via LiteLLM (OpenAI, Gemini, DeepSeek)
 - Auth: JWT + API keys (prefixed `sk_`), Google OAuth
 - Payments: Paddle (Merchant of Record)
 - Package management: uv

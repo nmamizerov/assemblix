@@ -22,7 +22,6 @@ PROVIDER_LABELS: dict[str, str] = {
     "openai": "OpenAI",
     "deepseek": "DeepSeek",
     "gemini": "Google Gemini",
-    "gigachat": "GigaChat",
 }
 
 

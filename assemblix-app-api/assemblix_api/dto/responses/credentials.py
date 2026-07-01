@@ -15,7 +15,7 @@ class CredentialsResponse(DTOModel):
 
     id: UUID = Field(description="Unique identifier of the credential")
     type: CredentialsType = Field(
-        description="Type of the credential (e.g. 'openai', 'gemini', 'gigachat')"
+        description="Type of the credential (e.g. 'openai', 'gemini', 'deepseek')"
     )
     name: str | None = Field(default=None, description="Optional display name for the credential")
     created_at: datetime = Field(description="Timestamp when the credential was created")

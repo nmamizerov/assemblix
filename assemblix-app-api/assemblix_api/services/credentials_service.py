@@ -144,7 +144,6 @@ class CredentialsService(BaseService[Credentials, CredentialsRepository]):
             AgentProvider.OPENAI: settings.system_openai_api_key,
             AgentProvider.GEMINI: settings.system_gemini_api_key,
             AgentProvider.DEEPSEEK: settings.system_deepseek_api_key,
-            AgentProvider.GIGACHAT: settings.system_gigachat_credentials,
         }
 
         api_key = key_map.get(provider, "")
@@ -164,7 +163,6 @@ class CredentialsService(BaseService[Credentials, CredentialsRepository]):
             AgentProvider.OPENAI: CredentialsType.OPENAI_TOKEN,
             AgentProvider.GEMINI: CredentialsType.GEMINI_TOKEN,
             AgentProvider.DEEPSEEK: CredentialsType.DEEPSEEK_TOKEN,
-            AgentProvider.GIGACHAT: CredentialsType.GIGACHAT_TOKEN,
         }
 
         return compatibility_map.get(provider) == credentials_type
@@ -174,7 +172,6 @@ class CredentialsService(BaseService[Credentials, CredentialsRepository]):
             CredentialsType.OPENAI_TOKEN: AgentProvider.OPENAI,
             CredentialsType.GEMINI_TOKEN: AgentProvider.GEMINI,
             CredentialsType.DEEPSEEK_TOKEN: AgentProvider.DEEPSEEK,
-            CredentialsType.GIGACHAT_TOKEN: AgentProvider.GIGACHAT,
         }
 
         provider = type_to_provider.get(credentials_type)
@@ -191,7 +188,6 @@ class CredentialsService(BaseService[Credentials, CredentialsRepository]):
             AgentProvider.OPENAI: CredentialsType.OPENAI_TOKEN,
             AgentProvider.GEMINI: CredentialsType.GEMINI_TOKEN,
             AgentProvider.DEEPSEEK: CredentialsType.DEEPSEEK_TOKEN,
-            AgentProvider.GIGACHAT: CredentialsType.GIGACHAT_TOKEN,
         }
 
         credentials_type = provider_to_type.get(provider)

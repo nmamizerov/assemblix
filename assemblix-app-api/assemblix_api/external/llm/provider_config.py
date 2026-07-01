@@ -23,12 +23,11 @@ class ProviderConfig:
     # Name of the Settings attribute that provides api_base (None → litellm default).
     api_base_setting: str | None = None
     # Name of the bool setting for TLS verification (None → verify, True).
-    # GigaChat uses Sber self-signed certs → we read gigachat_verify_ssl.
     ssl_verify_setting: str | None = None
     # Static env-overrides applied before the call: {ENV_VAR: settings_attr}.
     settings_env_overrides: dict[str, str] = field(default_factory=dict)
-    # If set — api_key is duplicated into this env variable (litellm GigaChat
-    # authenticates via env, not via the api_key kwarg).
+    # If set — api_key is duplicated into this env variable (for providers that
+    # authenticate via env, not via the api_key kwarg).
     api_key_env_var: str | None = None
 
 
@@ -42,12 +41,6 @@ PROVIDER_CONFIGS: dict[str, ProviderConfig] = {
     "gemini": ProviderConfig(
         litellm_prefix="gemini/",
         api_base_setting="gemini_api_base_url",
-    ),
-    "gigachat": ProviderConfig(
-        litellm_prefix="gigachat/",
-        ssl_verify_setting="gigachat_verify_ssl",
-        settings_env_overrides={"GIGACHAT_SCOPE": "gigachat_scope"},
-        api_key_env_var="GIGACHAT_CREDENTIALS",
     ),
 }
 

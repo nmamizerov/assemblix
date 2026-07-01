@@ -23,7 +23,6 @@ _SYSTEM_KEY_BY_PROVIDER: dict[str, str] = {
     "openai": "system_openai_api_key",
     "gemini": "system_gemini_api_key",
     "deepseek": "system_deepseek_api_key",
-    "gigachat": "system_gigachat_credentials",
 }
 
 

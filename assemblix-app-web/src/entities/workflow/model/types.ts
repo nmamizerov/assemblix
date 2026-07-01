@@ -53,7 +53,6 @@ export enum Provider {
   OPENAI = "openai",
   GEMINI = "gemini",
   DEEPSEEK = "deepseek",
-  GIGACHAT = "gigachat",
 }
 
 export interface FallbackModelConfig {

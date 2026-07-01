@@ -24,7 +24,7 @@ New node types can be added without a DB migration — see the workflow nodes gu
 
 ## Features
 
-- **Multiple LLM providers** — OpenAI, Gemini, DeepSeek, GigaChat (via LiteLLM).
+- **Multiple LLM providers** — OpenAI, Gemini, DeepSeek (via LiteLLM).
 - **Multi-tenancy** — organizations and projects, scoped credentials and resources.
 - **Knowledge bases (RAG)** — upload documents and ground agents on them.
 - **Credentials** — encrypted-at-rest secrets for providers and integrations.

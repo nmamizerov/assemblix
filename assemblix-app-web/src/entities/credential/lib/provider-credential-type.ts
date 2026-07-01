@@ -13,7 +13,6 @@ const PROVIDER_TO_CREDENTIAL_TYPE: Record<string, CredentialType> = {
   openai: CredentialType.OPENAI_TOKEN,
   gemini: CredentialType.GEMINI_TOKEN,
   deepseek: CredentialType.DEEPSEEK_TOKEN,
-  gigachat: CredentialType.GIGACHAT_TOKEN,
 };
 
 export const getCredentialTypeForProvider = (

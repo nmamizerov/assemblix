@@ -69,16 +69,6 @@ class Settings(BaseSettings):
         "GEMINI_API_BASE_URL", "https://gemini-proxy.skillslab.center"
     )
 
-    # GigaChat Config
-    # GigaChat uses Sber's self-signed certificates. TLS verification is on by default;
-    # disable it deliberately (MITM risk) via GIGACHAT_VERIFY_SSL=false, or preferably
-    # add the Sber CA bundle to the trust store.
-    gigachat_verify_ssl: bool = os.getenv("GIGACHAT_VERIFY_SSL", "true").lower() == "true"
-    gigachat_scope: str = os.getenv("GIGACHAT_SCOPE", "GIGACHAT_API_PERS")
-    gigachat_auth_url: str = os.getenv(
-        "GIGACHAT_AUTH_URL", "https://ngw.devices.sberbank.ru:9443/api/v2/oauth"
-    )
-
     # Tools Config
     tavily_api_key: str = os.getenv(
         "TAVILY_API_KEY",
@@ -89,7 +79,6 @@ class Settings(BaseSettings):
     system_openai_api_key: str = os.getenv("SYSTEM_OPENAI_API_KEY", "")
     system_gemini_api_key: str = os.getenv("SYSTEM_GEMINI_API_KEY", "")
     system_deepseek_api_key: str = os.getenv("SYSTEM_DEEPSEEK_API_KEY", "")
-    system_gigachat_credentials: str = os.getenv("SYSTEM_GIGACHAT_CREDENTIALS", "")
 
     # Credit System Config (all prices in USD!)
     credit_value_usd: float = float(

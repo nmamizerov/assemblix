@@ -132,7 +132,7 @@ Data builders (plain functions, not fixtures) — in `tests/fixtures/`:
 
 ## 4. Mocking LLM providers
 
-All providers (OpenAI/Gemini/DeepSeek/GigaChat) go through a single
+All providers (OpenAI/Gemini/DeepSeek) go through a single
 `litellm.acompletion` call. We test **our** system, not the provider.
 
 ```python

@@ -81,7 +81,7 @@
   <circle cx="626" cy="534" r="4" fill="#6366F1"/>
   <text x="668" y="532" font-size="28" font-weight="800" fill="#1E293B">LLM providers</text>
   <text x="604" y="600" font-size="20" fill="#64748B">OpenAI · Gemini</text>
-  <text x="604" y="628" font-size="20" fill="#64748B">DeepSeek · GigaChat</text>
+  <text x="604" y="628" font-size="20" fill="#64748B">DeepSeek</text>
 
   <!-- Redis + Arq -->
   <g filter="url(#shadow)">
