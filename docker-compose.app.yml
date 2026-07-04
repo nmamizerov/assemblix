@@ -1,0 +1,59 @@
+# ============================================================================
+# Assemblix — application tier only: web + api (bring your own Postgres).
+#
+# Deploys just the stateless app services and expects Postgres to be an
+# external / managed backing service (managed PG, Neon, Supabase, RDS, or a
+# separate container — anything reachable over the network). Platform-agnostic:
+# works on any Docker Compose host (Coolify, Portainer, `docker compose up`, ...).
+#
+#   - DATABASE_URL (from .env) must point at the external Postgres.
+#   - the api applies Alembic migrations on startup (RUN_MIGRATIONS=true).
+#   - no Redis / worker: executions run in-process ("regular" mode). To scale
+#     out later, add redis + an `arq` worker and set EXECUTION_QUEUE_ENABLED=true.
+#
+# Only `web` is public: nginx serves the SPA and proxies /api -> api:8000 over
+# the internal network, so neither service publishes host ports — the platform's
+# reverse proxy routes the domain to web:80.
+# ============================================================================
+
+name: assemblix
+
+services:
+  api:
+    build:
+      context: ./assemblix-app-api
+      target: prod
+    image: assemblix-api:latest
+    env_file: .env
+    environment:
+      # Apply `alembic upgrade head` against the external DB before uvicorn starts.
+      RUN_MIGRATIONS: "true"
+    expose:
+      - "8000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://localhost:8000/health').status==200 else 1)"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      # Generous start: migrations run before the server comes up.
+      start_period: 40s
+    restart: unless-stopped
+
+  web:
+    build:
+      context: ./assemblix-app-web
+      args:
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-/api}
+        VITE_APP_VERSION: ${VITE_APP_VERSION:-1.0.0}
+        VITE_LANGS: ${VITE_LANGS:-ru,en}
+        VITE_DEFAULT_LANGUAGE: ${VITE_DEFAULT_LANGUAGE:-ru}
+        VITE_SUPPORTED_LANGUAGES: ${VITE_SUPPORTED_LANGUAGES:-ru,en}
+        VITE_GOOGLE_CLIENT_ID: ${VITE_GOOGLE_CLIENT_ID:-}
+        VITE_GITHUB_CLIENT_ID: ${VITE_GITHUB_CLIENT_ID:-}
+        VITE_YANDEX_CLIENT_ID: ${VITE_YANDEX_CLIENT_ID:-}
+    image: assemblix-web:latest
+    expose:
+      - "80"
+    depends_on:
+      - api
+    restart: unless-stopped
