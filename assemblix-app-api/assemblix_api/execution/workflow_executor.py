@@ -919,7 +919,15 @@ class WorkflowExecutor:
                     content=user_message,
                 )
 
-            assistant_message = final_output.get("message", "")
+            # Persist the same (filtered) assistant turn that downstream agents saw
+            # in-memory, so save_to_history / history_field also apply to the stored
+            # session history. Fall back to the full output when no agent contributed
+            # to the shared history this run.
+            assistant_message = (
+                context.last_history_message
+                if context.last_history_message is not None
+                else final_output.get("message", "")
+            )
             if assistant_message:
                 await self._chat_message_service.save_message(
                     chat_session_id=context.chat_session_id,

@@ -69,6 +69,11 @@ class ExecutionContext:
     # Includes prior session messages (if continuing a session) plus the
     # current user message. Agent nodes read from here, not from the DB.
     chat_history: list[dict] = field(default_factory=list)
+    # Content of the most recent message appended to the shared history this run
+    # (the last agent's answer, already filtered by save_to_history/history_field).
+    # Persisted as the assistant turn at finalization so the DB matches what
+    # downstream agents saw in-memory. None → fall back to the full final output.
+    last_history_message: str | None = None
     # Transaction boundary hook: commits the execution session and returns its
     # DB connection to the pool. Nodes call this right before a long external
     # await (LLM/HTTP) so a workflow does not hold a Postgres connection while
@@ -102,10 +107,14 @@ class ExecutionContext:
 
     def with_chat_history(self, messages: list[dict]) -> ExecutionContext:
         """Append messages to the in-memory shared dialog history. Used mid-run so an
-        agent's answer is visible to later agents that include chat history."""
+        agent's answer is visible to later agents that include chat history. Also
+        remembers the last appended content so finalization persists the same
+        (filtered) assistant turn to the DB."""
+        last = messages[-1].get("content") if messages else self.last_history_message
         return replace(
             self,
             chat_history=[*self.chat_history, *messages],
+            last_history_message=last,
         )
 
     def with_node_visited(self, node_id: str) -> ExecutionContext:
