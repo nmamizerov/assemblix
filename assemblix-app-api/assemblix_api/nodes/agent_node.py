@@ -196,9 +196,10 @@ class AgentNode(BaseNode):
             return None, parse_json
 
         if self.typed_config.response_schema:
+            schema = _enforce_strict_schema(self.typed_config.response_schema)
             return {
                 "type": "json_schema",
-                "json_schema": {"name": "response", "schema": self.typed_config.response_schema},
+                "json_schema": {"name": "response", "schema": schema, "strict": True},
             }, parse_json
         return {"type": "json_object"}, parse_json
 
@@ -272,6 +273,27 @@ class AgentNode(BaseNode):
             color="node-llm",
             properties=[],
         )
+
+
+def _enforce_strict_schema(node: object) -> object:
+    """Recursively force every object to require all its declared properties and
+    forbid extras, so structured-output providers always return the whole schema.
+
+    The frontend never emits a `required` array, so without this a provider (Gemini,
+    non-strict OpenAI) treats every field as optional and may drop any the model chose
+    not to fill. Pure and side-effect-free: returns a new structure, leaving the input
+    (the node's stored `response_schema`) untouched.
+    """
+    if isinstance(node, list):
+        return [_enforce_strict_schema(item) for item in node]
+    if not isinstance(node, dict):
+        return node
+    result = {key: _enforce_strict_schema(value) for key, value in node.items()}
+    properties = result.get("properties")
+    if isinstance(properties, dict):
+        result["required"] = list(properties.keys())
+        result["additionalProperties"] = False
+    return result
 
 
 def _split_system_messages(messages: list[dict]) -> tuple[str, list[dict]]:

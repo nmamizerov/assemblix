@@ -26,7 +26,7 @@ import types
 import pytest
 
 from assemblix_api.enums import PlanTier
-from assemblix_api.nodes.agent_node import AgentNode
+from assemblix_api.nodes.agent_node import AgentNode, _enforce_strict_schema
 
 from ._helpers import build_node, make_context, node_input
 
@@ -228,3 +228,106 @@ async def test_agent_requires_credential_service() -> None:
     # Act + Assert
     with pytest.raises(AssertionError):
         await node.execute(node_input({"message": "hi"}, context))
+
+
+# --- Structured output: force every declared field to be returned -----------------
+# The frontend never emits a `required` array, so providers (Gemini, non-strict OpenAI)
+# treat all fields as optional and may drop unfilled ones. `_enforce_strict_schema`
+# recursively marks every object property required + forbids extras, and the request
+# adds `strict: true`, so the whole schema always comes back.
+
+_REPORTED_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "is_end": {"type": "boolean"},
+        "response_text": {"type": "string"},
+    },
+    "additionalProperties": False,
+    "title": "responseSchema",
+}
+
+
+def test_enforce_strict_schema_injects_required_flat() -> None:
+    """A flat object with no `required` gets every property marked required."""
+    # Act
+    out = _enforce_strict_schema(_REPORTED_SCHEMA)
+
+    # Assert
+    assert out["required"] == ["is_end", "response_text"]
+    assert out["additionalProperties"] is False
+    assert out["title"] == "responseSchema"  # cosmetic keys pass through
+
+
+def test_enforce_strict_schema_recurses_nested_objects_and_arrays() -> None:
+    """Nested objects and array-of-object items each get their own `required`."""
+    # Arrange
+    schema = {
+        "type": "object",
+        "properties": {
+            "meta": {"type": "object", "properties": {"x": {"type": "string"}}},
+            "rows": {
+                "type": "array",
+                "items": {"type": "object", "properties": {"y": {"type": "number"}}},
+            },
+        },
+    }
+
+    # Act
+    out = _enforce_strict_schema(schema)
+
+    # Assert
+    assert out["required"] == ["meta", "rows"]
+    assert out["properties"]["meta"]["required"] == ["x"]
+    assert out["properties"]["meta"]["additionalProperties"] is False
+    assert out["properties"]["rows"]["items"]["required"] == ["y"]
+    assert out["properties"]["rows"]["items"]["additionalProperties"] is False
+
+
+def test_enforce_strict_schema_overrides_partial_required() -> None:
+    """A hand-written partial `required` is widened to all properties."""
+    # Arrange
+    schema = {
+        "type": "object",
+        "properties": {"a": {"type": "string"}, "b": {"type": "string"}},
+        "required": ["a"],
+    }
+
+    # Act
+    out = _enforce_strict_schema(schema)
+
+    # Assert
+    assert out["required"] == ["a", "b"]
+
+
+def test_enforce_strict_schema_does_not_mutate_input() -> None:
+    """The normalizer returns a new structure and leaves the input untouched."""
+    # Arrange
+    import copy
+
+    original = copy.deepcopy(_REPORTED_SCHEMA)
+
+    # Act
+    _enforce_strict_schema(_REPORTED_SCHEMA)
+
+    # Assert
+    assert _REPORTED_SCHEMA == original
+
+
+async def test_agent_json_schema_forces_all_fields_required(mock_llm) -> None:
+    """The request carries the strict, all-fields-required response_format."""
+    # Arrange
+    mock_llm.set_response(json.dumps({"is_end": True, "response_text": "bye"}))
+    context = _agent_context()
+    node = _agent({"response_format": "json_object", "response_schema": dict(_REPORTED_SCHEMA)})
+
+    # Act
+    await node.execute(node_input({"message": "Hello there"}, context))
+
+    # Assert
+    sent = mock_llm.calls[0]["response_format"]
+    assert sent["type"] == "json_schema"
+    assert sent["json_schema"]["name"] == "response"
+    assert sent["json_schema"]["strict"] is True
+    inner = sent["json_schema"]["schema"]
+    assert inner["required"] == ["is_end", "response_text"]
+    assert inner["additionalProperties"] is False
