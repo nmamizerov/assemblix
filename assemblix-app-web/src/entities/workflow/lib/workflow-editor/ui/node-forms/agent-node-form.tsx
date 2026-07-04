@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 import { BaseForm } from "./base-form";
+import { FallbackModelRow } from "./fallback-model-row";
 import { useNodeDataChange } from "./useNodeDataChange";
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
@@ -67,7 +68,6 @@ import {
   useGetLLMProvidersQuery,
   useGetLLMProviderSchemaQuery,
   type ModelMetadata,
-  type ProviderListItem,
 } from "@/entities/llm-provider";
 
 const AVAILABLE_TOOLS = [
@@ -77,90 +77,6 @@ const AVAILABLE_TOOLS = [
 // Sentinel for the "whole answer" option in the history-field picker (Radix
 // SelectItem values must be non-empty strings).
 const HISTORY_FIELD_FULL = "__full__";
-
-interface FallbackModelRowProps {
-  value: FallbackModelConfig;
-  providerList: ProviderListItem[];
-  canUseOwnKeys: boolean;
-  hasSystemKeyForProvider: (provider: Provider) => boolean;
-  onChange: (next: FallbackModelConfig) => void;
-  onRemove: () => void;
-}
-
-/** One fallback-model row: provider + model + credential. Each row fetches its own
- *  provider schema (hooks can't run in a loop, so the row is its own component). */
-const FallbackModelRow = ({
-  value,
-  providerList,
-  canUseOwnKeys,
-  hasSystemKeyForProvider,
-  onChange,
-  onRemove,
-}: FallbackModelRowProps) => {
-  const { t } = useTranslation();
-  const { data: providerSchema } = useGetLLMProviderSchemaQuery(
-    { providerName: value.provider },
-    { skip: !value.provider },
-  );
-  const models = providerSchema?.models ?? [];
-  const credentialType = getCredentialTypeForProvider(value.provider);
-
-  return (
-    <div className="flex flex-col gap-2 rounded-md border border-border p-2">
-      <div className="flex items-center gap-2">
-        <Select
-          value={value.provider}
-          onValueChange={(provider) =>
-            onChange({
-              ...value,
-              provider: provider as Provider,
-              model: "",
-              credentialId: undefined,
-            })
-          }
-        >
-          <SelectTrigger className="text-xs flex-1">
-            <SelectValue placeholder={t("nodeForms.agent.selectProvider")} />
-          </SelectTrigger>
-          <SelectContent>
-            {providerList.map((p) => (
-              <SelectItem key={p.name} value={p.name} className="text-xs">
-                {p.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <Select
-          value={value.model}
-          onValueChange={(model) => onChange({ ...value, model })}
-        >
-          <SelectTrigger className="text-xs flex-1">
-            <SelectValue placeholder={t("nodeForms.agent.selectModel")} />
-          </SelectTrigger>
-          <SelectContent>
-            {models.map((m) => (
-              <SelectItem key={m.id} value={m.id} className="text-xs">
-                {m.label || m.id}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <Button type="button" variant="ghost" size="icon" onClick={onRemove}>
-          <TrashIcon className="h-4 w-4" />
-        </Button>
-      </div>
-      {canUseOwnKeys && credentialType && (
-        <CredentialSelect
-          selectedCredentialId={value.credentialId}
-          onSelect={(id) => onChange({ ...value, credentialId: id })}
-          credentialType={credentialType}
-          placeholder={t("nodeForms.agent.selectCredential")}
-          showSystemToken={hasSystemKeyForProvider(value.provider)}
-        />
-      )}
-    </div>
-  );
-};
 
 interface AgentNodeFormProps {
   nodeId: string;
@@ -1122,7 +1038,7 @@ export const AgentNodeForm = ({
             {isAdvancedOpen && (
               <div className="space-y-4 pl-6 border-l-2 border-muted mt-3">
                 {/* Число ретраев одного LLM-вызова */}
-                <div>
+                <div className="space-y-1.5">
                   <Label htmlFor="agent-max-retries">
                     {t("nodeForms.agent.maxRetries")}
                   </Label>
@@ -1140,7 +1056,7 @@ export const AgentNodeForm = ({
                 </div>
 
                 {/* Таймаут всего агентского цикла (секунды) */}
-                <div>
+                <div className="space-y-1.5">
                   <Label htmlFor="agent-timeout">
                     {t("nodeForms.agent.timeout")}
                   </Label>
@@ -1208,6 +1124,7 @@ export const AgentNodeForm = ({
                     {(formData.fallbackModels ?? []).map((fb, index) => (
                       <FallbackModelRow
                         key={index}
+                        index={index}
                         value={fb}
                         providerList={providerList}
                         canUseOwnKeys={canUseOwnKeys}

@@ -686,6 +686,7 @@
       "enforceTimeoutOnLastTooltip": "When enabled, the per-call timeout also applies to the last model in the chain, so no single provider can hang the run. When disabled, the last model may run up to the overall timeout as a last resort.",
       "fallbackModels": "Fallback models",
       "fallbackModelsHint": "Tried in order when the main model keeps failing with transient errors (rate limits, 5xx).",
+      "fallbackModelItem": "Fallback {{index}}",
       "addFallbackModel": "Add model",
       "searchModel": "Search model...",
       "loadingModels": "Loading models...",
