@@ -125,6 +125,10 @@ class ExecutionStepResponse(DTOModel):
         default=None,
         description="CEL expression evaluation results for debugging condition and routing logic",
     )
+    llm_request: list | None = Field(
+        default=None,
+        description="Exact messages sent to the LLM for this step (applicable to agent nodes)",
+    )
 
 
 class InFlightExecutionResponse(DTOModel):

@@ -37,6 +37,7 @@ export interface ExecutionStepResponse {
   credits?: number | null;
   modelUsed?: string | null;
   celEvaluations?: Record<string, unknown> | null;
+  llmRequest?: unknown[] | null;
 }
 
 export interface ChatSessionBaseResponse {

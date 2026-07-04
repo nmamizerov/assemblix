@@ -93,6 +93,14 @@ export interface AgentNodeConfig {
   timeoutSeconds?: number;
   // Сколько раз ретраить transient-сбой одного LLM-вызова. Пусто → дефолт из настроек.
   maxRetries?: number;
+  // Жёсткий таймаут на последней модели цепочки. Дефолт true.
+  enforceTimeoutOnLast?: boolean;
+
+  // --- Контроль контекста ---
+  // Класть ли ответ агента в общую историю прогона (её видят следующие агенты). Дефолт true.
+  saveToHistory?: boolean;
+  // Если ответ — JSON, в историю кладётся только это поле схемы, а не весь JSON.
+  historyField?: string;
 
   [key: string]: unknown;
 }

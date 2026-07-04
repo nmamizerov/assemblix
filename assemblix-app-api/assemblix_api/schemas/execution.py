@@ -100,6 +100,14 @@ class ExecutionContext:
             project_state={**self.project_state, **updates},
         )
 
+    def with_chat_history(self, messages: list[dict]) -> ExecutionContext:
+        """Append messages to the in-memory shared dialog history. Used mid-run so an
+        agent's answer is visible to later agents that include chat history."""
+        return replace(
+            self,
+            chat_history=[*self.chat_history, *messages],
+        )
+
     def with_node_visited(self, node_id: str) -> ExecutionContext:
         new_count = {**self.node_execution_count}
         new_count[node_id] = new_count.get(node_id, 0) + 1
@@ -141,6 +149,9 @@ class NodeOutput:
     project_updates: dict | None = None
     next_edge_id: str | None = None
     metadata: dict | None = None
+    # A message to append to the shared dialog history (OpenAI format), applied by the
+    # executor after the step. None → nothing is appended.
+    history_append: dict | None = None
 
 
 class ExecutionResultMetadata(DTOModel):
@@ -185,6 +196,8 @@ class ExecutionStepData(DTOModel):
     model_used: str | None = None
     own_key_cost_usd: float | None = None
     cel_evaluations: dict | None = None
+    # Exact messages sent to the LLM (agent nodes only); None for other node types.
+    llm_request: list | None = None
 
 
 @dataclass

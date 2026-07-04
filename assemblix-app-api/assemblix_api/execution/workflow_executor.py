@@ -675,6 +675,12 @@ class WorkflowExecutor:
             if node_output.project_updates:
                 context = context.with_project_state(node_output.project_updates)
 
+            # Append to the shared dialog history if the node produced a history message
+            # (agent nodes, gated by save_to_history). Later agents that include chat
+            # history will see it.
+            if node_output.history_append:
+                context = context.with_chat_history([node_output.history_append])
+
             # Step cost is accumulated centrally (the node does not mutate billing).
             # Additively into the right bucket (system/own) from per-step facts in metadata.
             context = accumulate_step_cost(context, node_output.metadata)
@@ -720,6 +726,9 @@ class WorkflowExecutor:
                         else None
                     ),
                     credits_used=step_credits,
+                    llm_request=(
+                        node_output.metadata.get("llm_request") if node_output.metadata else None
+                    ),
                 )
 
             # Log ExecutionStep BEFORE incrementing step_number.
@@ -756,6 +765,11 @@ class WorkflowExecutor:
                             else None
                         ),
                         cel_evaluations=None,
+                        llm_request=(
+                            node_output.metadata.get("llm_request")
+                            if node_output.metadata
+                            else None
+                        ),
                     )
                 )
 
