@@ -5,6 +5,31 @@ All notable changes to this project are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.0](https://github.com/nmamizerov/assemblix/compare/v0.1.12...v0.2.0) (2026-07-04)
+
+
+### ⚠ BREAKING CHANGES
+
+* GigaChat is no longer a supported LLM provider. Existing GigaChat credentials and agents referencing the gigachat provider will no longer resolve.
+
+### Features
+
+* **agent:** fallback credentials, save-to-history, LLM request view, system persona ([72047ee](https://github.com/nmamizerov/assemblix/commit/72047eed67e0a627bd24730a8398da13d69d936d))
+* **agent:** fallback credentials, save-to-history, LLM request view, system persona ([373692f](https://github.com/nmamizerov/assemblix/commit/373692f8746451b12b7b9e87c04215196896eb63))
+* remove GigaChat LLM provider ([a2ac3c7](https://github.com/nmamizerov/assemblix/commit/a2ac3c7c0ce6eb14b351e3ca6af143ddf77dc65b))
+
+
+### Bug Fixes
+
+* **api:** apply save_to_history/history_field to persisted session history ([f9851cc](https://github.com/nmamizerov/assemblix/commit/f9851ccb8bb4ef3f0e97d097500d8d740602df8c))
+* **web:** gate the Assemblix system-key option, not the provider list ([4e8f1ec](https://github.com/nmamizerov/assemblix/commit/4e8f1ec618dec69b3869be754479511c2a5ec308))
+* **web:** make node editor form scroll when content exceeds panel height ([22a490c](https://github.com/nmamizerov/assemblix/commit/22a490c37ad7ac3641c6fd0e6c05de114b88ea53))
+
+
+### Refactoring
+
+* **web:** stack fallback model fields vertically + advanced spacing ([dd7cc2f](https://github.com/nmamizerov/assemblix/commit/dd7cc2f2c00c3eae82cbde2f2169f995a249cad5))
+
 ## [0.1.12](https://github.com/nmamizerov/assemblix/compare/v0.1.11...v0.1.12) (2026-06-25)
 
 
