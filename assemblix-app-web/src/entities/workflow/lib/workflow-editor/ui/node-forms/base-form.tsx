@@ -96,8 +96,13 @@ export const BaseForm = ({ nodeType, children, label, description: descriptionPr
         </div>
       </div>
       {/* Внутренняя обёртка radix-viewport рендерится с display:table, что ломает
-          position:sticky у заголовков форм — переопределяем её на display:block. */}
-      <ScrollArea className="flex-1 min-h-0 [&_[data-slot=scroll-area-viewport]>div]:block!">
+          position:sticky у заголовков форм — переопределяем её на display:block.
+          Панель тянется по контенту (max-h), поэтому у flex-цепочки нет определённой
+          высоты и height:100% вьюпорта Radix не разрешается — из-за этого длинная
+          форма не скроллилась. Ограничиваем сам вьюпорт (элемент с overflow:scroll)
+          высотой относительно окна: короткие формы растут по контенту, длинные —
+          упираются в потолок и скроллятся. */}
+      <ScrollArea className="flex-1 min-h-0 [&_[data-slot=scroll-area-viewport]]:max-h-[calc(100vh_-_12rem)] [&_[data-slot=scroll-area-viewport]>div]:block!">
         <div className="p-4">{children}</div>
       </ScrollArea>
       
