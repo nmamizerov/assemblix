@@ -20,7 +20,6 @@ class CredentialsType(str, Enum):
     ANTHROPIC_TOKEN = "anthropic_token"
     GEMINI_TOKEN = "gemini_token"
     DEEPSEEK_TOKEN = "deepseek_token"
-    GIGACHAT_TOKEN = "gigachat_token"
 
 
 class Credentials(UUIDMixin, TimestampMixin, Base):

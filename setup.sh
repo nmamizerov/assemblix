@@ -277,7 +277,6 @@ if [ "$MODE_FLAG" = "detailed" ]; then
   ask_secret K_OPENAI   "  OpenAI";          [ -n "$K_OPENAI" ]   && set_env SYSTEM_OPENAI_API_KEY "$K_OPENAI"
   ask_secret K_GEMINI   "  Gemini";          [ -n "$K_GEMINI" ]   && set_env SYSTEM_GEMINI_API_KEY "$K_GEMINI"
   ask_secret K_DEEPSEEK "  DeepSeek";        [ -n "$K_DEEPSEEK" ] && set_env SYSTEM_DEEPSEEK_API_KEY "$K_DEEPSEEK"
-  ask_secret K_GIGA     "  GigaChat";        [ -n "$K_GIGA" ]     && set_env SYSTEM_GIGACHAT_CREDENTIALS "$K_GIGA"
   ask_secret K_TAVILY   "  Tavily (search)"; [ -n "$K_TAVILY" ]   && set_env TAVILY_API_KEY "$K_TAVILY"
 fi
 

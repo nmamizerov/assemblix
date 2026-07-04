@@ -15,7 +15,7 @@ import pytest_asyncio
 class LLMMock:
     """Controls the mocked ``litellm.acompletion`` for a test.
 
-    All four providers (OpenAI/Gemini/DeepSeek/GigaChat) funnel through this one
+    All providers (OpenAI/Gemini/DeepSeek) funnel through this one
     call, so patching it exercises our parsing/billing/branching logic against a
     deterministic "expected" provider response.
     """

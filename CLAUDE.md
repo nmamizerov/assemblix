@@ -7,7 +7,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 **Assemblix** — a visual AI agent / workflow automation platform. Users build workflows
 as directed graphs of nodes (START, AGENT, CONDITION, SET_VARIABLE, HTTP_REQUEST,
 STICKER, END) on a React Flow canvas, then execute and monitor them. Workflows can call
-multiple LLM providers (OpenAI, Gemini, DeepSeek, GigaChat). The platform supports
+multiple LLM providers (OpenAI, Gemini, DeepSeek). The platform supports
 multi-tenancy (organizations, projects), knowledge bases (RAG), credentials, chat
 sessions, and — in the commercial build — billing/credits and payments.
 
@@ -29,6 +29,7 @@ assemblix/
 
 **Each app has its own `CLAUDE.md` with the detail you need before working in it** — read
 the relevant one first; this file is only the umbrella:
+
 - [assemblix-app-api/CLAUDE.md](assemblix-app-api/CLAUDE.md) — backend architecture,
   commands, layering rules, the "add a new entity" checklist.
 - [assemblix-app-web/CLAUDE.md](assemblix-app-web/CLAUDE.md) — frontend FSD layers,
@@ -63,7 +64,7 @@ cp .env.example.quick .env
 The backend **fails fast on startup** without a valid `JWT_SECRET_KEY` and
 `ENCRYPTION_KEY` — generation commands are in the comments of `.env.example`. Only
 `VITE_`-prefixed vars are bundled into the frontend, so the secrets in this shared file
-never reach the browser. `DATABASE_URL`/`REDIS_URL` hold *host* values; the compose files
+never reach the browser. `DATABASE_URL`/`REDIS_URL` hold _host_ values; the compose files
 override them to the in-network `postgres`/`redis` service hosts.
 
 ## Running the whole stack — Docker Compose
@@ -116,7 +117,7 @@ from the repo root, which runs both apps' gates).
 Secret-scanning config is `.gitleaks.toml` at the repo root. Since this repo is public,
 never commit real secrets — generate ephemeral ones at runtime (as the Makefile and CI do).
 
-## Git & release workflow (read before committing)
+## Git & release workflow (read before create new changes)
 
 Branch off `main`; keep PRs focused; never push or open PRs unprompted. **Commit/PR-title
 messages must follow [Conventional Commits](https://www.conventionalcommits.org)**

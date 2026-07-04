@@ -255,7 +255,6 @@
     "openai": "OpenAI",
     "gemini": "Gemini",
     "deepseek": "DeepSeek",
-    "gigachat": "GigaChat",
     "temperature": "Temperature",
     "temperatureHelp": "Controls randomness of responses (0-2)"
   },
@@ -972,7 +971,7 @@
       },
       "credits": {
         "title": "Credits & Savings",
-        "description": "Every agent run consumes credits from your balance. Want to spend less? Connect your own API keys from OpenAI, GigaChat, or other providers — then only 1 credit per request instead of LLM call cost. Available on PRO and BUSINESS plans"
+        "description": "Every agent run consumes credits from your balance. Want to spend less? Connect your own API keys from OpenAI, DeepSeek, or other providers — then only 1 credit per request instead of LLM call cost. Available on PRO and BUSINESS plans"
       },
       "publish": {
         "title": "Ready for production?",

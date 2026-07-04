@@ -69,7 +69,7 @@ through a generic fallback. Out-of-tree node packages are auto-discovered via th
 
 ### LLM integration
 
-Providers (OpenAI, Gemini, DeepSeek, GigaChat) are reached through LiteLLM. Auth is JWT plus
+Providers (OpenAI, Gemini, DeepSeek) are reached through LiteLLM. Auth is JWT plus
 API keys (prefixed `sk_`), with optional Google/GitHub OAuth.
 
 ## Frontend: Feature-Sliced Design

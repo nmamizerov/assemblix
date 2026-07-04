@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-**Assemblix** — a visual AI agent/workflow builder platform. Users create workflows on a React Flow canvas by connecting nodes (START, AGENT, CONDITION, SET_VARIABLE, END, HTTP_REQUEST, STICKER), then execute and monitor them. Supports multiple LLM providers (OpenAI, Gemini, DeepSeek, GigaChat).
+**Assemblix** — a visual AI agent/workflow builder platform. Users create workflows on a React Flow canvas by connecting nodes (START, AGENT, CONDITION, SET_VARIABLE, END, HTTP_REQUEST, STICKER), then execute and monitor them. Supports multiple LLM providers (OpenAI, Gemini, DeepSeek).
 
 ## Commands
 

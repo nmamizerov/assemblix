@@ -60,8 +60,8 @@ infrastructure with a single `docker compose up`.
 
 - **Visual, not YAML.** Build agent logic by dragging and connecting nodes — see the whole
   flow at a glance, debug it node-by-node.
-- **Bring your own model.** One canvas, many providers — OpenAI, Gemini, DeepSeek, and
-  GigaChat — with retries, timeouts, and provider/model fallback built in.
+- **Bring your own model.** One canvas, many providers — OpenAI, Gemini, and DeepSeek —
+  with retries, timeouts, and provider/model fallback built in.
 - **Own your stack.** Self-host the entire thing with Postgres only; Redis + a worker queue
   tier are optional and opt-in. No vendor lock-in, no phone-home.
 - **Production-minded.** SSRF-guarded HTTP node, secrets encryption, Prometheus metrics,
@@ -74,7 +74,7 @@ infrastructure with a single `docker compose up`.
 | | |
 |---|---|
 | 🎨 **Visual canvas** | Drag-and-drop workflow editor (React Flow) with undo/redo, live debug panel, and per-node execution traces. |
-| 🤖 **Multi-LLM agents** | `AGENT` nodes run tool-calling loops against OpenAI · Gemini · DeepSeek · GigaChat, with fallback and backoff. |
+| 🤖 **Multi-LLM agents** | `AGENT` nodes run tool-calling loops against OpenAI · Gemini · DeepSeek, with fallback and backoff. |
 | 🔀 **Logic & control flow** | `CONDITION` (CEL expressions), `SET_VARIABLE`, and graph branching to build real decision logic. |
 | 🌐 **HTTP & tools** | `HTTP_REQUEST` node with SSRF protection to call any external API as a tool. |
 | 📚 **Knowledge bases (RAG)** | Attach document knowledge bases to agents for retrieval-augmented answers. |
@@ -86,7 +86,7 @@ infrastructure with a single `docker compose up`.
 
 **Works with the model you already use**
 
-<sub>OpenAI&nbsp;&nbsp;·&nbsp;&nbsp;Google Gemini&nbsp;&nbsp;·&nbsp;&nbsp;DeepSeek&nbsp;&nbsp;·&nbsp;&nbsp;GigaChat</sub>
+<sub>OpenAI&nbsp;&nbsp;·&nbsp;&nbsp;Google Gemini&nbsp;&nbsp;·&nbsp;&nbsp;DeepSeek</sub>
 
 </div>
 

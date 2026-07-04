@@ -2,7 +2,6 @@ import { CredentialType } from "./types";
 import OpenAIIcon from "../assets/openai.svg";
 import GeminiIcon from "../assets/google.svg";
 import DeepSeekIcon from "../assets/deepseek.svg";
-import GigachatIcon from "../assets/gigachat.svg";
 
 export interface CredentialTypeConfigItem {
   type: CredentialType;
@@ -32,12 +31,6 @@ export const CREDENTIAL_TYPE_CONFIG: Record<
     label: "DeepSeek Token",
     icon: DeepSeekIcon,
     color: "text-purple-600",
-  },
-  [CredentialType.GIGACHAT_TOKEN]: {
-    type: CredentialType.GIGACHAT_TOKEN,
-    label: "GigaChat Token",
-    icon: GigachatIcon,
-    color: "text-purple-700",
   },
 };
 

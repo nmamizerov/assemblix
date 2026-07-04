@@ -2,7 +2,7 @@
 
 Behavior:
 - If the provider itself returned `native_cost > 0` (LiteLLM does this for
-  OpenAI/Claude/DeepSeek/GigaChat) — we trust it. It is more accurate than the
+  OpenAI/Claude/DeepSeek) — we trust it. It is more accurate than the
   registry because it accounts for regional/contractual prices.
 - Otherwise we compute from `models/<provider>.json` × tokens from usage.
 - If the model/provider is unknown — we return 0.0 so as not to overcharge by

@@ -52,7 +52,7 @@ class _Completions:
         self._api_key = api_key
 
     async def create(self, **kwargs: Any) -> ChatCompletion:
-        # Apply env-overrides (e.g. GIGACHAT_SCOPE) and env-auth (GIGACHAT_CREDENTIALS).
+        # Apply provider env-overrides and env-based auth before the call.
         for env_name, value in self._env_overrides.items():
             os.environ[env_name] = value
         if self._api_key_env_var and self._api_key:
@@ -100,7 +100,7 @@ class LiteLLMModel(OpenAIChatModel):
         num_retries: int | None = None,
     ) -> None:
         defaults: dict[str, Any] = {"drop_params": True}
-        # Only forward `ssl_verify` when verification must be DISABLED (e.g. GigaChat's Sber
+        # Only forward `ssl_verify` when verification must be DISABLED (e.g. a provider with
         # self-signed certs). litellm 1.80.x does not list `ssl_verify` in `all_litellm_params`,
         # so a forwarded value leaks into the provider request body — OpenAI then 400s with
         # "Unrecognized request argument supplied: ssl_verify". True is litellm's own default,
@@ -135,7 +135,7 @@ class LiteLLMModel(OpenAIChatModel):
             api_key=api_key,
         )
         shim = _ShimClient(completions)
-        # model_name = the prefixed litellm name ("gigachat/GigaChat-Pro") — the same one
+        # model_name = the prefixed litellm name ("openai/gpt-4o") — the same one
         # that goes into litellm.acompletion(model=...). The shim replaces AsyncOpenAI via
         # duck typing (OpenAIChatModel touches only .chat.completions.create / .base_url).
         super().__init__(
@@ -159,10 +159,6 @@ def build_litellm_model(
     What the factory does per provider (the data lives in `provider_config.py`):
     - **openai**: `openai/` prefix + `api_base` from `openai_api_base_url`.
     - **deepseek**: only the `deepseek/` prefix (OpenAI-compatible endpoint).
-    - **gigachat**: `gigachat/` prefix, `ssl_verify` from `gigachat_verify_ssl`
-      (Sber self-signed certs), and api_key is duplicated into env `GIGACHAT_CREDENTIALS`
-      + `GIGACHAT_SCOPE` — the litellm GigaChat integration authenticates via env,
-      not via a kwarg.
     - **gemini**: `gemini/` prefix + `api_base` from `gemini_api_base_url` (our
       proxy). IMPORTANT about Gemini: thinking parameters are not set here — they come
       in `params` from the node config (`reasoning_effort` or `thinking_budget`/
@@ -173,8 +169,8 @@ def build_litellm_model(
       `GoogleModel` of Pydantic AI for Gemini only, without touching other providers.
 
     Args:
-        provider: provider key ("openai"/"deepseek"/"gigachat"/"gemini"/...).
-        model: the "bare" model id without prefix ("gpt-4o", "GigaChat-Pro").
+        provider: provider key ("openai"/"deepseek"/"gemini"/...).
+        model: the "bare" model id without prefix ("gpt-4o", "deepseek-chat").
         api_key: key for the call (system or user).
         response_format: optional litellm response_format (json_object / json_schema).
         params: optional node sampling parameters (temperature/max_tokens/thinking/...).

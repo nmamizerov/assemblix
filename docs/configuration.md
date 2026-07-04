@@ -84,10 +84,6 @@ python3 -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().
 | `SYSTEM_OPENAI_API_KEY` | *(blank)* | System OpenAI key; blank = self-host BYO-key |
 | `SYSTEM_GEMINI_API_KEY` | *(blank)* | System Gemini key |
 | `SYSTEM_DEEPSEEK_API_KEY` | *(blank)* | System DeepSeek key |
-| `SYSTEM_GIGACHAT_CREDENTIALS` | *(blank)* | System GigaChat credentials |
-| `GIGACHAT_VERIFY_SSL` | `true` | Verify SSL for GigaChat |
-| `GIGACHAT_SCOPE` | `GIGACHAT_API_PERS` | GigaChat API scope |
-| `GIGACHAT_AUTH_URL` | `https://ngw.devices.sberbank.ru:9443/api/v2/oauth` | GigaChat OAuth URL |
 | `TAVILY_API_KEY` | *(blank)* | Tavily key for web search |
 
 ## OAuth
