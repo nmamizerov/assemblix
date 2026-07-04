@@ -14,7 +14,12 @@ from assemblix_api.execution.error_taxonomy import classify_error
 from assemblix_api.execution.message_builder import MessageBuilder
 from assemblix_api.external.llm.litellm_model import build_litellm_model
 from assemblix_api.schemas import AgentNodeConfig, BaseNode
-from assemblix_api.schemas.execution import ExecutionContext, NodeInput, NodeOutput
+from assemblix_api.schemas.execution import (
+    AgentExecutionResult,
+    ExecutionContext,
+    NodeInput,
+    NodeOutput,
+)
 from assemblix_api.tools.registry import ToolContext
 from assemblix_api.tools.toolsets import build_toolsets
 
@@ -69,8 +74,16 @@ class AgentNode(BaseNode):
         response_format_kwarg, parse_json = self._resolve_response_format(response_format_str)
 
         num_retries = cfg.max_retries if cfg.max_retries is not None else settings.llm_num_retries
+        total_timeout = cfg.timeout_seconds or settings.agent_run_timeout_seconds
+
+        # When enforce_timeout_on_last is off, the last model in the chain runs up to the
+        # whole-loop budget instead of the shorter per-call timeout — a last resort that
+        # still cannot exceed the hard ceiling (asyncio.wait_for below). Otherwise every
+        # model keeps the default per-call timeout (timeout=None → factory default).
+        last_model_timeout = None if cfg.enforce_timeout_on_last else total_timeout
 
         # 4. Build the primary in-process litellm model (provider quirks + sampling params).
+        #    With no fallbacks the primary is itself the last model in the chain.
         primary_model = build_litellm_model(
             cfg.provider.value,
             cfg.model,
@@ -78,6 +91,7 @@ class AgentNode(BaseNode):
             response_format=response_format_kwarg,
             params=params,
             num_retries=num_retries,
+            timeout=None if cfg.fallback_models else last_model_timeout,
         )
 
         # 4b. Fallback models (Phase 3): build each with its own (lazily resolved) credential.
@@ -85,7 +99,8 @@ class AgentNode(BaseNode):
         model: Model = primary_model
         if cfg.fallback_models:
             fallback_models: list[Model] = []
-            for fb in cfg.fallback_models:
+            last_index = len(cfg.fallback_models) - 1
+            for index, fb in enumerate(cfg.fallback_models):
                 fb_key, _ = await self._load_credential(context, fb.provider, fb.credential_id)
                 fallback_models.append(
                     build_litellm_model(
@@ -95,6 +110,7 @@ class AgentNode(BaseNode):
                         response_format=response_format_kwarg,
                         params=params,
                         num_retries=num_retries,
+                        timeout=last_model_timeout if index == last_index else None,
                     )
                 )
             model = FallbackModel(primary_model, *fallback_models, fallback_on=_is_transient)
@@ -113,7 +129,6 @@ class AgentNode(BaseNode):
         # when limits are 0): one tenant can't starve the worker pool and a burst can't
         # blow the provider's rate limit. Backpressure happens here, after the DB
         # connection is already released.
-        total_timeout = cfg.timeout_seconds or settings.agent_run_timeout_seconds
         async with agent_call_guard(
             context.organization_id, cfg.provider.value, hold_timeout=total_timeout
         ):
@@ -139,8 +154,32 @@ class AgentNode(BaseNode):
                 "model": cfg.model,
                 "provider": cfg.provider.value,
                 "used_system_key": is_system_key,
+                # Exact messages sent to the LLM (KB + instructions + history + current
+                # turn). Lives in metadata, not data, so it is not passed downstream.
+                "llm_request": messages,
             },
+            history_append=self._build_history_append(result),
         )
+
+    def _build_history_append(self, result: AgentExecutionResult) -> dict | None:
+        """Message to append to the shared dialog history for this agent (or None).
+
+        Respects save_to_history (opt-out) and history_field (save only one JSON field).
+        Kept off node_output.data so the answer stays clean for downstream nodes.
+        """
+        cfg = self.typed_config
+        if not cfg.save_to_history:
+            return None
+
+        content = result.content
+        if (
+            cfg.history_field
+            and isinstance(result.parsed_content, dict)
+            and cfg.history_field in result.parsed_content
+        ):
+            content = str(result.parsed_content[cfg.history_field])
+
+        return {"role": "assistant", "content": content}
 
     def _resolve_response_format(self, response_format: str) -> tuple[dict | None, bool]:
         """Return (litellm response_format kwarg | None, whether to parse JSON).

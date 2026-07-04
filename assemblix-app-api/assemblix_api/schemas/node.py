@@ -66,6 +66,15 @@ class AgentNodeConfig(DTOModel):
     include_chat_history: bool = True  # default True for backward compatibility
     knowledge_base_ids: list[str] | None = None  # knowledge base IDs injected into the prompt
 
+    # --- Context control ---
+    # Whether this agent's answer is appended to the run's shared dialog history that
+    # later agents (with include_chat_history=True) see. Default True. False makes the
+    # agent "silent": its answer still flows downstream and to the final output.
+    save_to_history: bool = True
+    # If the answer is JSON, append only this schema field to the shared history instead
+    # of the whole JSON blob. Ignored when the answer is not a dict containing this key.
+    history_field: str | None = None
+
     # --- Reliability (Phase 3): retries / fallbacks / timeout ---
     # Fallback models tried, in order, after the primary exhausts transient retries.
     fallback_models: list[FallbackModelConfig] = Field(default_factory=list)
@@ -74,6 +83,11 @@ class AgentNodeConfig(DTOModel):
     # How many times litellm retries a transient error of a single LLM call.
     # None → settings default (`llm_num_retries`). Retries are ON by default.
     max_retries: int | None = Field(default=None, ge=0, le=10)
+    # Hard-timeout toggle for the last model in the chain (the last fallback, or the
+    # primary when there are no fallbacks). True (default) → the per-call timeout applies
+    # to it too, so no single provider can hang the run. False → the last model may run
+    # up to the whole-loop budget (`timeout_seconds`), which still bounds it hard.
+    enforce_timeout_on_last: bool = True
 
     @model_validator(mode="after")
     def _merge_legacy_into_params(self) -> "AgentNodeConfig":

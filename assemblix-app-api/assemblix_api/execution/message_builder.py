@@ -37,14 +37,20 @@ class MessageBuilder:
 
         # 2. System instructions with CEL rendering; KB is injected into the first system instruction.
         kb_injected = False
-        for instruction in instructions:
+        for index, instruction in enumerate(instructions):
             content = context.templates.render(instruction.content, context, node_data)
 
-            if kb_content and instruction.role == "system" and not kb_injected:
+            # The first instruction is the agent persona: always sent as the system
+            # prompt regardless of its stored role, so the model treats it as
+            # instructions (and Gemini maps it to the native system_instruction,
+            # enabling implicit caching).
+            role = "system" if index == 0 else instruction.role
+
+            if kb_content and role == "system" and not kb_injected:
                 content = f"{content}\n\n---\nБаза знаний:\n{kb_content}\n---"
                 kb_injected = True
 
-            messages.append({"role": instruction.role, "content": content})
+            messages.append({"role": role, "content": content})
 
         # If there was no system instruction — add the KB as a separate system message.
         if kb_content and not kb_injected:

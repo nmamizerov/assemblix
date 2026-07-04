@@ -47,6 +47,7 @@ export const DebugStepItem = ({
   const creditsUsed = data?.credits_used as number | undefined;
   const ownKeyCostUsd = data?.own_key_cost_usd as number | undefined;
   const isLLMNode = nodeType === NodeType.AGENT;
+  const llmRequest = data?.llm_request as unknown[] | undefined;
 
   // Проверяем, что в projectStateAfter есть хотя бы 1 ключ
   const hasProjectState =
@@ -54,7 +55,12 @@ export const DebugStepItem = ({
 
   const hasExpandableData =
     isCompleted &&
-    (inputData || outputData || stateBefore || stateAfter || hasProjectState);
+    (inputData ||
+      outputData ||
+      stateBefore ||
+      stateAfter ||
+      hasProjectState ||
+      (isLLMNode && llmRequest));
 
   const handleToggle = () => {
     if (hasExpandableData) {
@@ -176,6 +182,15 @@ export const DebugStepItem = ({
                 {t("debug.outputData")}
               </h4>
               <JsonViewer data={outputData} defaultExpanded={false} />
+            </div>
+          )}
+
+          {isLLMNode && llmRequest && (
+            <div>
+              <h4 className="text-xs font-semibold text-green-900 dark:text-green-100 mb-2">
+                {t("debug.llmRequest")}
+              </h4>
+              <JsonViewer data={llmRequest} defaultExpanded={false} />
             </div>
           )}
 

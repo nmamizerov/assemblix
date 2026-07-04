@@ -146,6 +146,7 @@ class DebugEventManager:
         cost: float | None = None,
         own_key_cost_usd: float | None = None,
         credits_used: float | None = None,
+        llm_request: list[dict] | None = None,
     ) -> None:
         event_data = StepCompleteEventData(
             step_number=step_number,
@@ -160,6 +161,7 @@ class DebugEventManager:
             cost=cost,
             own_key_cost_usd=own_key_cost_usd,
             credits_used=credits_used,
+            llm_request=llm_request,
         )
 
         event = DebugEvent(

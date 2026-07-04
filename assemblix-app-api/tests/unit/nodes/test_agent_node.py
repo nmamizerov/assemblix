@@ -129,6 +129,92 @@ async def test_agent_uses_configured_provider_and_model(mock_llm) -> None:
     assert "gpt-4o-mini" in mock_llm.calls[0]["model"]
 
 
+async def test_agent_first_instruction_forced_to_system(mock_llm) -> None:
+    """The first instruction (persona) is sent as system even when stored as user."""
+    # Arrange
+    mock_llm.set_response("ok")
+    context = _agent_context()
+    node = _agent(
+        {
+            "instructions": [
+                {"role": "user", "content": "You are the persona."},
+                {"role": "user", "content": "Extra user turn."},
+            ]
+        }
+    )
+
+    # Act
+    await node.execute(node_input({"message": "Hello there"}, context))
+
+    # Assert: the persona lands in the litellm system message, not as a user turn.
+    sent_messages = mock_llm.calls[0]["messages"]
+    system_text = " ".join(
+        str(m.get("content")) for m in sent_messages if m.get("role") == "system"
+    )
+    assert "You are the persona." in system_text
+
+
+async def test_agent_save_to_history_default_appends_answer(mock_llm) -> None:
+    """By default the agent's answer is offered for the shared history."""
+    # Arrange
+    mock_llm.set_response("the answer")
+    context = _agent_context()
+    node = _agent()
+
+    # Act
+    output = await node.execute(node_input({"message": "Hello there"}, context))
+
+    # Assert
+    assert output.history_append == {"role": "assistant", "content": "the answer"}
+
+
+async def test_agent_save_to_history_off_is_silent(mock_llm) -> None:
+    """save_to_history=False makes the agent silent (no history message)."""
+    # Arrange
+    mock_llm.set_response("the answer")
+    context = _agent_context()
+    node = _agent({"save_to_history": False})
+
+    # Act
+    output = await node.execute(node_input({"message": "Hello there"}, context))
+
+    # Assert
+    assert output.history_append is None
+    assert output.data["message"] == "the answer"  # still flows downstream
+
+
+async def test_agent_history_field_saves_single_json_field(mock_llm) -> None:
+    """history_field appends only the chosen JSON field, not the whole blob."""
+    # Arrange
+    mock_llm.set_response(json.dumps({"reply": "hi", "debug": "noise"}))
+    context = _agent_context()
+    node = _agent({"response_format": "json_object", "history_field": "reply"})
+
+    # Act
+    output = await node.execute(node_input({"message": "Hello there"}, context))
+
+    # Assert
+    assert output.history_append == {"role": "assistant", "content": "hi"}
+
+
+async def test_agent_exposes_llm_request_in_metadata(mock_llm) -> None:
+    """The exact messages sent to the LLM are exposed in metadata (not in data)."""
+    # Arrange
+    mock_llm.set_response("ok")
+    context = _agent_context()
+    node = _agent({"instructions": [{"role": "system", "content": "Persona here."}]})
+
+    # Act
+    output = await node.execute(node_input({"message": "Hello there"}, context))
+
+    # Assert
+    assert output.metadata is not None
+    llm_request = output.metadata["llm_request"]
+    assert isinstance(llm_request, list)
+    assert any(m.get("role") == "system" for m in llm_request)
+    assert "llm_request" not in output.data  # kept out of downstream data
+
+
 async def test_agent_requires_credential_service() -> None:
     """Without a credential_service in the context, _load_credential asserts."""
     # Arrange

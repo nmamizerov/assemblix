@@ -22,9 +22,9 @@ interface ExecutionLogPanelProps {
 export const ExecutionLogPanel = ({ step, onClose }: ExecutionLogPanelProps) => {
   const { t } = useTranslation();
   const { formatNumber } = useFormatDate();
-  const [activeTab, setActiveTab] = useState<"input" | "output" | "cel">(
-    "input",
-  );
+  const [activeTab, setActiveTab] = useState<
+    "input" | "output" | "cel" | "llm-request"
+  >("input");
   const { Icon: NodeIcon, label: nodeLabel, color } = useNodeDisplay(
     step.nodeType,
   );
@@ -168,6 +168,19 @@ export const ExecutionLogPanel = ({ step, onClose }: ExecutionLogPanelProps) => 
                   {t("executionViewer.celEvaluations")}
                 </button>
               )}
+              {step.llmRequest && (
+                <button
+                  onClick={() => setActiveTab("llm-request")}
+                  className={cn(
+                    "border-b-2 px-4 py-2 text-sm font-medium transition-colors",
+                    activeTab === "llm-request"
+                      ? "border-primary text-primary"
+                      : "border-transparent text-muted-foreground hover:text-foreground",
+                  )}
+                >
+                  {t("executionViewer.llmRequest")}
+                </button>
+              )}
             </div>
 
             <div>
@@ -191,6 +204,14 @@ export const ExecutionLogPanel = ({ step, onClose }: ExecutionLogPanelProps) => 
                 <JsonViewer
                   data={step.celEvaluations}
                   title={t("executionViewer.celEvaluations")}
+                  defaultExpanded={true}
+                />
+              )}
+
+              {activeTab === "llm-request" && step.llmRequest && (
+                <JsonViewer
+                  data={step.llmRequest}
+                  title={t("executionViewer.llmRequest")}
                   defaultExpanded={true}
                 />
               )}

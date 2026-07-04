@@ -63,6 +63,8 @@ class ExecutionStep(UUIDMixin, TimestampMixin, Base):
 
     # Debug metadata (optional)
     cel_evaluations: Mapped[dict | None] = mapped_column(JSONB, default=None)
+    # Exact messages sent to the LLM (AgentNode only) — for the "LLM Request" view.
+    llm_request: Mapped[list | None] = mapped_column(JSONB, default=None)
 
     # Relationships
     execution: Mapped["Execution"] = relationship(back_populates="steps")

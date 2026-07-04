@@ -46,6 +46,8 @@ class StepCompleteEventData(DTOModel):
     cost: float | None = None
     own_key_cost_usd: float | None = None
     credits_used: float | None = None
+    # Exact messages sent to the LLM (agent nodes only); None for other node types.
+    llm_request: list[dict[str, Any]] | None = None
 
 
 class ExecutionCompleteEventData(DTOModel):

@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 import { BaseForm } from "./base-form";
+import { FallbackModelRow } from "./fallback-model-row";
 import { useNodeDataChange } from "./useNodeDataChange";
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
@@ -67,75 +68,15 @@ import {
   useGetLLMProvidersQuery,
   useGetLLMProviderSchemaQuery,
   type ModelMetadata,
-  type ProviderListItem,
 } from "@/entities/llm-provider";
 
 const AVAILABLE_TOOLS = [
   { value: "web_search", label: "Web Search", icon: Search },
 ] as const;
 
-interface FallbackModelRowProps {
-  value: FallbackModelConfig;
-  providerList: ProviderListItem[];
-  onChange: (next: FallbackModelConfig) => void;
-  onRemove: () => void;
-}
-
-/** One fallback-model row: provider + model selects. Each row fetches its own
- *  provider schema (hooks can't run in a loop, so the row is its own component). */
-const FallbackModelRow = ({
-  value,
-  providerList,
-  onChange,
-  onRemove,
-}: FallbackModelRowProps) => {
-  const { t } = useTranslation();
-  const { data: providerSchema } = useGetLLMProviderSchemaQuery(
-    { providerName: value.provider },
-    { skip: !value.provider },
-  );
-  const models = providerSchema?.models ?? [];
-
-  return (
-    <div className="flex items-center gap-2">
-      <Select
-        value={value.provider}
-        onValueChange={(provider) =>
-          onChange({ ...value, provider: provider as Provider, model: "" })
-        }
-      >
-        <SelectTrigger className="text-xs flex-1">
-          <SelectValue placeholder={t("nodeForms.agent.selectProvider")} />
-        </SelectTrigger>
-        <SelectContent>
-          {providerList.map((p) => (
-            <SelectItem key={p.name} value={p.name} className="text-xs">
-              {p.label}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-      <Select
-        value={value.model}
-        onValueChange={(model) => onChange({ ...value, model })}
-      >
-        <SelectTrigger className="text-xs flex-1">
-          <SelectValue placeholder={t("nodeForms.agent.selectModel")} />
-        </SelectTrigger>
-        <SelectContent>
-          {models.map((m) => (
-            <SelectItem key={m.id} value={m.id} className="text-xs">
-              {m.label || m.id}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-      <Button type="button" variant="ghost" size="icon" onClick={onRemove}>
-        <TrashIcon className="h-4 w-4" />
-      </Button>
-    </div>
-  );
-};
+// Sentinel for the "whole answer" option in the history-field picker (Radix
+// SelectItem values must be non-empty strings).
+const HISTORY_FIELD_FULL = "__full__";
 
 interface AgentNodeFormProps {
   nodeId: string;
@@ -151,6 +92,7 @@ const defaultConfig: AgentNodeConfig = {
   instructions: [{ role: Role.USER, content: "" }],
   credentialId: "",
   includeChatHistory: true,
+  saveToHistory: true,
 };
 
 export const AgentNodeForm = ({
@@ -220,9 +162,12 @@ export const AgentNodeForm = ({
   // Server config — used to decide whether the "Assemblix system key" option is
   // offered for the current provider. Providers themselves are never hidden.
   const { data: serverConfig } = useGetServerConfigQuery();
-  const hasSystemKey = serverConfig
-    ? Boolean(serverConfig.systemApiKeys[formData.provider])
-    : true;
+  const hasSystemKeyForProvider = useCallback(
+    (provider: Provider) =>
+      serverConfig ? Boolean(serverConfig.systemApiKeys[provider]) : true,
+    [serverConfig],
+  );
+  const hasSystemKey = hasSystemKeyForProvider(formData.provider);
 
   // Единый источник правды для всего LLM-домена: schema-эндпоинт возвращает
   // и `paramSchema`, и `models` за один поход. Капабилити-фильтрация
@@ -457,6 +402,13 @@ export const AgentNodeForm = ({
     setFormData((prev) => ({ ...prev, includeChatHistory: checked }));
   };
 
+  const handleBooleanFieldChange = (
+    field: "enforceTimeoutOnLast" | "saveToHistory",
+    checked: boolean,
+  ) => {
+    setFormData((prev) => ({ ...prev, [field]: checked }));
+  };
+
   // --- Надёжность (Фаза 3): ретраи / таймаут / фолбэк-модели ---
   const handleNumberFieldChange = (
     field: "maxRetries" | "timeoutSeconds",
@@ -532,6 +484,11 @@ export const AgentNodeForm = ({
   // responseFormat зеркалится из него для backwards compatibility.
   const isJsonFormat = llmParams.response_format === "json_object";
   const currentSchema = formData.responseSchema as OpenAPISchema | undefined;
+  // Field names for the "history field" picker — only when the answer is JSON.
+  const schemaFieldNames =
+    isJsonFormat && currentSchema?.properties
+      ? Object.keys(currentSchema.properties)
+      : [];
 
   return (
     <>
@@ -821,6 +778,89 @@ export const AgentNodeForm = ({
             />
           </div>
 
+          {/* Save answer to shared history */}
+          <div className="flex justify-between gap-4 items-center">
+            <div className="flex items-center gap-1.5">
+              <Label htmlFor="save-to-history">
+                {t("nodeForms.agent.saveToHistory")}
+              </Label>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    type="button"
+                    className="text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    <HelpCircle className="h-3.5 w-3.5" />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="right" className="max-w-[250px]">
+                  <p>{t("nodeForms.agent.saveToHistoryTooltip")}</p>
+                </TooltipContent>
+              </Tooltip>
+            </div>
+            <Switch
+              id="save-to-history"
+              checked={formData.saveToHistory ?? true}
+              onCheckedChange={(checked) =>
+                handleBooleanFieldChange("saveToHistory", checked)
+              }
+              showIcons={false}
+            />
+          </div>
+
+          {/* History field (only for JSON answers with a schema) */}
+          {(formData.saveToHistory ?? true) && schemaFieldNames.length > 0 && (
+            <div className="flex justify-between gap-4 items-center">
+              <div className="flex items-center gap-1.5">
+                <Label htmlFor="history-field">
+                  {t("nodeForms.agent.historyField")}
+                </Label>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      type="button"
+                      className="text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      <HelpCircle className="h-3.5 w-3.5" />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent side="right" className="max-w-[250px]">
+                    <p>{t("nodeForms.agent.historyFieldTooltip")}</p>
+                  </TooltipContent>
+                </Tooltip>
+              </div>
+              <Select
+                value={formData.historyField ?? HISTORY_FIELD_FULL}
+                onValueChange={(value) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    historyField:
+                      value === HISTORY_FIELD_FULL ? undefined : value,
+                  }))
+                }
+              >
+                <SelectTrigger
+                  id="history-field"
+                  className="border-none shadow-none ring-0! text-xs w-auto"
+                >
+                  <SelectValue
+                    placeholder={t("nodeForms.agent.historyFieldFull")}
+                  />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={HISTORY_FIELD_FULL} className="text-xs">
+                    {t("nodeForms.agent.historyFieldFull")}
+                  </SelectItem>
+                  {schemaFieldNames.map((field) => (
+                    <SelectItem key={field} value={field} className="text-xs">
+                      {field}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
           {/* Инструменты */}
           <div>
             <div className="flex justify-between items-center">
@@ -998,7 +1038,7 @@ export const AgentNodeForm = ({
             {isAdvancedOpen && (
               <div className="space-y-4 pl-6 border-l-2 border-muted mt-3">
                 {/* Число ретраев одного LLM-вызова */}
-                <div>
+                <div className="space-y-1.5">
                   <Label htmlFor="agent-max-retries">
                     {t("nodeForms.agent.maxRetries")}
                   </Label>
@@ -1016,7 +1056,7 @@ export const AgentNodeForm = ({
                 </div>
 
                 {/* Таймаут всего агентского цикла (секунды) */}
-                <div>
+                <div className="space-y-1.5">
                   <Label htmlFor="agent-timeout">
                     {t("nodeForms.agent.timeout")}
                   </Label>
@@ -1029,6 +1069,36 @@ export const AgentNodeForm = ({
                     onChange={(e) =>
                       handleNumberFieldChange("timeoutSeconds", e.target.value)
                     }
+                  />
+                </div>
+
+                {/* Жёсткий таймаут на последней модели */}
+                <div className="flex justify-between gap-4 items-center">
+                  <div className="flex items-center gap-1.5">
+                    <Label htmlFor="enforce-timeout-on-last">
+                      {t("nodeForms.agent.enforceTimeoutOnLast")}
+                    </Label>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <button
+                          type="button"
+                          className="text-muted-foreground hover:text-foreground transition-colors"
+                        >
+                          <HelpCircle className="h-3.5 w-3.5" />
+                        </button>
+                      </TooltipTrigger>
+                      <TooltipContent side="right" className="max-w-[250px]">
+                        <p>{t("nodeForms.agent.enforceTimeoutOnLastTooltip")}</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </div>
+                  <Switch
+                    id="enforce-timeout-on-last"
+                    checked={formData.enforceTimeoutOnLast ?? true}
+                    onCheckedChange={(checked) =>
+                      handleBooleanFieldChange("enforceTimeoutOnLast", checked)
+                    }
+                    showIcons={false}
                   />
                 </div>
 
@@ -1054,8 +1124,11 @@ export const AgentNodeForm = ({
                     {(formData.fallbackModels ?? []).map((fb, index) => (
                       <FallbackModelRow
                         key={index}
+                        index={index}
                         value={fb}
                         providerList={providerList}
+                        canUseOwnKeys={canUseOwnKeys}
+                        hasSystemKeyForProvider={hasSystemKeyForProvider}
                         onChange={(next) => handleFallbackChange(index, next)}
                         onRemove={() => handleRemoveFallback(index)}
                       />
