@@ -5,6 +5,15 @@ All notable changes to this project are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.1](https://github.com/nmamizerov/assemblix/compare/v0.2.0...v0.2.1) (2026-07-05)
+
+
+### Bug Fixes
+
+* **agent:** always return all declared response-schema fields ([50db682](https://github.com/nmamizerov/assemblix/commit/50db68262417ecf2fc0901579dda2c30ab249ea0))
+* **agent:** always return all declared response-schema fields ([eb54bc2](https://github.com/nmamizerov/assemblix/commit/eb54bc24bbfdf204524ada230e64c70cc7ba8627))
+* **i18n:** force English for users with a stale non-bundled language ([ad432d5](https://github.com/nmamizerov/assemblix/commit/ad432d514b9c1dcf02de507a3f79dbb10a7d7d22))
+
 ## [0.2.0](https://github.com/nmamizerov/assemblix/compare/v0.1.12...v0.2.0) (2026-07-04)
 
 
