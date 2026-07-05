@@ -10,6 +10,7 @@ export * from "./add-variable-popover";
 export * from "./popover";
 export * from "./dialog";
 export * from "./select";
+export * from "./language-switcher";
 export * from "./cel-helper";
 export * from "./json-schema-builder";
 export * from "./pagination";

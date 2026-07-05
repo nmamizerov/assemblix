@@ -4,6 +4,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { Popover, PopoverContent, PopoverTrigger } from "./popover";
 import { Button } from "./button";
 import { Divider } from "./divider";
+import { LanguageSwitcher } from "./language-switcher";
 import {
   Tooltip,
   TooltipContent,
@@ -244,6 +245,13 @@ export const Header = () => {
                       </>
                     )}
                   </Button>
+
+                  <Divider />
+
+                  {/* Language */}
+                  <div className="px-3 py-1.5">
+                    <LanguageSwitcher className="w-full" />
+                  </div>
 
                   <Divider />
 

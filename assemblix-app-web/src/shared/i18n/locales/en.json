@@ -514,6 +514,7 @@
     "lightTheme": "Light",
     "darkTheme": "Dark",
     "systemTheme": "System",
+    "language": "Language",
     "tabs": {
       "general": "General",
       "apiKeys": "API keys",
