@@ -5,6 +5,14 @@ All notable changes to this project are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.2](https://github.com/nmamizerov/assemblix/compare/v0.2.1...v0.2.2) (2026-07-05)
+
+
+### Features
+
+* **i18n:** add Spanish and Russian as selectable UI languages ([8930102](https://github.com/nmamizerov/assemblix/commit/8930102dd6a8cee53e07564ff6f9a9e6c9887636))
+* **i18n:** add Spanish and Russian as selectable UI languages ([74f1393](https://github.com/nmamizerov/assemblix/commit/74f13934d12b8806000cc4588557e86fc2b4a9f4))
+
 ## [0.2.1](https://github.com/nmamizerov/assemblix/compare/v0.2.0...v0.2.1) (2026-07-05)
 
 
