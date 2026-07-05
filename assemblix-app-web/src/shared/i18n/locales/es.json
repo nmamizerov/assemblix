@@ -1,0 +1,1343 @@
+{
+  "footer": {
+    "terms": "Términos de servicio",
+    "privacy": "Política de privacidad",
+    "refund": "Política de reembolso",
+    "contact": "Contáctanos"
+  },
+  "notFoundPage": {
+    "title": "Parece que llegaste a un callejón sin salida",
+    "subtitle": "Esta página no existe — el camino terminó en un 404. Vamos a ponerte de nuevo en marcha.",
+    "home": "Ir al inicio",
+    "back": "Volver"
+  },
+  "common": {
+    "save": "Guardar",
+    "update": "Actualizar",
+    "cancel": "Cancelar",
+    "delete": "Eliminar",
+    "create": "Crear",
+    "edit": "Editar",
+    "close": "Cerrar",
+    "confirm": "Confirmar",
+    "loading": "Cargando...",
+    "yes": "Sí",
+    "no": "No",
+    "back": "Atrás",
+    "next": "Siguiente",
+    "search": "Buscar",
+    "actions": "Acciones",
+    "status": "Estado",
+    "name": "Nombre",
+    "type": "Tipo",
+    "value": "Valor",
+    "description": "Descripción",
+    "createdAt": "Creado",
+    "updatedAt": "Actualizado",
+    "optional": "opcional",
+    "required": "obligatorio",
+    "total": "Total",
+    "showMore": "Mostrar más",
+    "showLess": "Mostrar menos",
+    "or": "o",
+    "locale": "es"
+  },
+  "auth": {
+    "login": "Iniciar sesión",
+    "register": "Registrarse",
+    "logout": "Cerrar sesión",
+    "email": "Correo electrónico",
+    "password": "Contraseña",
+    "confirmPassword": "Confirmar contraseña",
+    "fullName": "Nombre completo",
+    "name": "Nombre",
+    "forgotPassword": "¿Olvidaste tu contraseña?",
+    "signIn": "Entrar",
+    "signUp": "Crear cuenta",
+    "createAccount": "Crear cuenta",
+    "enterCredentials": "Introduce tus credenciales para iniciar sesión",
+    "registerDescription": "Crea una cuenta para empezar a usar Assemblix",
+    "user": "Usuario",
+    "emailValidation": "Por favor, introduce un correo electrónico válido.",
+    "emailPlaceholder": "tu@email.com",
+    "namePlaceholder": "Tu nombre",
+    "passwordMinLength": "La contraseña debe contener al menos 3 caracteres.",
+    "passwordsNotMatch": "Las contraseñas no coinciden",
+    "nameMinLength": "El nombre debe contener al menos 2 caracteres.",
+    "loginError": "Error al iniciar sesión",
+    "registerError": "Error de registro",
+    "registerErrorDescription": "Inténtalo de nuevo más tarde o usa otro correo electrónico",
+    "invalidCredentials": "Correo electrónico o contraseña incorrectos",
+    "noAccount": "¿No tienes cuenta?",
+    "hasAccount": "¿Ya tienes cuenta?",
+    "oauth": {
+      "continueWithGoogle": "Continuar con Google",
+      "continueWithGitHub": "Continuar con GitHub",
+      "continueWithYandex": "Continuar con Yandex",
+      "googleError": "Error al iniciar sesión con Google",
+      "googleErrorDescription": "No se pudo iniciar sesión con Google. Inténtalo de nuevo.",
+      "githubError": "Error al iniciar sesión con GitHub",
+      "githubErrorDescription": "No se pudo iniciar sesión con GitHub. Inténtalo de nuevo.",
+      "githubProcessing": "Completando el inicio de sesión con GitHub...",
+      "githubStateMismatch": "Parámetro state no válido — inicia sesión de nuevo",
+      "emailAlreadyRegistered": "El correo electrónico ya está registrado",
+      "emailAlreadyRegisteredDescription": "Este correo ya está registrado con una contraseña. Inicia sesión mediante el formulario o restablece tu contraseña.",
+      "emailNotVerified": "Correo electrónico no verificado",
+      "emailNotVerifiedDescription": "Por favor, verifica tu correo electrónico en tu cuenta de Google.",
+      "cancelled": "Inicio de sesión cancelado por el usuario"
+    }
+  },
+  "header": {
+    "appName": "Assemblix",
+    "lightTheme": "Tema claro",
+    "darkTheme": "Tema oscuro",
+    "language": "Idioma",
+    "help": "Ayuda",
+    "organizationSettings": "Configuración de la organización"
+  },
+  "sidebar": {
+    "agents": "Agentes",
+    "agentSessions": "Llamadas de agentes",
+    "apiKeys": "Claves API",
+    "knowledgeBases": "Bases de conocimiento",
+    "organization": "Organización",
+    "credentials": "Credenciales",
+    "clientSessions": "Sesiones de clientes",
+    "projectSettings": "Configuración del proyecto",
+    "settings": "Configuración",
+    "community": "Comunidad",
+    "sections": {
+      "creation": "Crear",
+      "monitoring": "Monitoreo"
+    }
+  },
+  "home": {
+    "title": "Crea tu agente",
+    "subtitle": "Crea y gestiona tus agentes de IA con un editor visual",
+    "createAgent": "Crear nuevo agente"
+  },
+  "sessions": {
+    "title": "Llamadas de agentes",
+    "subtitle": "Historial de chats y ejecuciones de tus agentes",
+    "tabs": {
+      "chats": "Chats",
+      "executions": "Ejecuciones"
+    },
+    "showTestSessions": "Mostrar sesiones de prueba"
+  },
+  "agents": {
+    "title": "Agentes",
+    "createAgent": "Crear agente",
+    "noAgents": "Todavía no tienes agentes",
+    "createFirstAgent": "Crea tu primer agente para empezar",
+    "lastModified": "Última modificación",
+    "published": "Publicado",
+    "draft": "Borrador",
+    "selectProject": "Seleccionar proyecto",
+    "createError": "Error al crear el agente",
+    "publishSuccess": "Agente publicado correctamente",
+    "publishError": "Error al publicar el agente",
+    "deleteSuccess": "Agente eliminado",
+    "deleteError": "Error al eliminar el agente",
+    "renameSuccess": "Agente renombrado",
+    "renameError": "Error al renombrar el agente"
+  },
+  "workflow": {
+    "nodes": {
+      "start": "Inicio",
+      "agent": "Agente",
+      "sticker": "Nota",
+      "condition": "Condición",
+      "setVariable": "Establecer variable",
+      "end": "Fin",
+      "httpRequest": "Solicitud HTTP",
+      "newElement": "Nuevo elemento"
+    },
+    "nodeDefaults": {
+      "agentName": "Nuevo agente",
+      "endName": "Éxito"
+    },
+    "nodeDescriptions": {
+      "start": "Punto de entrada del flujo de trabajo",
+      "agent": "Llamada al LLM con parámetros",
+      "sticker": "Añadir nota",
+      "condition": "Comprobación de condición lógica",
+      "setVariable": "Asignar valor a una variable",
+      "end": "Fin de la ejecución del flujo de trabajo",
+      "httpRequest": "Solicitud HTTP a una API externa"
+    },
+    "categories": {
+      "main": "Principal",
+      "logic": "Lógica",
+      "data": "Datos",
+      "integrations": "Integraciones"
+    },
+    "sidebar": {
+      "selectNodeType": "Selecciona el tipo de nodo",
+      "clickToSelect": "Haz clic en el elemento deseado abajo"
+    },
+    "stateSidebar": {
+      "title": "Gestión de estado",
+      "agentState": "Estado del agente",
+      "projectState": "Estado del proyecto",
+      "live": "LIVE",
+      "noVariables": "No hay variables de estado",
+      "readOnlyHint": "El flujo de trabajo está en ejecución — edición deshabilitada"
+    },
+    "header": {
+      "debug": "Depurar",
+      "publish": "Publicar",
+      "published": "Publicado",
+      "debugMode": "Modo de depuración",
+      "exitDebug": "Salir de depuración",
+      "editMode": "Modo de edición",
+      "workMode": "Modo de trabajo",
+      "publishError": "No se pudo publicar el flujo de trabajo",
+      "agentCalls": "Llamadas de agentes"
+    },
+    "agentCalls": {
+      "title": "Llamadas de agentes",
+      "executions": "Ejecuciones",
+      "chats": "Chats",
+      "noExecutions": "No hay ejecuciones para este agente",
+      "noChats": "No hay chats para este agente",
+      "selectChat": "Selecciona un chat para verlo"
+    },
+    "bulkInstructions": {
+      "title": "Instrucciones de los agentes",
+      "openTooltip": "Editar las instrucciones de todos los agentes",
+      "emptyTooltip": "No hay nodos de agente en este flujo de trabajo",
+      "searchPlaceholder": "Buscar agente...",
+      "unnamedAgent": "Agente #{{index}}",
+      "noAgentsFound": "No se encontraron agentes",
+      "selectAgentHint": "Selecciona un agente a la izquierda para editar sus instrucciones",
+      "emptyState": "Este flujo de trabajo aún no tiene nodos de agente. Añade un agente al lienzo para empezar a editar las instrucciones.",
+      "addInstruction": "Añadir instrucción"
+    },
+    "rename": {
+      "title": "Renombrar agente",
+      "namePlaceholder": "Nombre del agente",
+      "nameRequired": "El nombre es obligatorio",
+      "nameMinLength": "El nombre debe contener al menos 3 caracteres"
+    },
+    "publish": {
+      "title": "Agente publicado",
+      "description": "Tu agente se ha publicado correctamente y está listo para usarse",
+      "close": "Cerrar"
+    },
+    "versions": {
+      "draft": "Borrador",
+      "version": "Versión",
+      "current": "Actual"
+    },
+    "editor": {
+      "nodeEditor": "Editor de nodos",
+      "unknownNodeType": "Tipo de nodo desconocido",
+      "loadingNodeTypes": "Cargando tipos de nodos…",
+      "data": "Datos"
+    },
+    "details": {
+      "loadingError": "Error de carga",
+      "loadingErrorDescription": "No se pudieron cargar los datos del agente. Puede que haya sido eliminado o que no tengas acceso.",
+      "backToList": "Volver a la lista",
+      "versionLoadError": "Error",
+      "versionLoadErrorDescription": "No se pudo cargar la versión"
+    },
+    "node": {
+      "agent": {
+        "warnings": {
+          "modelNotSelected": "Modelo no seleccionado"
+        }
+      }
+    }
+  },
+  "provider": {
+    "openai": "OpenAI",
+    "gemini": "Gemini",
+    "deepseek": "DeepSeek",
+    "temperature": "Temperatura",
+    "temperatureHelp": "Controla la aleatoriedad de las respuestas (0-2)"
+  },
+  "credentials": {
+    "title": "Gestionar credenciales",
+    "subtitle": "Añade y edita claves API para usarlas en los flujos de trabajo",
+    "addCredential": "Añadir credencial",
+    "addFirstCredential": "Añadir primera credencial",
+    "noCredentials": "Todavía no tienes credenciales guardadas",
+    "type": "Tipo",
+    "selectType": "Seleccionar tipo",
+    "name": "Nombre",
+    "namePlaceholder": "Mi clave API",
+    "nameMinLength": "El nombre debe contener al menos 3 caracteres",
+    "value": "Valor",
+    "newValue": "Nuevo valor (opcional)",
+    "valuePlaceholder": "sk-...",
+    "newValuePlaceholder": "Introduce un nuevo valor o déjalo vacío",
+    "valueRequired": "El valor es obligatorio",
+    "createSuccess": "Credencial creada",
+    "createError": "No se pudo crear la credencial",
+    "updateSuccess": "Credencial actualizada",
+    "updateError": "No se pudo actualizar la credencial",
+    "deleteSuccess": "Credencial eliminada",
+    "deleteError": "No se pudo eliminar la credencial",
+    "deleteConfirm": "¿Eliminar la credencial?",
+    "deleteWarning": "¿Seguro que quieres eliminar \"{{name}}\"? Esta acción no se puede deshacer.",
+    "untitled": "Sin título",
+    "selectCredentialType": "Por favor, selecciona un tipo de credencial",
+    "select": {
+      "placeholder": "Seleccionar credencial",
+      "title": "Credenciales",
+      "description": "Selecciona una credencial para usar",
+      "noKeys": "No hay claves disponibles. Añade tu primera credencial.",
+      "add": "Añadir credencial"
+    },
+    "systemToken": {
+      "name": "Token del sistema Assemblix",
+      "description": "Usa nuestros tokens para empezar rápido. Se descuentan créditos por el uso del LLM."
+    }
+  },
+  "apiKeys": {
+    "title": "Claves API",
+    "subtitle": "Gestiona las claves API para la autenticación en tu aplicación",
+    "createKey": "Crear clave API",
+    "createFirstKey": "Crear primera clave",
+    "noKeys": "Todavía no tienes claves API",
+    "noKeysDescription": "Crea tu primera clave API para empezar a trabajar con la API",
+    "name": "Nombre",
+    "key": "Clave",
+    "created": "Creada",
+    "lastUsed": "Último uso",
+    "requests": "Solicitudes",
+    "neverUsed": "Nunca usada",
+    "totalKeys": "Total de claves",
+    "createSuccess": "Clave API creada correctamente",
+    "createError": "Error al crear la clave API",
+    "deleteSuccess": "Clave API eliminada correctamente",
+    "deleteError": "Error al eliminar la clave API",
+    "copySuccess": "Clave copiada al portapapeles",
+    "copyError": "No se pudo copiar la clave",
+    "copyKey": "Copiar clave",
+    "justNow": "justo ahora",
+    "minutesAgo": "hace {{count}} min",
+    "hoursAgo": "hace {{count}} h",
+    "daysAgo": "hace {{count}} d",
+    "deleteConfirm": "¿Eliminar la clave API?",
+    "deleteWarning": "¿Seguro que quieres eliminar \"{{name}}\"? La clave dejará de funcionar de inmediato y esta acción no se puede deshacer.",
+    "enterKeyName": "Introduce el nombre de la clave",
+    "selectProject": "Seleccionar proyecto",
+    "modal": {
+      "createTitle": "Crear clave API",
+      "createDescription": "Introduce un nombre para la nueva clave API. Esto te ayudará a identificarla más adelante.",
+      "saveTitle": "Guarda tu clave API",
+      "saveWarning": "¡Importante! Copia y guarda esta clave en un lugar seguro.",
+      "saveDescription": "No se mostrará de nuevo. Si la pierdes, tendrás que crear una nueva clave.",
+      "yourKey": "Tu clave API",
+      "namePlaceholder": "p. ej., Production API Key",
+      "creating": "Creando...",
+      "done": "Listo, he guardado la clave",
+      "useInHeader": "Usa esta clave en el encabezado Authorization:"
+    },
+    "delete": {
+      "title": "¿Eliminar la clave API?",
+      "description": "¿Seguro que quieres eliminar la clave",
+      "warning": "La clave dejará de funcionar de inmediato y esta acción no se puede deshacer.",
+      "deleting": "Eliminando..."
+    }
+  },
+  "chats": {
+    "title": "Chats",
+    "noChats": "Todavía no tienes chats",
+    "noChatsDescription": "Los chats aparecerán aquí después de crearse",
+    "agent": "Agente",
+    "messages": "mensajes",
+    "lastMessage": "Último mensaje",
+    "active": "Activo",
+    "inactive": "Inactivo",
+    "credits": "Créditos:",
+    "infoBanner": {
+      "title": "📬 Los chats de tus agentes aparecerán aquí",
+      "description": "Cuando ejecutes un agente con el parámetro create_session: true, aparecerá aquí una sesión de chat con el historial completo de la conversación y estadísticas."
+    },
+    "rename": "Renombrar",
+    "delete": "Eliminar",
+    "deleteTitle": "Eliminar sesión",
+    "deleteDescription": "Esto eliminará permanentemente la sesión y todos los mensajes. Esta acción no se puede deshacer.",
+    "renameLabel": "Nombre de la sesión",
+    "renamePlaceholder": "Introduce el nombre de la sesión...",
+    "cancel": "Cancelar"
+  },
+  "chatDetails": {
+    "title": "Chat del",
+    "sendMessage": "Enviar mensaje",
+    "typePlaceholder": "Escribe un mensaje...",
+    "agent": "Agente",
+    "user": "Usuario",
+    "notFound": "Chat no encontrado",
+    "noMessages": "No hay mensajes en este chat",
+    "goToExecution": "Ir a la ejecución",
+    "credits": "créditos"
+  },
+  "executions": {
+    "title": "Ejecuciones",
+    "noExecutions": "Todavía no tienes ejecuciones",
+    "noExecutionsDescription": "El historial de ejecuciones de agentes aparecerá aquí",
+    "agent": "Agente",
+    "status": "Estado",
+    "started": "Iniciada",
+    "duration": "Duración",
+    "steps": "Pasos:",
+    "credits": "Créditos:",
+    "clientSession": "Sesión de cliente",
+    "filterByClientId": "Filtrar por Client ID...",
+    "statuses": {
+      "running": "En ejecución",
+      "completed": "Completada",
+      "failed": "Fallida",
+      "pending": "Pendiente"
+    },
+    "infoBanner": {
+      "title": "🚀 Las ejecuciones de tus agentes aparecerán aquí",
+      "description": "Cada ejecución de un agente publicado crea un registro en el historial. Verás los detalles de la ejecución, los tokens usados, el costo y los resultados."
+    }
+  },
+  "executionViewer": {
+    "title": "Visor de ejecuciones",
+    "step": "Paso",
+    "stepNumber": "Paso n.º",
+    "input": "Datos de entrada",
+    "output": "Datos de salida",
+    "error": "Error",
+    "errorMessage": "Mensaje de error",
+    "errorExecution": "Error de ejecución",
+    "errorInNode": "Error en el nodo:",
+    "logs": "Registros",
+    "backToExecutions": "Volver a ejecuciones",
+    "back": "Atrás",
+    "duration": "Duración",
+    "credits": "Créditos",
+    "steps": "Pasos",
+    "executionFrom": "Ejecución del",
+    "model": "Modelo",
+    "stateBefore": "Estado antes",
+    "stateAfter": "Estado después",
+    "celEvaluations": "Evaluaciones CEL",
+    "llmRequest": "Solicitud al LLM",
+    "currentState": "Estado",
+    "stateAfterStep": "Estado tras el paso",
+    "stateChanges": "Cambios",
+    "fullState": "Estado completo",
+    "noChanges": "Este nodo no realizó cambios de estado",
+    "loadingError": "Error de carga",
+    "loadingErrorDescription": "No se pudieron cargar los datos de la ejecución. Puede que haya sido eliminada o que no tengas acceso."
+  },
+  "organization": {
+    "title": "Configuración de la organización",
+    "subtitle": "Gestiona la configuración básica y los miembros de la organización",
+    "members": "Miembros",
+    "membersCount_one": "miembro",
+    "membersCount_other": "miembros",
+    "projects": "Proyectos",
+    "addMember": "Añadir miembro",
+    "removeMember": "Eliminar miembro",
+    "email": "Correo electrónico",
+    "role": "Rol",
+    "actions": "Acciones",
+    "member": "Miembro",
+    "joinedDate": "Fecha de ingreso",
+    "noMembers": "No hay miembros",
+    "noMembersDescription": "Añade el primer miembro a la organización",
+    "noName": "Sin nombre",
+    "selectOrganization": "Seleccionar organización",
+    "selectProject": "Seleccionar proyecto",
+    "createProject": "Crear proyecto",
+    "addOrganization": "Añadir organización",
+    "addProject": "Añadir proyecto",
+    "createOrganization": "Crear organización",
+    "organizationName": "Nombre de la organización",
+    "organizationNamePlaceholder": "p. ej., Mi equipo",
+    "projectName": "Nombre del proyecto",
+    "projectNamePlaceholder": "p. ej., Production",
+    "enterOrganizationName": "Introduce el nombre de la organización",
+    "enterProjectName": "Introduce un nombre para el nuevo proyecto",
+    "organizationCreated": "Organización creada",
+    "projectCreated": "Proyecto creado",
+    "organizationCreateError": "No se pudo crear la organización",
+    "projectCreateError": "No se pudo crear el proyecto",
+    "creating": "Creando...",
+    "saving": "Guardando...",
+    "enterName": "Introduce el nombre de la organización",
+    "enterProjectNameError": "Introduce el nombre del proyecto",
+    "selectOrganizationFirst": "Selecciona una organización",
+    "nameNotChanged": "El nombre no ha cambiado",
+    "nameUpdated": "Nombre de la organización actualizado",
+    "nameUpdateError": "Error al actualizar el nombre",
+    "onlyOwnerCanEdit": "Solo el propietario puede cambiar el nombre de la organización",
+    "basicSettings": "Configuración básica",
+    "organizationInfo": "Información de la organización",
+    "roles": {
+      "owner": "Propietario",
+      "admin": "Administrador",
+      "member": "Miembro"
+    },
+    "addMemberModal": {
+      "title": "Añadir miembro",
+      "description": "Introduce el correo electrónico de un usuario que ya esté registrado en el sistema.",
+      "emailPlaceholder": "user@example.com",
+      "selectRole": "Seleccionar rol",
+      "isOwner": "Propietario de la organización",
+      "isOwnerDescription": "Los propietarios pueden añadir y eliminar miembros",
+      "addSuccess": "Miembro añadido correctamente",
+      "addError": "Error al añadir el miembro",
+      "userNotFound": "No se encontró un usuario con este correo electrónico",
+      "userAlreadyMember": "El usuario ya es miembro de la organización",
+      "noPermission": "Permisos insuficientes para añadir miembros",
+      "enterEmail": "Introduce el correo electrónico del miembro",
+      "enterValidEmail": "Introduce un correo electrónico válido",
+      "adding": "Añadiendo..."
+    },
+    "removeMemberModal": {
+      "title": "¿Eliminar miembro?",
+      "description": "¿Seguro que quieres eliminar a",
+      "fromOrganization": "de la organización?",
+      "warning": "El miembro perderá el acceso a todos los proyectos y recursos de la organización. Esta acción puede revertirse añadiendo al miembro de nuevo.",
+      "removeSuccess": "Miembro eliminado de la organización",
+      "removeError": "Error al eliminar el miembro",
+      "cannotRemoveOwner": "No se puede eliminar al propietario de la organización",
+      "noPermission": "Permisos insuficientes para eliminar miembros",
+      "deleting": "Eliminando..."
+    }
+  },
+  "settings": {
+    "title": "Configuración",
+    "subtitle": "Paleta de colores utilizada en el sistema",
+    "theme": "Tema",
+    "lightTheme": "Claro",
+    "darkTheme": "Oscuro",
+    "systemTheme": "Sistema",
+    "language": "Idioma",
+    "tabs": {
+      "general": "General",
+      "apiKeys": "Claves API",
+      "credentials": "Credenciales",
+      "notifications": "Notificaciones"
+    },
+    "colorCategories": {
+      "basic": "Colores básicos",
+      "accents": "Acentos",
+      "statuses": "Estados",
+      "workflowNodes": "Nodos del flujo de trabajo",
+      "borders": "Bordes y elementos",
+      "sidebar": "Barra lateral"
+    }
+  },
+  "notifications": {
+    "title": "Notificaciones",
+    "subtitle": "Canales que reciben alertas sobre fallos técnicos en la ejecución de los flujos de trabajo. Se aplica a todos los flujos de trabajo del proyecto.",
+    "empty": "Aún no hay canales de notificación configurados",
+    "addFirst": "Añadir primer canal",
+    "add": "Añadir canal",
+    "untitled": "Sin título",
+    "disabled": "Deshabilitado",
+    "enabled": "Canal habilitado",
+    "type": "Tipo de origen",
+    "name": "Nombre",
+    "namePlaceholder": "p. ej., Alertas de prod",
+    "botToken": "Token del bot",
+    "botTokenPlaceholder": "123456:ABC-DEF...",
+    "botTokenEditPlaceholder": "Déjalo vacío para mantener el actual",
+    "botTokenRequired": "El token del bot es obligatorio",
+    "chatId": "Chat ID",
+    "chatIdPlaceholder": "-1001234567890",
+    "chatIdRequired": "El Chat ID es obligatorio",
+    "test": "Probar",
+    "testSuccess": "Mensaje de prueba enviado",
+    "testError": "No se pudo enviar el mensaje de prueba",
+    "createSuccess": "Canal creado",
+    "createError": "No se pudo crear el canal",
+    "updateSuccess": "Canal actualizado",
+    "updateError": "No se pudo actualizar el canal",
+    "deleteConfirm": "¿Eliminar el canal?",
+    "deleteWarning": "El canal \"{{name}}\" se eliminará permanentemente.",
+    "deleteSuccess": "Canal eliminado",
+    "deleteError": "No se pudo eliminar el canal"
+  },
+  "errors": {
+    "generic": "Se produjo un error",
+    "networkError": "Error de red",
+    "unauthorized": "Se requiere autorización",
+    "forbidden": "Acceso denegado",
+    "notFound": "No encontrado",
+    "serverError": "Error del servidor"
+  },
+  "variables": {
+    "title": "Variables",
+    "addVariable": "Añadir variable",
+    "noVariables": "No hay variables disponibles",
+    "availableVariables": "Variables disponibles",
+    "state": "Estado",
+    "input": "Entrada"
+  },
+  "nodeForms": {
+    "start": {
+      "title": "Inicio",
+      "firstPhrase": "Primera frase",
+      "firstPhraseHint": "Saludo del asistente que se añade al historial como primer mensaje cuando comienza una nueva sesión.",
+      "firstPhrasePlaceholder": "¡Hola! ¿En qué puedo ayudarte?",
+      "inputVariables": "Variables de entrada",
+      "projectVariables": "Variables del proyecto",
+      "projectVariablesNote": "Estas variables se definen a nivel de proyecto y están disponibles en todos los flujos de trabajo",
+      "stateVariables": "Variables de estado",
+      "add": "Añadir",
+      "variableUpdateError": "Error al actualizar la variable",
+      "variableAddError": "Error al añadir la variable",
+      "variableUpdated": "Variable \"{{name}}\" actualizada",
+      "variableAdded": "Variable \"{{name}}\" añadida",
+      "variableDeleteError": "Error al eliminar la variable",
+      "variableDeleted": "Variable eliminada"
+    },
+    "end": {
+      "title": "Fin",
+      "endpointPlaceholder": "p. ej., Éxito, Error",
+      "isSessionEnd": "Finalizar sesión",
+      "sessionEndDescription": "La sesión pasará a estar inactiva. Úsalo como indicador de que el diálogo ha terminado.",
+      "isError": "Error de negocio",
+      "isErrorDescription": "Marcar la finalización como un rechazo deliberado del agente (estado ERROR en lugar de COMPLETED)",
+      "errorMessage": "Mensaje de error",
+      "errorMessagePlaceholder": "{{state.error_reason}}",
+      "advancedSettings": "Configuración avanzada",
+      "outputSource": "Origen de la salida",
+      "outputModeLastAgent": "Último agente",
+      "outputModeSpecificAgent": "Agente específico",
+      "outputModeCustom": "Mensaje fijo",
+      "selectAgent": "Seleccionar agente",
+      "agentLabel": "Agente",
+      "goToAgent": "Ir al agente",
+      "customMessage": "Mensaje",
+      "customMessagePlaceholder": "{{input.message}} o texto fijo",
+      "dataFiltering": "Filtrado de datos",
+      "stateFilter": "Variables de estado",
+      "projectFilter": "Variables del proyecto",
+      "filterAll": "Todas",
+      "filterNone": "No devolver",
+      "filterSelected": "Seleccionadas",
+      "selectVariables": "Seleccionar variables",
+      "noAgents": "No hay agentes disponibles",
+      "properties": "Propiedades (JSON)",
+      "propertiesPlaceholder": "{\n  \"status\": \"success\",\n  \"message\": \"Workflow completed\"\n}",
+      "invalidJSON": "⚠️ JSON no válido. Debe ser un objeto.",
+      "propertiesHelp": "Introduce un objeto JSON con propiedades adicionales para el nodo final",
+      "preview": "Vista previa:"
+    },
+    "sticker": {
+      "title": "Nota",
+      "text": "Texto de la nota",
+      "placeholder": "Escribe tu nota..."
+    },
+    "condition": {
+      "title": "Condición",
+      "conditions": "Condiciones",
+      "expression": "Expresión {{number}}",
+      "expressionPlaceholder": "state.counter > 10",
+      "branchName": "Nombre de la rama",
+      "branchPlaceholder": "p. ej., high_count",
+      "add": "Añadir condición",
+      "defaultBranch": "Por defecto",
+      "defaultBranchPlaceholder": "default",
+      "namePlaceholder": "Introduce el nombre de la condición"
+    },
+    "setVariable": {
+      "title": "Establecer variable",
+      "updates": "Actualizaciones de variables",
+      "variable": "Variable {{number}}",
+      "selectVariable": "Seleccionar variable",
+      "value": "Valor",
+      "valuePlaceholder": "state.counter + 1",
+      "add": "Añadir actualización",
+      "advancedUsage": "Uso avanzado",
+      "merges": "Fusión inteligente",
+      "merge": "Fusión {{number}}",
+      "addMerge": "Añadir fusión",
+      "mergeSource": "Origen",
+      "mergeSourcePlaceholder": "input.parsed_message",
+      "mergeTargetKey": "Variable de estado",
+      "mergeTargetKeyAll": "Estado completo",
+      "mergeTarget": "Destino",
+      "mergeTargetState": "Estado",
+      "mergeTargetProject": "Proyecto",
+      "mergeOperation": "Operación",
+      "mergeOperationAdd": "Sumar (+)",
+      "mergeOperationSubtract": "Restar (−)",
+      "mergeOperationOverwrite": "Sobrescribir (=)"
+    },
+    "agent": {
+      "title": "Agente",
+      "name": "Nombre",
+      "namePlaceholder": "Introduce el nombre del agente",
+      "provider": "Proveedor",
+      "selectProvider": "Seleccionar proveedor",
+      "model": "Modelo",
+      "modelPlaceholder": "gpt-4, gemini-pro, etc.",
+      "selectModel": "Seleccionar modelo",
+      "advancedSettings": "Configuración avanzada",
+      "maxRetries": "Reintentos ante errores transitorios",
+      "maxRetriesPlaceholder": "Por defecto",
+      "timeout": "Tiempo de espera, segundos",
+      "timeoutPlaceholder": "Por defecto",
+      "enforceTimeoutOnLast": "Tiempo de espera estricto en el último modelo",
+      "enforceTimeoutOnLastTooltip": "Cuando está habilitado, el tiempo de espera por llamada también se aplica al último modelo de la cadena, de modo que ningún proveedor pueda bloquear la ejecución. Cuando está deshabilitado, el último modelo puede ejecutarse hasta el tiempo de espera general como último recurso.",
+      "fallbackModels": "Modelos de respaldo",
+      "fallbackModelsHint": "Se prueban en orden cuando el modelo principal sigue fallando con errores transitorios (límites de tasa, 5xx).",
+      "fallbackModelItem": "Respaldo {{index}}",
+      "addFallbackModel": "Añadir modelo",
+      "searchModel": "Buscar modelo...",
+      "loadingModels": "Cargando modelos...",
+      "modelsError": "Error al cargar los modelos",
+      "noModels": "No hay modelos disponibles",
+      "noModelsFound": "No se encontraron modelos",
+      "credential": "Clave de acceso",
+      "selectCredential": "Seleccionar clave",
+      "selectCredentialFirst": "Selecciona primero una clave de acceso",
+      "instructions": "Instrucciones",
+      "role": "Rol",
+      "selectRole": "Seleccionar rol",
+      "roleUser": "Usuario",
+      "roleAssistant": "Asistente",
+      "contentPlaceholder": "Introduce el contenido de la instrucción",
+      "expandInstruction": "Expandir prompt",
+      "promptModalTitle": "Editar instrucción",
+      "promptModalLabel": "Instrucción",
+      "additionalSettings": "Configuración adicional",
+      "tools": "Herramientas",
+      "allToolsAdded": "Todas añadidas",
+      "addTool": "Añadir herramienta",
+      "responseFormat": "Formato de respuesta",
+      "selectFormat": "Seleccionar formato",
+      "formatText": "Texto",
+      "formatJSON": "Objeto JSON",
+      "schemaBuilder": "Constructor de esquemas JSON",
+      "schemaDescription": "Crea la estructura de la respuesta JSON para el modelo LLM",
+      "cancel": "Cancelar",
+      "save": "Guardar",
+      "includeChatHistory": "Historial del chat",
+      "includeChatHistoryTooltip": "Cuando está habilitado, se enviará al LLM el historial completo del diálogo de la sesión. Cuando está deshabilitado, solo se enviarán las instrucciones del nodo y el mensaje actual del usuario",
+      "saveToHistory": "Guardar la respuesta en el historial",
+      "saveToHistoryTooltip": "Cuando está habilitado, la respuesta de este agente se añade al historial de diálogo compartido que ven los agentes posteriores. Deshabilítalo para hacer que el agente sea silencioso — su respuesta seguirá fluyendo al siguiente nodo y a la salida final, pero no al historial compartido.",
+      "historyField": "Campo del historial",
+      "historyFieldTooltip": "Cuando la respuesta es JSON, guarda solo este campo del esquema en el historial compartido en lugar del JSON completo. La respuesta completa sigue fluyendo hacia adelante y hacia la salida final.",
+      "historyFieldFull": "Respuesta completa",
+      "knowledgeBases": "Bases de conocimiento",
+      "selectKnowledgeBases": "Añadir base de conocimiento",
+      "noKnowledgeBases": "No hay bases de conocimiento",
+      "noKnowledgeBasesFound": "No se encontraron bases de conocimiento",
+      "loadingKnowledgeBases": "Cargando bases de conocimiento...",
+      "searchKnowledgeBases": "Buscar base de conocimiento...",
+      "modelSettings": "Configuración del modelo",
+      "modelSettingsTooltip": "Parámetros avanzados de la llamada al LLM: temperatura, penalizaciones, formato de respuesta, razonamiento y otras opciones según el modelo",
+      "modelSettingsModalTitle": "Configuración del modelo",
+      "modelSettingsModalDescription": "Ajusta con precisión los parámetros de la llamada al LLM. Los campos disponibles dependen del modelo seleccionado.",
+      "close": "Cerrar"
+    },
+    "generic": {
+      "jsonPlaceholder": "{ \"key\": \"value\" }"
+    },
+    "httpRequest": {
+      "title": "Solicitud HTTP",
+      "method": "Método",
+      "selectMethod": "Seleccionar método",
+      "url": "URL",
+      "urlPlaceholder": "https://api.example.com/endpoint",
+      "headers": "Encabezados",
+      "headerKey": "Clave",
+      "headerValue": "Valor",
+      "queryParams": "Parámetros de consulta",
+      "paramKey": "Clave",
+      "paramValue": "Valor",
+      "body": "Cuerpo de la solicitud",
+      "bodyPlaceholder": "{\"key\": \"value\"}",
+      "timeout": "Tiempo de espera (seg)"
+    }
+  },
+  "debug": {
+    "title": "Chat de depuración",
+    "running": "En ejecución",
+    "clearHistory": "Borrar el historial e iniciar una nueva sesión",
+    "noMessages": "No hay mensajes",
+    "noMessagesHelp": "Escribe un mensaje abajo y ejecuta el flujo de trabajo",
+    "userMessage": "Tú:",
+    "error": "Error:",
+    "inputPlaceholder": "Por ejemplo: ¡Hola! ¿Cómo estás?",
+    "execute": "Ejecutar",
+    "stop": "Detener",
+    "executing": "Ejecutando...",
+    "step": "Paso {{number}}:",
+    "completed": "Completado",
+    "failed": "Fallido",
+    "input": "Entrada",
+    "output": "Salida",
+    "duration": "{{ms}} ms",
+    "executionResult": "Resultado de la ejecución",
+    "inputData": "Datos de entrada",
+    "outputData": "Datos de salida",
+    "llmRequest": "Solicitud al LLM",
+    "stateBefore": "Estado antes",
+    "stateAfter": "Estado después",
+    "projectStateAfter": "Estado del proyecto después",
+    "noData": "Sin datos",
+    "creditsUsed": "Créditos",
+    "ownKeyCost": "Clave propia",
+    "totalCost": "Total",
+    "executionError": "La ejecución terminó con un error",
+    "sessionClosed": "Sesión cerrada",
+    "sessionClosedDesc": "El agente cerró la sesión. Puedes continuar o iniciar una nueva sesión",
+    "continueSession": "Continuar sesión",
+    "startNewSession": "Iniciar nueva sesión",
+    "stateManagement": "Gestión de estado",
+    "agentState": "Estado del agente",
+    "projectState": "Estado del proyecto",
+    "noStateVariables": "No hay variables de estado",
+    "noProjectVariables": "No hay variables del proyecto",
+    "invalidJson": "Formato JSON no válido",
+    "resetToDefault": "Restablecer"
+  },
+  "nodes": {
+    "condition": {
+      "else": "Si no"
+    },
+    "placeholder": {
+      "newElement": "Nuevo elemento",
+      "selectTypeInSidebar": "Selecciona el tipo en la barra lateral"
+    }
+  },
+  "stateVariables": {
+    "noVariablesText": "No hay variables. Añade tu primera variable.",
+    "selectTitle": "Variables de estado",
+    "selectDescription": "Selecciona la variable a actualizar",
+    "selectPlaceholder": "Seleccionar variable",
+    "noAvailableVariables": "No hay variables disponibles. Crea la primera variable.",
+    "addVariable": "Añadir variable",
+    "defaultValueLabel": "valor por defecto"
+  },
+  "availableVariables": {
+    "operators": {
+      "comparison": {
+        "equal": "Igual",
+        "notEqual": "Distinto",
+        "less": "Menor que",
+        "greater": "Mayor que",
+        "lessOrEqual": "Menor o igual",
+        "greaterOrEqual": "Mayor o igual"
+      },
+      "logical": {
+        "ternary": "Operador ternario",
+        "or": "O lógico",
+        "and": "Y lógico"
+      },
+      "comparisonTitle": "Comparación",
+      "logicalTitle": "Lógica",
+      "notFound": "No se encontraron operadores",
+      "noAvailable": "No hay operadores disponibles"
+    },
+    "variablesNotFound": "No se encontraron variables",
+    "noAvailableVariables": "No hay variables disponibles",
+    "groups": {
+      "input": "Datos de entrada",
+      "state": "Estado",
+      "project": "Proyecto",
+      "workflow": "Agente",
+      "metadata": "Metadatos"
+    }
+  },
+  "workflowCard": {
+    "noDescription": "Sin descripción"
+  },
+  "versionsDropdown": {
+    "draft": "Borrador",
+    "error": "Error",
+    "loadVersionError": "No se pudo cargar la versión"
+  },
+  "workflowActions": {
+    "additionalActions": "Acciones adicionales",
+    "rename": "Renombrar",
+    "renameAgent": "Renombrar agente",
+    "renameDescription": "Introduce un nuevo nombre para el agente",
+    "nameLabel": "Nombre",
+    "namePlaceholder": "Nombre del agente",
+    "nameMinLength": "El nombre debe contener al menos 3 caracteres",
+    "cancel": "Cancelar",
+    "save": "Guardar",
+    "renamed": "Flujo de trabajo renombrado",
+    "renameError": "No se pudo renombrar el agente",
+    "duplicate": "Duplicar",
+    "duplicateSuccess": "Agente duplicado correctamente",
+    "duplicateError": "No se pudo duplicar el agente",
+    "delete": "Eliminar",
+    "deleteAgent": "Eliminar agente",
+    "deleteDescription": "¿Seguro que quieres eliminar el agente \"{{name}}\"?",
+    "deleteWarning": "Esta acción no se puede deshacer. El agente se eliminará permanentemente.",
+    "deleteConfirm": "Eliminar",
+    "deleted": "Agente eliminado correctamente",
+    "deleteError": "No se pudo eliminar el agente",
+    "move": "Mover",
+    "moveAgent": "Mover agente",
+    "moveDescription": "Selecciona el proyecto al que mover el agente",
+    "moveProjectLabel": "Proyecto",
+    "moveProjectPlaceholder": "Seleccionar proyecto",
+    "moveSuccess": "Agente movido correctamente",
+    "moveError": "No se pudo mover el agente",
+    "moveConfirm": "Mover"
+  },
+  "publishSuccess": {
+    "title": "Agente publicado",
+    "version": "Versión v{{version}}",
+    "workflowIdLabel": "Workflow ID",
+    "apiKeyLabel": "Clave API",
+    "apiKeyAutoCreated": "Hemos creado una clave API para esta integración — guárdala ahora, no se mostrará de nuevo.",
+    "apiKeyHint": "No podemos mostrar las claves existentes. Usa una que ya tengas o crea una nueva.",
+    "apiKeyCreate": "Crear clave de integración",
+    "apiKeyCreating": "Creando…",
+    "apiKeyCreateError": "No se pudo crear la clave API",
+    "examplesLabel": "Ejemplos de integración",
+    "supportPrompt": "¿Tienes preguntas? Escríbenos:",
+    "copySuccess": "Copiado",
+    "close": "Listo"
+  },
+  "clientSessions": {
+    "title": "Sesiones de clientes",
+    "subtitle": "Gestiona los datos de los clientes y el historial de sesiones",
+    "noSessions": "Aún no hay sesiones de clientes",
+    "clientId": "Client ID",
+    "lastActivity": "Última actividad",
+    "executions": "Ejecuciones",
+    "credits": "Créditos",
+    "status": "Estado",
+    "active": "Activa",
+    "inactive": "Inactiva",
+    "never": "Nunca",
+    "onlyActive": "Solo activas",
+    "showTestSessions": "Mostrar sesiones de prueba",
+    "searchPlaceholder": "Buscar por Client ID...",
+    "deactivate": "Desactivar",
+    "deactivateConfirm": "¿Desactivar la sesión de cliente?",
+    "deactivateWarning": "Esto marcará la sesión de cliente como inactiva. Los datos de la sesión se conservarán.",
+    "deactivateSuccess": "Sesión de cliente desactivada",
+    "deactivateError": "No se pudo desactivar la sesión de cliente",
+    "details": "Detalles de la sesión de cliente",
+    "information": "Información",
+    "createdAt": "Creada",
+    "updatedAt": "Actualizada",
+    "projectState": "Estado del proyecto",
+    "metadata": "Metadatos",
+    "editMetadata": "Editar metadatos",
+    "editMetadataDescription": "Edita los metadatos como JSON",
+    "metadataUpdated": "Metadatos actualizados correctamente",
+    "updateError": "No se pudieron actualizar los metadatos",
+    "invalidJson": "Formato JSON no válido",
+    "noExecutions": "No hay ejecuciones para este cliente",
+    "noChatSessions": "No hay sesiones de chat para este cliente",
+    "tabs": {
+      "overview": "Resumen",
+      "state": "Estado",
+      "metadata": "Metadatos",
+      "executions": "Ejecuciones",
+      "chatSessions": "Sesiones de chat"
+    }
+  },
+  "projectSettings": {
+    "title": "Configuración del proyecto",
+    "subtitle": "Gestiona la configuración del proyecto y el esquema de estado",
+    "projectInfo": "Información del proyecto",
+    "projectInfoDescription": "Información básica sobre el proyecto",
+    "stateSchema": "Variables del proyecto",
+    "stateSchemaDescription": "Almacena de forma segura claves API, secretos y el estado de los clientes. Pasa client_id para acceder a los datos compartidos en todos los agentes del proyecto.",
+    "addVariable": "Añadir variable",
+    "variableName": "Nombre de la variable",
+    "variableType": "Tipo",
+    "defaultValue": "Valor por defecto",
+    "noVariables": "No hay variables del proyecto definidas",
+    "noVariablesDescription": "Crea variables para almacenar claves API, secretos y el estado de los clientes. Usa client_id para compartir datos entre agentes.",
+    "addVariableDescription": "Crear una nueva variable del proyecto",
+    "nameRequired": "El nombre de la variable es obligatorio",
+    "duplicateName": "Ya existe una variable con este nombre",
+    "variableAdded": "Variable añadida correctamente",
+    "addError": "No se pudo añadir la variable",
+    "deleteVariable": "¿Eliminar la variable?",
+    "deleteVariableWarning": "¿Seguro que quieres eliminar esta variable? Esto puede afectar a los flujos de trabajo que la usan.",
+    "variableDeleted": "Variable eliminada correctamente",
+    "deleteError": "No se pudo eliminar la variable"
+  },
+  "onboarding": {
+    "progress": "{{current}} de {{total}}",
+    "steps": {
+      "sidebar": {
+        "title": "Tu constructor",
+        "description": "Arrastra bloques al lienzo para construir la lógica de tu agente. Empieza con un nodo de agente — se encarga de la comunicación con el LLM"
+      },
+      "agentNode": {
+        "title": "Agente de IA — el corazón de tu flujo de trabajo",
+        "description": "Arrastra este bloque al lienzo — se convertirá en el cerebro de tu agente. Usa un LLM para entender las solicitudes y generar respuestas. Funciona desde el primer momento con nuestras claves del sistema — ¡solo empieza a probar!"
+      },
+      "debug": {
+        "title": "Prueba sobre la marcha",
+        "description": "Pulsa Play y prueba tu agente ahora mismo. Ya tienes créditos iniciales — envía mensajes y observa cómo el agente piensa y responde en cada paso"
+      },
+      "credits": {
+        "title": "Créditos y ahorro",
+        "description": "Cada ejecución de un agente consume créditos de tu saldo. ¿Quieres gastar menos? Conecta tus propias claves API de OpenAI, DeepSeek u otros proveedores — entonces solo 1 crédito por solicitud en lugar del costo de la llamada al LLM. Disponible en los planes PRO y BUSINESS"
+      },
+      "publish": {
+        "title": "¿Listo para producción?",
+        "description": "Cuando tu agente esté listo — publícalo. Después podrás llamarlo por API desde cualquier aplicación"
+      },
+      "final": {
+        "title": "¡Genial! Vamos a probarlo",
+        "description": "El chat de depuración se abrirá automáticamente. Envía un mensaje y ve a tu agente en acción. ¡Ya tienes créditos iniciales!",
+        "telegramButton": "Unirse a Discord",
+        "startButton": "Empezar a construir"
+      }
+    }
+  },
+  "billing": {
+    "unlimited": "Ilimitado",
+    "upgrade": "Mejorar",
+    "upgradePlan": "Mejorar plan",
+    "upgradeToPlan": "Pasar a {{plan}}",
+    "availableInPlan": "Disponible en {{plan}}",
+    "viewPlans": "Ver planes",
+    "highUsage": "Tienes un uso elevado de recursos",
+    "criticalUsage": "Has alcanzado un nivel crítico de uso",
+    "nextReset": "Los límites se restablecerán el {{date}}",
+    "section": {
+      "title": "Facturación y uso",
+      "subtitle": "Gestiona tu plan de facturación y controla el uso de recursos"
+    },
+    "usage": {
+      "agents": "Agentes",
+      "credits": "Créditos"
+    },
+    "pricing": {
+      "title": "Elige tu plan",
+      "subtitle": "Selecciona el plan que se ajuste a las necesidades de tu proyecto",
+      "popular": "Popular",
+      "perMonth": "mes",
+      "currentPlan": "Plan actual",
+      "getStarted": "Empieza gratis",
+      "contactSales": "Contáctanos",
+      "subscribe": "Suscribirse",
+      "business": {
+        "price": "Bajo consulta",
+        "description": "Condiciones individuales para grandes empresas",
+        "features": {
+          "consulting": "Consultoría experta y auditoría de procesos",
+          "integration": "Integración llave en mano y soporte de implementación",
+          "sla": "SLA personal y gerente dedicado",
+          "onpremise": "Opción de despliegue On-Premise"
+        }
+      },
+      "agents_one": "{{count}} agente",
+      "agents_other": "{{count}} agentes",
+      "unlimitedAgents": "Agentes ilimitados",
+      "agentsDesc": "Crea agentes de IA",
+      "creditsPerMonth": "créditos/mes",
+      "creditsDesc": "Úsalos para ejecutar agentes",
+      "rpmLimit_one": "{{count}} solicitud/min",
+      "rpmLimit_other": "{{count}} solicitudes/min",
+      "rpmDesc": "Tasa máxima de solicitudes a la API",
+      "unlimitedRequests": "Solicitudes ilimitadas con tus claves",
+      "unlimitedRequestsDesc": "0 créditos al usar tus propias claves API",
+      "ownApiKeys": "Claves API propias",
+      "ownApiKeysDesc": "Usa tus propias claves de proveedores de LLM",
+      "projectVariables": "Variables del proyecto",
+      "projectVariablesDesc": "Almacena secretos y el estado de los clientes con client_id",
+      "support": {
+        "community": "Soporte de la comunidad",
+        "email_24h": "Soporte por correo (24 h)",
+        "priority_4h_slack": "Soporte prioritario (4 h) + Slack"
+      },
+      "supportDesc": {
+        "community": "Ayuda a través del foro de la comunidad",
+        "email_24h": "Respuesta en un plazo de 24 horas",
+        "priority_4h_slack": "Respuesta rápida y canal directo"
+      },
+      "allPlansInclude": "Todos los planes incluyen:",
+      "commonFeatures": {
+        "allProviders": "Todos los proveedores de IA",
+        "visualBuilder": "Constructor visual",
+        "apiAccess": "Acceso a la API",
+        "sessionManagement": "Gestión de sesiones",
+        "logsMonitoring": "Registros y monitoreo"
+      },
+      "note": "Contáctanos para pasar a un plan de pago u obtener una solución empresarial"
+    },
+    "features": {
+      "projectVariables": {
+        "name": "Variables del proyecto",
+        "description": "Almacena claves API, secretos y el estado de los clientes. Pasa client_id — y todos los agentes acceden a los datos compartidos sin perder el contexto entre conversaciones."
+      }
+    },
+    "errors": {
+      "limitReached": "Límite de uso alcanzado",
+      "agentsLimitReached": "¡Hora de escalar! 🚀",
+      "agentsLimitReachedHint": "Has alcanzado el límite de agentes de tu plan actual. Pasa a PRO o BUSINESS — obtén más agentes, solicitudes ilimitadas y variables del proyecto para escenarios complejos.",
+      "creditsLimitReached": "Sin créditos 💳",
+      "creditsInsufficient": "Créditos insuficientes para ejecutar",
+      "creditsInsfficientHint": "Conecta tus propias claves API (plan PRO+) y paga solo 1 crédito por solicitud. O pasa a un plan con más créditos.",
+      "featureNotAvailable": "Esta función no está disponible en tu plan actual",
+      "rateLimitExceeded": "Límite de solicitudes excedido",
+      "rateLimitHint": "Has excedido el límite de {{rpm}} solicitudes por minuto. Reduce la frecuencia de las solicitudes o mejora tu plan."
+    },
+    "limitWarning": {
+      "warning": {
+        "agents": {
+          "title": "Pronto necesitarás más agentes",
+          "description": "Usados {{current}} de {{limit}} agentes ({{percentage}}%). Considera mejorar tu plan para escalar tus proyectos."
+        },
+        "credits": {
+          "title": "Los créditos se están agotando",
+          "description": "Quedan {{current}} de {{limit}} créditos ({{percentage}}%). Conecta tus propias claves API o pasa a un plan con más créditos."
+        }
+      },
+      "critical": {
+        "agents": {
+          "title": "¡Hora de mejorar el plan! 🚀",
+          "description": "Usados {{current}} de {{limit}} agentes ({{percentage}}%). Pasa a PRO o BUSINESS ahora para seguir construyendo."
+        },
+        "credits": {
+          "title": "¡Casi sin créditos! 💳",
+          "description": "Quedan {{current}} de {{limit}} créditos ({{percentage}}%). Mejora tu plan o conecta claves API para ahorrar costos."
+        }
+      }
+    },
+    "credits": {
+      "balance": "Saldo de créditos",
+      "current": "Saldo actual",
+      "used": "Usados",
+      "remaining": "Restantes",
+      "nextRefill": "Próxima recarga",
+      "refillIn": "Recarga en",
+      "dateUnknown": "Fecha desconocida",
+      "transactions": "Historial de transacciones",
+      "totalTransactions": "Total de transacciones",
+      "noTransactions": "Sin transacciones",
+      "viewAll": "Ver todas",
+      "transactionTypes": {
+        "plan_grant": "Asignación del plan",
+        "llm_usage": "Uso de LLM",
+        "request_fee": "Tarifa por solicitud",
+        "manual_topup": "Recarga manual",
+        "refund": "Reembolso"
+      },
+      "filters": {
+        "all": "Todos los tipos",
+        "type": "Tipo de transacción",
+        "period": "Período"
+      }
+    },
+    "systemKeys": {
+      "title": "Claves API del sistema",
+      "description": "Se usan las claves del sistema de los proveedores de LLM",
+      "upgradeMessage": "Las claves API propias están disponibles en los planes STARTER, PRO y BUSINESS",
+      "benefit": "Al usar tus propias claves, no se descuentan créditos por las solicitudes"
+    },
+    "payments": {
+      "confirmDialog": {
+        "title": "Suscribirse al plan",
+        "subtitle": "Estás pasando al plan {{plan}}",
+        "price": "Precio",
+        "autoRenewal": "Habilitar tarjeta para renovación automática",
+        "autoRenewalHint": "El dinero se cobrará automáticamente cada mes",
+        "cancel": "Cancelar",
+        "submit": "Proceder al pago",
+        "loading": "Creando el pago...",
+        "error": "No se pudo crear el pago. Inténtalo de nuevo."
+      },
+      "successPage": {
+        "checking": "Comprobando el estado del pago...",
+        "checkingHint": "Esto tomará unos segundos",
+        "success": "¡Suscripción activada!",
+        "successHint": "Ahora tienes acceso a todas las funciones del plan {{plan}}",
+        "goToAgents": "Ir a los agentes",
+        "error": "El pago falló",
+        "errorHint": "Inténtalo de nuevo o contacta con soporte",
+        "retry": "Intentar de nuevo",
+        "timeout": "No se pudo verificar el estado",
+        "timeoutHint": "Si el dinero fue cobrado, el plan se activará automáticamente"
+      }
+    }
+  },
+  "variableForm": {
+    "name": "Nombre",
+    "namePlaceholder": "Introduce el nombre de la variable",
+    "nameRequired": "El nombre de la variable no puede estar vacío",
+    "duplicateName": "Ya existe una variable con este nombre",
+    "defaultValue": "Valor por defecto",
+    "optional": "(opcional)",
+    "stringPlaceholder": "Introduce un valor",
+    "numberPlaceholder": "Introduce un número",
+    "booleanPlaceholder": "Selecciona un valor",
+    "projectVariable": "Variable del proyecto",
+    "projectVariableDescription": "Disponible en todos los flujos de trabajo del proyecto",
+    "projectVariableUpgradeRequired": "Pasa al plan Pro para usar variables del proyecto",
+    "objectPlaceholder": "Introduce un objeto JSON, p. ej. {\"key\": \"value\"}",
+    "invalidJson": "Formato JSON no válido",
+    "objectMustBeObject": "El valor debe ser un objeto JSON",
+    "editObjectValue": "Editar",
+    "objectEmpty": "Objeto vacío",
+    "objectSummary": "{{count}} claves"
+  },
+  "objectValueEditor": {
+    "title": "Valor por defecto",
+    "description": "Define el valor del objeto — mediante el constructor o JSON.",
+    "tabConstructor": "Constructor",
+    "tabJson": "JSON",
+    "addKey": "Añadir clave",
+    "keyPlaceholder": "clave",
+    "valuePlaceholder": "valor",
+    "emptyObject": "Vacío. Añade tu primera clave.",
+    "invalidJson": "JSON no válido",
+    "mustBeObject": "El valor debe ser un objeto"
+  },
+  "nodeTemplates": {
+    "templates": "Plantillas",
+    "saveAsTemplate": "Guardar como plantilla",
+    "edit": "Editar",
+    "duplicate": "Duplicar",
+    "modal": {
+      "title": "Guardar como plantilla",
+      "description": "Crea una plantilla reutilizable a partir de este nodo",
+      "name": "Nombre",
+      "namePlaceholder": "Mi plantilla",
+      "nameRequired": "El nombre es obligatorio",
+      "nameMaxLength": "El nombre no debe superar los 255 caracteres",
+      "templateDescription": "Descripción",
+      "descriptionPlaceholder": "Descripción de la plantilla (opcional)",
+      "descriptionMaxLength": "La descripción no debe superar los 1000 caracteres"
+    },
+    "editModal": {
+      "title": "Editar plantilla",
+      "description": "Cambia el nombre y la descripción de la plantilla"
+    },
+    "duplicateModal": {
+      "title": "Duplicar plantilla",
+      "description": "Selecciona el proyecto al que copiar la plantilla",
+      "selectProject": "Seleccionar proyecto",
+      "noOtherProjects": "No hay otros proyectos disponibles para copiar"
+    },
+    "createSuccess": "Plantilla creada correctamente",
+    "createError": "No se pudo crear la plantilla",
+    "updateSuccess": "Plantilla actualizada",
+    "updateError": "No se pudo actualizar la plantilla",
+    "duplicateSuccess": "Plantilla duplicada",
+    "duplicateError": "No se pudo duplicar la plantilla",
+    "deleteSuccess": "Plantilla eliminada",
+    "deleteError": "No se pudo eliminar la plantilla",
+    "deleteConfirm": "¿Eliminar la plantilla?",
+    "deleteWarning": "¿Seguro que quieres eliminar \"{{name}}\"?",
+    "noTemplates": "No hay plantillas guardadas",
+    "noTemplatesDescription": "Guarda un nodo como plantilla para reutilizarlo rápidamente"
+  },
+  "knowledgeBases": {
+    "title": "Bases de conocimiento",
+    "subtitle": "Gestiona las bases de conocimiento de tus agentes",
+    "create": "Crear base de conocimiento",
+    "empty": "No hay bases de conocimiento",
+    "emptyDescription": "Crea una base de conocimiento para que los agentes puedan usar tus documentos",
+    "columns": {
+      "name": "Nombre",
+      "description": "Descripción",
+      "documents": "Documentos",
+      "characters": "Caracteres",
+      "createdAt": "Creada",
+      "actions": "Acciones"
+    },
+    "createModal": {
+      "title": "Crear base de conocimiento",
+      "editTitle": "Editar base de conocimiento",
+      "nameLabel": "Nombre",
+      "namePlaceholder": "Introduce el nombre de la base de conocimiento",
+      "descriptionLabel": "Descripción",
+      "descriptionPlaceholder": "Descripción opcional",
+      "nameRequired": "El nombre es obligatorio"
+    },
+    "deleteDialog": {
+      "title": "Eliminar base de conocimiento",
+      "description": "¿Seguro que quieres eliminar la base de conocimiento \"{{name}}\"? Todos los documentos se eliminarán permanentemente."
+    },
+    "createSuccess": "Base de conocimiento creada",
+    "createError": "No se pudo crear la base de conocimiento",
+    "updateSuccess": "Base de conocimiento actualizada",
+    "updateError": "No se pudo actualizar la base de conocimiento",
+    "deleteSuccess": "Base de conocimiento eliminada",
+    "deleteError": "No se pudo eliminar la base de conocimiento"
+  },
+  "knowledgeBaseDetails": {
+    "backToList": "Bases de conocimiento",
+    "usage": "{{used}} / {{max}} caracteres usados",
+    "addText": "Añadir texto",
+    "uploadPDF": "Subir PDF",
+    "documentsTitle": "Documentos",
+    "empty": "No hay documentos",
+    "emptyDescription": "Añade texto o sube un PDF para llenar la base de conocimiento",
+    "columns": {
+      "name": "Nombre",
+      "type": "Tipo",
+      "characters": "Caracteres",
+      "createdAt": "Añadido",
+      "actions": "Acciones"
+    },
+    "docType": {
+      "text": "Texto",
+      "pdf": "PDF"
+    },
+    "addTextModal": {
+      "title": "Añadir texto",
+      "nameLabel": "Nombre del documento",
+      "namePlaceholder": "Introduce el nombre del documento",
+      "contentLabel": "Contenido",
+      "contentPlaceholder": "Pega tu texto aquí...",
+      "nameRequired": "El nombre es obligatorio",
+      "contentRequired": "El contenido es obligatorio"
+    },
+    "uploadPDFModal": {
+      "title": "Subir PDF",
+      "nameLabel": "Nombre del documento",
+      "namePlaceholder": "Introduce el nombre del documento",
+      "fileLabel": "Archivo PDF",
+      "filePlaceholder": "Selecciona un archivo PDF",
+      "uploading": "Subiendo...",
+      "nameRequired": "El nombre es obligatorio",
+      "fileRequired": "Por favor, selecciona un archivo PDF"
+    },
+    "viewDocumentModal": {
+      "title": "Contenido del documento"
+    },
+    "deleteDialog": {
+      "title": "Eliminar documento",
+      "description": "¿Seguro que quieres eliminar el documento \"{{name}}\"?"
+    },
+    "addSuccess": "Documento añadido",
+    "addError": "No se pudo añadir el documento",
+    "uploadSuccess": "PDF subido",
+    "uploadError": "No se pudo subir el PDF",
+    "deleteSuccess": "Documento eliminado",
+    "deleteError": "No se pudo eliminar el documento",
+    "errorDuplicate": "Ya existe un documento con este contenido",
+    "errorNoText": "El PDF no contiene texto (documento escaneado sin OCR)"
+  },
+  "schemaBuilder": {
+    "title": "Salida estructurada (JSON)",
+    "description": "El modelo generará un objeto JSON que coincida con este esquema",
+    "simpleMode": "Visual",
+    "advancedMode": "JSON",
+    "schemaName": "Nombre",
+    "properties": "Propiedades",
+    "noProperties": "No hay propiedades. Añade la primera propiedad.",
+    "addProperty": "Añadir propiedad",
+    "jsonSyntaxError": "Sintaxis JSON no válida",
+    "jsonMustBeObject": "El esquema debe ser un objeto JSON"
+  },
+  "meta": {
+    "title": "Assemblix - Constructor visual de agentes de IA",
+    "description": "Crea agentes de IA inteligentes sin código con el constructor visual de Assemblix. Automatiza procesos de negocio, crea chatbots y flujos de trabajo.",
+    "keywords": "agentes de IA, constructor de agentes, editor visual, constructor de flujos de trabajo, automatización, chatbots, inteligencia artificial, no-code, low-code, Assemblix"
+  }
+}

@@ -1,0 +1,1349 @@
+{
+  "footer": {
+    "terms": "Условия использования",
+    "privacy": "Политика конфиденциальности",
+    "refund": "Политика возврата",
+    "contact": "Связаться с нами"
+  },
+  "notFoundPage": {
+    "title": "Похоже, вы зашли в тупик",
+    "subtitle": "Этой страницы не существует — путь закончился ошибкой 404. Давайте вернем вас на маршрут.",
+    "home": "На главную",
+    "back": "Назад"
+  },
+  "common": {
+    "save": "Сохранить",
+    "update": "Обновить",
+    "cancel": "Отмена",
+    "delete": "Удалить",
+    "create": "Создать",
+    "edit": "Редактировать",
+    "close": "Закрыть",
+    "confirm": "Подтвердить",
+    "loading": "Загрузка...",
+    "yes": "Да",
+    "no": "Нет",
+    "back": "Назад",
+    "next": "Далее",
+    "search": "Поиск",
+    "actions": "Действия",
+    "status": "Статус",
+    "name": "Название",
+    "type": "Тип",
+    "value": "Значение",
+    "description": "Описание",
+    "createdAt": "Создано",
+    "updatedAt": "Обновлено",
+    "optional": "необязательно",
+    "required": "обязательно",
+    "total": "Всего",
+    "showMore": "Показать больше",
+    "showLess": "Свернуть",
+    "or": "или",
+    "locale": "ru"
+  },
+  "auth": {
+    "login": "Вход",
+    "register": "Регистрация",
+    "logout": "Выйти",
+    "email": "Email",
+    "password": "Пароль",
+    "confirmPassword": "Подтвердите пароль",
+    "fullName": "Полное имя",
+    "name": "Имя",
+    "forgotPassword": "Забыли пароль?",
+    "signIn": "Войти",
+    "signUp": "Зарегистрироваться",
+    "createAccount": "Создать аккаунт",
+    "enterCredentials": "Введите свои данные для входа",
+    "registerDescription": "Создайте аккаунт, чтобы начать работу с Assemblix",
+    "user": "Пользователь",
+    "emailValidation": "Пожалуйста, введите корректный email.",
+    "emailPlaceholder": "your@email.com",
+    "namePlaceholder": "Ваше имя",
+    "passwordMinLength": "Пароль должен содержать не менее 3 символов.",
+    "passwordsNotMatch": "Пароли не совпадают",
+    "nameMinLength": "Имя должно содержать не менее 2 символов.",
+    "loginError": "Ошибка входа",
+    "registerError": "Ошибка регистрации",
+    "registerErrorDescription": "Попробуйте позже или используйте другой email",
+    "invalidCredentials": "Неверный email или пароль",
+    "noAccount": "Нет аккаунта?",
+    "hasAccount": "Уже есть аккаунт?",
+    "oauth": {
+      "continueWithGoogle": "Продолжить с Google",
+      "continueWithGitHub": "Продолжить с GitHub",
+      "continueWithYandex": "Продолжить с Яндексом",
+      "googleError": "Ошибка входа через Google",
+      "googleErrorDescription": "Не удалось войти через Google. Попробуйте еще раз.",
+      "githubError": "Ошибка входа через GitHub",
+      "githubErrorDescription": "Не удалось войти через GitHub. Попробуйте еще раз.",
+      "githubProcessing": "Завершаем вход через GitHub...",
+      "githubStateMismatch": "Неверный параметр state — войдите еще раз",
+      "emailAlreadyRegistered": "Email уже зарегистрирован",
+      "emailAlreadyRegisteredDescription": "Этот email уже зарегистрирован с паролем. Войдите через форму входа или сбросьте пароль.",
+      "emailNotVerified": "Email не подтвержден",
+      "emailNotVerifiedDescription": "Пожалуйста, подтвердите email в вашем аккаунте Google.",
+      "cancelled": "Вход отменен пользователем"
+    }
+  },
+  "header": {
+    "appName": "Assemblix",
+    "lightTheme": "Светлая тема",
+    "darkTheme": "Темная тема",
+    "language": "Язык",
+    "help": "Помощь",
+    "organizationSettings": "Настройки организации"
+  },
+  "sidebar": {
+    "agents": "Агенты",
+    "agentSessions": "Вызовы агентов",
+    "apiKeys": "API-ключи",
+    "knowledgeBases": "Базы знаний",
+    "organization": "Организация",
+    "credentials": "Учетные данные",
+    "clientSessions": "Клиентские сессии",
+    "projectSettings": "Настройки проекта",
+    "settings": "Настройки",
+    "community": "Сообщество",
+    "sections": {
+      "creation": "Создание",
+      "monitoring": "Мониторинг"
+    }
+  },
+  "home": {
+    "title": "Создайте своего агента",
+    "subtitle": "Создавайте AI-агентов и управляйте ими в визуальном редакторе",
+    "createAgent": "Создать нового агента"
+  },
+  "sessions": {
+    "title": "Вызовы агентов",
+    "subtitle": "История чатов и запусков ваших агентов",
+    "tabs": {
+      "chats": "Чаты",
+      "executions": "Запуски"
+    },
+    "showTestSessions": "Показывать тестовые сессии"
+  },
+  "agents": {
+    "title": "Агенты",
+    "createAgent": "Создать агента",
+    "noAgents": "У вас пока нет агентов",
+    "createFirstAgent": "Создайте первого агента, чтобы начать",
+    "lastModified": "Последнее изменение",
+    "published": "Опубликован",
+    "draft": "Черновик",
+    "selectProject": "Выберите проект",
+    "createError": "Ошибка создания агента",
+    "publishSuccess": "Агент успешно опубликован",
+    "publishError": "Ошибка публикации агента",
+    "deleteSuccess": "Агент удален",
+    "deleteError": "Ошибка удаления агента",
+    "renameSuccess": "Агент переименован",
+    "renameError": "Ошибка переименования агента"
+  },
+  "workflow": {
+    "nodes": {
+      "start": "Старт",
+      "agent": "Агент",
+      "sticker": "Стикер",
+      "condition": "Условие",
+      "setVariable": "Установить переменную",
+      "end": "Конец",
+      "httpRequest": "HTTP-запрос",
+      "newElement": "Новый элемент"
+    },
+    "nodeDefaults": {
+      "agentName": "Новый агент",
+      "endName": "Успех"
+    },
+    "nodeDescriptions": {
+      "start": "Точка входа воркфлоу",
+      "agent": "Вызов LLM с параметрами",
+      "sticker": "Добавить стикер",
+      "condition": "Проверка логического условия",
+      "setVariable": "Присвоить значение переменной",
+      "end": "Завершение выполнения воркфлоу",
+      "httpRequest": "HTTP-запрос к внешнему API"
+    },
+    "categories": {
+      "main": "Основные",
+      "logic": "Логика",
+      "data": "Данные",
+      "integrations": "Интеграции"
+    },
+    "sidebar": {
+      "selectNodeType": "Выберите тип узла",
+      "clickToSelect": "Нажмите на нужный элемент ниже"
+    },
+    "stateSidebar": {
+      "title": "Управление состоянием",
+      "agentState": "Состояние агента",
+      "projectState": "Состояние проекта",
+      "live": "LIVE",
+      "noVariables": "Нет переменных состояния",
+      "readOnlyHint": "Воркфлоу выполняется — редактирование отключено"
+    },
+    "header": {
+      "debug": "Отладка",
+      "publish": "Опубликовать",
+      "published": "Опубликован",
+      "debugMode": "Режим отладки",
+      "exitDebug": "Выйти из отладки",
+      "editMode": "Режим редактирования",
+      "workMode": "Рабочий режим",
+      "publishError": "Не удалось опубликовать воркфлоу",
+      "agentCalls": "Вызовы агентов"
+    },
+    "agentCalls": {
+      "title": "Вызовы агентов",
+      "executions": "Запуски",
+      "chats": "Чаты",
+      "noExecutions": "У этого агента нет запусков",
+      "noChats": "У этого агента нет чатов",
+      "selectChat": "Выберите чат для просмотра"
+    },
+    "bulkInstructions": {
+      "title": "Инструкции агентов",
+      "openTooltip": "Редактировать инструкции всех агентов",
+      "emptyTooltip": "В этом воркфлоу нет узлов-агентов",
+      "searchPlaceholder": "Поиск агента...",
+      "unnamedAgent": "Агент #{{index}}",
+      "noAgentsFound": "Агенты не найдены",
+      "selectAgentHint": "Выберите агента слева, чтобы редактировать его инструкции",
+      "emptyState": "В этом воркфлоу пока нет узлов-агентов. Добавьте агента на холст, чтобы начать редактировать инструкции.",
+      "addInstruction": "Добавить инструкцию"
+    },
+    "rename": {
+      "title": "Переименовать агента",
+      "namePlaceholder": "Название агента",
+      "nameRequired": "Название обязательно",
+      "nameMinLength": "Название должно содержать не менее 3 символов"
+    },
+    "publish": {
+      "title": "Агент опубликован",
+      "description": "Ваш агент успешно опубликован и готов к использованию",
+      "close": "Закрыть"
+    },
+    "versions": {
+      "draft": "Черновик",
+      "version": "Версия",
+      "current": "Текущая"
+    },
+    "editor": {
+      "nodeEditor": "Редактор узла",
+      "unknownNodeType": "Неизвестный тип узла",
+      "loadingNodeTypes": "Загрузка типов узлов…",
+      "data": "Данные"
+    },
+    "details": {
+      "loadingError": "Ошибка загрузки",
+      "loadingErrorDescription": "Не удалось загрузить данные агента. Возможно, он был удален или у вас нет доступа.",
+      "backToList": "К списку",
+      "versionLoadError": "Ошибка",
+      "versionLoadErrorDescription": "Не удалось загрузить версию"
+    },
+    "node": {
+      "agent": {
+        "warnings": {
+          "modelNotSelected": "Модель не выбрана"
+        }
+      }
+    }
+  },
+  "provider": {
+    "openai": "OpenAI",
+    "gemini": "Gemini",
+    "deepseek": "DeepSeek",
+    "temperature": "Температура",
+    "temperatureHelp": "Управляет случайностью ответов (0-2)"
+  },
+  "credentials": {
+    "title": "Управление учетными данными",
+    "subtitle": "Добавляйте и редактируйте API-ключи для использования в воркфлоу",
+    "addCredential": "Добавить учетные данные",
+    "addFirstCredential": "Добавить первые учетные данные",
+    "noCredentials": "У вас пока нет сохраненных учетных данных",
+    "type": "Тип",
+    "selectType": "Выберите тип",
+    "name": "Название",
+    "namePlaceholder": "Мой API-ключ",
+    "nameMinLength": "Название должно содержать не менее 3 символов",
+    "value": "Значение",
+    "newValue": "Новое значение (необязательно)",
+    "valuePlaceholder": "sk-...",
+    "newValuePlaceholder": "Введите новое значение или оставьте пустым",
+    "valueRequired": "Значение обязательно",
+    "createSuccess": "Учетные данные созданы",
+    "createError": "Не удалось создать учетные данные",
+    "updateSuccess": "Учетные данные обновлены",
+    "updateError": "Не удалось обновить учетные данные",
+    "deleteSuccess": "Учетные данные удалены",
+    "deleteError": "Не удалось удалить учетные данные",
+    "deleteConfirm": "Удалить учетные данные?",
+    "deleteWarning": "Вы уверены, что хотите удалить \"{{name}}\"? Это действие нельзя отменить.",
+    "untitled": "Без названия",
+    "selectCredentialType": "Пожалуйста, выберите тип учетных данных",
+    "select": {
+      "placeholder": "Выберите учетные данные",
+      "title": "Учетные данные",
+      "description": "Выберите учетные данные для использования",
+      "noKeys": "Нет доступных ключей. Добавьте первые учетные данные.",
+      "add": "Добавить учетные данные"
+    },
+    "systemToken": {
+      "name": "Системный токен Assemblix",
+      "description": "Используйте наши токены для быстрого старта. За использование LLM списываются кредиты."
+    }
+  },
+  "apiKeys": {
+    "title": "API-ключи",
+    "subtitle": "Управляйте API-ключами для аутентификации в вашем приложении",
+    "createKey": "Создать API-ключ",
+    "createFirstKey": "Создать первый ключ",
+    "noKeys": "У вас пока нет API-ключей",
+    "noKeysDescription": "Создайте первый API-ключ, чтобы начать работать с API",
+    "name": "Название",
+    "key": "Ключ",
+    "created": "Создан",
+    "lastUsed": "Последнее использование",
+    "requests": "Запросы",
+    "neverUsed": "Не использовался",
+    "totalKeys": "Всего ключей",
+    "createSuccess": "API-ключ успешно создан",
+    "createError": "Ошибка создания API-ключа",
+    "deleteSuccess": "API-ключ успешно удален",
+    "deleteError": "Ошибка удаления API-ключа",
+    "copySuccess": "Ключ скопирован в буфер обмена",
+    "copyError": "Не удалось скопировать ключ",
+    "copyKey": "Скопировать ключ",
+    "justNow": "только что",
+    "minutesAgo": "{{count}} мин. назад",
+    "hoursAgo": "{{count}} ч. назад",
+    "daysAgo": "{{count}} дн. назад",
+    "deleteConfirm": "Удалить API-ключ?",
+    "deleteWarning": "Вы уверены, что хотите удалить \"{{name}}\"? Ключ сразу перестанет работать, и это действие нельзя отменить.",
+    "enterKeyName": "Введите название ключа",
+    "selectProject": "Выберите проект",
+    "modal": {
+      "createTitle": "Создать API-ключ",
+      "createDescription": "Введите название нового API-ключа. Это поможет вам идентифицировать ключ позже.",
+      "saveTitle": "Сохраните ваш API-ключ",
+      "saveWarning": "Важно! Скопируйте и сохраните этот ключ в надежном месте.",
+      "saveDescription": "Он больше не будет показан. Если вы его потеряете, придется создать новый ключ.",
+      "yourKey": "Ваш API-ключ",
+      "namePlaceholder": "например, Production API Key",
+      "creating": "Создание...",
+      "done": "Готово, я сохранил ключ",
+      "useInHeader": "Используйте этот ключ в заголовке Authorization:"
+    },
+    "delete": {
+      "title": "Удалить API-ключ?",
+      "description": "Вы уверены, что хотите удалить ключ",
+      "warning": "Ключ сразу перестанет работать, и это действие нельзя отменить.",
+      "deleting": "Удаление..."
+    }
+  },
+  "chats": {
+    "title": "Чаты",
+    "noChats": "У вас пока нет чатов",
+    "noChatsDescription": "Чаты появятся здесь после их создания",
+    "agent": "Агент",
+    "messages": "сообщений",
+    "lastMessage": "Последнее сообщение",
+    "active": "Активен",
+    "inactive": "Неактивен",
+    "credits": "Кредиты:",
+    "infoBanner": {
+      "title": "📬 Здесь появятся чаты ваших агентов",
+      "description": "Когда вы запустите агента с параметром create_session: true, здесь появится чат-сессия с полной историей диалога и статистикой."
+    },
+    "rename": "Переименовать",
+    "delete": "Удалить",
+    "deleteTitle": "Удалить сессию",
+    "deleteDescription": "Сессия и все сообщения будут удалены навсегда. Это действие нельзя отменить.",
+    "renameLabel": "Название сессии",
+    "renamePlaceholder": "Введите название сессии...",
+    "cancel": "Отмена"
+  },
+  "chatDetails": {
+    "title": "Чат от",
+    "sendMessage": "Отправить сообщение",
+    "typePlaceholder": "Введите сообщение...",
+    "agent": "Агент",
+    "user": "Пользователь",
+    "notFound": "Чат не найден",
+    "noMessages": "В этом чате нет сообщений",
+    "goToExecution": "Перейти к запуску",
+    "credits": "кредитов"
+  },
+  "executions": {
+    "title": "Запуски",
+    "noExecutions": "У вас пока нет запусков",
+    "noExecutionsDescription": "Здесь появится история запусков агентов",
+    "agent": "Агент",
+    "status": "Статус",
+    "started": "Запущен",
+    "duration": "Длительность",
+    "steps": "Шаги:",
+    "credits": "Кредиты:",
+    "clientSession": "Клиентская сессия",
+    "filterByClientId": "Фильтр по Client ID...",
+    "statuses": {
+      "running": "Выполняется",
+      "completed": "Завершен",
+      "failed": "Ошибка",
+      "pending": "В очереди"
+    },
+    "infoBanner": {
+      "title": "🚀 Здесь появятся запуски ваших агентов",
+      "description": "Каждый запуск опубликованного агента создает запись в истории. Вы увидите детали выполнения, использованные токены, стоимость и результаты."
+    }
+  },
+  "executionViewer": {
+    "title": "Просмотр запуска",
+    "step": "Шаг",
+    "stepNumber": "Шаг №",
+    "input": "Входные данные",
+    "output": "Выходные данные",
+    "error": "Ошибка",
+    "errorMessage": "Сообщение об ошибке",
+    "errorExecution": "Ошибка выполнения",
+    "errorInNode": "Ошибка в узле:",
+    "logs": "Логи",
+    "backToExecutions": "К списку запусков",
+    "back": "Назад",
+    "duration": "Длительность",
+    "credits": "Кредиты",
+    "steps": "Шаги",
+    "executionFrom": "Запуск от",
+    "model": "Модель",
+    "stateBefore": "Состояние до",
+    "stateAfter": "Состояние после",
+    "celEvaluations": "CEL-вычисления",
+    "llmRequest": "Запрос к LLM",
+    "currentState": "Состояние",
+    "stateAfterStep": "Состояние после шага",
+    "stateChanges": "Изменения",
+    "fullState": "Полное состояние",
+    "noChanges": "Этот узел не изменил состояние",
+    "loadingError": "Ошибка загрузки",
+    "loadingErrorDescription": "Не удалось загрузить данные запуска. Возможно, он был удален или у вас нет доступа."
+  },
+  "organization": {
+    "title": "Настройки организации",
+    "subtitle": "Управление основными настройками и участниками организации",
+    "members": "Участники",
+    "membersCount_one": "участник",
+    "membersCount_few": "участника",
+    "membersCount_many": "участников",
+    "membersCount_other": "участника",
+    "projects": "Проекты",
+    "addMember": "Добавить участника",
+    "removeMember": "Удалить участника",
+    "email": "Email",
+    "role": "Роль",
+    "actions": "Действия",
+    "member": "Участник",
+    "joinedDate": "Дата присоединения",
+    "noMembers": "Нет участников",
+    "noMembersDescription": "Добавьте первого участника организации",
+    "noName": "Без имени",
+    "selectOrganization": "Выберите организацию",
+    "selectProject": "Выберите проект",
+    "createProject": "Создать проект",
+    "addOrganization": "Добавить организацию",
+    "addProject": "Добавить проект",
+    "createOrganization": "Создать организацию",
+    "organizationName": "Название организации",
+    "organizationNamePlaceholder": "например, Моя команда",
+    "projectName": "Название проекта",
+    "projectNamePlaceholder": "например, Production",
+    "enterOrganizationName": "Введите название организации",
+    "enterProjectName": "Введите название нового проекта",
+    "organizationCreated": "Организация создана",
+    "projectCreated": "Проект создан",
+    "organizationCreateError": "Не удалось создать организацию",
+    "projectCreateError": "Не удалось создать проект",
+    "creating": "Создание...",
+    "saving": "Сохранение...",
+    "enterName": "Введите название организации",
+    "enterProjectNameError": "Введите название проекта",
+    "selectOrganizationFirst": "Выберите организацию",
+    "nameNotChanged": "Название не изменилось",
+    "nameUpdated": "Название организации обновлено",
+    "nameUpdateError": "Ошибка обновления названия",
+    "onlyOwnerCanEdit": "Только владелец может изменить название организации",
+    "basicSettings": "Основные настройки",
+    "organizationInfo": "Информация об организации",
+    "roles": {
+      "owner": "Владелец",
+      "admin": "Администратор",
+      "member": "Участник"
+    },
+    "addMemberModal": {
+      "title": "Добавить участника",
+      "description": "Введите email пользователя, который уже зарегистрирован в системе.",
+      "emailPlaceholder": "user@example.com",
+      "selectRole": "Выберите роль",
+      "isOwner": "Владелец организации",
+      "isOwnerDescription": "Владельцы могут добавлять и удалять участников",
+      "addSuccess": "Участник успешно добавлен",
+      "addError": "Ошибка добавления участника",
+      "userNotFound": "Пользователь с таким email не найден",
+      "userAlreadyMember": "Пользователь уже является участником организации",
+      "noPermission": "Недостаточно прав для добавления участников",
+      "enterEmail": "Введите email участника",
+      "enterValidEmail": "Введите корректный email",
+      "adding": "Добавление..."
+    },
+    "removeMemberModal": {
+      "title": "Удалить участника?",
+      "description": "Вы уверены, что хотите удалить",
+      "fromOrganization": "из организации?",
+      "warning": "Участник потеряет доступ ко всем проектам и ресурсам организации. Это действие можно отменить, добавив участника снова.",
+      "removeSuccess": "Участник удален из организации",
+      "removeError": "Ошибка удаления участника",
+      "cannotRemoveOwner": "Нельзя удалить владельца организации",
+      "noPermission": "Недостаточно прав для удаления участников",
+      "deleting": "Удаление..."
+    }
+  },
+  "settings": {
+    "title": "Настройки",
+    "subtitle": "Цветовая палитра, используемая в системе",
+    "theme": "Тема",
+    "lightTheme": "Светлая",
+    "darkTheme": "Темная",
+    "systemTheme": "Системная",
+    "language": "Язык",
+    "tabs": {
+      "general": "Общие",
+      "apiKeys": "API-ключи",
+      "credentials": "Учетные данные",
+      "notifications": "Уведомления"
+    },
+    "colorCategories": {
+      "basic": "Основные цвета",
+      "accents": "Акценты",
+      "statuses": "Статусы",
+      "workflowNodes": "Узлы воркфлоу",
+      "borders": "Границы и элементы",
+      "sidebar": "Боковая панель"
+    }
+  },
+  "notifications": {
+    "title": "Уведомления",
+    "subtitle": "Каналы, которые получают оповещения о технических сбоях выполнения воркфлоу. Применяется ко всем воркфлоу проекта.",
+    "empty": "Каналы уведомлений пока не настроены",
+    "addFirst": "Добавить первый канал",
+    "add": "Добавить канал",
+    "untitled": "Без названия",
+    "disabled": "Отключен",
+    "enabled": "Канал включен",
+    "type": "Тип источника",
+    "name": "Название",
+    "namePlaceholder": "например, Prod alerts",
+    "botToken": "Токен бота",
+    "botTokenPlaceholder": "123456:ABC-DEF...",
+    "botTokenEditPlaceholder": "Оставьте пустым, чтобы сохранить текущий",
+    "botTokenRequired": "Токен бота обязателен",
+    "chatId": "Chat ID",
+    "chatIdPlaceholder": "-1001234567890",
+    "chatIdRequired": "Chat ID обязателен",
+    "test": "Тест",
+    "testSuccess": "Тестовое сообщение отправлено",
+    "testError": "Не удалось отправить тестовое сообщение",
+    "createSuccess": "Канал создан",
+    "createError": "Не удалось создать канал",
+    "updateSuccess": "Канал обновлен",
+    "updateError": "Не удалось обновить канал",
+    "deleteConfirm": "Удалить канал?",
+    "deleteWarning": "Канал \"{{name}}\" будет удален навсегда.",
+    "deleteSuccess": "Канал удален",
+    "deleteError": "Не удалось удалить канал"
+  },
+  "errors": {
+    "generic": "Произошла ошибка",
+    "networkError": "Ошибка сети",
+    "unauthorized": "Требуется авторизация",
+    "forbidden": "Доступ запрещен",
+    "notFound": "Не найдено",
+    "serverError": "Ошибка сервера"
+  },
+  "variables": {
+    "title": "Переменные",
+    "addVariable": "Добавить переменную",
+    "noVariables": "Нет доступных переменных",
+    "availableVariables": "Доступные переменные",
+    "state": "Состояние",
+    "input": "Входные данные"
+  },
+  "nodeForms": {
+    "start": {
+      "title": "Старт",
+      "firstPhrase": "Первая фраза",
+      "firstPhraseHint": "Приветствие ассистента, которое добавляется в историю первым сообщением при старте новой сессии.",
+      "firstPhrasePlaceholder": "Привет! Чем могу помочь?",
+      "inputVariables": "Входные переменные",
+      "projectVariables": "Переменные проекта",
+      "projectVariablesNote": "Эти переменные определены на уровне проекта и доступны во всех воркфлоу",
+      "stateVariables": "Переменные состояния",
+      "add": "Добавить",
+      "variableUpdateError": "Ошибка обновления переменной",
+      "variableAddError": "Ошибка добавления переменной",
+      "variableUpdated": "Переменная \"{{name}}\" обновлена",
+      "variableAdded": "Переменная \"{{name}}\" добавлена",
+      "variableDeleteError": "Ошибка удаления переменной",
+      "variableDeleted": "Переменная удалена"
+    },
+    "end": {
+      "title": "Конец",
+      "endpointPlaceholder": "например, Успех, Ошибка",
+      "isSessionEnd": "Завершить сессию",
+      "sessionEndDescription": "Сессия станет неактивной. Используйте как индикатор завершения диалога.",
+      "isError": "Бизнес-ошибка",
+      "isErrorDescription": "Пометить завершение как намеренный отказ агента (статус ERROR вместо COMPLETED)",
+      "errorMessage": "Сообщение об ошибке",
+      "errorMessagePlaceholder": "{{state.error_reason}}",
+      "advancedSettings": "Расширенные настройки",
+      "outputSource": "Источник ответа",
+      "outputModeLastAgent": "Последний агент",
+      "outputModeSpecificAgent": "Конкретный агент",
+      "outputModeCustom": "Фиксированное сообщение",
+      "selectAgent": "Выберите агента",
+      "agentLabel": "Агент",
+      "goToAgent": "Перейти к агенту",
+      "customMessage": "Сообщение",
+      "customMessagePlaceholder": "{{input.message}} или фиксированный текст",
+      "dataFiltering": "Фильтрация данных",
+      "stateFilter": "Переменные состояния",
+      "projectFilter": "Переменные проекта",
+      "filterAll": "Все",
+      "filterNone": "Не возвращать",
+      "filterSelected": "Выбранные",
+      "selectVariables": "Выберите переменные",
+      "noAgents": "Нет доступных агентов",
+      "properties": "Свойства (JSON)",
+      "propertiesPlaceholder": "{\n  \"status\": \"success\",\n  \"message\": \"Workflow completed\"\n}",
+      "invalidJSON": "⚠️ Некорректный JSON. Должен быть объект.",
+      "propertiesHelp": "Введите JSON-объект с дополнительными свойствами для узла завершения",
+      "preview": "Предпросмотр:"
+    },
+    "sticker": {
+      "title": "Стикер",
+      "text": "Текст стикера",
+      "placeholder": "Напишите заметку..."
+    },
+    "condition": {
+      "title": "Условие",
+      "conditions": "Условия",
+      "expression": "Выражение {{number}}",
+      "expressionPlaceholder": "state.counter > 10",
+      "branchName": "Название ветки",
+      "branchPlaceholder": "например, high_count",
+      "add": "Добавить условие",
+      "defaultBranch": "По умолчанию",
+      "defaultBranchPlaceholder": "default",
+      "namePlaceholder": "Введите название условия"
+    },
+    "setVariable": {
+      "title": "Установить переменную",
+      "updates": "Обновления переменных",
+      "variable": "Переменная {{number}}",
+      "selectVariable": "Выберите переменную",
+      "value": "Значение",
+      "valuePlaceholder": "state.counter + 1",
+      "add": "Добавить обновление",
+      "advancedUsage": "Расширенное использование",
+      "merges": "Умное слияние",
+      "merge": "Слияние {{number}}",
+      "addMerge": "Добавить слияние",
+      "mergeSource": "Источник",
+      "mergeSourcePlaceholder": "input.parsed_message",
+      "mergeTargetKey": "Переменная состояния",
+      "mergeTargetKeyAll": "Все состояние",
+      "mergeTarget": "Назначение",
+      "mergeTargetState": "Состояние",
+      "mergeTargetProject": "Проект",
+      "mergeOperation": "Операция",
+      "mergeOperationAdd": "Сложить (+)",
+      "mergeOperationSubtract": "Вычесть (−)",
+      "mergeOperationOverwrite": "Перезаписать (=)"
+    },
+    "agent": {
+      "title": "Агент",
+      "name": "Название",
+      "namePlaceholder": "Введите название агента",
+      "provider": "Провайдер",
+      "selectProvider": "Выберите провайдера",
+      "model": "Модель",
+      "modelPlaceholder": "gpt-4, gemini-pro и т.д.",
+      "selectModel": "Выберите модель",
+      "advancedSettings": "Расширенные настройки",
+      "maxRetries": "Повторы при временных ошибках",
+      "maxRetriesPlaceholder": "По умолчанию",
+      "timeout": "Таймаут, секунды",
+      "timeoutPlaceholder": "По умолчанию",
+      "enforceTimeoutOnLast": "Жесткий таймаут для последней модели",
+      "enforceTimeoutOnLastTooltip": "Если включено, таймаут на вызов применяется и к последней модели в цепочке, чтобы ни один провайдер не мог подвесить запуск. Если выключено, последняя модель может работать вплоть до общего таймаута как крайний вариант.",
+      "fallbackModels": "Резервные модели",
+      "fallbackModelsHint": "Используются по порядку, когда основная модель раз за разом возвращает временные ошибки (лимиты, 5xx).",
+      "fallbackModelItem": "Резерв {{index}}",
+      "addFallbackModel": "Добавить модель",
+      "searchModel": "Поиск модели...",
+      "loadingModels": "Загрузка моделей...",
+      "modelsError": "Ошибка загрузки моделей",
+      "noModels": "Нет доступных моделей",
+      "noModelsFound": "Модели не найдены",
+      "credential": "Ключ доступа",
+      "selectCredential": "Выберите ключ",
+      "selectCredentialFirst": "Сначала выберите ключ доступа",
+      "instructions": "Инструкции",
+      "role": "Роль",
+      "selectRole": "Выберите роль",
+      "roleUser": "Пользователь",
+      "roleAssistant": "Ассистент",
+      "contentPlaceholder": "Введите текст инструкции",
+      "expandInstruction": "Развернуть промпт",
+      "promptModalTitle": "Редактировать инструкцию",
+      "promptModalLabel": "Инструкция",
+      "additionalSettings": "Дополнительные настройки",
+      "tools": "Инструменты",
+      "allToolsAdded": "Все добавлены",
+      "addTool": "Добавить инструмент",
+      "responseFormat": "Формат ответа",
+      "selectFormat": "Выберите формат",
+      "formatText": "Текст",
+      "formatJSON": "JSON-объект",
+      "schemaBuilder": "Конструктор JSON-схемы",
+      "schemaDescription": "Создайте структуру JSON-ответа для LLM-модели",
+      "cancel": "Отмена",
+      "save": "Сохранить",
+      "includeChatHistory": "История чата",
+      "includeChatHistoryTooltip": "Если включено, в LLM будет отправлена полная история диалога сессии. Если выключено, будут отправлены только инструкции узла и текущее сообщение пользователя",
+      "saveToHistory": "Сохранять ответ в историю",
+      "saveToHistoryTooltip": "Если включено, ответ этого агента добавляется в общую историю диалога, которую видят следующие агенты. Отключите, чтобы сделать агента «тихим» — его ответ по-прежнему передается следующему узлу и в итоговый результат, но не попадает в общую историю.",
+      "historyField": "Поле для истории",
+      "historyFieldTooltip": "Если ответ в формате JSON, в общую историю сохраняется только это поле схемы, а не весь JSON. Полный ответ по-прежнему передается дальше и в итоговый результат.",
+      "historyFieldFull": "Весь ответ",
+      "knowledgeBases": "Базы знаний",
+      "selectKnowledgeBases": "Добавить базу знаний",
+      "noKnowledgeBases": "Нет баз знаний",
+      "noKnowledgeBasesFound": "Базы знаний не найдены",
+      "loadingKnowledgeBases": "Загрузка баз знаний...",
+      "searchKnowledgeBases": "Поиск базы знаний...",
+      "modelSettings": "Настройки модели",
+      "modelSettingsTooltip": "Расширенные параметры вызова LLM: температура, штрафы, формат ответа, рассуждения и другие опции, зависящие от модели",
+      "modelSettingsModalTitle": "Настройки модели",
+      "modelSettingsModalDescription": "Тонкая настройка параметров вызова LLM. Доступные поля зависят от выбранной модели.",
+      "close": "Закрыть"
+    },
+    "generic": {
+      "jsonPlaceholder": "{ \"key\": \"value\" }"
+    },
+    "httpRequest": {
+      "title": "HTTP-запрос",
+      "method": "Метод",
+      "selectMethod": "Выберите метод",
+      "url": "URL",
+      "urlPlaceholder": "https://api.example.com/endpoint",
+      "headers": "Заголовки",
+      "headerKey": "Ключ",
+      "headerValue": "Значение",
+      "queryParams": "Query-параметры",
+      "paramKey": "Ключ",
+      "paramValue": "Значение",
+      "body": "Тело запроса",
+      "bodyPlaceholder": "{\"key\": \"value\"}",
+      "timeout": "Таймаут (сек)"
+    }
+  },
+  "debug": {
+    "title": "Чат отладки",
+    "running": "Выполняется",
+    "clearHistory": "Очистить историю и начать новую сессию",
+    "noMessages": "Нет сообщений",
+    "noMessagesHelp": "Введите сообщение ниже и запустите воркфлоу",
+    "userMessage": "Вы:",
+    "error": "Ошибка:",
+    "inputPlaceholder": "Например: Привет! Как дела?",
+    "execute": "Выполнить",
+    "stop": "Остановить",
+    "executing": "Выполнение...",
+    "step": "Шаг {{number}}:",
+    "completed": "Завершено",
+    "failed": "Ошибка",
+    "input": "Вход",
+    "output": "Выход",
+    "duration": "{{ms}} мс",
+    "executionResult": "Результат выполнения",
+    "inputData": "Входные данные",
+    "outputData": "Выходные данные",
+    "llmRequest": "Запрос к LLM",
+    "stateBefore": "Состояние до",
+    "stateAfter": "Состояние после",
+    "projectStateAfter": "Состояние проекта после",
+    "noData": "Нет данных",
+    "creditsUsed": "Кредиты",
+    "ownKeyCost": "Свой ключ",
+    "totalCost": "Всего",
+    "executionError": "Выполнение завершилось с ошибкой",
+    "sessionClosed": "Сессия закрыта",
+    "sessionClosedDesc": "Агент закрыл сессию. Вы можете продолжить или начать новую сессию",
+    "continueSession": "Продолжить сессию",
+    "startNewSession": "Начать новую сессию",
+    "stateManagement": "Управление состоянием",
+    "agentState": "Состояние агента",
+    "projectState": "Состояние проекта",
+    "noStateVariables": "Нет переменных состояния",
+    "noProjectVariables": "Нет переменных проекта",
+    "invalidJson": "Некорректный формат JSON",
+    "resetToDefault": "Сбросить"
+  },
+  "nodes": {
+    "condition": {
+      "else": "Иначе"
+    },
+    "placeholder": {
+      "newElement": "Новый элемент",
+      "selectTypeInSidebar": "Выберите тип в боковой панели"
+    }
+  },
+  "stateVariables": {
+    "noVariablesText": "Нет переменных. Добавьте первую переменную.",
+    "selectTitle": "Переменные состояния",
+    "selectDescription": "Выберите переменную для обновления",
+    "selectPlaceholder": "Выберите переменную",
+    "noAvailableVariables": "Нет доступных переменных. Создайте первую переменную.",
+    "addVariable": "Добавить переменную",
+    "defaultValueLabel": "значение по умолчанию"
+  },
+  "availableVariables": {
+    "operators": {
+      "comparison": {
+        "equal": "Равно",
+        "notEqual": "Не равно",
+        "less": "Меньше",
+        "greater": "Больше",
+        "lessOrEqual": "Меньше или равно",
+        "greaterOrEqual": "Больше или равно"
+      },
+      "logical": {
+        "ternary": "Тернарный оператор",
+        "or": "Логическое ИЛИ",
+        "and": "Логическое И"
+      },
+      "comparisonTitle": "Сравнение",
+      "logicalTitle": "Логика",
+      "notFound": "Операторы не найдены",
+      "noAvailable": "Нет доступных операторов"
+    },
+    "variablesNotFound": "Переменные не найдены",
+    "noAvailableVariables": "Нет доступных переменных",
+    "groups": {
+      "input": "Входные данные",
+      "state": "Состояние",
+      "project": "Проект",
+      "workflow": "Агент",
+      "metadata": "Метаданные"
+    }
+  },
+  "workflowCard": {
+    "noDescription": "Без описания"
+  },
+  "versionsDropdown": {
+    "draft": "Черновик",
+    "error": "Ошибка",
+    "loadVersionError": "Не удалось загрузить версию"
+  },
+  "workflowActions": {
+    "additionalActions": "Дополнительные действия",
+    "rename": "Переименовать",
+    "renameAgent": "Переименовать агента",
+    "renameDescription": "Введите новое название агента",
+    "nameLabel": "Название",
+    "namePlaceholder": "Название агента",
+    "nameMinLength": "Название должно содержать не менее 3 символов",
+    "cancel": "Отмена",
+    "save": "Сохранить",
+    "renamed": "Воркфлоу переименован",
+    "renameError": "Не удалось переименовать агента",
+    "duplicate": "Дублировать",
+    "duplicateSuccess": "Агент успешно продублирован",
+    "duplicateError": "Не удалось продублировать агента",
+    "delete": "Удалить",
+    "deleteAgent": "Удалить агента",
+    "deleteDescription": "Вы уверены, что хотите удалить агента \"{{name}}\"?",
+    "deleteWarning": "Это действие нельзя отменить. Агент будет удален навсегда.",
+    "deleteConfirm": "Удалить",
+    "deleted": "Агент успешно удален",
+    "deleteError": "Не удалось удалить агента",
+    "move": "Переместить",
+    "moveAgent": "Переместить агента",
+    "moveDescription": "Выберите проект, в который переместить агента",
+    "moveProjectLabel": "Проект",
+    "moveProjectPlaceholder": "Выберите проект",
+    "moveSuccess": "Агент успешно перемещен",
+    "moveError": "Не удалось переместить агента",
+    "moveConfirm": "Переместить"
+  },
+  "publishSuccess": {
+    "title": "Агент опубликован",
+    "version": "Версия v{{version}}",
+    "workflowIdLabel": "Workflow ID",
+    "apiKeyLabel": "API-ключ",
+    "apiKeyAutoCreated": "Мы создали API-ключ для этой интеграции — сохраните его сейчас, он больше не будет показан.",
+    "apiKeyHint": "Мы не можем показать существующие ключи. Используйте имеющийся или создайте новый.",
+    "apiKeyCreate": "Создать ключ интеграции",
+    "apiKeyCreating": "Создание…",
+    "apiKeyCreateError": "Не удалось создать API-ключ",
+    "examplesLabel": "Примеры интеграции",
+    "supportPrompt": "Есть вопросы? Напишите нам:",
+    "copySuccess": "Скопировано",
+    "close": "Готово"
+  },
+  "clientSessions": {
+    "title": "Клиентские сессии",
+    "subtitle": "Управление данными клиентов и историей сессий",
+    "noSessions": "Клиентских сессий пока нет",
+    "clientId": "Client ID",
+    "lastActivity": "Последняя активность",
+    "executions": "Запуски",
+    "credits": "Кредиты",
+    "status": "Статус",
+    "active": "Активна",
+    "inactive": "Неактивна",
+    "never": "Никогда",
+    "onlyActive": "Только активные",
+    "showTestSessions": "Показывать тестовые сессии",
+    "searchPlaceholder": "Поиск по Client ID...",
+    "deactivate": "Деактивировать",
+    "deactivateConfirm": "Деактивировать клиентскую сессию?",
+    "deactivateWarning": "Клиентская сессия будет помечена как неактивная. Данные сессии сохранятся.",
+    "deactivateSuccess": "Клиентская сессия деактивирована",
+    "deactivateError": "Не удалось деактивировать клиентскую сессию",
+    "details": "Детали клиентской сессии",
+    "information": "Информация",
+    "createdAt": "Создана",
+    "updatedAt": "Обновлена",
+    "projectState": "Состояние проекта",
+    "metadata": "Метаданные",
+    "editMetadata": "Редактировать метаданные",
+    "editMetadataDescription": "Редактируйте метаданные в формате JSON",
+    "metadataUpdated": "Метаданные успешно обновлены",
+    "updateError": "Не удалось обновить метаданные",
+    "invalidJson": "Некорректный формат JSON",
+    "noExecutions": "Нет запусков для этого клиента",
+    "noChatSessions": "Нет чат-сессий для этого клиента",
+    "tabs": {
+      "overview": "Обзор",
+      "state": "Состояние",
+      "metadata": "Метаданные",
+      "executions": "Запуски",
+      "chatSessions": "Чат-сессии"
+    }
+  },
+  "projectSettings": {
+    "title": "Настройки проекта",
+    "subtitle": "Управление конфигурацией проекта и схемой состояния",
+    "projectInfo": "Информация о проекте",
+    "projectInfoDescription": "Основная информация о проекте",
+    "stateSchema": "Переменные проекта",
+    "stateSchemaDescription": "Безопасно храните API-ключи, секреты и состояние клиентов. Передавайте client_id, чтобы получить доступ к общим данным во всех агентах проекта.",
+    "addVariable": "Добавить переменную",
+    "variableName": "Название переменной",
+    "variableType": "Тип",
+    "defaultValue": "Значение по умолчанию",
+    "noVariables": "Переменные проекта не определены",
+    "noVariablesDescription": "Создавайте переменные для хранения API-ключей, секретов и состояния клиентов. Используйте client_id для обмена данными между агентами.",
+    "addVariableDescription": "Создать новую переменную проекта",
+    "nameRequired": "Название переменной обязательно",
+    "duplicateName": "Переменная с таким названием уже существует",
+    "variableAdded": "Переменная успешно добавлена",
+    "addError": "Не удалось добавить переменную",
+    "deleteVariable": "Удалить переменную?",
+    "deleteVariableWarning": "Вы уверены, что хотите удалить эту переменную? Это может повлиять на воркфлоу, которые ее используют.",
+    "variableDeleted": "Переменная успешно удалена",
+    "deleteError": "Не удалось удалить переменную"
+  },
+  "onboarding": {
+    "progress": "{{current}} из {{total}}",
+    "steps": {
+      "sidebar": {
+        "title": "Ваш конструктор",
+        "description": "Перетаскивайте блоки на холст, чтобы построить логику агента. Начните с узла агента — он отвечает за общение с LLM"
+      },
+      "agentNode": {
+        "title": "AI-агент — сердце вашего воркфлоу",
+        "description": "Перетащите этот блок на холст — он станет мозгом вашего агента. Использует LLM, чтобы понимать запросы и генерировать ответы. Работает из коробки с нашими системными ключами — просто начните тестировать!"
+      },
+      "debug": {
+        "title": "Тестируйте на лету",
+        "description": "Нажмите Play и протестируйте агента прямо сейчас. У вас уже есть стартовые кредиты — отправляйте сообщения и смотрите, как агент думает и отвечает на каждом шаге"
+      },
+      "credits": {
+        "title": "Кредиты и экономия",
+        "description": "Каждый запуск агента расходует кредиты с вашего баланса. Хотите тратить меньше? Подключите собственные API-ключи OpenAI, DeepSeek или других провайдеров — тогда всего 1 кредит за запрос вместо стоимости вызова LLM. Доступно на планах PRO и BUSINESS"
+      },
+      "publish": {
+        "title": "Готовы к продакшену?",
+        "description": "Когда агент готов — опубликуйте его. После этого его можно вызывать по API из любого приложения"
+      },
+      "final": {
+        "title": "Отлично! Давайте протестируем",
+        "description": "Чат отладки откроется автоматически. Отправьте сообщение и посмотрите на агента в действии. У вас уже есть стартовые кредиты!",
+        "telegramButton": "Присоединиться к Discord",
+        "startButton": "Начать создавать"
+      }
+    }
+  },
+  "billing": {
+    "unlimited": "Безлимитно",
+    "upgrade": "Улучшить",
+    "upgradePlan": "Улучшить план",
+    "upgradeToPlan": "Перейти на {{plan}}",
+    "availableInPlan": "Доступно в {{plan}}",
+    "viewPlans": "Посмотреть планы",
+    "highUsage": "У вас высокое потребление ресурсов",
+    "criticalUsage": "Вы достигли критического уровня потребления",
+    "nextReset": "Лимиты обновятся {{date}}",
+    "section": {
+      "title": "Оплата и использование",
+      "subtitle": "Управляйте тарифным планом и отслеживайте потребление ресурсов"
+    },
+    "usage": {
+      "agents": "Агенты",
+      "credits": "Кредиты"
+    },
+    "pricing": {
+      "title": "Выберите свой план",
+      "subtitle": "Выберите план, который подходит под задачи вашего проекта",
+      "popular": "Популярный",
+      "perMonth": "мес",
+      "currentPlan": "Текущий план",
+      "getStarted": "Начать бесплатно",
+      "contactSales": "Связаться с нами",
+      "subscribe": "Подписаться",
+      "business": {
+        "price": "По запросу",
+        "description": "Индивидуальные условия для крупных компаний",
+        "features": {
+          "consulting": "Экспертный консалтинг и аудит процессов",
+          "integration": "Интеграция под ключ и поддержка внедрения",
+          "sla": "Персональный SLA и выделенный менеджер",
+          "onpremise": "Возможность развертывания On-Premise"
+        }
+      },
+      "agents_one": "{{count}} агент",
+      "agents_few": "{{count}} агента",
+      "agents_many": "{{count}} агентов",
+      "agents_other": "{{count}} агента",
+      "unlimitedAgents": "Безлимитные агенты",
+      "agentsDesc": "Создавайте AI-агентов",
+      "creditsPerMonth": "кредитов/мес",
+      "creditsDesc": "Используйте для запуска агентов",
+      "rpmLimit_one": "{{count}} запрос/мин",
+      "rpmLimit_few": "{{count}} запроса/мин",
+      "rpmLimit_many": "{{count}} запросов/мин",
+      "rpmLimit_other": "{{count}} запроса/мин",
+      "rpmDesc": "Максимальная частота API-запросов",
+      "unlimitedRequests": "Безлимитные запросы со своими ключами",
+      "unlimitedRequestsDesc": "0 кредитов при использовании собственных API-ключей",
+      "ownApiKeys": "Собственные API-ключи",
+      "ownApiKeysDesc": "Используйте свои ключи LLM-провайдеров",
+      "projectVariables": "Переменные проекта",
+      "projectVariablesDesc": "Храните секреты и состояние клиентов с client_id",
+      "support": {
+        "community": "Поддержка сообщества",
+        "email_24h": "Поддержка по email (24 ч)",
+        "priority_4h_slack": "Приоритетная поддержка (4 ч) + Slack"
+      },
+      "supportDesc": {
+        "community": "Помощь через форум сообщества",
+        "email_24h": "Ответ в течение 24 часов",
+        "priority_4h_slack": "Быстрый ответ и прямой канал связи"
+      },
+      "allPlansInclude": "Все планы включают:",
+      "commonFeatures": {
+        "allProviders": "Все AI-провайдеры",
+        "visualBuilder": "Визуальный конструктор",
+        "apiAccess": "Доступ к API",
+        "sessionManagement": "Управление сессиями",
+        "logsMonitoring": "Логи и мониторинг"
+      },
+      "note": "Свяжитесь с нами, чтобы перейти на платный план или получить корпоративное решение"
+    },
+    "features": {
+      "projectVariables": {
+        "name": "Переменные проекта",
+        "description": "Храните API-ключи, секреты и состояние клиентов. Передайте client_id — и все агенты получат доступ к общим данным без потери контекста между диалогами."
+      }
+    },
+    "errors": {
+      "limitReached": "Достигнут лимит использования",
+      "agentsLimitReached": "Пора масштабироваться! 🚀",
+      "agentsLimitReachedHint": "Вы достигли лимита агентов на текущем плане. Перейдите на PRO или BUSINESS — получите больше агентов, безлимитные запросы и переменные проекта для сложных сценариев.",
+      "creditsLimitReached": "Кредиты закончились 💳",
+      "creditsInsufficient": "Недостаточно кредитов для запуска",
+      "creditsInsfficientHint": "Подключите собственные API-ключи (план PRO+) и платите всего 1 кредит за запрос. Или перейдите на план с большим количеством кредитов.",
+      "featureNotAvailable": "Эта функция недоступна на вашем текущем плане",
+      "rateLimitExceeded": "Превышен лимит запросов",
+      "rateLimitHint": "Вы превысили лимит {{rpm}} запросов в минуту. Замедлите запросы или улучшите план."
+    },
+    "limitWarning": {
+      "warning": {
+        "agents": {
+          "title": "Скоро вам понадобится больше агентов",
+          "description": "Использовано {{current}} из {{limit}} агентов ({{percentage}}%). Подумайте об улучшении плана, чтобы масштабировать проекты."
+        },
+        "credits": {
+          "title": "Кредиты заканчиваются",
+          "description": "Осталось {{current}} из {{limit}} кредитов ({{percentage}}%). Подключите собственные API-ключи или перейдите на план с большим количеством кредитов."
+        }
+      },
+      "critical": {
+        "agents": {
+          "title": "Пора улучшить план! 🚀",
+          "description": "Использовано {{current}} из {{limit}} агентов ({{percentage}}%). Перейдите на PRO или BUSINESS прямо сейчас, чтобы продолжить создавать."
+        },
+        "credits": {
+          "title": "Кредиты почти закончились! 💳",
+          "description": "Осталось {{current}} из {{limit}} кредитов ({{percentage}}%). Улучшите план или подключите API-ключи, чтобы сэкономить."
+        }
+      }
+    },
+    "credits": {
+      "balance": "Баланс кредитов",
+      "current": "Текущий баланс",
+      "used": "Использовано",
+      "remaining": "Осталось",
+      "nextRefill": "Следующее пополнение",
+      "refillIn": "Пополнение через",
+      "dateUnknown": "Дата неизвестна",
+      "transactions": "История транзакций",
+      "totalTransactions": "Всего транзакций",
+      "noTransactions": "Нет транзакций",
+      "viewAll": "Показать все",
+      "transactionTypes": {
+        "plan_grant": "Начисление по плану",
+        "llm_usage": "Использование LLM",
+        "request_fee": "Плата за запрос",
+        "manual_topup": "Ручное пополнение",
+        "refund": "Возврат"
+      },
+      "filters": {
+        "all": "Все типы",
+        "type": "Тип транзакции",
+        "period": "Период"
+      }
+    },
+    "systemKeys": {
+      "title": "Системные API-ключи",
+      "description": "Используются системные ключи LLM-провайдеров",
+      "upgradeMessage": "Собственные API-ключи доступны на планах STARTER, PRO и BUSINESS",
+      "benefit": "При использовании собственных ключей кредиты за запросы не списываются"
+    },
+    "payments": {
+      "confirmDialog": {
+        "title": "Подписка на план",
+        "subtitle": "Вы переходите на план {{plan}}",
+        "price": "Цена",
+        "autoRenewal": "Привязать карту для автопродления",
+        "autoRenewalHint": "Деньги будут списываться автоматически каждый месяц",
+        "cancel": "Отмена",
+        "submit": "Перейти к оплате",
+        "loading": "Создание платежа...",
+        "error": "Не удалось создать платеж. Попробуйте еще раз."
+      },
+      "successPage": {
+        "checking": "Проверяем статус платежа...",
+        "checkingHint": "Это займет несколько секунд",
+        "success": "Подписка активирована!",
+        "successHint": "Теперь вам доступны все возможности плана {{plan}}",
+        "goToAgents": "Перейти к агентам",
+        "error": "Платеж не прошел",
+        "errorHint": "Попробуйте еще раз или обратитесь в поддержку",
+        "retry": "Попробовать снова",
+        "timeout": "Не удалось проверить статус",
+        "timeoutHint": "Если деньги были списаны, план активируется автоматически"
+      }
+    }
+  },
+  "variableForm": {
+    "name": "Название",
+    "namePlaceholder": "Введите название переменной",
+    "nameRequired": "Название переменной не может быть пустым",
+    "duplicateName": "Переменная с таким названием уже существует",
+    "defaultValue": "Значение по умолчанию",
+    "optional": "(необязательно)",
+    "stringPlaceholder": "Введите значение",
+    "numberPlaceholder": "Введите число",
+    "booleanPlaceholder": "Выберите значение",
+    "projectVariable": "Переменная проекта",
+    "projectVariableDescription": "Доступна во всех воркфлоу проекта",
+    "projectVariableUpgradeRequired": "Перейдите на план Pro, чтобы использовать переменные проекта",
+    "objectPlaceholder": "Введите JSON-объект, например {\"key\": \"value\"}",
+    "invalidJson": "Некорректный формат JSON",
+    "objectMustBeObject": "Значение должно быть JSON-объектом",
+    "editObjectValue": "Редактировать",
+    "objectEmpty": "Пустой объект",
+    "objectSummary": "Ключей: {{count}}"
+  },
+  "objectValueEditor": {
+    "title": "Значение по умолчанию",
+    "description": "Задайте значение объекта — через конструктор или JSON.",
+    "tabConstructor": "Конструктор",
+    "tabJson": "JSON",
+    "addKey": "Добавить ключ",
+    "keyPlaceholder": "ключ",
+    "valuePlaceholder": "значение",
+    "emptyObject": "Пусто. Добавьте первый ключ.",
+    "invalidJson": "Некорректный JSON",
+    "mustBeObject": "Значение должно быть объектом"
+  },
+  "nodeTemplates": {
+    "templates": "Шаблоны",
+    "saveAsTemplate": "Сохранить как шаблон",
+    "edit": "Редактировать",
+    "duplicate": "Дублировать",
+    "modal": {
+      "title": "Сохранить как шаблон",
+      "description": "Создайте переиспользуемый шаблон из этого узла",
+      "name": "Название",
+      "namePlaceholder": "Мой шаблон",
+      "nameRequired": "Название обязательно",
+      "nameMaxLength": "Название не должно превышать 255 символов",
+      "templateDescription": "Описание",
+      "descriptionPlaceholder": "Описание шаблона (необязательно)",
+      "descriptionMaxLength": "Описание не должно превышать 1000 символов"
+    },
+    "editModal": {
+      "title": "Редактировать шаблон",
+      "description": "Измените название и описание шаблона"
+    },
+    "duplicateModal": {
+      "title": "Дублировать шаблон",
+      "description": "Выберите проект, в который скопировать шаблон",
+      "selectProject": "Выберите проект",
+      "noOtherProjects": "Нет других проектов для копирования"
+    },
+    "createSuccess": "Шаблон успешно создан",
+    "createError": "Не удалось создать шаблон",
+    "updateSuccess": "Шаблон обновлен",
+    "updateError": "Не удалось обновить шаблон",
+    "duplicateSuccess": "Шаблон продублирован",
+    "duplicateError": "Не удалось продублировать шаблон",
+    "deleteSuccess": "Шаблон удален",
+    "deleteError": "Не удалось удалить шаблон",
+    "deleteConfirm": "Удалить шаблон?",
+    "deleteWarning": "Вы уверены, что хотите удалить \"{{name}}\"?",
+    "noTemplates": "Нет сохраненных шаблонов",
+    "noTemplatesDescription": "Сохраните узел как шаблон для быстрого переиспользования"
+  },
+  "knowledgeBases": {
+    "title": "Базы знаний",
+    "subtitle": "Управляйте базами знаний для ваших агентов",
+    "create": "Создать базу знаний",
+    "empty": "Нет баз знаний",
+    "emptyDescription": "Создайте базу знаний, чтобы агенты могли использовать ваши документы",
+    "columns": {
+      "name": "Название",
+      "description": "Описание",
+      "documents": "Документы",
+      "characters": "Символы",
+      "createdAt": "Создана",
+      "actions": "Действия"
+    },
+    "createModal": {
+      "title": "Создать базу знаний",
+      "editTitle": "Редактировать базу знаний",
+      "nameLabel": "Название",
+      "namePlaceholder": "Введите название базы знаний",
+      "descriptionLabel": "Описание",
+      "descriptionPlaceholder": "Необязательное описание",
+      "nameRequired": "Название обязательно"
+    },
+    "deleteDialog": {
+      "title": "Удалить базу знаний",
+      "description": "Вы уверены, что хотите удалить базу знаний \"{{name}}\"? Все документы будут удалены навсегда."
+    },
+    "createSuccess": "База знаний создана",
+    "createError": "Не удалось создать базу знаний",
+    "updateSuccess": "База знаний обновлена",
+    "updateError": "Не удалось обновить базу знаний",
+    "deleteSuccess": "База знаний удалена",
+    "deleteError": "Не удалось удалить базу знаний"
+  },
+  "knowledgeBaseDetails": {
+    "backToList": "Базы знаний",
+    "usage": "Использовано {{used}} / {{max}} символов",
+    "addText": "Добавить текст",
+    "uploadPDF": "Загрузить PDF",
+    "documentsTitle": "Документы",
+    "empty": "Нет документов",
+    "emptyDescription": "Добавьте текст или загрузите PDF, чтобы наполнить базу знаний",
+    "columns": {
+      "name": "Название",
+      "type": "Тип",
+      "characters": "Символы",
+      "createdAt": "Добавлен",
+      "actions": "Действия"
+    },
+    "docType": {
+      "text": "Текст",
+      "pdf": "PDF"
+    },
+    "addTextModal": {
+      "title": "Добавить текст",
+      "nameLabel": "Название документа",
+      "namePlaceholder": "Введите название документа",
+      "contentLabel": "Содержимое",
+      "contentPlaceholder": "Вставьте ваш текст сюда...",
+      "nameRequired": "Название обязательно",
+      "contentRequired": "Содержимое обязательно"
+    },
+    "uploadPDFModal": {
+      "title": "Загрузить PDF",
+      "nameLabel": "Название документа",
+      "namePlaceholder": "Введите название документа",
+      "fileLabel": "PDF-файл",
+      "filePlaceholder": "Выберите PDF-файл",
+      "uploading": "Загрузка...",
+      "nameRequired": "Название обязательно",
+      "fileRequired": "Пожалуйста, выберите PDF-файл"
+    },
+    "viewDocumentModal": {
+      "title": "Содержимое документа"
+    },
+    "deleteDialog": {
+      "title": "Удалить документ",
+      "description": "Вы уверены, что хотите удалить документ \"{{name}}\"?"
+    },
+    "addSuccess": "Документ добавлен",
+    "addError": "Не удалось добавить документ",
+    "uploadSuccess": "PDF загружен",
+    "uploadError": "Не удалось загрузить PDF",
+    "deleteSuccess": "Документ удален",
+    "deleteError": "Не удалось удалить документ",
+    "errorDuplicate": "Документ с таким содержимым уже существует",
+    "errorNoText": "PDF не содержит текста (отсканированный документ без OCR)"
+  },
+  "schemaBuilder": {
+    "title": "Структурированный вывод (JSON)",
+    "description": "Модель сгенерирует JSON-объект, соответствующий этой схеме",
+    "simpleMode": "Визуальный",
+    "advancedMode": "JSON",
+    "schemaName": "Название",
+    "properties": "Свойства",
+    "noProperties": "Нет свойств. Добавьте первое свойство.",
+    "addProperty": "Добавить свойство",
+    "jsonSyntaxError": "Некорректный синтаксис JSON",
+    "jsonMustBeObject": "Схема должна быть JSON-объектом"
+  },
+  "meta": {
+    "title": "Assemblix - Визуальный конструктор AI-агентов",
+    "description": "Создавайте умных AI-агентов без кода в визуальном конструкторе Assemblix. Автоматизируйте бизнес-процессы, создавайте чат-ботов и воркфлоу.",
+    "keywords": "AI-агенты, конструктор агентов, визуальный редактор, конструктор воркфлоу, автоматизация, чат-боты, искусственный интеллект, no-code, low-code, Assemblix"
+  }
+}

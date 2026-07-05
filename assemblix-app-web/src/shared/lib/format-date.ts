@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 const LOCALE_MAP: Record<string, string> = {
   ru: "ru-RU",
   en: "en-US",
+  es: "es-ES",
 };
 
 function toLocale(lang: string): string {

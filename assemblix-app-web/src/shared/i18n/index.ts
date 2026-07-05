@@ -3,6 +3,8 @@ import { initReactI18next } from "react-i18next";
 import LanguageDetector from "i18next-browser-languagedetector";
 
 import en from "./locales/en.json";
+import es from "./locales/es.json";
+import ru from "./locales/ru.json";
 
 // Available languages come from build-time env vars.
 export const AVAILABLE_LANGS =
@@ -11,19 +13,27 @@ export const AVAILABLE_LANGS =
 export const DEFAULT_LANG =
   typeof __DEFAULT_LANG__ !== "undefined" ? __DEFAULT_LANG__ : "en";
 
-// Build the resources object only with available languages.
+// Every language we ship translations for. Adding a new one is a single entry
+// here plus a locale file — no other change to this module.
+const ALL_TRANSLATIONS: Record<string, { translation: typeof en }> = {
+  en: { translation: en },
+  es: { translation: es },
+  ru: { translation: ru },
+};
+
+// Build the resources object only with available languages that we bundle.
 const resources: Record<string, { translation: typeof en }> = {};
 
 AVAILABLE_LANGS.forEach((lang) => {
-  if (lang === "en") {
-    resources.en = { translation: en };
+  if (ALL_TRANSLATIONS[lang]) {
+    resources[lang] = ALL_TRANSLATIONS[lang];
   }
 });
 
-// Only these languages actually ship translations (currently English only).
+// The languages that actually ship translations in this build.
 // `AVAILABLE_LANGS` / `DEFAULT_LANG` come from build-time env and may name a
 // language we don't bundle yet — resolving to it leaves the UI without strings.
-const BUNDLED_LANGS = Object.keys(resources);
+export const BUNDLED_LANGS = Object.keys(resources);
 const FALLBACK_LANG = BUNDLED_LANGS.includes(DEFAULT_LANG) ? DEFAULT_LANG : "en";
 
 // Returning users may have cached a now-unbundled language (e.g. "ru") from an

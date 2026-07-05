@@ -1,5 +1,6 @@
 import { useTheme } from "@/shared/lib/theme-context";
 import { Button } from "@/shared/ui/button";
+import { LanguageSwitcher } from "@/shared/ui/language-switcher";
 import { useTranslation } from "react-i18next";
 
 export const SettingsPage = () => {
@@ -179,6 +180,11 @@ export const SettingsPage = () => {
             {t("settings.systemTheme")}
           </Button>
         </div>
+      </section>
+
+      <section className="bg-card p-6 rounded-xl border border-border shadow-sm">
+        <h2 className="text-xl font-semibold mb-4">{t("settings.language")}</h2>
+        <LanguageSwitcher className="w-full max-w-xs" />
       </section>
 
       <div className="grid gap-12">
