@@ -11,10 +11,24 @@ from assemblix_api.enums import AgentProvider, NodeType
 from assemblix_api.schemas.execution import NodeInput, NodeOutput
 
 
+class VoiceModelConfig(DTOModel):
+    """Provider/model that transcribes inbound audio when a workflow accepts voice
+    input on its START node (mirrors :class:`FallbackModelConfig`)."""
+
+    provider: AgentProvider
+    model: str
+    credential_id: str | None = None
+
+
 class StartNodeConfig(DTOModel):
     # On a new session this greeting is stored as an assistant message and
     # becomes part of the chat history.
     first_phrase: str | None = None
+    # Voice input: when true, the /execute/audio endpoints transcribe an inbound
+    # audio blob into `input.message` before the run. `voice_model` selects the
+    # transcription provider/model; it defaults to openai/whisper-1 when unset.
+    accept_voice: bool = False
+    voice_model: VoiceModelConfig | None = None
 
 
 class AgentInstruction(DTOModel):
