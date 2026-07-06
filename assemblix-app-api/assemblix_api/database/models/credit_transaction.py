@@ -30,6 +30,7 @@ class CreditTransactionType(str, Enum):
     REQUEST_FEE = "request_fee"  # Per-request charge
     MANUAL_TOPUP = "manual_topup"  # Manual top-up
     REFUND = "refund"  # Refund
+    VOICE_USAGE = "voice_usage"  # Text-to-speech usage charge (system keys)
 
 
 class CreditTransaction(UUIDMixin, TimestampMixin, Base):
