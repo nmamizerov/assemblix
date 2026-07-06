@@ -654,6 +654,9 @@
       "voice": "Voz",
       "selectVoice": "Seleccionar voz",
       "loadingVoices": "Cargando...",
+      "searchVoice": "Buscar voz",
+      "noVoices": "No hay voces disponibles",
+      "noVoicesFound": "No se encontraron voces",
       "voiceMaxChars": "Máximo de caracteres",
       "voiceMaxCharsPlaceholder": "p. ej., 2000",
       "voiceMissingWarning": "Selecciona una voz o el mensaje se devolverá solo como texto."

@@ -656,6 +656,9 @@
       "voice": "Голос",
       "selectVoice": "Выберите голос",
       "loadingVoices": "Загрузка...",
+      "searchVoice": "Поиск голоса",
+      "noVoices": "Нет доступных голосов",
+      "noVoicesFound": "Голоса не найдены",
       "voiceMaxChars": "Максимум символов",
       "voiceMaxCharsPlaceholder": "например, 2000",
       "voiceMissingWarning": "Выберите голос, иначе сообщение будет возвращено только текстом."

@@ -1,7 +1,7 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
-import { ChevronDown, ChevronRight } from "lucide-react";
+import { ChevronDown, ChevronRight, Search } from "lucide-react";
 import { BaseForm } from "./base-form";
 import { useNodeDataChange } from "./useNodeDataChange";
 import { Label } from "@/shared/ui/label";
@@ -277,6 +277,13 @@ export const EndNodeForm = ({
   const isLoadingVoices = formData.voice?.credentialId
     ? isLoadingCredentialVoices
     : isLoadingSystemVoices;
+
+  const [voiceSearchQuery, setVoiceSearchQuery] = useState("");
+  const filteredVoices = useMemo(() => {
+    if (!voiceSearchQuery.trim()) return availableVoices;
+    const query = voiceSearchQuery.toLowerCase();
+    return availableVoices.filter((v) => v.name.toLowerCase().includes(query));
+  }, [availableVoices, voiceSearchQuery]);
 
   return (
     <>
@@ -579,7 +586,11 @@ export const EndNodeForm = ({
                               }
                             />
                           </SelectTrigger>
-                          <SelectContent>
+                          <SelectContent
+                            position="popper"
+                            sideOffset={5}
+                            align="end"
+                          >
                             {speechModels.map((m) => (
                               <SelectItem
                                 key={m.id}
@@ -603,6 +614,11 @@ export const EndNodeForm = ({
                               value={formData.voice?.voiceId ?? ""}
                               onValueChange={handleVoiceIdChange}
                               disabled={isLoadingVoices}
+                              onOpenChange={(open) => {
+                                if (!open) {
+                                  setVoiceSearchQuery("");
+                                }
+                              }}
                             >
                               <SelectTrigger className="text-xs">
                                 <SelectValue
@@ -613,16 +629,61 @@ export const EndNodeForm = ({
                                   }
                                 />
                               </SelectTrigger>
-                              <SelectContent>
-                                {availableVoices.map((v) => (
-                                  <SelectItem
-                                    key={v.id}
-                                    value={v.id}
-                                    className="text-xs"
-                                  >
-                                    {v.name}
-                                  </SelectItem>
-                                ))}
+                              <SelectContent
+                                className="h-[300px] flex flex-col p-0"
+                                position="popper"
+                                sideOffset={5}
+                                align="end"
+                              >
+                                {availableVoices.length > 0 && (
+                                  <div className="sticky top-0 z-10 bg-popover p-2 border-b">
+                                    <div className="relative">
+                                      <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                                      <Input
+                                        placeholder={t(
+                                          "nodeForms.end.searchVoice",
+                                        )}
+                                        value={voiceSearchQuery}
+                                        onChange={(e) =>
+                                          setVoiceSearchQuery(e.target.value)
+                                        }
+                                        className="pl-8 h-8 text-xs"
+                                        onClick={(e) => e.stopPropagation()}
+                                        onKeyDown={(e) => {
+                                          e.stopPropagation();
+                                          if (
+                                            e.key === "Backspace" ||
+                                            e.key === "Delete"
+                                          ) {
+                                            e.stopPropagation();
+                                          }
+                                        }}
+                                      />
+                                    </div>
+                                  </div>
+                                )}
+                                <div className="overflow-y-auto flex-1 min-h-0">
+                                  {availableVoices.length === 0 &&
+                                  !isLoadingVoices ? (
+                                    <div className="px-2 py-1.5 text-xs text-muted-foreground">
+                                      {t("nodeForms.end.noVoices")}
+                                    </div>
+                                  ) : filteredVoices.length === 0 ? (
+                                    <div className="px-2 py-1.5 text-xs text-muted-foreground">
+                                      {t("nodeForms.end.noVoicesFound")}
+                                    </div>
+                                  ) : (
+                                    filteredVoices.map((v) => (
+                                      <SelectItem
+                                        key={v.id}
+                                        value={v.id}
+                                        className="text-xs"
+                                      >
+                                        {v.name}
+                                      </SelectItem>
+                                    ))
+                                  )}
+                                </div>
                               </SelectContent>
                             </Select>
                           </div>
