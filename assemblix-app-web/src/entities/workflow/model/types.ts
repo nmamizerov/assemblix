@@ -37,7 +37,17 @@ export enum NodeType {
 
 export type StartNodeConfig = {
   firstPhrase?: string;
+  // Voice input: when enabled, the /execute/audio endpoints transcribe an
+  // inbound audio blob into the run's message using `voiceModel`.
+  acceptVoice?: boolean;
+  voiceModel?: VoiceModelConfig;
 };
+
+export interface VoiceModelConfig {
+  provider: Provider;
+  model: string;
+  credentialId?: string;
+}
 
 export enum Role {
   SYSTEM = "system",

@@ -1,0 +1,19 @@
+{
+  "models": [
+    {
+      "id": "whisper-1",
+      "label": "Whisper",
+      "description": "OpenAI Whisper — multilingual speech-to-text with automatic language detection.",
+      "capability": "transcription",
+      "route": "transcription",
+      "costPerMinute": 0.006
+    },
+    {
+      "id": "gpt-4o-transcribe",
+      "label": "GPT-4o Transcribe",
+      "description": "OpenAI GPT-4o transcription model.",
+      "capability": "transcription",
+      "route": "transcription"
+    }
+  ]
+}

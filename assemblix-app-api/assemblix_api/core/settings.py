@@ -195,6 +195,12 @@ class Settings(BaseSettings):
     kb_max_pdf_pages: int = int(os.getenv("KB_MAX_PDF_PAGES", "500"))
     kb_pdf_parse_timeout_seconds: float = float(os.getenv("KB_PDF_PARSE_TIMEOUT_SECONDS", "30"))
 
+    # Max size of an inbound audio blob transcribed by the /execute/audio endpoints.
+    # Kept under the provider transcription ceiling (OpenAI Whisper caps at 25 MB).
+    voice_max_upload_bytes: int = int(
+        os.getenv("VOICE_MAX_UPLOAD_BYTES", str(20 * 1024 * 1024))  # 20 MB
+    )
+
     # Phase 5: Observability / Prometheus metrics.
     # When true, the /metrics endpoint and worker scrape port are enabled.
     metrics_enabled: bool = os.getenv("METRICS_ENABLED", "true").lower() == "true"
