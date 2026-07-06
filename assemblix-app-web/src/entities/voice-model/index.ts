@@ -2,6 +2,7 @@ export {
   useGetVoiceProvidersQuery,
   useGetVoiceProviderModelsQuery,
   useGetCredentialVoicesQuery,
+  useGetSystemVoicesQuery,
 } from "./api/voice-model.api";
 
 export type {

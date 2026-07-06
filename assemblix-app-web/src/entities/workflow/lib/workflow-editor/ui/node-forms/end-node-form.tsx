@@ -34,6 +34,7 @@ import {
   useGetVoiceProvidersQuery,
   useGetVoiceProviderModelsQuery,
   useGetCredentialVoicesQuery,
+  useGetSystemVoicesQuery,
 } from "@/entities/voice-model";
 import {
   CredentialSelect,
@@ -240,7 +241,7 @@ export const EndNodeForm = ({
       { providerName: voiceProvider ?? "", capability: "speech" },
       { skip: !voiceProvider },
     );
-  const { data: credentialVoices = [], isLoading: isLoadingVoices } =
+  const { data: credentialVoices = [], isLoading: isLoadingCredentialVoices } =
     useGetCredentialVoicesQuery(
       { credentialId: formData.voice?.credentialId ?? "" },
       { skip: !formData.voice?.credentialId },
@@ -260,6 +261,22 @@ export const EndNodeForm = ({
       ? Boolean(serverConfig.systemApiKeys[voiceProvider])
       : true
     : false;
+
+  // No personal credential selected but the platform has a system key for
+  // this provider: the run will use the system key, so list its voices.
+  const usingSystemKey =
+    Boolean(voiceProvider) && !formData.voice?.credentialId && hasVoiceSystemKey;
+  const { data: systemVoices = [], isLoading: isLoadingSystemVoices } =
+    useGetSystemVoicesQuery(
+      { providerName: voiceProvider ?? "" },
+      { skip: !usingSystemKey },
+    );
+  const availableVoices = formData.voice?.credentialId
+    ? credentialVoices
+    : systemVoices;
+  const isLoadingVoices = formData.voice?.credentialId
+    ? isLoadingCredentialVoices
+    : isLoadingSystemVoices;
 
   return (
     <>
@@ -576,39 +593,40 @@ export const EndNodeForm = ({
                         </Select>
                       </div>
 
-                      {formData.voice?.credentialId && (
-                        <div className="space-y-2">
-                          <Label className="text-xs">
-                            {t("nodeForms.end.voice")}
-                          </Label>
-                          <Select
-                            value={formData.voice?.voiceId ?? ""}
-                            onValueChange={handleVoiceIdChange}
-                            disabled={isLoadingVoices}
-                          >
-                            <SelectTrigger className="text-xs">
-                              <SelectValue
-                                placeholder={
-                                  isLoadingVoices
-                                    ? t("nodeForms.end.loadingVoices")
-                                    : t("nodeForms.end.selectVoice")
-                                }
-                              />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {credentialVoices.map((v) => (
-                                <SelectItem
-                                  key={v.id}
-                                  value={v.id}
-                                  className="text-xs"
-                                >
-                                  {v.name}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      )}
+                      {formData.voice?.provider &&
+                        (formData.voice?.credentialId || usingSystemKey) && (
+                          <div className="space-y-2">
+                            <Label className="text-xs">
+                              {t("nodeForms.end.voice")}
+                            </Label>
+                            <Select
+                              value={formData.voice?.voiceId ?? ""}
+                              onValueChange={handleVoiceIdChange}
+                              disabled={isLoadingVoices}
+                            >
+                              <SelectTrigger className="text-xs">
+                                <SelectValue
+                                  placeholder={
+                                    isLoadingVoices
+                                      ? t("nodeForms.end.loadingVoices")
+                                      : t("nodeForms.end.selectVoice")
+                                  }
+                                />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {availableVoices.map((v) => (
+                                  <SelectItem
+                                    key={v.id}
+                                    value={v.id}
+                                    className="text-xs"
+                                  >
+                                    {v.name}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        )}
 
                       <div className="space-y-2">
                         <Label className="text-xs">

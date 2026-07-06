@@ -19,6 +19,10 @@ interface GetCredentialVoicesParams {
   credentialId: string;
 }
 
+interface GetSystemVoicesParams {
+  providerName: string;
+}
+
 export const voiceModelApi = baseApi.injectEndpoints({
   endpoints: (build) => ({
     getVoiceProviders: build.query<VoiceProviderListItem[], GetVoiceProvidersParams | void>({
@@ -55,6 +59,16 @@ export const voiceModelApi = baseApi.injectEndpoints({
         { type: "VoiceModels", id: `voices:${credentialId}` },
       ],
     }),
+
+    getSystemVoices: build.query<VoiceListItem[], GetSystemVoicesParams>({
+      query: ({ providerName }) => ({
+        url: `/voice/providers/${providerName}/system-voices`,
+        method: "GET",
+      }),
+      providesTags: (_result, _error, { providerName }) => [
+        { type: "VoiceModels", id: `system-voices:${providerName}` },
+      ],
+    }),
   }),
 });
 
@@ -62,4 +76,5 @@ export const {
   useGetVoiceProvidersQuery,
   useGetVoiceProviderModelsQuery,
   useGetCredentialVoicesQuery,
+  useGetSystemVoicesQuery,
 } = voiceModelApi;

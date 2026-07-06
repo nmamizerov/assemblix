@@ -15,6 +15,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
+from assemblix_api.core.settings import get_settings
 from assemblix_api.database.models.credentials import CredentialsType
 from assemblix_api.database.models.user import User
 from assemblix_api.dependencies import (
@@ -87,5 +88,30 @@ async def list_credential_voices(
     api_key = await credentials_service.get_decrypted_api_key(
         credentials_id, credentials.project_id
     )
+    voices = await list_voices(api_key)
+    return [VoiceListItem(id=v.id, name=v.name, preview_url=v.preview_url) for v in voices]
+
+
+@router.get("/providers/{provider_name}/system-voices", response_model=list[VoiceListItem])
+async def list_system_voices(
+    provider_name: str,
+    current_user: User = Depends(get_current_user),
+) -> list[VoiceListItem]:
+    """List the voices available to the platform's system key for a voice provider.
+
+    Used by the END-node voice picker when a run uses the system key (no personal
+    credential). Requires an authenticated user; never exposes the key.
+    """
+    if provider_name != "elevenlabs":
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"No system voices for provider {provider_name!r}",
+        )
+    api_key = get_settings().system_elevenlabs_api_key
+    if not api_key:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="System voice key is not configured",
+        )
     voices = await list_voices(api_key)
     return [VoiceListItem(id=v.id, name=v.name, preview_url=v.preview_url) for v in voices]
