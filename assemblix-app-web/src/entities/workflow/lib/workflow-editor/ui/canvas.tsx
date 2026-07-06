@@ -575,8 +575,19 @@ const FlowCanvas = ({
     ],
   );
 
+  // Запрет соединения ноды с самой собой: узел не может быть собственной
+  // следующей нодой (иначе исполнитель зациклится на нём до кап-лимита).
+  const isValidConnection = useCallback(
+    (connection: Connection | Edge) => connection.source !== connection.target,
+    [],
+  );
+
   const onConnect = useCallback(
     (params: Connection) => {
+      // Страховка на случай программного добавления ребра в обход isValidConnection.
+      if (params.source === params.target) {
+        return;
+      }
       if (!isDebugMode && !isViewMode) {
         // Используем nodes/edges из замыкания - состояние ДО подключения!
         takeSnapshot(nodes, edges);
@@ -899,6 +910,7 @@ const FlowCanvas = ({
         }
         onConnect={isDebugMode || isViewMode ? undefined : onConnect}
         onConnectEnd={isDebugMode || isViewMode ? undefined : onConnectEnd}
+        isValidConnection={isValidConnection}
         onDrop={isDebugMode || isViewMode ? undefined : onDrop}
         onDragOver={isDebugMode || isViewMode ? undefined : onDragOver}
         onPaneClick={handlePaneClick}
