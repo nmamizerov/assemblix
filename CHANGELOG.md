@@ -5,6 +5,19 @@ All notable changes to this project are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.4](https://github.com/nmamizerov/assemblix/compare/v0.2.3...v0.2.4) (2026-07-06)
+
+
+### Features
+
+* **execution:** parallel fork/join node execution within a run ([6443b5d](https://github.com/nmamizerov/assemblix/commit/6443b5dd1146a92ec3ce3f8a172a11aa2061f7d6))
+* **execution:** parallel fork/join node execution within a run ([8ebda42](https://github.com/nmamizerov/assemblix/commit/8ebda4289b780ebb75e521f8d756f199109c1c07))
+
+
+### Refactoring
+
+* **execution:** extract per-node mechanics into NodeRunner ([b48318b](https://github.com/nmamizerov/assemblix/commit/b48318beb7d792ec90ca1e0cf1ee41761cfecb78))
+
 ## [0.2.3](https://github.com/nmamizerov/assemblix/compare/v0.2.2...v0.2.3) (2026-07-06)
 
 
