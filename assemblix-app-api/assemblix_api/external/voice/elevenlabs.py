@@ -10,8 +10,14 @@ from __future__ import annotations
 import httpx
 from pydantic import BaseModel
 
-_BASE_URL = "https://api.elevenlabs.io/v1"
+from assemblix_api.core.settings import get_settings
+
 _TIMEOUT = httpx.Timeout(60.0, connect=10.0)
+
+
+def _base_url() -> str:
+    """ElevenLabs API base URL; override via ELEVENLABS_API_BASE_URL for a proxy."""
+    return get_settings().elevenlabs_api_base_url.rstrip("/")
 
 
 class ElevenLabsVoice(BaseModel):
@@ -25,7 +31,7 @@ class ElevenLabsVoice(BaseModel):
 async def list_voices(api_key: str) -> list[ElevenLabsVoice]:
     """Return the voices available to ``api_key`` (GET /v1/voices)."""
     async with httpx.AsyncClient(timeout=_TIMEOUT) as client:
-        resp = await client.get(f"{_BASE_URL}/voices", headers={"xi-api-key": api_key})
+        resp = await client.get(f"{_base_url()}/voices", headers={"xi-api-key": api_key})
         resp.raise_for_status()
         data = resp.json()
     return [
@@ -38,7 +44,7 @@ async def synthesize(*, api_key: str, voice_id: str, model: str, text: str) -> b
     """Synthesize ``text`` with ``voice_id`` and return MP3 bytes."""
     async with httpx.AsyncClient(timeout=_TIMEOUT) as client:
         resp = await client.post(
-            f"{_BASE_URL}/text-to-speech/{voice_id}",
+            f"{_base_url()}/text-to-speech/{voice_id}",
             headers={"xi-api-key": api_key, "accept": "audio/mpeg"},
             json={"text": text, "model_id": model},
         )

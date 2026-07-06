@@ -30,3 +30,17 @@ async def test_synthesize_posts_to_voice_and_returns_bytes(mocker) -> None:
     assert result == audio
     assert "text-to-speech/v1" in post.call_args.args[0]
     assert post.call_args.kwargs["json"]["model_id"] == "eleven_multilingual_v2"
+
+
+async def test_base_url_override_routes_to_proxy(mocker, monkeypatch) -> None:
+    """ELEVENLABS_API_BASE_URL override (e.g. a proxy) changes the request base URL."""
+    # Arrange
+    from assemblix_api.core.settings import get_settings
+
+    monkeypatch.setattr(get_settings(), "elevenlabs_api_base_url", "https://proxy.example/v1/")
+    mock_resp = httpx.Response(200, content=b"a", request=httpx.Request("POST", "http://x"))
+    post = mocker.patch.object(httpx.AsyncClient, "post", return_value=mock_resp)
+    # Act
+    await elevenlabs.synthesize(api_key="k", voice_id="v1", model="m", text="hi")
+    # Assert — trailing slash stripped, proxy base used
+    assert post.call_args.args[0] == "https://proxy.example/v1/text-to-speech/v1"
