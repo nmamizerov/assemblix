@@ -2,6 +2,7 @@ import { CredentialType } from "./types";
 import OpenAIIcon from "../assets/openai.svg";
 import GeminiIcon from "../assets/google.svg";
 import DeepSeekIcon from "../assets/deepseek.svg";
+import ElevenLabsIcon from "../assets/elevenlabs.svg";
 
 export interface CredentialTypeConfigItem {
   type: CredentialType;
@@ -31,6 +32,12 @@ export const CREDENTIAL_TYPE_CONFIG: Record<
     label: "DeepSeek Token",
     icon: DeepSeekIcon,
     color: "text-purple-600",
+  },
+  [CredentialType.ELEVENLABS_TOKEN]: {
+    type: CredentialType.ELEVENLABS_TOKEN,
+    label: "ElevenLabs Token",
+    icon: ElevenLabsIcon,
+    color: "text-zinc-900",
   },
 };
 
