@@ -147,6 +147,16 @@ export interface SetVariableNodeConfig extends Record<string, unknown> {
 export type OutputMode = "last_agent" | "specific_agent" | "custom";
 export type FilterMode = "all" | "none" | "selected";
 
+// TTS provider/voice for the END node. `provider` is a voice-provider id
+// (e.g. "elevenlabs"), intentionally a plain string and not the `Provider`
+// enum (which only covers LLM providers).
+export interface VoiceOutputConfig {
+  provider: string;
+  model: string;
+  voiceId?: string;
+  credentialId?: string;
+}
+
 export interface EndNodeConfig extends Record<string, unknown> {
   name?: string;
 
@@ -169,6 +179,14 @@ export interface EndNodeConfig extends Record<string, unknown> {
 
   // Session
   isSessionEnd?: boolean;
+
+  // Output format. "text" (default) keeps existing behavior; "voice" also
+  // synthesizes the final message into audio via `voice`.
+  outputFormat?: "text" | "voice";
+  voice?: VoiceOutputConfig;
+  // Per-node character cap for synthesis; the effective cap is min(this, the
+  // server-side ceiling).
+  voiceMaxChars?: number;
 }
 
 export interface StickerNodeConfig extends Record<string, unknown> {
