@@ -12,6 +12,7 @@ END terminates the workflow. It:
 from __future__ import annotations
 
 from assemblix_api.nodes.end_node import EndNode
+from assemblix_api.schemas.node import EndNodeConfig
 
 from ._helpers import build_node, make_context, node_input
 
@@ -159,9 +160,6 @@ async def test_end_custom_mode_empty_message() -> None:
     assert output.data == {"message": ""}
 
 
-from assemblix_api.schemas.node import EndNodeConfig
-
-
 def test_end_config_defaults_to_text_output() -> None:
     """output_format defaults to text and voice is None (backward compatible)."""
     # Arrange / Act
@@ -176,8 +174,12 @@ def test_end_config_parses_voice_block_camelcase() -> None:
     # Arrange / Act
     cfg = EndNodeConfig(
         outputFormat="voice",
-        voice={"provider": "elevenlabs", "model": "eleven_multilingual_v2",
-               "voiceId": "v1", "credentialId": "c1"},
+        voice={
+            "provider": "elevenlabs",
+            "model": "eleven_multilingual_v2",
+            "voiceId": "v1",
+            "credentialId": "c1",
+        },
         voiceMaxChars=500,
     )
     # Assert

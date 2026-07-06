@@ -15,7 +15,7 @@ class VoiceProviderListItem(DTOModel):
     )
     label: str = Field(description="Human-readable provider name for display.")
     models_count: int = Field(
-        description="Number of transcription models the provider exposes.",
+        description="Number of models the provider exposes for the requested capability.",
     )
 
 

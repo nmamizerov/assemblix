@@ -34,8 +34,9 @@ async def test_voice_output_own_key_attaches_audio(mocker) -> None:
     # Arrange
     mocker.patch("assemblix_api.nodes.end_node.synthesize", side_effect=_fake_synth)
     node = build_node(EndNode, "end", _voice_config())
-    context = make_context(credential_service=_FakeVoiceCreds(is_system=False),
-                           organization_plan=PlanTier.PRO)
+    context = make_context(
+        credential_service=_FakeVoiceCreds(is_system=False), organization_plan=PlanTier.PRO
+    )
     # Act
     output = await node.execute(node_input({}, context))
     # Assert
@@ -51,8 +52,9 @@ async def test_voice_output_system_key_flags_metadata(mocker) -> None:
     # Arrange
     mocker.patch("assemblix_api.nodes.end_node.synthesize", side_effect=_fake_synth)
     node = build_node(EndNode, "end", _voice_config())
-    context = make_context(credential_service=_FakeVoiceCreds(is_system=True),
-                           organization_plan=PlanTier.PRO)
+    context = make_context(
+        credential_service=_FakeVoiceCreds(is_system=True), organization_plan=PlanTier.PRO
+    )
     # Act
     output = await node.execute(node_input({}, context))
     # Assert
@@ -85,6 +87,23 @@ async def test_text_mode_unchanged_no_synthesis(mocker) -> None:
     output = await node.execute(node_input({}, context))
     # Assert
     assert output.data == {"message": "Hi"}
+    synth.assert_not_called()
+
+
+async def test_missing_voice_id_falls_back_to_text(mocker) -> None:
+    """Voice enabled but no voiceId configured → no synthesis, no audio, no cost."""
+    # Arrange
+    synth = mocker.patch("assemblix_api.nodes.end_node.synthesize", side_effect=_fake_synth)
+    config = _voice_config()
+    config["voice"] = {"provider": "elevenlabs", "model": "eleven_multilingual_v2"}
+    node = build_node(EndNode, "end", config)
+    context = make_context(credential_service=_FakeVoiceCreds(), organization_plan=PlanTier.PRO)
+    # Act
+    output = await node.execute(node_input({}, context))
+    # Assert
+    assert output.data["message"] == "Hello there"
+    assert "audio" not in output.data
+    assert "cost" not in output.metadata
     synth.assert_not_called()
 
 

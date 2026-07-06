@@ -1,17 +1,18 @@
 import { baseApi } from "@/shared/api/baseApi";
 import type {
+  VoiceCapability,
   VoiceListItem,
   VoiceModelMetadata,
   VoiceProviderListItem,
 } from "../model/types";
 
 interface GetVoiceProvidersParams {
-  capability?: string;
+  capability?: VoiceCapability;
 }
 
 interface GetVoiceModelsParams {
   providerName: string;
-  capability?: string;
+  capability?: VoiceCapability;
 }
 
 interface GetCredentialVoicesParams {

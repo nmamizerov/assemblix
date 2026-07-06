@@ -1,10 +1,12 @@
 """Voice provider/model discovery endpoints.
 
 Powers voice-model pickers on the frontend (e.g. the START-node "accept voice"
-picker and, later, the END-node speech-output picker): the UI fetches providers
-and their models for a given ``capability`` to render a provider→model
-selection. Read-only, returns data straight from the voice model catalog;
-requires an authenticated user.
+picker and the END-node speech-output picker): the UI fetches providers and
+their models for a given ``capability`` to render a provider→model selection.
+All endpoints require an authenticated user. ``list_providers`` and
+``list_provider_models`` return data straight from the in-memory voice model
+catalog, but ``list_credential_voices`` makes a live authenticated call to the
+ElevenLabs API using a decrypted stored credential.
 """
 
 from __future__ import annotations
@@ -82,6 +84,8 @@ async def list_credential_voices(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="This credential is not an ElevenLabs token",
         )
-    api_key = await credentials_service.get_decrypted_api_key(credentials_id, credentials.project_id)
+    api_key = await credentials_service.get_decrypted_api_key(
+        credentials_id, credentials.project_id
+    )
     voices = await list_voices(api_key)
     return [VoiceListItem(id=v.id, name=v.name, preview_url=v.preview_url) for v in voices]

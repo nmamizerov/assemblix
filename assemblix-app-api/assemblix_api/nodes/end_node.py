@@ -138,7 +138,9 @@ class EndNode(BaseNode):
 
         return {"message": message}
 
-    async def _synthesize_into(self, output_data: dict, metadata: dict, node_input: NodeInput) -> None:
+    async def _synthesize_into(
+        self, output_data: dict, metadata: dict, node_input: NodeInput
+    ) -> None:
         voice = self.typed_config.voice
         assert voice is not None  # caller only invokes this when voice is configured
         text = output_data.get("message") or ""
@@ -147,6 +149,8 @@ class EndNode(BaseNode):
             effective_limit = min(effective_limit, self.typed_config.voice_max_chars)
         if not text or len(text) > effective_limit:
             return  # text-only fallback
+        if not voice.voice_id or not voice.model:
+            return  # text-only fallback: voice not fully configured
 
         context = node_input.context
         assert context.credential_service is not None
@@ -158,8 +162,11 @@ class EndNode(BaseNode):
             organization_plan=context.organization_plan,
         )
         result = await synthesize(
-            text=text, provider=voice.provider, model=voice.model,
-            voice_id=voice.voice_id, api_key=api_key,
+            text=text,
+            provider=voice.provider,
+            model=voice.model,
+            voice_id=voice.voice_id,
+            api_key=api_key,
         )
 
         output_data["audio"] = {

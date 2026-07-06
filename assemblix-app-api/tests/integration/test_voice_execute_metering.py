@@ -36,7 +36,11 @@ def _voice_output_workflow() -> tuple[list[dict[str, Any]], list[dict[str, Any]]
             "end",
             {
                 "outputFormat": "voice",
-                "voice": {"provider": "elevenlabs", "model": "eleven_multilingual_v2", "voiceId": "v1"},
+                "voice": {
+                    "provider": "elevenlabs",
+                    "model": "eleven_multilingual_v2",
+                    "voiceId": "v1",
+                },
             },
         ),
     ]
@@ -65,7 +69,12 @@ async def _voice_execute_setup(api_client) -> SimpleNamespace:
     nodes, edges = _voice_output_workflow()
     create_resp = await api_client.post(
         "/api/workflows/",
-        json={"projectId": project_id, "name": "Voice output workflow", "nodes": nodes, "edges": edges},
+        json={
+            "projectId": project_id,
+            "name": "Voice output workflow",
+            "nodes": nodes,
+            "edges": edges,
+        },
         headers=jwt_headers,
     )
     assert create_resp.status_code == 201
@@ -80,10 +89,14 @@ async def _voice_execute_setup(api_client) -> SimpleNamespace:
 
 
 async def _fake_synth(*, text, provider, model, voice_id, api_key):
-    return SynthesisResult(audio_bytes=b"AUDIO_BYTES", chars=len(text), provider=provider, model=model)
+    return SynthesisResult(
+        audio_bytes=b"AUDIO_BYTES", chars=len(text), provider=provider, model=model
+    )
 
 
-async def test_voice_run_meters_system_key_and_scrubs_audio(api_client, mock_llm, mocker, monkeypatch) -> None:
+async def test_voice_run_meters_system_key_and_scrubs_audio(
+    api_client, mock_llm, mocker, monkeypatch
+) -> None:
     """A system-key voice run: response has audio, DB row is scrubbed, VOICE_USAGE recorded."""
     # Arrange
     from assemblix_api.core.settings import get_settings
