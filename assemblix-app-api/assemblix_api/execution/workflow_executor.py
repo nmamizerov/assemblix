@@ -963,6 +963,8 @@ class WorkflowExecutor:
                 execution_id=execution.id,
                 system_key_cost_usd=context.system_key_cost_usd,
                 own_key_cost_usd=context.own_key_cost_usd,
+                system_voice_cost_usd=context.system_voice_cost_usd,
+                own_voice_cost_usd=context.own_voice_cost_usd,
                 metadata={
                     "steps_count": context.step_number,
                 },
@@ -1024,11 +1026,16 @@ class WorkflowExecutor:
         # 5. Update execution status (COMPLETED or ERROR)
         status = ExecutionStatus.ERROR if is_error else ExecutionStatus.COMPLETED
 
+        # Audio rides the live response / SSE only — keep it out of the DB.
+        persisted_output = final_output
+        if isinstance(final_output, dict) and "audio" in final_output:
+            persisted_output = {k: v for k, v in final_output.items() if k != "audio"}
+
         await self._execution_service.update_execution_status(
             execution_id=execution.id,
             status=status,
             final_state=context.state,
-            output=final_output,
+            output=persisted_output,
             final_project_state=context.project_state,
             is_session_closed=is_session_end,
             total_credits=total_credits,

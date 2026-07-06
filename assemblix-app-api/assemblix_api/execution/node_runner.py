@@ -204,6 +204,11 @@ class NodeRunner:
 
         # Log the COMPLETED ExecutionStep (idempotency guard against a resumed run that
         # already wrote this step_number).
+        # Audio rides the live response / SSE only — keep it out of the persisted step.
+        persisted_step_output = node_output.data
+        if isinstance(node_output.data, dict) and "audio" in node_output.data:
+            persisted_step_output = {k: v for k, v in node_output.data.items() if k != "audio"}
+
         if not await self._tracer.has_step(
             execution_id=context.execution_id, step_number=step_number
         ):
@@ -214,7 +219,7 @@ class NodeRunner:
                     node_id=node_id,
                     node_type=node_type,
                     input_data=node_data,
-                    output_data=node_output.data,
+                    output_data=persisted_step_output,
                     state_before=state_before,
                     state_after=context.state,
                     status=StepStatus.COMPLETED.value,
