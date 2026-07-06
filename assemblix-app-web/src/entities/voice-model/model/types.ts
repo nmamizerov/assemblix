@@ -11,6 +11,12 @@ export interface VoiceModelMetadata {
   label: string;
   description?: string | null;
   capability: VoiceCapability;
-  route: "transcription" | "completion";
+  route: "transcription" | "completion" | "speech";
   costPerMinute?: number | null;
+}
+
+export interface VoiceListItem {
+  id: string;
+  name: string;
+  previewUrl?: string;
 }

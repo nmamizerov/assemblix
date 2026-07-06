@@ -1,9 +1,9 @@
 """Voice-model registry — the data-driven catalog of speech models.
 
 Mirror of ``external/llm/model_catalog`` + ``models_loader``: models are declared
-as data in ``models/<provider>.json`` and loaded/validated here. Only
-transcription models ship today; adding a TTS/realtime model is a JSON edit plus
-(if a new provider) a ``VOICE_PROVIDER_LABELS`` entry — no code change.
+as data in ``models/<provider>.json`` and loaded/validated here. ``transcription``
+and ``speech`` models ship today; adding a model to an existing provider is a JSON
+edit, adding a provider also needs a ``VOICE_PROVIDER_LABELS`` entry.
 """
 
 from __future__ import annotations
@@ -18,7 +18,7 @@ _VOICE_MODELS_DIR = Path(__file__).parent / "models"
 
 # Registered voice providers → display label. This is the gate for what the API
 # exposes; a provider without an entry here is invisible even if a JSON exists.
-VOICE_PROVIDER_LABELS: dict[str, str] = {"openai": "OpenAI"}
+VOICE_PROVIDER_LABELS: dict[str, str] = {"openai": "OpenAI", "elevenlabs": "ElevenLabs"}
 
 
 @cache

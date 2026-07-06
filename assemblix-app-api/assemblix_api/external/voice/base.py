@@ -1,9 +1,9 @@
 """Metadata contracts for the voice-model registry.
 
 Mirrors ``external/llm/base.py`` but for speech models. ``capability`` groups
-models by feature — only ``transcription`` ships today; ``speech``/``realtime``
-reserve the shape for future TTS / streaming without a schema change. ``route``
-tells the transcription service how to call the model.
+models by feature — ``transcription`` and ``speech`` ship today; ``realtime``
+reserves the shape for future streaming without a schema change. ``route``
+tells the calling service how to invoke the model.
 """
 
 from __future__ import annotations
@@ -20,5 +20,6 @@ class VoiceModelMetadata(DTOModel):
     label: str
     description: str | None = None
     capability: Literal["transcription", "speech", "realtime"]
-    route: Literal["transcription", "completion"]
+    route: Literal["transcription", "completion", "speech"]
     cost_per_minute: float | None = None
+    cost_per_char: float | None = None

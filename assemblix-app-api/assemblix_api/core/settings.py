@@ -201,6 +201,16 @@ class Settings(BaseSettings):
         os.getenv("VOICE_MAX_UPLOAD_BYTES", str(20 * 1024 * 1024))  # 20 MB
     )
 
+    # ElevenLabs (voice output). Optional platform key for the hosted build; when
+    # unset, only user-supplied credentials work (self-host default).
+    system_elevenlabs_api_key: str = os.getenv("SYSTEM_ELEVENLABS_API_KEY", "")
+    # ElevenLabs API base URL. Override to route through a proxy/gateway.
+    elevenlabs_api_base_url: str = os.getenv(
+        "ELEVENLABS_API_BASE_URL", "https://api.elevenlabs.io/v1"
+    )
+    # Hard ceiling on characters sent to TTS per END node (bounds payload + cost).
+    voice_output_max_chars: int = int(os.getenv("VOICE_OUTPUT_MAX_CHARS", "2000"))
+
     # Phase 5: Observability / Prometheus metrics.
     # When true, the /metrics endpoint and worker scrape port are enabled.
     metrics_enabled: bool = os.getenv("METRICS_ENABLED", "true").lower() == "true"

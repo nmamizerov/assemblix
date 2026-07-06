@@ -1,24 +1,38 @@
 """Voice provider/model discovery endpoints.
 
-Powers the START-node "accept voice" picker on the frontend: the UI fetches the
-transcription providers and their models to render the same provider→model
-selection the agent node uses. Read-only, returns data straight from the voice
-model catalog; requires an authenticated user.
+Powers voice-model pickers on the frontend (e.g. the START-node "accept voice"
+picker and the END-node speech-output picker): the UI fetches providers and
+their models for a given ``capability`` to render a provider→model selection.
+All endpoints require an authenticated user. ``list_providers`` and
+``list_provider_models`` return data straight from the in-memory voice model
+catalog, but ``list_credential_voices`` makes a live authenticated call to the
+ElevenLabs API using a decrypted stored credential.
 """
 
 from __future__ import annotations
 
+from uuid import UUID
+
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
+from assemblix_api.core.settings import get_settings
+from assemblix_api.database.models.credentials import CredentialsType
 from assemblix_api.database.models.user import User
-from assemblix_api.dependencies import get_current_user
-from assemblix_api.dto.responses.voice import VoiceProviderListItem
+from assemblix_api.dependencies import (
+    get_credentials_service,
+    get_current_user,
+    get_project_service,
+)
+from assemblix_api.dto.responses.voice import VoiceListItem, VoiceProviderListItem
 from assemblix_api.external.voice.base import VoiceModelMetadata
+from assemblix_api.external.voice.elevenlabs import list_voices
 from assemblix_api.external.voice.voice_catalog import (
     VOICE_PROVIDER_LABELS,
     list_voice_models,
     list_voice_providers,
 )
+from assemblix_api.services.credentials_service import CredentialsService
+from assemblix_api.services.project_service import ProjectService
 
 router = APIRouter(prefix="/voice", tags=["Voice"])
 
@@ -27,16 +41,17 @@ _CAPABILITY = "transcription"
 
 @router.get("/providers", response_model=list[VoiceProviderListItem])
 async def list_providers(
+    capability: str = Query(default=_CAPABILITY, description="Model capability filter"),
     current_user: User = Depends(get_current_user),
 ) -> list[VoiceProviderListItem]:
-    """List voice providers that expose transcription models."""
+    """List voice providers exposing models for the given capability."""
     return [
         VoiceProviderListItem(
             name=name,
             label=VOICE_PROVIDER_LABELS[name],
-            models_count=len(list_voice_models(name, _CAPABILITY)),
+            models_count=len(list_voice_models(name, capability)),
         )
-        for name in list_voice_providers(_CAPABILITY)
+        for name in list_voice_providers(capability)
     ]
 
 
@@ -53,3 +68,50 @@ async def list_provider_models(
             detail=f"Voice provider {provider_name!r} is not registered",
         )
     return list_voice_models(provider_name, capability)
+
+
+@router.get("/credentials/{credentials_id}/voices", response_model=list[VoiceListItem])
+async def list_credential_voices(
+    credentials_id: UUID,
+    current_user: User = Depends(get_current_user),
+    credentials_service: CredentialsService = Depends(get_credentials_service),
+    project_service: ProjectService = Depends(get_project_service),
+) -> list[VoiceListItem]:
+    """List the ElevenLabs voices available to a stored credential."""
+    credentials = await credentials_service.get_by_id(credentials_id)
+    await project_service.verify_user_project_access(current_user, credentials.project_id)
+    if credentials.type != CredentialsType.ELEVENLABS_TOKEN:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="This credential is not an ElevenLabs token",
+        )
+    api_key = await credentials_service.get_decrypted_api_key(
+        credentials_id, credentials.project_id
+    )
+    voices = await list_voices(api_key)
+    return [VoiceListItem(id=v.id, name=v.name, preview_url=v.preview_url) for v in voices]
+
+
+@router.get("/providers/{provider_name}/system-voices", response_model=list[VoiceListItem])
+async def list_system_voices(
+    provider_name: str,
+    current_user: User = Depends(get_current_user),
+) -> list[VoiceListItem]:
+    """List the voices available to the platform's system key for a voice provider.
+
+    Used by the END-node voice picker when a run uses the system key (no personal
+    credential). Requires an authenticated user; never exposes the key.
+    """
+    if provider_name != "elevenlabs":
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"No system voices for provider {provider_name!r}",
+        )
+    api_key = get_settings().system_elevenlabs_api_key
+    if not api_key:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="System voice key is not configured",
+        )
+    voices = await list_voices(api_key)
+    return [VoiceListItem(id=v.id, name=v.name, preview_url=v.preview_url) for v in voices]
