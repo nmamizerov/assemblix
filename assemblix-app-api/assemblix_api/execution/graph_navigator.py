@@ -55,6 +55,11 @@ class GraphNavigator:
         Edges pointing to non-existent nodes are silently skipped so that
         stale references left in a saved workflow JSON do not crash execution.
 
+        Self-loop edges (target == current_node_id) are also skipped: a node must
+        never route back to itself, otherwise the executor would re-run it until the
+        per-node cycle cap trips. If the only outgoing edge is a self-loop, None is
+        returned and the executor fails fast with NoNextNodeError.
+
         Args:
             edges: List of edges from workflow
             nodes: List of node configs from workflow (used to validate targets)
@@ -85,14 +90,22 @@ class GraphNavigator:
                     if e.source == current_node_id
                     and e.source_handle == source_handle
                     and e.target in valid_node_ids
+                    and e.target != current_node_id
                 ),
                 None,
             )
             return edge.target if edge else None
 
-        # For regular nodes: find first edge whose target actually exists
+        # For regular nodes: find first edge whose target actually exists and is
+        # not the node itself (self-loops are never followed).
         edge = next(
-            (e for e in edges if e.source == current_node_id and e.target in valid_node_ids),
+            (
+                e
+                for e in edges
+                if e.source == current_node_id
+                and e.target in valid_node_ids
+                and e.target != current_node_id
+            ),
             None,
         )
         return edge.target if edge else None
