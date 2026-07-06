@@ -14,7 +14,6 @@ from assemblix_api.core.settings import get_settings
 from assemblix_api.core.template_evaluator import TemplateEvaluator
 from assemblix_api.database.models.execution import Execution
 from assemblix_api.database.models.workflow import Workflow
-from assemblix_api.execution.cost_accumulator import accumulate_step_cost
 from assemblix_api.execution.credential_resolver import CredentialResolver
 from assemblix_api.services import (
     ChatMessageService,
@@ -31,23 +30,17 @@ from assemblix_api.services.project_service import ProjectService
 if TYPE_CHECKING:
     from assemblix_api.billing.credit_service import CreditService
     from assemblix_api.execution.resume import ResumePoint
-from assemblix_api.billing.plans import credit_config
-from assemblix_api.core.metrics import (
-    observe_execution,
-    observe_step,
-    set_nodes_in_progress,
-    track_llm,
-)
+from assemblix_api.core.metrics import observe_execution
 from assemblix_api.enums import NodeType
 from assemblix_api.execution.debug_event_manager import DebugEventManager
 from assemblix_api.execution.graph_navigator import GraphNavigator
+from assemblix_api.execution.node_runner import NodeRunner
 from assemblix_api.schemas.execution import (
     ExecutionContext,
     ExecutionResult,
     ExecutionResultMetadata,
     ExecutionStepData,
     NodeInput,
-    NodeOutput,
     _noop_checkpoint,
 )
 from assemblix_api.schemas.node import StartNodeConfig
@@ -100,6 +93,8 @@ class WorkflowExecutor:
         # released during long external awaits. No-op when not wired (request scope/tests).
         self._db_checkpoint = db_checkpoint if db_checkpoint is not None else _noop_checkpoint
         self._navigator = GraphNavigator()
+        # Owns per-node execution mechanics (run + step recording) shared by both loops.
+        self._node_runner = NodeRunner(self._tracer, self._debug_event_manager, self._db_checkpoint)
 
     async def execute(
         self,
@@ -530,14 +525,6 @@ class WorkflowExecutor:
                 return True  # AND-split (parallel fork)
         return any(len(srcs) >= 2 for srcs in in_sources.values())  # join
 
-    async def _run_node(self, node, node_input: NodeInput) -> NodeOutput:
-        """Execute a single node under the in-progress gauge. Errors propagate."""
-        set_nodes_in_progress(+1)
-        try:
-            return await node.execute(node_input)
-        finally:
-            set_nodes_in_progress(-1)
-
     async def _execution_loop_sequential(
         self,
         context: ExecutionContext,
@@ -568,7 +555,6 @@ class WorkflowExecutor:
         Returns:
             Tuple of (final_output, context, is_session_end, is_error, error_message)
         """
-        from assemblix_api.enums import StepStatus
         from assemblix_api.execution.exceptions import (
             MaxStepsExceededError,
             NodeExecutionLimitError,
@@ -634,218 +620,51 @@ class WorkflowExecutor:
 
             node_input = NodeInput(data=node_data, context=context)
 
-            # Save state before execution for logging
+            # Save state before execution for logging; step id is the current counter.
             state_before = context.state.copy()
-
-            # Log step START
             step_start = datetime.now()
-            logger.info(
-                "workflow.node.started",
+            assigned_step = context.step_number
+
+            await self._node_runner.emit_start(
+                context,
                 node_id=current_node_id,
                 node_type=node_type_str,
-                step_number=context.step_number,
+                node_data=node_data,
+                state_before=state_before,
+                project_state_before=context.project_state.copy(),
+                step_number=assigned_step,
             )
 
-            # Emit step_start event for debug mode
-            if self._debug_event_manager.get_stream(context.execution_id):
-                await self._debug_event_manager.emit_step_start(
-                    execution_id=context.execution_id,
-                    step_number=context.step_number,
-                    node_id=current_node_id,
-                    node_type=node_type_str,
-                    input_data=node_data,
-                    state_before=state_before,
-                    project_state_before=context.project_state.copy(),
-                )
-
-            # Execute node - wrap in try-except to capture node_id on error.
-            # The in-progress gauge is adjusted in a try/finally so it always
-            # decrements even when the node raises.
-            set_nodes_in_progress(+1)
             try:
-                node_output = await node.execute(node_input)
+                node_output = await self._node_runner.run(node, node_input)
             except Exception as e:
-                # Persist a FAILED ExecutionStep BEFORE re-raising, so the upper
-                # error handler doesn't have to reconstruct timing/payload and
-                # the UI can show the failed node alongside successful ones.
                 from assemblix_api.execution.exceptions import NodeExecutionError
 
-                step_end = datetime.now()
-                try:
-                    # Idempotency guard: on a resumed/redelivered run the node that
-                    # previously failed is re-executed at the SAME step_number.  If
-                    # it fails again we must NOT insert a duplicate row — that would
-                    # violate the (execution_id, step_number) UniqueConstraint.
-                    # The guard only skips the DB insert; the error is always re-raised.
-                    _failed_step_exists = await self._tracer.has_step(
-                        execution_id=context.execution_id,
-                        step_number=context.step_number,
-                    )
-                    if not _failed_step_exists:
-                        await self._tracer.log_step(
-                            ExecutionStepData(
-                                execution_id=context.execution_id,
-                                step_number=context.step_number,
-                                node_id=current_node_id,
-                                node_type=node_type_str,
-                                input_data=node_data,
-                                output_data=None,
-                                state_before=state_before,
-                                state_after=None,
-                                status=StepStatus.FAILED.value,
-                                started_at=step_start,
-                                completed_at=step_end,
-                                duration_ms=int((step_end - step_start).total_seconds() * 1000),
-                                error_message=str(e),
-                                cel_evaluations=None,
-                            )
-                        )
-                except Exception as log_err:
-                    # Never let logging failure mask the original node error.
-                    logger.warning(
-                        "workflow.step.log_failed",
-                        node_id=current_node_id,
-                        error=str(log_err),
-                    )
-
-                # Emit step metric for the failed node (best-effort, raw type string).
-                observe_step(node_type_str, "failed")
-                raise NodeExecutionError(e, current_node_id) from e
-            finally:
-                set_nodes_in_progress(-1)
-
-            # Calculate duration
-            step_end = datetime.now()
-            duration_ms = int((step_end - step_start).total_seconds() * 1000)
-            logger.info(
-                "workflow.node.completed",
-                node_id=current_node_id,
-                node_type=node_type_str,
-                step_number=context.step_number,
-                duration_ms=duration_ms,
-            )
-
-            # Update state if node returned state_updates
-            if node_output.state_updates:
-                context = context.with_state(node_output.state_updates)
-
-            # Update project_state if node returned project_updates
-            if node_output.project_updates:
-                context = context.with_project_state(node_output.project_updates)
-
-            # Append to the shared dialog history if the node produced a history message
-            # (agent nodes, gated by save_to_history). Later agents that include chat
-            # history will see it.
-            if node_output.history_append:
-                context = context.with_chat_history([node_output.history_append])
-
-            # Step cost is accumulated centrally (the node does not mutate billing).
-            # Additively into the right bucket (system/own) from per-step facts in metadata.
-            context = accumulate_step_cost(context, node_output.metadata)
-
-            # Note: Metrics (tokens, cost) are tracked in context for billing
-            # Credits will be calculated in finalization phase via credit_service
-
-            # Emit step_complete event for debug mode
-            if self._debug_event_manager.get_stream(context.execution_id):
-                # Compute credits for this step (only for system keys)
-                step_credits = None
-                if node_output.metadata and get_settings().billing_enabled:
-                    step_cost = node_output.metadata.get("cost", 0)
-                    used_system_key = node_output.metadata.get("used_system_key", False)
-
-                    # Credits are charged only when system keys are used
-                    if step_cost and used_system_key:
-                        from decimal import Decimal
-
-                        step_credits = float(
-                            credit_config.usd_to_credits(Decimal(str(step_cost)), with_margin=True)
-                        )
-
-                await self._debug_event_manager.emit_step_complete(
-                    execution_id=context.execution_id,
-                    step_number=context.step_number,
+                await self._node_runner.record_failed(
+                    context,
                     node_id=current_node_id,
                     node_type=node_type_str,
-                    output_data=node_output.data,
-                    state_after=context.state,
-                    project_state_after=context.project_state,
-                    duration_ms=duration_ms,
-                    model_used=(
-                        node_output.metadata.get("model") if node_output.metadata else None
-                    ),
-                    tokens_used=(
-                        node_output.metadata.get("tokens") if node_output.metadata else None
-                    ),
-                    cost=(node_output.metadata.get("cost") if node_output.metadata else None),
-                    own_key_cost_usd=(
-                        node_output.metadata.get("own_key_cost_usd")
-                        if node_output.metadata
-                        else None
-                    ),
-                    credits_used=step_credits,
-                    llm_request=(
-                        node_output.metadata.get("llm_request") if node_output.metadata else None
-                    ),
+                    node_data=node_data,
+                    state_before=state_before,
+                    step_number=assigned_step,
+                    started_at=step_start,
+                    error=e,
                 )
+                raise NodeExecutionError(e, current_node_id) from e
 
-            # Log ExecutionStep BEFORE incrementing step_number.
-            # Idempotency guard: on a resumed execution the step might already
-            # exist in the DB (e.g. a crash happened after logging but before
-            # the next node started).  Skip the insert to avoid a UniqueConstraint
-            # violation on (execution_id, step_number).
-            step_already_logged = await self._tracer.has_step(
-                execution_id=context.execution_id,
-                step_number=context.step_number,
-            )
-            if not step_already_logged:
-                await self._tracer.log_step(
-                    ExecutionStepData(
-                        execution_id=context.execution_id,
-                        step_number=context.step_number,
-                        node_id=current_node_id,
-                        node_type=node_type_str,
-                        input_data=node_data,
-                        output_data=node_output.data,
-                        state_before=state_before,
-                        state_after=context.state,
-                        status=StepStatus.COMPLETED.value,
-                        started_at=step_start,
-                        completed_at=step_end,
-                        duration_ms=duration_ms,
-                        error_message=None,
-                        model_used=(
-                            node_output.metadata.get("model") if node_output.metadata else None
-                        ),
-                        own_key_cost_usd=(
-                            node_output.metadata.get("own_key_cost_usd")
-                            if node_output.metadata
-                            else None
-                        ),
-                        cel_evaluations=None,
-                        llm_request=(
-                            node_output.metadata.get("llm_request")
-                            if node_output.metadata
-                            else None
-                        ),
-                    )
-                )
-
-            # Emit step and LLM metrics for completed nodes (best-effort, raw type string).
-            observe_step(node_type_str, "completed")
-            track_llm(
-                model=node_output.metadata.get("model") if node_output.metadata else None,
-                tokens=node_output.metadata.get("tokens") if node_output.metadata else None,
-                cost_usd=node_output.metadata.get("cost") if node_output.metadata else None,
+            # Apply outputs, emit events, log the COMPLETED step, checkpoint.
+            context = await self._node_runner.record_completed(
+                context,
+                node_id=current_node_id,
+                node_type=node_type_str,
+                node_data=node_data,
+                node_output=node_output,
+                state_before=state_before,
+                step_number=assigned_step,
+                started_at=step_start,
             )
 
-            # Commit this step and release the DB connection between nodes. Keeps the
-            # connection out of the pool only while actually doing DB work, not across
-            # the next node's external await. No-op outside the queue/isolated path.
-            await self._db_checkpoint()
-
-            # Update context with visited node (increments step_number for next iteration)
-            # This MUST be done AFTER logging to avoid duplicate step_number
+            # Increment step_number for the next iteration (AFTER logging).
             context = context.with_node_visited(current_node_id)
 
             # Check if this is a terminal node (capability hook replaces NodeType.END check).
@@ -923,7 +742,6 @@ class WorkflowExecutor:
         import asyncio
         from dataclasses import replace
 
-        from assemblix_api.enums import StepStatus
         from assemblix_api.execution.dag_scheduler import DagScheduler
         from assemblix_api.execution.exceptions import (
             MaxStepsExceededError,
@@ -988,24 +806,17 @@ class WorkflowExecutor:
                     # Reserve this run's step id / cycle-cap slot.
                     context = context.with_node_visited(node_id)
 
-                    logger.info(
-                        "workflow.node.started",
+                    await self._node_runner.emit_start(
+                        context,
                         node_id=node_id,
                         node_type=node_type_str,
+                        node_data=node_data,
+                        state_before=state_before,
+                        project_state_before=project_state_before,
                         step_number=assigned_step,
                     )
-                    if self._debug_event_manager.get_stream(context.execution_id):
-                        await self._debug_event_manager.emit_step_start(
-                            execution_id=context.execution_id,
-                            step_number=assigned_step,
-                            node_id=node_id,
-                            node_type=node_type_str,
-                            input_data=node_data,
-                            state_before=state_before,
-                            project_state_before=project_state_before,
-                        )
 
-                    task = asyncio.create_task(self._run_node(node, node_input))
+                    task = asyncio.create_task(self._node_runner.run(node, node_input))
                     running[task] = {
                         "node_id": node_id,
                         "node_type": node_type_str,
@@ -1053,151 +864,30 @@ class WorkflowExecutor:
                     try:
                         node_output = task.result()
                     except Exception as e:
-                        # Persist a FAILED step (idempotent) then abort the whole run —
-                        # a node error fails the execution, as on the sequential path.
-                        step_end = datetime.now()
-                        try:
-                            if not await self._tracer.has_step(
-                                execution_id=context.execution_id,
-                                step_number=assigned_step,
-                            ):
-                                await self._tracer.log_step(
-                                    ExecutionStepData(
-                                        execution_id=context.execution_id,
-                                        step_number=assigned_step,
-                                        node_id=node_id,
-                                        node_type=node_type_str,
-                                        input_data=node_data,
-                                        output_data=None,
-                                        state_before=state_before,
-                                        state_after=None,
-                                        status=StepStatus.FAILED.value,
-                                        started_at=started_at,
-                                        completed_at=step_end,
-                                        duration_ms=int(
-                                            (step_end - started_at).total_seconds() * 1000
-                                        ),
-                                        error_message=str(e),
-                                        cel_evaluations=None,
-                                    )
-                                )
-                        except Exception as log_err:
-                            logger.warning(
-                                "workflow.step.log_failed",
-                                node_id=node_id,
-                                error=str(log_err),
-                            )
-                        observe_step(node_type_str, "failed")
-                        raise NodeExecutionError(e, node_id) from e
-
-                    # --- success: apply outputs to the shared context (serially) ---
-                    step_end = datetime.now()
-                    duration_ms = int((step_end - started_at).total_seconds() * 1000)
-                    logger.info(
-                        "workflow.node.completed",
-                        node_id=node_id,
-                        node_type=node_type_str,
-                        step_number=assigned_step,
-                        duration_ms=duration_ms,
-                    )
-
-                    if node_output.state_updates:
-                        context = context.with_state(node_output.state_updates)
-                    if node_output.project_updates:
-                        context = context.with_project_state(node_output.project_updates)
-                    if node_output.history_append:
-                        context = context.with_chat_history([node_output.history_append])
-                    context = accumulate_step_cost(context, node_output.metadata)
-
-                    if self._debug_event_manager.get_stream(context.execution_id):
-                        step_credits = None
-                        if node_output.metadata and get_settings().billing_enabled:
-                            step_cost = node_output.metadata.get("cost", 0)
-                            used_system_key = node_output.metadata.get("used_system_key", False)
-                            if step_cost and used_system_key:
-                                from decimal import Decimal
-
-                                step_credits = float(
-                                    credit_config.usd_to_credits(
-                                        Decimal(str(step_cost)), with_margin=True
-                                    )
-                                )
-                        await self._debug_event_manager.emit_step_complete(
-                            execution_id=context.execution_id,
-                            step_number=assigned_step,
+                        # A node error fails the whole run, as on the sequential path.
+                        await self._node_runner.record_failed(
+                            context,
                             node_id=node_id,
                             node_type=node_type_str,
-                            output_data=node_output.data,
-                            state_after=context.state,
-                            project_state_after=context.project_state,
-                            duration_ms=duration_ms,
-                            model_used=(
-                                node_output.metadata.get("model") if node_output.metadata else None
-                            ),
-                            tokens_used=(
-                                node_output.metadata.get("tokens") if node_output.metadata else None
-                            ),
-                            cost=(
-                                node_output.metadata.get("cost") if node_output.metadata else None
-                            ),
-                            own_key_cost_usd=(
-                                node_output.metadata.get("own_key_cost_usd")
-                                if node_output.metadata
-                                else None
-                            ),
-                            credits_used=step_credits,
-                            llm_request=(
-                                node_output.metadata.get("llm_request")
-                                if node_output.metadata
-                                else None
-                            ),
+                            node_data=node_data,
+                            state_before=state_before,
+                            step_number=assigned_step,
+                            started_at=started_at,
+                            error=e,
                         )
+                        raise NodeExecutionError(e, node_id) from e
 
-                    if not await self._tracer.has_step(
-                        execution_id=context.execution_id,
+                    # Record the step and fold outputs into the shared context (serially).
+                    context = await self._node_runner.record_completed(
+                        context,
+                        node_id=node_id,
+                        node_type=node_type_str,
+                        node_data=node_data,
+                        node_output=node_output,
+                        state_before=state_before,
                         step_number=assigned_step,
-                    ):
-                        await self._tracer.log_step(
-                            ExecutionStepData(
-                                execution_id=context.execution_id,
-                                step_number=assigned_step,
-                                node_id=node_id,
-                                node_type=node_type_str,
-                                input_data=node_data,
-                                output_data=node_output.data,
-                                state_before=state_before,
-                                state_after=context.state,
-                                status=StepStatus.COMPLETED.value,
-                                started_at=started_at,
-                                completed_at=step_end,
-                                duration_ms=duration_ms,
-                                error_message=None,
-                                model_used=(
-                                    node_output.metadata.get("model")
-                                    if node_output.metadata
-                                    else None
-                                ),
-                                own_key_cost_usd=(
-                                    node_output.metadata.get("own_key_cost_usd")
-                                    if node_output.metadata
-                                    else None
-                                ),
-                                cel_evaluations=None,
-                                llm_request=(
-                                    node_output.metadata.get("llm_request")
-                                    if node_output.metadata
-                                    else None
-                                ),
-                            )
-                        )
-
-                    observe_step(node_type_str, "completed")
-                    track_llm(
-                        model=node_output.metadata.get("model") if node_output.metadata else None,
-                        tokens=node_output.metadata.get("tokens") if node_output.metadata else None,
-                        cost_usd=node_output.metadata.get("cost") if node_output.metadata else None,
+                        started_at=started_at,
                     )
-                    await self._db_checkpoint()
 
                     # --- routing ---
                     if node.is_terminal:
