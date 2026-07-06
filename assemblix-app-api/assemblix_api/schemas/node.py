@@ -20,6 +20,16 @@ class VoiceModelConfig(DTOModel):
     credential_id: str | None = None
 
 
+class VoiceOutputConfig(DTOModel):
+    """TTS provider/voice for the END node. ``provider`` is a voice-provider id
+    (e.g. "elevenlabs"), intentionally not an AgentProvider."""
+
+    provider: str
+    model: str
+    voice_id: str | None = None
+    credential_id: str | None = None
+
+
 class StartNodeConfig(DTOModel):
     # On a new session this greeting is stored as an assistant message and
     # becomes part of the chat history.
@@ -157,6 +167,13 @@ class EndNodeConfig(DTOModel):
 
     project_filter: Literal["all", "none", "selected"] = "all"
     project_variables: list[str] = []  # variables for "selected"
+
+    # Output format. "text" (default) keeps existing behavior; "voice" also
+    # synthesizes the final text via `voice` into base64 audio on the output.
+    output_format: Literal["text", "voice"] = "text"
+    voice: VoiceOutputConfig | None = None
+    # Per-node character cap for synthesis; effective cap is min(this, settings ceiling).
+    voice_max_chars: int | None = None
 
     is_error: bool = False  # business error (not a technical one)
 
