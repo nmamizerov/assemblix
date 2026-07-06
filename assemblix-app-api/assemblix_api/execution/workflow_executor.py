@@ -14,7 +14,6 @@ from assemblix_api.core.settings import get_settings
 from assemblix_api.core.template_evaluator import TemplateEvaluator
 from assemblix_api.database.models.execution import Execution
 from assemblix_api.database.models.workflow import Workflow
-from assemblix_api.execution.cost_accumulator import accumulate_step_cost
 from assemblix_api.execution.credential_resolver import CredentialResolver
 from assemblix_api.services import (
     ChatMessageService,
@@ -31,15 +30,11 @@ from assemblix_api.services.project_service import ProjectService
 if TYPE_CHECKING:
     from assemblix_api.billing.credit_service import CreditService
     from assemblix_api.execution.resume import ResumePoint
-from assemblix_api.billing.plans import credit_config
-from assemblix_api.core.metrics import (
-    observe_execution,
-    observe_step,
-    set_nodes_in_progress,
-    track_llm,
-)
+from assemblix_api.core.metrics import observe_execution
+from assemblix_api.enums import NodeType
 from assemblix_api.execution.debug_event_manager import DebugEventManager
 from assemblix_api.execution.graph_navigator import GraphNavigator
+from assemblix_api.execution.node_runner import NodeRunner
 from assemblix_api.schemas.execution import (
     ExecutionContext,
     ExecutionResult,
@@ -98,6 +93,8 @@ class WorkflowExecutor:
         # released during long external awaits. No-op when not wired (request scope/tests).
         self._db_checkpoint = db_checkpoint if db_checkpoint is not None else _noop_checkpoint
         self._navigator = GraphNavigator()
+        # Owns per-node execution mechanics (run + step recording) shared by both loops.
+        self._node_runner = NodeRunner(self._tracer, self._debug_event_manager, self._db_checkpoint)
 
     async def execute(
         self,
@@ -485,6 +482,54 @@ class WorkflowExecutor:
         context: ExecutionContext,
         resume_point: "ResumePoint | None" = None,
     ) -> tuple[dict, ExecutionContext, bool, bool, str]:
+        """Traverse and execute the node graph.
+
+        Dispatches between two engines:
+        - The **parallel** scheduler (fork/join, dead-path elimination) for graphs that
+          actually branch — a real AND-split (a non-CONDITION node with 2+ outgoing
+          edges) or a join (a node with 2+ incoming edges).
+        - The **sequential** single-pointer loop for everything else (linear / condition
+          / bounded-loop graphs) and for all resume paths. This is the original,
+          battle-tested engine, byte-for-byte unchanged, so non-parallel workflows keep
+          their exact behavior.
+        """
+        if resume_point is not None:
+            # Crash-resume is linear-only in v1 (see resume.py); always sequential.
+            return await self._execution_loop_sequential(context, resume_point)
+        if self._has_parallelism(context.workflow.nodes, context.workflow.edges):
+            return await self._execution_loop_parallel(context)
+        return await self._execution_loop_sequential(context, None)
+
+    @staticmethod
+    def _has_parallelism(nodes: list[dict], edges) -> bool:
+        """Whether the graph needs the parallel engine: a genuine fork or a join.
+
+        A CONDITION with several outgoing edges is a router (one branch taken), not a
+        fork, so it does not count. Edges to missing nodes and self-loops are ignored,
+        matching the traversal rules.
+        """
+        from collections import defaultdict
+
+        node_ids = {n["id"] for n in nodes}
+        node_type = {n["id"]: n.get("type") for n in nodes}
+        out_targets: dict[str, set[str]] = defaultdict(set)
+        in_sources: dict[str, set[str]] = defaultdict(set)
+        for e in edges:
+            if e.target not in node_ids or e.source not in node_ids or e.target == e.source:
+                continue
+            out_targets[e.source].add(e.target)
+            in_sources[e.target].add(e.source)
+
+        for source, targets in out_targets.items():
+            if len(targets) >= 2 and node_type.get(source) != NodeType.CONDITION.value:
+                return True  # AND-split (parallel fork)
+        return any(len(srcs) >= 2 for srcs in in_sources.values())  # join
+
+    async def _execution_loop_sequential(
+        self,
+        context: ExecutionContext,
+        resume_point: "ResumePoint | None" = None,
+    ) -> tuple[dict, ExecutionContext, bool, bool, str]:
         """
         Main loop - traverse and execute nodes.
 
@@ -510,7 +555,6 @@ class WorkflowExecutor:
         Returns:
             Tuple of (final_output, context, is_session_end, is_error, error_message)
         """
-        from assemblix_api.enums import StepStatus
         from assemblix_api.execution.exceptions import (
             MaxStepsExceededError,
             NodeExecutionLimitError,
@@ -576,218 +620,51 @@ class WorkflowExecutor:
 
             node_input = NodeInput(data=node_data, context=context)
 
-            # Save state before execution for logging
+            # Save state before execution for logging; step id is the current counter.
             state_before = context.state.copy()
-
-            # Log step START
             step_start = datetime.now()
-            logger.info(
-                "workflow.node.started",
+            assigned_step = context.step_number
+
+            await self._node_runner.emit_start(
+                context,
                 node_id=current_node_id,
                 node_type=node_type_str,
-                step_number=context.step_number,
+                node_data=node_data,
+                state_before=state_before,
+                project_state_before=context.project_state.copy(),
+                step_number=assigned_step,
             )
 
-            # Emit step_start event for debug mode
-            if self._debug_event_manager.get_stream(context.execution_id):
-                await self._debug_event_manager.emit_step_start(
-                    execution_id=context.execution_id,
-                    step_number=context.step_number,
-                    node_id=current_node_id,
-                    node_type=node_type_str,
-                    input_data=node_data,
-                    state_before=state_before,
-                    project_state_before=context.project_state.copy(),
-                )
-
-            # Execute node - wrap in try-except to capture node_id on error.
-            # The in-progress gauge is adjusted in a try/finally so it always
-            # decrements even when the node raises.
-            set_nodes_in_progress(+1)
             try:
-                node_output = await node.execute(node_input)
+                node_output = await self._node_runner.run(node, node_input)
             except Exception as e:
-                # Persist a FAILED ExecutionStep BEFORE re-raising, so the upper
-                # error handler doesn't have to reconstruct timing/payload and
-                # the UI can show the failed node alongside successful ones.
                 from assemblix_api.execution.exceptions import NodeExecutionError
 
-                step_end = datetime.now()
-                try:
-                    # Idempotency guard: on a resumed/redelivered run the node that
-                    # previously failed is re-executed at the SAME step_number.  If
-                    # it fails again we must NOT insert a duplicate row — that would
-                    # violate the (execution_id, step_number) UniqueConstraint.
-                    # The guard only skips the DB insert; the error is always re-raised.
-                    _failed_step_exists = await self._tracer.has_step(
-                        execution_id=context.execution_id,
-                        step_number=context.step_number,
-                    )
-                    if not _failed_step_exists:
-                        await self._tracer.log_step(
-                            ExecutionStepData(
-                                execution_id=context.execution_id,
-                                step_number=context.step_number,
-                                node_id=current_node_id,
-                                node_type=node_type_str,
-                                input_data=node_data,
-                                output_data=None,
-                                state_before=state_before,
-                                state_after=None,
-                                status=StepStatus.FAILED.value,
-                                started_at=step_start,
-                                completed_at=step_end,
-                                duration_ms=int((step_end - step_start).total_seconds() * 1000),
-                                error_message=str(e),
-                                cel_evaluations=None,
-                            )
-                        )
-                except Exception as log_err:
-                    # Never let logging failure mask the original node error.
-                    logger.warning(
-                        "workflow.step.log_failed",
-                        node_id=current_node_id,
-                        error=str(log_err),
-                    )
-
-                # Emit step metric for the failed node (best-effort, raw type string).
-                observe_step(node_type_str, "failed")
-                raise NodeExecutionError(e, current_node_id) from e
-            finally:
-                set_nodes_in_progress(-1)
-
-            # Calculate duration
-            step_end = datetime.now()
-            duration_ms = int((step_end - step_start).total_seconds() * 1000)
-            logger.info(
-                "workflow.node.completed",
-                node_id=current_node_id,
-                node_type=node_type_str,
-                step_number=context.step_number,
-                duration_ms=duration_ms,
-            )
-
-            # Update state if node returned state_updates
-            if node_output.state_updates:
-                context = context.with_state(node_output.state_updates)
-
-            # Update project_state if node returned project_updates
-            if node_output.project_updates:
-                context = context.with_project_state(node_output.project_updates)
-
-            # Append to the shared dialog history if the node produced a history message
-            # (agent nodes, gated by save_to_history). Later agents that include chat
-            # history will see it.
-            if node_output.history_append:
-                context = context.with_chat_history([node_output.history_append])
-
-            # Step cost is accumulated centrally (the node does not mutate billing).
-            # Additively into the right bucket (system/own) from per-step facts in metadata.
-            context = accumulate_step_cost(context, node_output.metadata)
-
-            # Note: Metrics (tokens, cost) are tracked in context for billing
-            # Credits will be calculated in finalization phase via credit_service
-
-            # Emit step_complete event for debug mode
-            if self._debug_event_manager.get_stream(context.execution_id):
-                # Compute credits for this step (only for system keys)
-                step_credits = None
-                if node_output.metadata and get_settings().billing_enabled:
-                    step_cost = node_output.metadata.get("cost", 0)
-                    used_system_key = node_output.metadata.get("used_system_key", False)
-
-                    # Credits are charged only when system keys are used
-                    if step_cost and used_system_key:
-                        from decimal import Decimal
-
-                        step_credits = float(
-                            credit_config.usd_to_credits(Decimal(str(step_cost)), with_margin=True)
-                        )
-
-                await self._debug_event_manager.emit_step_complete(
-                    execution_id=context.execution_id,
-                    step_number=context.step_number,
+                await self._node_runner.record_failed(
+                    context,
                     node_id=current_node_id,
                     node_type=node_type_str,
-                    output_data=node_output.data,
-                    state_after=context.state,
-                    project_state_after=context.project_state,
-                    duration_ms=duration_ms,
-                    model_used=(
-                        node_output.metadata.get("model") if node_output.metadata else None
-                    ),
-                    tokens_used=(
-                        node_output.metadata.get("tokens") if node_output.metadata else None
-                    ),
-                    cost=(node_output.metadata.get("cost") if node_output.metadata else None),
-                    own_key_cost_usd=(
-                        node_output.metadata.get("own_key_cost_usd")
-                        if node_output.metadata
-                        else None
-                    ),
-                    credits_used=step_credits,
-                    llm_request=(
-                        node_output.metadata.get("llm_request") if node_output.metadata else None
-                    ),
+                    node_data=node_data,
+                    state_before=state_before,
+                    step_number=assigned_step,
+                    started_at=step_start,
+                    error=e,
                 )
+                raise NodeExecutionError(e, current_node_id) from e
 
-            # Log ExecutionStep BEFORE incrementing step_number.
-            # Idempotency guard: on a resumed execution the step might already
-            # exist in the DB (e.g. a crash happened after logging but before
-            # the next node started).  Skip the insert to avoid a UniqueConstraint
-            # violation on (execution_id, step_number).
-            step_already_logged = await self._tracer.has_step(
-                execution_id=context.execution_id,
-                step_number=context.step_number,
-            )
-            if not step_already_logged:
-                await self._tracer.log_step(
-                    ExecutionStepData(
-                        execution_id=context.execution_id,
-                        step_number=context.step_number,
-                        node_id=current_node_id,
-                        node_type=node_type_str,
-                        input_data=node_data,
-                        output_data=node_output.data,
-                        state_before=state_before,
-                        state_after=context.state,
-                        status=StepStatus.COMPLETED.value,
-                        started_at=step_start,
-                        completed_at=step_end,
-                        duration_ms=duration_ms,
-                        error_message=None,
-                        model_used=(
-                            node_output.metadata.get("model") if node_output.metadata else None
-                        ),
-                        own_key_cost_usd=(
-                            node_output.metadata.get("own_key_cost_usd")
-                            if node_output.metadata
-                            else None
-                        ),
-                        cel_evaluations=None,
-                        llm_request=(
-                            node_output.metadata.get("llm_request")
-                            if node_output.metadata
-                            else None
-                        ),
-                    )
-                )
-
-            # Emit step and LLM metrics for completed nodes (best-effort, raw type string).
-            observe_step(node_type_str, "completed")
-            track_llm(
-                model=node_output.metadata.get("model") if node_output.metadata else None,
-                tokens=node_output.metadata.get("tokens") if node_output.metadata else None,
-                cost_usd=node_output.metadata.get("cost") if node_output.metadata else None,
+            # Apply outputs, emit events, log the COMPLETED step, checkpoint.
+            context = await self._node_runner.record_completed(
+                context,
+                node_id=current_node_id,
+                node_type=node_type_str,
+                node_data=node_data,
+                node_output=node_output,
+                state_before=state_before,
+                step_number=assigned_step,
+                started_at=step_start,
             )
 
-            # Commit this step and release the DB connection between nodes. Keeps the
-            # connection out of the pool only while actually doing DB work, not across
-            # the next node's external await. No-op outside the queue/isolated path.
-            await self._db_checkpoint()
-
-            # Update context with visited node (increments step_number for next iteration)
-            # This MUST be done AFTER logging to avoid duplicate step_number
+            # Increment step_number for the next iteration (AFTER logging).
             context = context.with_node_visited(current_node_id)
 
             # Check if this is a terminal node (capability hook replaces NodeType.END check).
@@ -848,6 +725,211 @@ class WorkflowExecutor:
             # Update for next iteration
             current_node_id = next_node_id
             previous_output = node_output.data
+
+    async def _execution_loop_parallel(
+        self,
+        context: ExecutionContext,
+    ) -> tuple[dict, ExecutionContext, bool, bool, str]:
+        """Parallel fork/join engine (dead-path elimination via DagScheduler).
+
+        Ready nodes run concurrently as asyncio tasks; completions are processed one at a
+        time (asyncio is single-threaded), so shared-context updates, step numbering and
+        step logging stay race-free. State merges are last-write-wins by completion order.
+        The run finishes only when every live branch is done — an END does not abort its
+        siblings; the FIRST END reached provides the final output and session/error flags.
+        Per-node processing mirrors _execution_loop_sequential exactly.
+        """
+        import asyncio
+        from dataclasses import replace
+
+        from assemblix_api.execution.dag_scheduler import DagScheduler
+        from assemblix_api.execution.exceptions import (
+            MaxStepsExceededError,
+            NodeExecutionError,
+            NodeExecutionLimitError,
+            WorkflowTimeoutError,
+        )
+
+        settings = get_settings()
+        execution_deadline = time.monotonic() + settings.workflow_execution_timeout_seconds
+
+        start_node_id = self._navigator.find_start_node(context.workflow.nodes)
+        scheduler = DagScheduler(context.workflow.nodes, context.workflow.edges, start_node_id)
+
+        # First END wins: captured output + flags for the final result.
+        final_output: dict = {}
+        is_session_end = False
+        is_error = False
+        error_message = ""
+        end_captured = False
+
+        # In-flight tasks → metadata captured at launch.
+        running: dict[asyncio.Task, dict] = {}
+
+        async def _cancel_running() -> None:
+            for t in running:
+                t.cancel()
+            if running:
+                await asyncio.gather(*running, return_exceptions=True)
+            running.clear()
+
+        ready = scheduler.start()
+        try:
+            while ready or running:
+                # 1. Launch every ready node. Counters (step_number, node_execution_count)
+                #    are bumped synchronously per node, so each launch gets a unique step
+                #    id and the cycle cap counts launches — no await in between.
+                for ready_node in ready:
+                    node_id = ready_node.node_id
+
+                    can_execute, err_msg = context.can_execute_node(node_id)
+                    if not can_execute:
+                        if "Max steps" in (err_msg or ""):
+                            raise MaxStepsExceededError(err_msg)
+                        raise NodeExecutionLimitError(err_msg)
+
+                    node = self._node_registry.get_node(context.workflow.nodes, node_id)
+                    node_config = next(n for n in context.workflow.nodes if n["id"] == node_id)
+                    node_type_str = node_config["type"]
+
+                    if node.input_source == "workflow_input":
+                        node_data = context.input_data
+                    else:
+                        node_data = ready_node.input_data or {}
+
+                    node_input = NodeInput(data=node_data, context=context)
+                    state_before = context.state.copy()
+                    project_state_before = context.project_state.copy()
+                    assigned_step = context.step_number
+                    started_at = datetime.now()
+
+                    # Reserve this run's step id / cycle-cap slot.
+                    context = context.with_node_visited(node_id)
+
+                    await self._node_runner.emit_start(
+                        context,
+                        node_id=node_id,
+                        node_type=node_type_str,
+                        node_data=node_data,
+                        state_before=state_before,
+                        project_state_before=project_state_before,
+                        step_number=assigned_step,
+                    )
+
+                    task = asyncio.create_task(self._node_runner.run(node, node_input))
+                    running[task] = {
+                        "node_id": node_id,
+                        "node_type": node_type_str,
+                        "node_data": node_data,
+                        "state_before": state_before,
+                        "assigned_step": assigned_step,
+                        "started_at": started_at,
+                        "node": node,
+                    }
+                ready = []
+
+                if not running:
+                    break
+
+                # 2. Wait for the next node to finish (bounded by the global deadline).
+                remaining = execution_deadline - time.monotonic()
+                if remaining <= 0:
+                    raise WorkflowTimeoutError(
+                        "Workflow execution exceeded the global time budget "
+                        f"({settings.workflow_execution_timeout_seconds}s)"
+                    )
+                done, _pending = await asyncio.wait(
+                    running.keys(),
+                    timeout=remaining,
+                    return_when=asyncio.FIRST_COMPLETED,
+                )
+                if not done:
+                    raise WorkflowTimeoutError(
+                        "Workflow execution exceeded the global time budget "
+                        f"({settings.workflow_execution_timeout_seconds}s)"
+                    )
+
+                # 3. Process each finished node serially (no interleaving of the shared
+                #    context updates and step logging).
+                for task in done:
+                    pend = running.pop(task)
+                    node_id = pend["node_id"]
+                    node_type_str = pend["node_type"]
+                    node_data = pend["node_data"]
+                    state_before = pend["state_before"]
+                    assigned_step = pend["assigned_step"]
+                    started_at = pend["started_at"]
+                    node = pend["node"]
+
+                    try:
+                        node_output = task.result()
+                    except Exception as e:
+                        # A node error fails the whole run, as on the sequential path.
+                        await self._node_runner.record_failed(
+                            context,
+                            node_id=node_id,
+                            node_type=node_type_str,
+                            node_data=node_data,
+                            state_before=state_before,
+                            step_number=assigned_step,
+                            started_at=started_at,
+                            error=e,
+                        )
+                        raise NodeExecutionError(e, node_id) from e
+
+                    # Record the step and fold outputs into the shared context (serially).
+                    context = await self._node_runner.record_completed(
+                        context,
+                        node_id=node_id,
+                        node_type=node_type_str,
+                        node_data=node_data,
+                        node_output=node_output,
+                        state_before=state_before,
+                        step_number=assigned_step,
+                        started_at=started_at,
+                    )
+
+                    # --- routing ---
+                    if node.is_terminal:
+                        if not end_captured:
+                            end_captured = True
+                            meta = node_output.metadata or {}
+                            is_session_end = meta.get("is_session_end", False)
+                            is_error = meta.get("is_error", False)
+                            error_message = meta.get("error_message", "")
+                            final_output = node_output.data
+                            filtered_state = meta.get("filtered_state")
+                            filtered_project_state = meta.get("filtered_project_state")
+                            if filtered_state is not None:
+                                context = replace(context, state=filtered_state)
+                            if filtered_project_state is not None:
+                                context = replace(context, project_state=filtered_project_state)
+                        # END has no successors; siblings keep running until all finish.
+                        continue
+
+                    branch_index = node.get_branch_index(node_output)
+                    result = scheduler.complete(
+                        node_id, node_output.data, branch_index=branch_index
+                    )
+                    # A non-terminal node with no live successor just ends its branch —
+                    # a leaf that, e.g., writes state and stops. Unlike the sequential
+                    # engine this is NOT an error: sibling branches keep running and the
+                    # run completes when all are exhausted (wait-all guarantees the leaf's
+                    # state writes are already applied). NoNextNodeError stays a fatal
+                    # error only on the single-path sequential engine.
+                    if result.live_out_count == 0:
+                        logger.info(
+                            "workflow.branch.leaf",
+                            node_id=node_id,
+                            node_type=node_type_str,
+                        )
+                    ready.extend(result.ready)
+        except BaseException:
+            # Never leave orphaned node tasks running on abort (error/timeout/cap).
+            await _cancel_running()
+            raise
+
+        return final_output, context, is_session_end, is_error, error_message
 
     async def _finalization_phase(
         self,

@@ -109,3 +109,39 @@ class GraphNavigator:
             None,
         )
         return edge.target if edge else None
+
+    @staticmethod
+    def find_next_nodes(
+        edges: list[Edge],
+        nodes: list[dict],
+        current_node_id: str,
+    ) -> list[str]:
+        """Find ALL valid successor node IDs of a node (parallel fan-out).
+
+        Unlike find_next_node (which returns the first edge only, for the legacy
+        sequential/resume path), this returns every distinct outgoing target so the
+        DAG scheduler can fork into parallel branches. The same invariants apply:
+        edges to non-existent nodes and self-loop edges (target == current_node_id)
+        are skipped. Order and de-duplication follow the edge list.
+
+        Args:
+            edges: List of edges from workflow
+            nodes: List of node configs from workflow (used to validate targets)
+            current_node_id: ID of current node
+
+        Returns:
+            List of successor node IDs (possibly empty). Duplicates are removed
+            while preserving first-seen order.
+        """
+        valid_node_ids = {node["id"] for node in nodes}
+
+        targets: list[str] = []
+        for e in edges:
+            if (
+                e.source == current_node_id
+                and e.target in valid_node_ids
+                and e.target != current_node_id
+                and e.target not in targets
+            ):
+                targets.append(e.target)
+        return targets

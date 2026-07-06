@@ -63,6 +63,10 @@ def pytest_configure(config: pytest.Config) -> None:
     os.environ["DEBUG_EVENTS_USE_REDIS"] = "false"
     os.environ["EXECUTION_CHECKPOINTING_ENABLED"] = "false"
     os.environ["METRICS_ENABLED"] = "false"
+    # The auth rate limiter uses a process-global in-memory backend in tests (no Redis),
+    # so registrations/logins accumulate across the whole session against the default
+    # 10-per-5-min window. Lift it so the base suite never trips a 429 on register/login.
+    os.environ["LOGIN_RATE_LIMIT_PER_5MIN"] = "100000"
     os.environ["REDIS_URL"] = ""  # no Redis in the base scope; use fakeredis fixtures
     # Dummy system LLM keys so credential resolution succeeds for mocked agent runs
     # (the LLM call itself is patched). setdefault keeps any real keys for `external`.

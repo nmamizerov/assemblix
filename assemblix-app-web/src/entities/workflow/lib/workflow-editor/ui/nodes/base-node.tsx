@@ -1,8 +1,11 @@
 import { Handle, Position } from "@xyflow/react";
 import { cn } from "@/shared/lib/utils";
 import type { ReactNode } from "react";
+import { useSelector } from "react-redux";
+import { useTranslation } from "react-i18next";
 import { useHandleConnectivity } from "./useHandleConnectivity";
 import { generateHandleId } from "../../helpers/utils";
+import { selectNodeWarnings } from "../../model/editor-mode.slice";
 import { AlertTriangle } from "lucide-react";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/shared/ui/tooltip";
 
@@ -78,18 +81,26 @@ export const BaseNode = ({
   children,
   warning,
 }: BaseNodeProps) => {
+  const { t } = useTranslation();
+  // Static graph warning for this node (parallel ENDs, join on a loop), computed in
+  // the editor and stored per node id. An explicit `warning` prop from the node
+  // component (e.g. "model not selected") takes precedence.
+  const analysisWarningKey = useSelector(selectNodeWarnings)[nodeId];
+  const effectiveWarning =
+    warning ?? (analysisWarningKey ? { message: t(analysisWarningKey) } : undefined);
+
   return (
     <div
       className={cn(
         "rounded-2xl border  bg-card transition-all p-3 px-5 relative",
-        warning
+        effectiveWarning
           ? "border-yellow-500"
           : selected
           ? "border border-primary"
           : "border-border hover:border-primary/50"
       )}
     >
-      {warning && (
+      {effectiveWarning && (
         <Tooltip>
           <TooltipTrigger asChild>
             <div className="absolute -right-1 -top-1 z-10 flex h-5 w-5 items-center justify-center rounded-full bg-yellow-500 text-white shadow-md">
@@ -97,7 +108,7 @@ export const BaseNode = ({
             </div>
           </TooltipTrigger>
           <TooltipContent side="top">
-            <p>{warning.message}</p>
+            <p>{effectiveWarning.message}</p>
           </TooltipContent>
         </Tooltip>
       )}

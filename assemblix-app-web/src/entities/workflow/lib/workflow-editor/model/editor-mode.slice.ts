@@ -9,6 +9,10 @@ interface EditorModeState {
   executionId: string | null;
   nodeStatuses: Record<string, NodeStatus>;
   isExecuting: boolean;
+  // Static graph warnings, keyed by node id → i18n message key. Computed in the
+  // editor from the graph structure (e.g. parallel END nodes, a join on a loop) and
+  // rendered as an orange badge/border by BaseNode. Independent of execution status.
+  nodeWarnings: Record<string, string>;
 }
 
 const initialState: EditorModeState = {
@@ -16,6 +20,7 @@ const initialState: EditorModeState = {
   executionId: null,
   nodeStatuses: {},
   isExecuting: false,
+  nodeWarnings: {},
 };
 
 export const editorModeSlice = createSlice({
@@ -51,6 +56,12 @@ export const editorModeSlice = createSlice({
     clearNodeStatuses: (state) => {
       state.nodeStatuses = {};
     },
+    setNodeWarnings: (
+      state,
+      action: PayloadAction<Record<string, string>>
+    ) => {
+      state.nodeWarnings = action.payload;
+    },
   },
 });
 
@@ -61,6 +72,7 @@ export const {
   setIsExecuting,
   resetExecution,
   clearNodeStatuses,
+  setNodeWarnings,
 } = editorModeSlice.actions;
 
 // Селекторы
@@ -75,3 +87,6 @@ export const selectIsExecuting = (state: { editorMode: EditorModeState }) =>
 
 export const selectExecutionId = (state: { editorMode: EditorModeState }) =>
   state.editorMode.executionId;
+
+export const selectNodeWarnings = (state: { editorMode: EditorModeState }) =>
+  state.editorMode.nodeWarnings;

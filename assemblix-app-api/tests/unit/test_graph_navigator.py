@@ -85,3 +85,67 @@ def test_find_next_node_excludes_self_loop_on_condition_branch() -> None:
 
     # Assert
     assert result is None
+
+
+# --- find_next_nodes: parallel fan-out (returns ALL valid successors) ---
+
+
+def test_find_next_nodes_returns_all_valid_targets() -> None:
+    # Arrange — a fork: A has two outgoing edges to B and C.
+    nodes = [
+        {"id": "A", "type": "agent"},
+        {"id": "B", "type": "agent"},
+        {"id": "C", "type": "agent"},
+    ]
+    edges = [_edge("A", "B"), _edge("A", "C")]
+
+    # Act
+    result = GraphNavigator.find_next_nodes(edges, nodes, "A")
+
+    # Assert — both branches are returned (unlike find_next_node's first-only).
+    assert result == ["B", "C"]
+
+
+def test_find_next_nodes_skips_self_loop_and_missing_targets() -> None:
+    # Arrange — self-loop and a dangling edge are interleaved with real targets.
+    nodes = [
+        {"id": "A", "type": "agent"},
+        {"id": "B", "type": "end"},
+        {"id": "C", "type": "end"},
+    ]
+    edges = [
+        _edge("A", "deleted-node"),  # target missing → skipped
+        _edge("A", "A"),  # self-loop → skipped
+        _edge("A", "B"),
+        _edge("A", "C"),
+    ]
+
+    # Act
+    result = GraphNavigator.find_next_nodes(edges, nodes, "A")
+
+    # Assert — only the real successors survive, order preserved.
+    assert result == ["B", "C"]
+
+
+def test_find_next_nodes_dedupes_repeated_targets() -> None:
+    # Arrange — two edges to the same target (e.g. both handles wired to B).
+    nodes = [{"id": "A", "type": "agent"}, {"id": "B", "type": "end"}]
+    edges = [_edge("A", "B", handle="source_A_0"), _edge("A", "B", handle="source_A_1")]
+
+    # Act
+    result = GraphNavigator.find_next_nodes(edges, nodes, "A")
+
+    # Assert — B appears once.
+    assert result == ["B"]
+
+
+def test_find_next_nodes_returns_empty_for_terminal() -> None:
+    # Arrange — an END node has no outgoing edges.
+    nodes = [{"id": "A", "type": "agent"}, {"id": "END", "type": "end"}]
+    edges = [_edge("A", "END")]
+
+    # Act
+    result = GraphNavigator.find_next_nodes(edges, nodes, "END")
+
+    # Assert
+    assert result == []
