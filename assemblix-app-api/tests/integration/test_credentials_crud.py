@@ -73,3 +73,19 @@ async def test_delete_credentials(client, auth_headers, credential) -> None:
 
     # Assert
     assert resp.status_code == 204
+
+
+async def test_create_elevenlabs_credential(client, auth_user, auth_headers) -> None:
+    """POST /credentials with the new elevenlabs_token type → 201."""
+    # Arrange
+    payload = {
+        "type": "elevenlabs_token",
+        "value": "xi-secret",
+        "name": "My ElevenLabs",
+        "projectId": str(auth_user.project_id),
+    }
+    # Act
+    resp = await client.post("/api/credentials/", json=payload, headers=auth_headers)
+    # Assert
+    assert resp.status_code == 201
+    assert resp.json()["type"] == "elevenlabs_token"
