@@ -16,8 +16,11 @@ async def test_synthesize_routes_to_elevenlabs(mocker) -> None:
     )
     # Act
     result = await synthesize(
-        text="hello", provider="elevenlabs", model="eleven_multilingual_v2",
-        voice_id="v1", api_key="xi-key",
+        text="hello",
+        provider="elevenlabs",
+        model="eleven_multilingual_v2",
+        voice_id="v1",
+        api_key="xi-key",
     )
     # Assert
     assert isinstance(result, SynthesisResult)
@@ -29,5 +32,6 @@ async def test_synthesize_unknown_model_raises() -> None:
     """An unregistered model raises ValueError before any network call."""
     # Arrange / Act / Assert
     with pytest.raises(ValueError):
-        await synthesize(text="x", provider="elevenlabs", model="nope",
-                         voice_id="v1", api_key="xi-key")
+        await synthesize(
+            text="x", provider="elevenlabs", model="nope", voice_id="v1", api_key="xi-key"
+        )
