@@ -186,13 +186,11 @@ export interface BaseNode {
 export interface StartNode extends BaseNode {
   type: NodeType.START;
   config: StartNodeConfig;
-  nextNode: string;
 }
 
 export interface AgentNode extends BaseNode {
   type: NodeType.AGENT;
   config: AgentNodeConfig;
-  nextNode: string;
 }
 
 export interface ConditionNode extends BaseNode {
@@ -203,7 +201,6 @@ export interface ConditionNode extends BaseNode {
 export interface SetVariableNode extends BaseNode {
   type: NodeType.SET_VARIABLE;
   config: SetVariableNodeConfig;
-  nextNode: string;
 }
 
 export interface EndNode extends BaseNode {
@@ -219,7 +216,6 @@ export interface StickerNode extends BaseNode {
 export interface HTTPRequestNode extends BaseNode {
   type: NodeType.HTTP_REQUEST;
   config: HTTPRequestNodeConfig;
-  nextNode: string;
 }
 
 export type Node =
@@ -243,6 +239,9 @@ export interface StateVariable {
   name: string;
   defaultValue?: number | string | boolean | Record<string, unknown> | null;
   type: "number" | "string" | "boolean" | "object";
+  // Reserved for v2: how parallel branches merge concurrent writes to this key.
+  // The backend currently defaults to last-write-wins; no UI yet.
+  mergePolicy?: "last_value" | "append" | "numeric_add" | "dict_merge";
 }
 
 // Node Descriptor types (Phase 5 Node SDK)

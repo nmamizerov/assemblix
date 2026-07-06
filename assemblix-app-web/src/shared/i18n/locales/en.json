@@ -248,6 +248,10 @@
         "warnings": {
           "modelNotSelected": "Model not selected"
         }
+      },
+      "warnings": {
+        "parallelEndNodes": "Multiple END nodes can run in parallel branches. Only the first one to finish is used; the others are ignored.",
+        "joinOnLoop": "This join node sits on a loop. Joins inside loops are not supported and may behave unexpectedly."
       }
     }
   },

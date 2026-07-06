@@ -248,6 +248,10 @@
         "warnings": {
           "modelNotSelected": "Modelo no seleccionado"
         }
+      },
+      "warnings": {
+        "parallelEndNodes": "Varios nodos END pueden ejecutarse en ramas paralelas. Solo se usa el primero que termina; los demás se ignoran.",
+        "joinOnLoop": "Este nodo de unión está en un bucle. Las uniones dentro de bucles no son compatibles y pueden comportarse de forma inesperada."
       }
     }
   },

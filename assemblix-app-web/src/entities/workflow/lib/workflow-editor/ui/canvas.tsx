@@ -41,8 +41,10 @@ import {
   selectEditorMode,
   selectNodeStatuses,
   setEditorMode,
+  setNodeWarnings,
   resetExecution,
 } from "../model/editor-mode.slice";
+import { analyzeGraph } from "../helpers/graph-analysis";
 import { DebugPanel } from "./debug/debug-panel";
 import { cn } from "@/shared/lib/utils";
 import { useAppDispatch } from "@/app/store";
@@ -272,6 +274,29 @@ const FlowCanvas = ({
       );
     }
   }, [isDebugMode, isViewMode, nodeStatuses, executionSteps, setNodes]);
+
+  // Статический анализ графа (только в режиме редактирования): подсвечиваем ноды с
+  // потенциальными проблемами параллельного выполнения — несколько END в параллельных
+  // ветках или join на цикле. Пересчитываем только при изменении СТРУКТУРЫ графа
+  // (id/type нод и source/target рёбер), а не при перетаскивании.
+  const graphSignature = useMemo(
+    () =>
+      JSON.stringify([
+        nodes.map((n) => [n.id, n.type]),
+        edges.map((e) => [e.source, e.target]),
+      ]),
+    [nodes, edges],
+  );
+
+  useEffect(() => {
+    if (isDebugMode || isViewMode) {
+      dispatch(setNodeWarnings({}));
+      return;
+    }
+    dispatch(setNodeWarnings(analyzeGraph(getNodes(), getEdges())));
+    // graphSignature captures the structural inputs; getNodes/getEdges are stable.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [graphSignature, isDebugMode, isViewMode, dispatch]);
 
   // Обработчик копирования выбранных нод
   const handleCopy = useCallback(() => {
