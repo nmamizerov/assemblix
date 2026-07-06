@@ -5,6 +5,14 @@ All notable changes to this project are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.5](https://github.com/nmamizerov/assemblix/compare/v0.2.4...v0.2.5) (2026-07-06)
+
+
+### Features
+
+* **voice:** voice input via server-side transcription ([a07e5f2](https://github.com/nmamizerov/assemblix/commit/a07e5f22a8f9064c748676919c795aacfaabf144))
+* **voice:** voice input via server-side transcription ([37e070c](https://github.com/nmamizerov/assemblix/commit/37e070c551e06a2835307de2843312362a1cf1bb))
+
 ## [0.2.4](https://github.com/nmamizerov/assemblix/compare/v0.2.3...v0.2.4) (2026-07-06)
 
 
