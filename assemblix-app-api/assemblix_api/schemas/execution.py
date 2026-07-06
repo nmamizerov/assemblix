@@ -65,6 +65,9 @@ class ExecutionContext:
     system_key_cost_usd: Decimal = Decimal("0")
     # Raw cost on own keys; not charged.
     own_key_cost_usd: Decimal = Decimal("0")
+    # Voice (TTS) cost, tracked separately so it can be itemized as VOICE_USAGE.
+    system_voice_cost_usd: Decimal = Decimal("0")
+    own_voice_cost_usd: Decimal = Decimal("0")
     # In-memory chat history (OpenAI format), built once in preparation phase.
     # Includes prior session messages (if continuing a session) plus the
     # current user message. Agent nodes read from here, not from the DB.

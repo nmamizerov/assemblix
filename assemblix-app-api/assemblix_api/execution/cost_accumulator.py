@@ -27,6 +27,12 @@ def accumulate_step_cost(
     if step_cost == 0:
         return context
 
-    if metadata.get("used_system_key", False):
+    is_system = metadata.get("used_system_key", False)
+    if metadata.get("cost_kind") == "voice":
+        if is_system:
+            return replace(context, system_voice_cost_usd=context.system_voice_cost_usd + step_cost)
+        return replace(context, own_voice_cost_usd=context.own_voice_cost_usd + step_cost)
+
+    if is_system:
         return replace(context, system_key_cost_usd=context.system_key_cost_usd + step_cost)
     return replace(context, own_key_cost_usd=context.own_key_cost_usd + step_cost)
