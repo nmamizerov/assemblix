@@ -1,9 +1,14 @@
 # /nodes/end_node.py
 
+import base64
 from typing import Any
+from uuid import UUID
 
 from assemblix_api.core.node_registry import register_node
+from assemblix_api.core.settings import get_settings
 from assemblix_api.enums import NodeType
+from assemblix_api.external.voice.pricing import compute_tts_cost
+from assemblix_api.external.voice.synthesis import synthesize
 from assemblix_api.schemas.execution import NodeInput, NodeOutput
 from assemblix_api.schemas.node import BaseNode, EndNodeConfig
 
@@ -62,6 +67,11 @@ class EndNode(BaseNode):
             metadata["filtered_state"] = filtered_state
         if filtered_project_state is not None:
             metadata["filtered_project_state"] = filtered_project_state
+
+        # 3b. Voice output: synthesize the final text into base64 audio (best-effort
+        # under a char cap; over the cap we keep text only).
+        if self.typed_config.output_format == "voice" and self.typed_config.voice:
+            await self._synthesize_into(output_data, metadata, node_input)
 
         # 4. Return NodeOutput
         return NodeOutput(
@@ -127,6 +137,52 @@ class EndNode(BaseNode):
         )
 
         return {"message": message}
+
+    async def _synthesize_into(self, output_data: dict, metadata: dict, node_input: NodeInput) -> None:
+        voice = self.typed_config.voice
+        assert voice is not None  # caller only invokes this when voice is configured
+        text = output_data.get("message") or ""
+        effective_limit = get_settings().voice_output_max_chars
+        if self.typed_config.voice_max_chars is not None:
+            effective_limit = min(effective_limit, self.typed_config.voice_max_chars)
+        if not text or len(text) > effective_limit:
+            return  # text-only fallback
+
+        context = node_input.context
+        assert context.credential_service is not None
+        assert context.organization_plan is not None
+        api_key, is_system_key = await context.credential_service.get_voice_api_key_with_fallback(
+            credentials_id=UUID(voice.credential_id) if voice.credential_id else None,
+            project_id=context.project_id,
+            voice_provider=voice.provider,
+            organization_plan=context.organization_plan,
+        )
+        result = await synthesize(
+            text=text, provider=voice.provider, model=voice.model,
+            voice_id=voice.voice_id, api_key=api_key,
+        )
+
+        output_data["audio"] = {
+            "base64": base64.b64encode(result.audio_bytes).decode("ascii"),
+            "format": "mp3",
+            "voiceId": voice.voice_id,
+            "model": voice.model,
+        }
+        cost = compute_tts_cost(voice.provider, voice.model, result.chars)
+        metadata["cost"] = float(cost)
+        metadata["cost_kind"] = "voice"
+        metadata["used_system_key"] = is_system_key
+        metadata["chars"] = result.chars
+        metadata["voice_provider"] = voice.provider
+        metadata["voice_model"] = voice.model
+
+    def validate_config(self) -> list[str]:
+        warnings: list[str] = []
+        if self.typed_config.output_format == "voice":
+            voice = self.typed_config.voice
+            if voice is None or not voice.provider or not voice.voice_id:
+                warnings.append("Voice output is enabled but no voice is selected")
+        return warnings
 
     @classmethod
     def descriptor(cls):
