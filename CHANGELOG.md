@@ -5,6 +5,43 @@ All notable changes to this project are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.6](https://github.com/nmamizerov/assemblix/compare/v0.2.5...v0.2.6) (2026-07-06)
+
+
+### Features
+
+* **voice:** add direct ElevenLabs client (list voices + synthesize) ([c1883e1](https://github.com/nmamizerov/assemblix/commit/c1883e1fcc4a71ea2b565c3d20a0a73f274b3711))
+* **voice:** add elevenlabs credential type and voice-output settings ([b11fd9f](https://github.com/nmamizerov/assemblix/commit/b11fd9ff9f9fa9eef425d8e4de45993ef841cd40))
+* **voice:** add ElevenLabs credential type to the web UI ([108e4c1](https://github.com/nmamizerov/assemblix/commit/108e4c18256e7e93295f716c47a9682b8eabd1bb))
+* **voice:** add per-character TTS cost helper ([587c188](https://github.com/nmamizerov/assemblix/commit/587c188cfa90c188bf7df8a01cdbafe7bd40a75c))
+* **voice:** add provider-agnostic synthesize() seam ([6230b6c](https://github.com/nmamizerov/assemblix/commit/6230b6c2f4770b480d1e638272a9518992217a48))
+* **voice:** add voice output config to the END node schema ([5376cba](https://github.com/nmamizerov/assemblix/commit/5376cbae0cd688974a5a81e2549399a3a30639cf))
+* **voice:** configurable ElevenLabs base URL for proxy override ([8ab16ee](https://github.com/nmamizerov/assemblix/commit/8ab16ee98573e76fe7bc539f5314282ff14bbdc9))
+* **voice:** itemize TTS spend as VOICE_USAGE credit transactions ([cb99997](https://github.com/nmamizerov/assemblix/commit/cb999975735d09d8f71b46dcfbe4ecd2d011c39f))
+* **voice:** list ElevenLabs voices by credential ([0f285f7](https://github.com/nmamizerov/assemblix/commit/0f285f73430c86d6654d36eabaa4006ed7996089))
+* **voice:** meter TTS at finalization and keep audio out of the DB ([b2f87b1](https://github.com/nmamizerov/assemblix/commit/b2f87b12ff08bddc894c68cf323cdf9a7d441d51))
+* **voice:** play synthesized audio in the chat reply ([59d552a](https://github.com/nmamizerov/assemblix/commit/59d552a50340594ba89eae969c0347bdef105b48))
+* **voice:** register ElevenLabs speech models and capability-filtered discovery ([ba68f0c](https://github.com/nmamizerov/assemblix/commit/ba68f0c07d59c1a8c5002e1d5fef82a7d5df17db))
+* **voice:** server-side voice output on the END node (ElevenLabs TTS) ([7bc81d6](https://github.com/nmamizerov/assemblix/commit/7bc81d6b4f304652ec477ef8f3fe231b890a4f3d))
+* **voice:** synthesize audio in the END node with char cap and billing facts ([a335e85](https://github.com/nmamizerov/assemblix/commit/a335e855c04e969c7c70c1c266457443a40b6333))
+* **voice:** system-token voice list endpoint and END-form branch ([f911ed5](https://github.com/nmamizerov/assemblix/commit/f911ed55daa8b82a26e18150d15335be070cbb78))
+* **voice:** text/voice output picker on the END node form ([ae4c9ca](https://github.com/nmamizerov/assemblix/commit/ae4c9ca9b9ea871654df998364d1f016ffe6c31c))
+* **voice:** track TTS cost in dedicated voice buckets ([34079d5](https://github.com/nmamizerov/assemblix/commit/34079d53628ff702b4bc26cf24b2a99f33e47b8e))
+* **voice:** voice-aware credential resolution with system-key fallback ([84ca9e8](https://github.com/nmamizerov/assemblix/commit/84ca9e892cc5849c9b3e415863394b4fd4ad8eac))
+* **voice:** voice-model hooks for speech models and account voices ([a3464eb](https://github.com/nmamizerov/assemblix/commit/a3464ebcb07efb857f5188bbd5560c76660a3403))
+
+
+### Bug Fixes
+
+* **voice:** resolve lint gates, graceful voice fallback, and review nits ([c60bfe9](https://github.com/nmamizerov/assemblix/commit/c60bfe92db010a14e0085719da598059f0cb64c3))
+* **voice:** searchable, fixed-height voice select on the END node ([9ef5c50](https://github.com/nmamizerov/assemblix/commit/9ef5c502fdda386a2fb77c6e1f55870ced209693))
+
+
+### Documentation
+
+* **voice:** document voice-output env vars and read them via os.getenv ([7fead94](https://github.com/nmamizerov/assemblix/commit/7fead94c0da231ab9337830f2a316b72f922a6cd))
+* **voice:** spec and implementation plan for voice output on the END node ([ed41c78](https://github.com/nmamizerov/assemblix/commit/ed41c789dacb54ec56865288a82e64ed12af5b98))
+
 ## [0.2.5](https://github.com/nmamizerov/assemblix/compare/v0.2.4...v0.2.5) (2026-07-06)
 
 
