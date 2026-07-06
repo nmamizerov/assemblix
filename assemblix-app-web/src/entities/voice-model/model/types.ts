@@ -14,3 +14,9 @@ export interface VoiceModelMetadata {
   route: "transcription" | "completion";
   costPerMinute?: number | null;
 }
+
+export interface VoiceListItem {
+  id: string;
+  name: string;
+  previewUrl?: string;
+}

@@ -1,30 +1,64 @@
 import { baseApi } from "@/shared/api/baseApi";
-import type { VoiceModelMetadata, VoiceProviderListItem } from "../model/types";
+import type {
+  VoiceListItem,
+  VoiceModelMetadata,
+  VoiceProviderListItem,
+} from "../model/types";
+
+interface GetVoiceProvidersParams {
+  capability?: string;
+}
 
 interface GetVoiceModelsParams {
   providerName: string;
+  capability?: string;
+}
+
+interface GetCredentialVoicesParams {
+  credentialId: string;
 }
 
 export const voiceModelApi = baseApi.injectEndpoints({
   endpoints: (build) => ({
-    getVoiceProviders: build.query<VoiceProviderListItem[], void>({
-      query: () => ({
+    getVoiceProviders: build.query<VoiceProviderListItem[], GetVoiceProvidersParams | void>({
+      query: (arg) => ({
         url: "/voice/providers",
         method: "GET",
+        params: arg?.capability ? { capability: arg.capability } : undefined,
       }),
-      providesTags: [{ type: "VoiceModels", id: "LIST" }],
+      providesTags: (_result, _error, arg) => [
+        { type: "VoiceModels", id: arg?.capability ? `LIST:${arg.capability}` : "LIST" },
+      ],
     }),
 
     getVoiceProviderModels: build.query<VoiceModelMetadata[], GetVoiceModelsParams>({
-      query: ({ providerName }) => ({
+      query: ({ providerName, capability }) => ({
         url: `/voice/providers/${providerName}/models`,
         method: "GET",
+        params: capability ? { capability } : undefined,
       }),
-      providesTags: (_result, _error, { providerName }) => [
-        { type: "VoiceModels", id: `models:${providerName}` },
+      providesTags: (_result, _error, { providerName, capability }) => [
+        {
+          type: "VoiceModels",
+          id: `models:${providerName}${capability ? `:${capability}` : ""}`,
+        },
+      ],
+    }),
+
+    getCredentialVoices: build.query<VoiceListItem[], GetCredentialVoicesParams>({
+      query: ({ credentialId }) => ({
+        url: `/voice/credentials/${credentialId}/voices`,
+        method: "GET",
+      }),
+      providesTags: (_result, _error, { credentialId }) => [
+        { type: "VoiceModels", id: `voices:${credentialId}` },
       ],
     }),
   }),
 });
 
-export const { useGetVoiceProvidersQuery, useGetVoiceProviderModelsQuery } = voiceModelApi;
+export const {
+  useGetVoiceProvidersQuery,
+  useGetVoiceProviderModelsQuery,
+  useGetCredentialVoicesQuery,
+} = voiceModelApi;
