@@ -17,3 +17,11 @@ class VoiceProviderListItem(DTOModel):
     models_count: int = Field(
         description="Number of transcription models the provider exposes.",
     )
+
+
+class VoiceListItem(DTOModel):
+    """A voice from a provider account, for the END-node voice picker."""
+
+    id: str
+    name: str
+    preview_url: str | None = None
