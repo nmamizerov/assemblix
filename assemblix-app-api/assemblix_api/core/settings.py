@@ -215,6 +215,24 @@ class Settings(BaseSettings):
     # Hard ceiling on characters sent to TTS per END node (bounds payload + cost).
     voice_output_max_chars: int = int(os.getenv("VOICE_OUTPUT_MAX_CHARS", "2000"))
 
+    # Streaming voice (phase 2b). Transient audio ring / Redis audio-stream MAXLEN — bounds
+    # memory so heavy PCM never starves the replayable text/control history.
+    stream_audio_buffer_max_chunks: int = int(os.getenv("STREAM_AUDIO_BUFFER_MAX_CHUNKS", "50"))
+    # ElevenLabs realtime WebSocket base URL (stream-input). Override for a proxy/gateway.
+    elevenlabs_ws_base_url: str = os.getenv("ELEVENLABS_WS_BASE_URL", "wss://api.elevenlabs.io/v1")
+    # PCM wire format for realtime audio (avatar-native; the debug player decodes via Web Audio).
+    voice_realtime_output_format: str = os.getenv("VOICE_REALTIME_OUTPUT_FORMAT", "pcm_16000")
+    # ElevenLabs chunk_length_schedule — server-side batching to natural boundaries.
+    voice_realtime_chunk_schedule: list[int] = [50, 120, 200, 300]
+
+    @field_validator("voice_realtime_chunk_schedule", mode="before")
+    @classmethod
+    def _parse_chunk_schedule(cls, v: object) -> object:
+        """Accept a CSV env override (e.g. "50,120,200") for the chunk schedule."""
+        if isinstance(v, str):
+            return [int(x) for x in v.split(",") if x.strip()]
+        return v
+
     # Phase 5: Observability / Prometheus metrics.
     # When true, the /metrics endpoint and worker scrape port are enabled.
     metrics_enabled: bool = os.getenv("METRICS_ENABLED", "true").lower() == "true"
