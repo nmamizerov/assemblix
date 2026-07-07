@@ -71,7 +71,7 @@ async def test_live_voice_tees_and_meters(mock_llm, mock_tts_ws, mocker):
         node, node_input({"message": "hi"}, context), node_id="agent-1", step_number=1
     )
     # Assert — metered as voice, no base64 blob on a live run, EOS sent
-    assert out.metadata["cost_kind"] == "voice"
+    assert out.metadata["voice_cost"] > 0
     assert "audio" not in out.data
     assert mock_tts_ws.socket.sent[-1]["text"] == ""
 
@@ -96,5 +96,5 @@ async def test_buffered_voice_single_synthesis(mock_llm, mocker):
     out = await node.execute(node_input({"message": "hi"}, context))
     # Assert
     assert out.data["audio"]["format"] == "mp3"
-    assert out.metadata["cost_kind"] == "voice"
+    assert out.metadata["voice_cost"] > 0
     synth.assert_awaited_once()

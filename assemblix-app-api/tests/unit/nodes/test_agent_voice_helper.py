@@ -36,9 +36,9 @@ def test_voice_cost_metadata():
     cfg = _voice_cfg()
     # Act
     meta = agent_voice.voice_cost_metadata(cfg, chars=100, is_system_key=True)
-    # Assert
-    assert meta["cost_kind"] == "voice"
-    assert meta["used_system_key"] is True
+    # Assert — dedicated voice keys so LLM `cost` on the same step is not clobbered
+    assert meta["voice_used_system_key"] is True
     assert meta["chars"] == 100
     assert meta["voice_model"] == "eleven_flash_v2_5"
-    assert meta["cost"] > 0
+    assert meta["voice_cost"] > 0
+    assert "cost" not in meta

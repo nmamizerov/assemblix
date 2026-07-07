@@ -78,12 +78,13 @@ async def open_voice_session(
 
 
 def voice_cost_metadata(cfg: AgentNodeConfig, *, chars: int, is_system_key: bool) -> dict:
+    """Voice cost facts under dedicated keys so they add to the VOICE_USAGE bucket WITHOUT
+    clobbering the agent's own LLM `cost` (both are emitted from the same step)."""
     assert cfg.voice is not None
     cost = compute_tts_cost(cfg.voice.provider, cfg.voice.model, chars)
     return {
-        "cost": float(cost),
-        "cost_kind": "voice",
-        "used_system_key": is_system_key,
+        "voice_cost": float(cost),
+        "voice_used_system_key": is_system_key,
         "chars": chars,
         "voice_provider": cfg.voice.provider,
         "voice_model": cfg.voice.model,

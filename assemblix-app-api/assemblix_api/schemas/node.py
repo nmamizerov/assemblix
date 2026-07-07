@@ -176,12 +176,8 @@ class EndNodeConfig(DTOModel):
     project_filter: Literal["all", "none", "selected"] = "all"
     project_variables: list[str] = []  # variables for "selected"
 
-    # Output format. "text" (default) keeps existing behavior; "voice" also
-    # synthesizes the final text via `voice` into base64 audio on the output.
-    output_format: Literal["text", "voice"] = "text"
-    voice: VoiceOutputConfig | None = None
-    # Per-node character cap for synthesis; effective cap is min(this, settings ceiling).
-    voice_max_chars: int | None = None
+    # Voice output moved to the AGENT node (phase 2b). END is text-only: it selects the
+    # source output (which may already carry `audio` from a voiced agent) and passes it through.
 
     is_error: bool = False  # business error (not a technical one)
 
