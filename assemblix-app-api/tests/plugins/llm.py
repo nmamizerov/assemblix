@@ -155,8 +155,8 @@ class _AsyncChunkStream:
             return next(self._it)
         except StopIteration:
             if self._error is not None:
-                raise self._error
-            raise StopAsyncIteration
+                raise self._error from None
+            raise StopAsyncIteration from None
 
 
 @pytest.fixture

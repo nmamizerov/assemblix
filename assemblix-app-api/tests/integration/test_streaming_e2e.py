@@ -107,9 +107,7 @@ async def test_error_mid_stream_marks_failed_and_keeps_partials(api_client, mock
     )
     execution_id = run.json()["executionId"]
     stream = await asyncio.wait_for(
-        api_client.get(
-            f"/api/executions/{execution_id}/stream", headers=auth.jwt_headers
-        ),
+        api_client.get(f"/api/executions/{execution_id}/stream", headers=auth.jwt_headers),
         timeout=30.0,
     )
     frames = _sse_frames(stream.text)
@@ -117,9 +115,7 @@ async def test_error_mid_stream_marks_failed_and_keeps_partials(api_client, mock
     # Assert
     assert any(f["event"] == "stream_delta" for f in frames)  # partials delivered
     assert frames[-1]["event"] == "error"
-    detail = await api_client.get(
-        f"/api/executions/{execution_id}", headers=auth.jwt_headers
-    )
+    detail = await api_client.get(f"/api/executions/{execution_id}", headers=auth.jwt_headers)
     assert detail.json()["status"] == "FAILED"
 
 
@@ -154,17 +150,13 @@ async def test_parallel_streamable_agents_demux_by_node_id(api_client, mock_llm)
     )
     execution_id = run.json()["executionId"]
     stream = await asyncio.wait_for(
-        api_client.get(
-            f"/api/executions/{execution_id}/stream", headers=auth.jwt_headers
-        ),
+        api_client.get(f"/api/executions/{execution_id}/stream", headers=auth.jwt_headers),
         timeout=30.0,
     )
     frames = _sse_frames(stream.text)
 
     # Assert
     node_ids = {
-        f["data"]["data"]["node_id"]
-        for f in frames
-        if f["event"] == "stream_delta" and f["data"]
+        f["data"]["data"]["node_id"] for f in frames if f["event"] == "stream_delta" and f["data"]
     }
     assert node_ids == {"agent-a", "agent-b"}

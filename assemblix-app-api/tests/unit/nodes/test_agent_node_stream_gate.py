@@ -91,9 +91,7 @@ async def test_three_gate_delta_emission(
     )
 
     # Act
-    await runner.run(
-        node, node_input({"message": "hi"}, context), node_id="agent-1", step_number=1
-    )
+    await runner.run(node, node_input({"message": "hi"}, context), node_id="agent-1", step_number=1)
 
     # Assert
     assert (await _count_deltas(mgr, eid) > 0) is expect_deltas

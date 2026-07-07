@@ -32,11 +32,12 @@ class _FakeLiteLLMStream:
         try:
             return _FakeLiteLLMChunk(next(self._it))
         except StopIteration:
-            raise StopAsyncIteration
+            raise StopAsyncIteration from None
 
 
 async def test_stream_shim_yields_chatcompletionchunks_and_supports_context_manager(mocker) -> None:
     """create(stream=True) returns a _StreamShim yielding real ChatCompletionChunks."""
+
     # Arrange
     async def _fake_acompletion(**kwargs):
         assert kwargs.get("stream") is True
