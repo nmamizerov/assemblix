@@ -10,7 +10,7 @@ from datetime import datetime
 from uuid import UUID
 
 import structlog
-from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, UploadFile, status
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, Request, UploadFile, status
 from fastapi.responses import StreamingResponse
 from pydantic import ValidationError
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -822,4 +822,60 @@ async def get_execution_detail(
     return await execution_service.get_execution_detail(
         execution_id=execution_id,
         current_user=current_user,
+    )
+
+
+@execution_detail_router.get("/{execution_id}/stream")
+async def stream_execution_events(
+    execution_id: UUID,
+    request: Request,
+    current_user: User = Depends(get_current_user),
+    execution_service: ExecutionService = Depends(get_execution_service),
+    debug_event_manager: DebugEventManager = Depends(get_debug_event_manager),
+) -> StreamingResponse:
+    """Subscribe to an execution's event stream (step events + text deltas) over SSE.
+
+    Replays from the ``Last-Event-ID`` cursor, then tails live until the terminal event.
+    404 when no live buffer exists (expired or a non-streaming run) — the client then falls
+    back to GET /workflows/task/{execution_id} for the final result.
+    """
+    # Authorize: raises 404 if the execution is unknown, 403 if not in the caller's project.
+    await execution_service.get_execution_detail(
+        execution_id=execution_id, current_user=current_user
+    )
+
+    # A task=true run returns its id before the executor opens the buffer; wait briefly.
+    for _ in range(200):  # up to ~10s
+        if debug_event_manager.is_streaming(execution_id):
+            break
+        await asyncio.sleep(0.05)
+    if not debug_event_manager.is_streaming(execution_id):
+        raise HTTPException(status_code=404, detail="No active stream for this execution")
+
+    last_event_id = request.headers.get("last-event-id")
+    try:
+        cursor = int(last_event_id) if last_event_id else int(request.query_params.get("cursor", 0))
+    except (TypeError, ValueError):
+        cursor = 0
+
+    async def event_generator():
+        subscription = debug_event_manager.subscribe(execution_id, after_seq=cursor).__aiter__()
+        while True:
+            try:
+                event = await asyncio.wait_for(subscription.__anext__(), timeout=25.0)
+            except StopAsyncIteration:
+                break
+            except TimeoutError:
+                yield ": keepalive\n\n"
+                continue
+            yield (
+                f"id: {event.seq}\n"
+                f"event: {event.event_type.value}\n"
+                f"data: {event.model_dump_json()}\n\n"
+            )
+
+    return StreamingResponse(
+        event_generator(),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
     )
