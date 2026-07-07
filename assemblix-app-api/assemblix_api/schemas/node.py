@@ -86,6 +86,11 @@ class AgentNodeConfig(DTOModel):
     # Stream this agent's free-form text output token-by-token when the run is dispatched
     # with request.stream=true. Only honored for response_format="text".
     stream: bool = False
+    # Output modality (voice moved here from the END node). "text" (default) unchanged;
+    # "voice" streams realtime audio when the run streams + a realtime model is set, else
+    # synthesizes one buffered base64 blob at the end of the run.
+    output_type: Literal["text", "voice"] = "text"
+    voice: VoiceOutputConfig | None = None
     tools: list[str] | None = None  # List of tool names, e.g. ["web_search"]
     # MCP servers (backend seam): accepted in the config, but a real client is not connected yet.
     mcp_servers: list[MCPServerConfig] = Field(default_factory=list)

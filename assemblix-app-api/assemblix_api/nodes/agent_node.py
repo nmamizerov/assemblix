@@ -262,6 +262,15 @@ class AgentNode(BaseNode):
                 "Streaming is ignored for json_object output; set response_format=text to stream"
             )
 
+        if self.typed_config.output_type == "voice":
+            voice = self.typed_config.voice
+            if voice is None or not voice.voice_id or not voice.model:
+                errors.append("Voice output is enabled but no voice is fully selected")
+            if self.typed_config.stream and self.typed_config.response_format == "json_object":
+                errors.append(
+                    "Streaming voice needs text output; set response_format=text or it runs buffered"
+                )
+
         return errors
 
     @classmethod
