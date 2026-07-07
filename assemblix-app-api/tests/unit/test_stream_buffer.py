@@ -4,7 +4,7 @@ import asyncio
 from datetime import datetime
 from uuid import uuid4
 
-from assemblix_api.execution.stream_buffer import InMemoryStreamBuffer
+from assemblix_api.execution.stream_buffer import InMemoryStreamBuffer, RedisStreamBuffer
 from assemblix_api.schemas.debug_events import DebugEvent, DebugEventType
 
 
@@ -70,3 +70,21 @@ async def test_two_subscribers_each_get_full_stream_from_their_cursor() -> None:
     # Assert
     assert await task_a == [1, 2]
     assert await task_b == [1, 2]
+
+
+async def test_redis_buffer_replays_after_cursor_like_in_memory(fake_redis) -> None:
+    """RedisStreamBuffer replays events after a cursor identically to the in-memory buffer (C11)."""
+    # Arrange
+    buf = RedisStreamBuffer(fake_redis, max_events=100)
+    eid = uuid4()
+    buf.open(eid)
+    await buf.append(eid, _ev(eid, delta="a"))  # seq 1
+    await buf.append(eid, _ev(eid, delta="b"))  # seq 2
+    await buf.append(eid, _ev(eid, DebugEventType.EXECUTION_COMPLETE))  # seq 3
+
+    # Act
+    got = [e async for e in buf.subscribe(eid, after_seq=1)]
+
+    # Assert
+    assert [e.seq for e in got] == [2, 3]
+    assert got[0].data["delta"] == "b"
