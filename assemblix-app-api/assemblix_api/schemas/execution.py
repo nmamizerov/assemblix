@@ -153,6 +153,9 @@ class ExecutionContext:
 class NodeInput:
     data: dict
     context: ExecutionContext
+    # Per-run delta sink, set by NodeRunner when the run streams; agent nodes forward it to
+    # AgentRunner. None for non-streaming runs and for non-agent nodes.
+    on_delta: Callable[[str], Awaitable[None]] | None = None
 
 
 @dataclass

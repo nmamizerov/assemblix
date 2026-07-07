@@ -83,6 +83,9 @@ class AgentNodeConfig(DTOModel):
 
     response_format: Literal["json_object", "text"] = "text"
     response_schema: dict | None = None
+    # Stream this agent's free-form text output token-by-token when the run is dispatched
+    # with request.stream=true. Only honored for response_format="text".
+    stream: bool = False
     tools: list[str] | None = None  # List of tool names, e.g. ["web_search"]
     # MCP servers (backend seam): accepted in the config, but a real client is not connected yet.
     mcp_servers: list[MCPServerConfig] = Field(default_factory=list)

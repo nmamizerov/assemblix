@@ -132,6 +132,9 @@ class AgentNode(BaseNode):
         async with agent_call_guard(
             context.organization_id, cfg.provider.value, hold_timeout=total_timeout
         ):
+            # Format gate: stream only free-form text (parse_json False) when the node opts in.
+            # The request-level gate already decided whether node_input.on_delta exists.
+            on_delta = node_input.on_delta if (cfg.stream and not parse_json) else None
             result = await AgentRunner().run(
                 model=model,
                 provider=cfg.provider.value,
@@ -141,6 +144,7 @@ class AgentNode(BaseNode):
                 toolsets=toolsets,
                 parse_json=parse_json,
                 total_timeout=total_timeout,
+                on_delta=on_delta,
             )
 
         return NodeOutput(
@@ -252,6 +256,11 @@ class AgentNode(BaseNode):
             for tool_name in self.typed_config.tools:
                 if not registry.is_registered(tool_name):
                     errors.append(f"Unknown tool: {tool_name}")
+
+        if self.typed_config.stream and self.typed_config.response_format == "json_object":
+            errors.append(
+                "Streaming is ignored for json_object output; set response_format=text to stream"
+            )
 
         return errors
 

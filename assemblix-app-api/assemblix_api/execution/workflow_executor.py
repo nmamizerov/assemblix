@@ -640,7 +640,9 @@ class WorkflowExecutor:
             )
 
             try:
-                node_output = await self._node_runner.run(node, node_input)
+                node_output = await self._node_runner.run(
+                    node, node_input, node_id=current_node_id, step_number=assigned_step
+                )
             except Exception as e:
                 from assemblix_api.execution.exceptions import NodeExecutionError
 
@@ -820,7 +822,11 @@ class WorkflowExecutor:
                         step_number=assigned_step,
                     )
 
-                    task = asyncio.create_task(self._node_runner.run(node, node_input))
+                    task = asyncio.create_task(
+                        self._node_runner.run(
+                            node, node_input, node_id=node_id, step_number=assigned_step
+                        )
+                    )
                     running[task] = {
                         "node_id": node_id,
                         "node_type": node_type_str,

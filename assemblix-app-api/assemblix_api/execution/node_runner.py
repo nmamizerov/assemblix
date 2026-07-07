@@ -52,8 +52,26 @@ class NodeRunner:
         # released during long external awaits. No-op outside the queue/isolated path.
         self._db_checkpoint = db_checkpoint
 
-    async def run(self, node, node_input: NodeInput) -> NodeOutput:
-        """Execute the node under the in-progress gauge. Errors propagate."""
+    async def run(
+        self, node, node_input: NodeInput, *, node_id: str, step_number: int
+    ) -> NodeOutput:
+        """Execute the node under the in-progress gauge. Errors propagate.
+
+        On a streaming run, build the per-node delta sink here (the single choke point for
+        every node) so agent nodes can forward it to AgentRunner. The request-level gate is
+        ``context.stream_enabled``; the node-level and format gates live in the agent node.
+        """
+        ctx = node_input.context
+        if ctx.stream_enabled and self._debug_event_manager.is_streaming(ctx.execution_id):
+            execution_id = ctx.execution_id
+
+            async def _sink(text: str) -> None:
+                await self._debug_event_manager.emit_stream_delta(
+                    execution_id, step_number=step_number, node_id=node_id, delta=text
+                )
+
+            node_input.on_delta = _sink
+
         set_nodes_in_progress(+1)
         try:
             return await node.execute(node_input)
