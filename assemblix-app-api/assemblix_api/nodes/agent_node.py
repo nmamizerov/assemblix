@@ -13,6 +13,7 @@ from assemblix_api.execution.credential_resolver import CredentialResolver
 from assemblix_api.execution.error_taxonomy import classify_error
 from assemblix_api.execution.message_builder import MessageBuilder
 from assemblix_api.external.llm.litellm_model import build_litellm_model
+from assemblix_api.nodes import agent_voice
 from assemblix_api.schemas import AgentNodeConfig, BaseNode
 from assemblix_api.schemas.execution import (
     AgentExecutionResult,
@@ -135,6 +136,22 @@ class AgentNode(BaseNode):
             # Format gate: stream only free-form text (parse_json False) when the node opts in.
             # The request-level gate already decided whether node_input.on_delta exists.
             on_delta = node_input.on_delta if (cfg.stream and not parse_json) else None
+            on_audio = node_input.on_audio
+
+            # Live voice: when the run streams a realtime-voice agent, tee each text delta into
+            # an ElevenLabs WS session so audio streams while the agent generates.
+            tts_session = None
+            voice_is_system_key = False
+            effective_on_delta = on_delta
+            if on_delta is not None and agent_voice.should_stream_voice(
+                cfg, on_delta=on_delta, on_audio=on_audio
+            ):
+                tts_session, effective_on_delta, voice_is_system_key = (
+                    await agent_voice.open_voice_session(
+                        cfg, context, on_delta=on_delta, on_audio=on_audio
+                    )
+                )
+
             result = await AgentRunner().run(
                 model=model,
                 provider=cfg.provider.value,
@@ -144,17 +161,35 @@ class AgentNode(BaseNode):
                 toolsets=toolsets,
                 parse_json=parse_json,
                 total_timeout=total_timeout,
-                on_delta=on_delta,
+                on_delta=effective_on_delta,
             )
 
+        output_data = {
+            "message": result.content,
+            "parsed_message": result.parsed_content,
+            "tool_executions": result.tool_executions,
+        }
+        extra_metadata: dict = {}
+
+        # Live voice: drain the WS and meter the synthesized chars. No base64 on a live run.
+        if tts_session is not None:
+            chars = await tts_session.flush_and_close()
+            if chars > 0:
+                extra_metadata = agent_voice.voice_cost_metadata(
+                    cfg, chars=chars, is_system_key=voice_is_system_key
+                )
+        # Buffered voice: exactly one synthesis when voice is requested but not streamed live.
+        elif cfg.output_type == "voice" and cfg.voice and cfg.voice.voice_id:
+            audio, cost_meta = await agent_voice.synthesize_buffered(cfg, context, result.content)
+            if audio is not None:
+                output_data["audio"] = audio
+                extra_metadata = cost_meta
+
         return NodeOutput(
-            data={
-                "message": result.content,
-                "parsed_message": result.parsed_content,
-                "tool_executions": result.tool_executions,
-            },
+            data=output_data,
             metadata={
                 **result.metadata,
+                **extra_metadata,
                 "model": cfg.model,
                 "provider": cfg.provider.value,
                 "used_system_key": is_system_key,
