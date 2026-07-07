@@ -162,6 +162,10 @@ class Settings(BaseSettings):
     redis_url: str | None = os.getenv("REDIS_URL") or None
     execution_queue_enabled: bool = os.getenv("EXECUTION_QUEUE_ENABLED", "false").lower() == "true"
     debug_events_use_redis: bool = os.getenv("DEBUG_EVENTS_USE_REDIS", "false").lower() == "true"
+    # Streaming: how long an execution's replayable event buffer is retained after it
+    # completes, and the max events kept per execution (ring / Redis Stream MAXLEN).
+    stream_buffer_ttl_seconds: int = int(os.getenv("STREAM_BUFFER_TTL_SECONDS", "600"))
+    stream_buffer_max_events: int = int(os.getenv("STREAM_BUFFER_MAX_EVENTS", "2000"))
     execution_checkpointing_enabled: bool = (
         os.getenv("EXECUTION_CHECKPOINTING_ENABLED", "false").lower() == "true"
     )
