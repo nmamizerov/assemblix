@@ -7,6 +7,8 @@ import { motion } from "framer-motion";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
 import { ScrollArea } from "@/shared/ui/scroll-area";
+import { Switch } from "@/shared/ui/switch";
+import { Label } from "@/shared/ui/label";
 import { Play, Square, AlertCircle, Trash2, MessageCircle, Mic } from "lucide-react";
 import { useWorkflowDebug } from "../../lib/use-workflow-debug";
 import { useVoiceRecorder } from "../../lib/use-voice-recorder";
@@ -26,6 +28,7 @@ interface DebugPanelProps {
 export const DebugPanel = ({ workflow }: DebugPanelProps) => {
   const { t } = useTranslation();
   const [inputMessage, setInputMessage] = useState("");
+  const [streaming, setStreaming] = useState(false);
   const currentProjectId = useSelector(selectCurrentProjectId);
   const {
     history,
@@ -81,7 +84,7 @@ export const DebugPanel = ({ workflow }: DebugPanelProps) => {
 
   const handleExecute = () => {
     if (!inputMessage.trim() || isRunning) return;
-    startDebugExecution(workflow.id, inputMessage);
+    startDebugExecution(workflow.id, inputMessage, streaming);
     setInputMessage("");
   };
 
@@ -267,6 +270,22 @@ export const DebugPanel = ({ workflow }: DebugPanelProps) => {
                     <Mic className="size-4" />
                   </Button>
                 )}
+              </div>
+              <div className="flex items-center gap-2">
+                <Switch
+                  id="debug-streaming"
+                  checked={streaming}
+                  onCheckedChange={setStreaming}
+                  disabled={isRunning}
+                  showIcons={false}
+                />
+                <Label
+                  htmlFor="debug-streaming"
+                  className="text-xs text-muted-foreground cursor-pointer"
+                  title={t("debug.streamingHint")}
+                >
+                  {t("debug.streaming")}
+                </Label>
               </div>
               <div className="flex gap-2">
                 {!isRunning ? (

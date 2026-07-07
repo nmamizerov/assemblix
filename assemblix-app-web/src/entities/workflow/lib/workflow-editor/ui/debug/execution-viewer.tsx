@@ -14,6 +14,8 @@ type DebugStep = {
   nodeType: NodeType;
   isCompleted: boolean;
   data?: Record<string, unknown>;
+  // Live token text accumulated from stream_delta events (streamable agent nodes).
+  streamedText?: string;
 };
 
 // Shape of `execution_complete.data.output.audio` when the workflow
@@ -54,7 +56,11 @@ export const ExecutionViewer = ({
     // Создаем карту нод по node_id для отслеживания
     const nodeMap = new Map<
       string,
-      { start?: Record<string, unknown>; complete?: Record<string, unknown> }
+      {
+        start?: Record<string, unknown>;
+        complete?: Record<string, unknown>;
+        streamed?: string;
+      }
     >();
 
     events.forEach((event) => {
@@ -65,6 +71,16 @@ export const ExecutionViewer = ({
             nodeMap.set(nodeId, {});
           }
           nodeMap.get(nodeId)!.start = event.data;
+        }
+      } else if (event.event_type === "stream_delta") {
+        const nodeId = event.data?.node_id as string;
+        const delta = event.data?.delta as string;
+        if (nodeId && delta) {
+          if (!nodeMap.has(nodeId)) {
+            nodeMap.set(nodeId, {});
+          }
+          const entry = nodeMap.get(nodeId)!;
+          entry.streamed = (entry.streamed || "") + delta;
         }
       } else if (event.event_type === "step_complete") {
         const nodeId = event.data?.node_id as string;
@@ -102,6 +118,7 @@ export const ExecutionViewer = ({
           nodeType,
           isCompleted: true,
           data: { ...nodeData.complete, node_name: nodeName },
+          streamedText: nodeData.streamed,
         });
       } else if (nodeData.start) {
         // Нода начата но не завершена
@@ -109,6 +126,7 @@ export const ExecutionViewer = ({
           nodeType,
           isCompleted: false,
           data: undefined,
+          streamedText: nodeData.streamed,
         });
       }
     });
@@ -131,6 +149,7 @@ export const ExecutionViewer = ({
           nodeType={step.nodeType}
           isCompleted={step.isCompleted}
           data={step.data}
+          streamedText={step.streamedText}
           isRunning={
             isRunning && index === steps.length - 1 && !step.isCompleted
           }

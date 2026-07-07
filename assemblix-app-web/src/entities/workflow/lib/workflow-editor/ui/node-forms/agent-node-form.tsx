@@ -403,7 +403,7 @@ export const AgentNodeForm = ({
   };
 
   const handleBooleanFieldChange = (
-    field: "enforceTimeoutOnLast" | "saveToHistory",
+    field: "enforceTimeoutOnLast" | "saveToHistory" | "stream",
     checked: boolean,
   ) => {
     setFormData((prev) => ({ ...prev, [field]: checked }));
@@ -807,6 +807,38 @@ export const AgentNodeForm = ({
               showIcons={false}
             />
           </div>
+
+          {/* Stream token output (text format only) */}
+          {(formData.responseFormat ?? "text") === "text" && (
+            <div className="flex justify-between gap-4 items-center">
+              <div className="flex items-center gap-1.5">
+                <Label htmlFor="agent-stream">
+                  {t("nodeForms.agent.stream")}
+                </Label>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      type="button"
+                      className="text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      <HelpCircle className="h-3.5 w-3.5" />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent side="right" className="max-w-[250px]">
+                    <p>{t("nodeForms.agent.streamTooltip")}</p>
+                  </TooltipContent>
+                </Tooltip>
+              </div>
+              <Switch
+                id="agent-stream"
+                checked={formData.stream ?? false}
+                onCheckedChange={(checked) =>
+                  handleBooleanFieldChange("stream", checked)
+                }
+                showIcons={false}
+              />
+            </div>
+          )}
 
           {/* History field (only for JSON answers with a schema) */}
           {(formData.saveToHistory ?? true) && schemaFieldNames.length > 0 && (
