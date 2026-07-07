@@ -471,13 +471,15 @@ class WorkflowExecutor:
             stream_enabled=stream_enabled,
         )
 
-        # 11. Open the event buffer for a debug OR a streaming run.
-        if is_debug or stream_enabled:
-            self._debug_event_manager.create_stream(execution.id)
-        # Only the legacy single-request debug SSE waits for the client; a streaming run
-        # (task=true) runs freely and the buffer lets a late subscriber catch up.
+        # 11. Open the event stream. Debug uses the legacy queue+buffer (create_stream);
+        # a streaming-only run opens the buffer alone (no undrained queue).
         if is_debug:
+            self._debug_event_manager.create_stream(execution.id)
+            # Only the legacy single-request debug SSE waits for the client; a streaming run
+            # (task=true) runs freely and the buffer lets a late subscriber catch up.
             await self._debug_event_manager.wait_for_client(execution.id, timeout=10.0)
+        elif stream_enabled:
+            self._debug_event_manager.open_buffer(execution.id)
 
         return execution, context, resume_point
 
@@ -1059,7 +1061,7 @@ class WorkflowExecutor:
             await self._chat_service.end_session(context.chat_session_id)
 
         # 7. Emit execution_complete event for debug mode
-        if self._debug_event_manager.get_stream(execution.id):
+        if self._debug_event_manager.is_streaming(execution.id):
             debug_status = "error" if is_error else "completed"
             await self._debug_event_manager.emit_execution_complete(
                 execution_id=execution.id,
@@ -1074,8 +1076,9 @@ class WorkflowExecutor:
                 own_key_cost_usd=context.own_key_cost_usd,
                 is_session_closed=is_session_end,
             )
-            # Cleanup stream
-            self._debug_event_manager.cleanup_stream(execution.id)
+            # Drop the stream buffer a TTL later, so a late/reconnecting subscriber can
+            # still replay the completed run before falling back to task polling.
+            self._debug_event_manager.schedule_stream_cleanup(execution.id)
 
     @staticmethod
     def _resolve_node_type(workflow, node_id: str) -> str:
@@ -1187,7 +1190,7 @@ class WorkflowExecutor:
                 )
 
         # 2.6. Emit error event for debug mode (ALWAYS, even if DB update failed)
-        if self._debug_event_manager.get_stream(execution.id):
+        if self._debug_event_manager.is_streaming(execution.id):
             await self._debug_event_manager.emit_error(
                 execution_id=execution.id,
                 error_message=str(error),
@@ -1195,8 +1198,8 @@ class WorkflowExecutor:
                 failed_node_id=failed_node_id,
                 step_number=context.step_number,
             )
-            # Cleanup stream
-            self._debug_event_manager.cleanup_stream(execution.id)
+            # Drop the stream buffer a TTL later (see the success path above).
+            self._debug_event_manager.schedule_stream_cleanup(execution.id)
 
         # 3. Return ExecutionResult with error information
         return ExecutionResult(

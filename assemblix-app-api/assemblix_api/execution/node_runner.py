@@ -96,7 +96,7 @@ class NodeRunner:
             node_type=node_type,
             step_number=step_number,
         )
-        if self._debug_event_manager.get_stream(context.execution_id):
+        if self._debug_event_manager.is_streaming(context.execution_id):
             await self._debug_event_manager.emit_step_start(
                 execution_id=context.execution_id,
                 step_number=step_number,
@@ -194,7 +194,7 @@ class NodeRunner:
         context = accumulate_step_cost(context, node_output.metadata)
 
         meta = node_output.metadata
-        if self._debug_event_manager.get_stream(context.execution_id):
+        if self._debug_event_manager.is_streaming(context.execution_id):
             # Credits are charged only when system keys are used.
             step_credits = None
             if meta and get_settings().billing_enabled:

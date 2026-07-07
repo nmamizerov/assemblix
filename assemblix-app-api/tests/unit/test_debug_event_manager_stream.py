@@ -1,9 +1,12 @@
 """Unit tests for the STREAM_DELTA debug event schema + DebugEventManager streaming."""
 
+import asyncio
+import types
 from datetime import datetime
 from decimal import Decimal
 from uuid import uuid4
 
+import assemblix_api.execution.debug_event_manager as dem
 from assemblix_api.execution.debug_event_manager import DebugEventManager
 from assemblix_api.schemas.debug_events import (
     DebugEvent,
@@ -61,3 +64,33 @@ async def test_emit_stream_delta_is_buffered_and_subscribable() -> None:
     assert events[0].seq == 1
     assert events[0].data["delta"] == "Hi"
     assert events[0].data["node_id"] == "agent-1"
+
+
+async def test_open_buffer_streams_without_legacy_queue() -> None:
+    """A streaming-only run opens the replayable buffer but NOT the legacy asyncio.Queue."""
+    # Arrange / Act
+    mgr = DebugEventManager()
+    eid = uuid4()
+    mgr.open_buffer(eid)
+
+    # Assert
+    assert mgr.is_streaming(eid) is True
+    assert mgr.get_stream(eid) is None  # no undrained legacy queue for a streaming-only run
+
+
+async def test_buffer_dropped_after_ttl(monkeypatch) -> None:
+    """schedule_stream_cleanup drops the buffer after the configured TTL."""
+    # Arrange
+    monkeypatch.setattr(
+        dem, "get_settings", lambda: types.SimpleNamespace(stream_buffer_ttl_seconds=0)
+    )
+    mgr = DebugEventManager()
+    eid = uuid4()
+    mgr.create_stream(eid)
+
+    # Act
+    mgr.schedule_stream_cleanup(eid)
+    await asyncio.sleep(0.05)  # let the scheduled task run (ttl=0)
+
+    # Assert
+    assert mgr.is_streaming(eid) is False

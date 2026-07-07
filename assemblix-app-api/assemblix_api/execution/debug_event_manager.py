@@ -15,6 +15,7 @@ from decimal import Decimal
 from typing import TYPE_CHECKING
 from uuid import UUID
 
+from assemblix_api.core.settings import get_settings
 from assemblix_api.schemas.debug_events import (
     DebugEvent,
     DebugEventType,
@@ -121,11 +122,34 @@ class DebugEventManager:
         )
         await self.emit_event(execution_id, event)
 
+    def open_buffer(self, execution_id: UUID) -> None:
+        """Open the replayable buffer for a streaming-only run (no legacy queue).
+
+        Unlike create_stream, this does NOT allocate an asyncio.Queue — a streaming run is
+        consumed via subscribe(), so a queue would just accumulate undrained events.
+        """
+        self._buffer.open(execution_id)
+
     def cleanup_stream(self, execution_id: UUID) -> None:
         if execution_id in self._streams:
             del self._streams[execution_id]
         if execution_id in self._client_ready:
             del self._client_ready[execution_id]
+        self._buffer.drop(execution_id)
+
+    def schedule_stream_cleanup(self, execution_id: UUID) -> None:
+        """Drop the buffer (and any legacy queue) a TTL after the execution completes.
+
+        The delay lets a late or reconnecting subscriber still replay just after the run
+        finishes; after the TTL the endpoint 404s and the client falls back to task polling.
+        """
+        ttl = get_settings().stream_buffer_ttl_seconds
+
+        async def _drop_later() -> None:
+            await asyncio.sleep(ttl)
+            self.cleanup_stream(execution_id)
+
+        asyncio.create_task(_drop_later())
 
     def mark_client_ready(self, execution_id: UUID) -> None:
         """Signal that the client connected and is ready to receive events."""
