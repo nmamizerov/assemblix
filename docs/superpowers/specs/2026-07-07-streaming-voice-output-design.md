@@ -296,3 +296,14 @@ Verify e2e via `curl` against the SSE endpoint, plus a browser dogfood of the We
   form move + possible data migration of saved graphs); low burden if phase 1 is unmerged.
 - Whether multiple voiced agents in one graph are allowed (each synthesizes) or constrained to
   one.
+
+## 12. Spike results (2026-07-07, live `stream-input`)
+
+Confirmed against a real key + account voice, model `eleven_flash_v2_5`, `output_format=pcm_16000`:
+
+- **WS URL:** `wss://api.elevenlabs.io/v1/text-to-speech/{voice_id}/stream-input?model_id=…&output_format=pcm_16000`. Auth via `xi_api_key` inside the BOS JSON. `try_trigger_generation: true` accepted.
+- **Receive message keys:** `audio` (base64 PCM), `normalizedAlignment`, `alignment`, `isFinal`.
+- **Alignment is camelCase:** `chars: list[str]`, `charStartTimesMs: list[int]`, `charDurationsMs: list[int]`. `RealtimeTTSSession._parse_alignment` reads both camelCase and snake_case, so no change needed. We use `normalizedAlignment` (normalized to spoken text).
+- **Framing:** audio arrives in a few chunks (~14–17 KB PCM each ≈ 0.45 s @16 kHz); the terminal message has empty `audio` and `isFinal: true`. The recv loop stops on `isFinal` or socket close.
+- **PCM format:** signed 16-bit LE mono @16 kHz — matches the Web Audio player plan (Int16 → Float32 `/32768`).
+- **Decisions confirmed:** live path is NOT char-capped (only the buffered path caps via `voice_output_max_chars`); multiple voiced agents allowed (each owns its session). WS library = `websockets` (already in the dependency tree).
