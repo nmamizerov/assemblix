@@ -91,6 +91,33 @@ async def test_non_stream_debug_has_no_deltas(api_client, mock_llm) -> None:
     assert "event: execution_complete" in resp.text
 
 
+async def test_debug_stream_true_emits_deltas_inline(api_client, mock_llm) -> None:
+    """A /execute/debug run with stream=true carries stream_delta frames on the inline SSE.
+
+    This is the path the frontend debug runner uses when its streaming toggle is on.
+    """
+    # Arrange
+    mock_llm.set_stream(["Hel", "lo"])
+    auth = await _register(api_client)
+    nodes, edges = _streamable_linear()
+    workflow_id = await _create_publish(api_client, auth, nodes, edges)
+
+    # Act
+    resp = await asyncio.wait_for(
+        api_client.post(
+            f"/api/workflows/{workflow_id}/execute/debug",
+            json={"input": {"message": "hi"}, "stream": True},
+            headers=auth.key_headers,
+        ),
+        timeout=30.0,
+    )
+
+    # Assert
+    assert resp.status_code == 200
+    assert "event: stream_delta" in resp.text
+    assert "event: execution_complete" in resp.text
+
+
 async def test_error_mid_stream_marks_failed_and_keeps_partials(api_client, mock_llm) -> None:
     """An LLM error mid-stream keeps the delivered deltas, ends with error, marks FAILED (D14)."""
     # Arrange
