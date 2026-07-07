@@ -27,11 +27,15 @@ class LLMMock:
         # Default response so an un-configured agent call still succeeds.
         self._queue: list[dict[str, Any]] = []
         self._default = self._completion("OK")
+        # Armed text deltas for the next stream=True call (None → empty stream).
+        self._stream_chunks: list[str] | None = None
         self._install()
 
     def _install(self) -> None:
         async def _acompletion(**kwargs: Any) -> Any:
             self.calls.append(kwargs)
+            if kwargs.get("stream"):
+                return _AsyncChunkStream(self._stream_chunks or [])
             payload = self._queue.pop(0) if self._queue else self._default
             return _ModelResponse(payload)
 
@@ -78,6 +82,11 @@ class LLMMock:
         self._queue = [self._completion(r) for r in responses]
         return self
 
+    def set_stream(self, chunks: list[str]) -> LLMMock:
+        """Arm the next stream=True acompletion to yield these text deltas in order."""
+        self._stream_chunks = list(chunks)
+        return self
+
     @property
     def call_count(self) -> int:
         return len(self.calls)
@@ -91,6 +100,47 @@ class _ModelResponse:
 
     def model_dump(self, *args: Any, **kwargs: Any) -> dict[str, Any]:
         return self._payload
+
+
+class _StreamChunk:
+    """Mimics ``litellm.ModelResponseStream`` for the shim's per-chunk ``.model_dump()``."""
+
+    def __init__(self, content: str | None, finish_reason: str | None) -> None:
+        self._content = content
+        self._finish_reason = finish_reason
+
+    def model_dump(self, *args: Any, **kwargs: Any) -> dict[str, Any]:
+        return {
+            "id": "chatcmpl-mock",
+            "object": "chat.completion.chunk",
+            "created": 0,
+            "model": "gpt-4o",
+            "choices": [
+                {
+                    "index": 0,
+                    "delta": {"role": "assistant", "content": self._content},
+                    "finish_reason": self._finish_reason,
+                }
+            ],
+        }
+
+
+class _AsyncChunkStream:
+    """Async iterator of ``_StreamChunk`` — the content deltas then a terminal stop chunk."""
+
+    def __init__(self, chunks: list[str]) -> None:
+        payloads = [_StreamChunk(c, None) for c in chunks]
+        payloads.append(_StreamChunk(None, "stop"))
+        self._it = iter(payloads)
+
+    def __aiter__(self) -> _AsyncChunkStream:
+        return self
+
+    async def __anext__(self) -> _StreamChunk:
+        try:
+            return next(self._it)
+        except StopIteration:
+            raise StopAsyncIteration
 
 
 @pytest.fixture
