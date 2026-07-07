@@ -12,6 +12,7 @@ class DebugEventType(str, Enum):
     STEP_START = "step_start"
     STEP_COMPLETE = "step_complete"
     STREAM_DELTA = "stream_delta"
+    AUDIO_DELTA = "audio_delta"
     EXECUTION_COMPLETE = "execution_complete"
     ERROR = "error"
 
@@ -31,6 +32,25 @@ class StreamDeltaEventData(DTOModel):
     node_id: str
     step_number: int
     delta: str
+
+
+class AlignmentData(DTOModel):
+    """Character-level timing from the TTS provider (ElevenLabs normalizedAlignment).
+
+    Carried through for phase-3 avatars/lip-sync; the phase-2b debug player ignores it.
+    """
+
+    chars: list[str]
+    char_start_times_ms: list[int]
+    char_durations_ms: list[int]
+
+
+class AudioDeltaEventData(DTOModel):
+    node_id: str
+    step_number: int
+    audio: str  # base64-encoded PCM chunk
+    format: str = "pcm_16000"
+    alignment: AlignmentData | None = None
 
 
 class StepStartEventData(DTOModel):
