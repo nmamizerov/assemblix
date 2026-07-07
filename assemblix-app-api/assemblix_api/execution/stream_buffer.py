@@ -22,14 +22,17 @@ TERMINAL_EVENTS = {DebugEventType.EXECUTION_COMPLETE, DebugEventType.ERROR}
 class InMemoryStreamBuffer:
     """Retains events per execution and fans out live to any number of subscribers."""
 
-    def __init__(self, max_events: int = 2000):
+    def __init__(self, max_events: int = 2000, audio_max_chunks: int = 50):
         self._max_events = max_events
+        self._audio_max_chunks = audio_max_chunks
         self._events: dict[UUID, deque[DebugEvent]] = {}
+        self._audio: dict[UUID, deque[DebugEvent]] = {}
         self._seq: dict[UUID, int] = {}
         self._conds: dict[UUID, asyncio.Condition] = {}
 
     def open(self, execution_id: UUID) -> None:
         self._events.setdefault(execution_id, deque(maxlen=self._max_events))
+        self._audio.setdefault(execution_id, deque(maxlen=self._audio_max_chunks))
         self._seq.setdefault(execution_id, 0)
         self._conds.setdefault(execution_id, asyncio.Condition())
 
@@ -47,26 +50,50 @@ class InMemoryStreamBuffer:
             cond.notify_all()
         return event.seq
 
+    async def append_transient(self, execution_id: UUID, event: DebugEvent) -> int:
+        """Append a live-only event (audio). Shares the seq counter with append() but is
+        stored in a small ring that is NOT part of cursor replay, so heavy PCM never evicts
+        retained control/text events."""
+        if execution_id not in self._events:
+            self.open(execution_id)
+        self._seq[execution_id] += 1
+        event.seq = self._seq[execution_id]
+        self._audio[execution_id].append(event)
+        cond = self._conds[execution_id]
+        async with cond:
+            cond.notify_all()
+        return event.seq
+
     async def subscribe(self, execution_id: UUID, after_seq: int) -> AsyncIterator[DebugEvent]:
         if execution_id not in self._events:
             return
         cond = self._conds[execution_id]
         cursor = after_seq
+
+        def _pending() -> list[DebugEvent]:
+            merged = [
+                e
+                for e in (*self._events[execution_id], *self._audio[execution_id])
+                if e.seq > cursor
+            ]
+            merged.sort(key=lambda e: e.seq)
+            return merged
+
         while True:
-            pending = [e for e in list(self._events[execution_id]) if e.seq > cursor]
-            for event in pending:
+            for event in _pending():
                 cursor = event.seq
                 yield event
                 if event.event_type in TERMINAL_EVENTS:
                     return
             async with cond:
                 # Re-check under the lock so a notify between the scan and the wait isn't missed.
-                if any(e.seq > cursor for e in self._events[execution_id]):
+                if _pending():
                     continue
                 await cond.wait()
 
     def drop(self, execution_id: UUID) -> None:
         self._events.pop(execution_id, None)
+        self._audio.pop(execution_id, None)
         self._seq.pop(execution_id, None)
         self._conds.pop(execution_id, None)
 
