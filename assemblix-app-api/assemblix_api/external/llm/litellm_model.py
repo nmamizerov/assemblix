@@ -18,7 +18,7 @@ from typing import Any, cast
 
 import litellm
 from openai import AsyncOpenAI, NotGiven, Omit
-from openai.types.chat import ChatCompletion
+from openai.types.chat import ChatCompletion, ChatCompletionChunk
 from pydantic_ai.models.openai import OpenAIChatModel
 from pydantic_ai.providers.openai import OpenAIProvider
 
@@ -51,7 +51,7 @@ class _Completions:
         self._api_key_env_var = api_key_env_var
         self._api_key = api_key
 
-    async def create(self, **kwargs: Any) -> ChatCompletion:
+    async def create(self, **kwargs: Any) -> ChatCompletion | _StreamShim:
         # Apply provider env-overrides and env-based auth before the call.
         for env_name, value in self._env_overrides.items():
             os.environ[env_name] = value
@@ -59,11 +59,46 @@ class _Completions:
             os.environ[self._api_key_env_var] = self._api_key
 
         merged = {**self._defaults, **_strip_sentinels(kwargs)}
+        if merged.get("stream"):
+            # Streaming: OpenAIChatModel does `async with response:` then iterates and closes
+            # the object. litellm's CustomStreamWrapper has none of those, so wrap it.
+            return _StreamShim(await litellm.acompletion(**merged))
         resp = await litellm.acompletion(**merged)
         # litellm.ModelResponse → real openai ChatCompletion (pydantic-ai isinstance check).
         # warnings=False: the litellm schema is slightly wider than the openai types; without
         # this it emits UserWarning.
         return ChatCompletion.model_validate(resp.model_dump(warnings=False))
+
+
+class _StreamShim:
+    """Adapts a litellm streaming wrapper to what OpenAIChatModel consumes.
+
+    OpenAIChatModel does `async with response:` then async-iterates the object and calls
+    `await source.close()`. litellm's CustomStreamWrapper implements none of those, so we
+    wrap it: iterate its ModelResponseStream chunks and revalidate each into a real
+    ChatCompletionChunk (pydantic-ai reads chunks via attribute access, not model_dump).
+    """
+
+    def __init__(self, litellm_stream: Any):
+        self._stream = litellm_stream
+
+    async def __aenter__(self) -> _StreamShim:
+        return self
+
+    async def __aexit__(self, *exc: object) -> None:
+        await self.close()
+
+    def __aiter__(self) -> _StreamShim:
+        return self
+
+    async def __anext__(self) -> ChatCompletionChunk:
+        chunk = await self._stream.__anext__()
+        return ChatCompletionChunk.model_validate(chunk.model_dump(warnings=False))
+
+    async def close(self) -> None:
+        aclose = getattr(self._stream, "aclose", None)
+        if aclose is not None:
+            await aclose()
 
 
 class _Chat:
