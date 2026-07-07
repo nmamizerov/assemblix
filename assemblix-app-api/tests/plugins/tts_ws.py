@@ -47,7 +47,7 @@ class TTSWSMock:
         self.socket: FakeTTSWebSocket | None = None
         self._scripted: list[dict[str, Any]] = []
 
-    def script_audio(self, chunks: list[tuple[bytes, dict | None]]) -> "TTSWSMock":
+    def script_audio(self, chunks: list[tuple[bytes, dict | None]]) -> TTSWSMock:
         """Arm received messages: each (pcm_bytes, alignment_dict|None)."""
         self._scripted = [
             {

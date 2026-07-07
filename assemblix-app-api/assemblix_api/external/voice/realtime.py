@@ -10,8 +10,10 @@ from __future__ import annotations
 
 import asyncio
 import base64
+import contextlib
 import json
 from collections.abc import Awaitable, Callable
+from typing import Any
 
 import structlog
 
@@ -55,7 +57,7 @@ class RealtimeTTSSession:
         self._output_format = output_format or settings.voice_realtime_output_format
         self._chunk_schedule = chunk_schedule or settings.voice_realtime_chunk_schedule
         self._ws_base = settings.elevenlabs_ws_base_url.rstrip("/")
-        self._ws: object | None = None
+        self._ws: Any = None  # duck-typed websocket (real websockets client or a test fake)
         self._recv_task: asyncio.Task | None = None
         self._chars_sent = 0
         self._failed = False
@@ -73,7 +75,7 @@ class RealtimeTTSSession:
         connect = self._connect or self._default_connect
         self._ws = await connect(url)
         # BOS: a single space primes the stream; carries voice_settings + xi_api_key.
-        await self._ws.send(  # type: ignore[attr-defined]
+        await self._ws.send(
             json.dumps(
                 {
                     "text": " ",
@@ -89,7 +91,7 @@ class RealtimeTTSSession:
         assert self._ws is not None
         try:
             while True:
-                message = await self._ws.recv()  # type: ignore[attr-defined]
+                message = await self._ws.recv()
                 payload = json.loads(message)
                 audio_b64 = payload.get("audio")
                 if audio_b64:
@@ -106,9 +108,7 @@ class RealtimeTTSSession:
         if self._failed or self._ws is None:
             return
         try:
-            await self._ws.send(  # type: ignore[attr-defined]
-                json.dumps({"text": text, "try_trigger_generation": True})
-            )
+            await self._ws.send(json.dumps({"text": text, "try_trigger_generation": True}))
             self._chars_sent += len(text)
         except Exception as exc:  # noqa: BLE001 — best-effort.
             self._failed = True
@@ -117,7 +117,7 @@ class RealtimeTTSSession:
     async def flush_and_close(self) -> int:
         if self._ws is not None and not self._failed:
             try:
-                await self._ws.send(json.dumps({"text": ""}))  # type: ignore[attr-defined]  # EOS
+                await self._ws.send(json.dumps({"text": ""}))  # EOS
             except Exception:  # noqa: BLE001
                 self._failed = True
         if self._recv_task is not None:
@@ -130,13 +130,11 @@ class RealtimeTTSSession:
 
     async def aclose(self) -> None:
         if self._ws is not None:
-            try:
-                await self._ws.close()  # type: ignore[attr-defined]
-            except Exception:  # noqa: BLE001
-                pass
+            with contextlib.suppress(Exception):
+                await self._ws.close()
             self._ws = None
 
-    async def __aenter__(self) -> "RealtimeTTSSession":
+    async def __aenter__(self) -> RealtimeTTSSession:
         await self.open()
         return self
 

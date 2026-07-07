@@ -84,7 +84,9 @@ async def test_buffer_dropped_after_ttl(monkeypatch) -> None:
     monkeypatch.setattr(
         dem,
         "get_settings",
-        lambda: types.SimpleNamespace(stream_buffer_ttl_seconds=0, stream_audio_buffer_max_chunks=50),
+        lambda: types.SimpleNamespace(
+            stream_buffer_ttl_seconds=0, stream_audio_buffer_max_chunks=50
+        ),
     )
     mgr = DebugEventManager()
     eid = uuid4()

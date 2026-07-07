@@ -143,13 +143,17 @@ class AgentNode(BaseNode):
             tts_session = None
             voice_is_system_key = False
             effective_on_delta = on_delta
-            if on_delta is not None and agent_voice.should_stream_voice(
-                cfg, on_delta=on_delta, on_audio=on_audio
+            if (
+                on_delta is not None
+                and on_audio is not None
+                and agent_voice.should_stream_voice(cfg, on_delta=on_delta, on_audio=on_audio)
             ):
-                tts_session, effective_on_delta, voice_is_system_key = (
-                    await agent_voice.open_voice_session(
-                        cfg, context, on_delta=on_delta, on_audio=on_audio
-                    )
+                (
+                    tts_session,
+                    effective_on_delta,
+                    voice_is_system_key,
+                ) = await agent_voice.open_voice_session(
+                    cfg, context, on_delta=on_delta, on_audio=on_audio
                 )
 
             result = await AgentRunner().run(

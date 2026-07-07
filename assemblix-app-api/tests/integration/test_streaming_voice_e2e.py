@@ -107,6 +107,7 @@ async def test_streaming_voice_emits_audio_before_agent_step_complete(
     types = [f["event"] for f in frames]
     assert "audio_delta" in types
     assert "execution_complete" in types
+
     def _node_type(f: dict) -> str | None:
         # The inline SSE serializes the whole DebugEvent, so the step payload is nested.
         inner = (f["data"] or {}).get("data") or {}
@@ -121,7 +122,9 @@ async def test_streaming_voice_emits_audio_before_agent_step_complete(
     assert last_audio < agent_complete
 
 
-async def test_non_stream_voice_has_no_audio_delta(api_client, mock_llm, mocker, monkeypatch) -> None:
+async def test_non_stream_voice_has_no_audio_delta(
+    api_client, mock_llm, mocker, monkeypatch
+) -> None:
     """Without stream=true the same workflow emits no audio_delta (buffered path)."""
     # Arrange
     from assemblix_api.core.settings import get_settings

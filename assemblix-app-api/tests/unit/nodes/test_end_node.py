@@ -12,7 +12,6 @@ END terminates the workflow. It:
 from __future__ import annotations
 
 from assemblix_api.nodes.end_node import EndNode
-from assemblix_api.schemas.node import EndNodeConfig
 
 from ._helpers import build_node, make_context, node_input
 

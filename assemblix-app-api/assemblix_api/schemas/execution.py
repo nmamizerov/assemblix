@@ -21,9 +21,9 @@ async def _noop_checkpoint() -> None:
 if TYPE_CHECKING:
     from assemblix_api.core.cel_evaluator import CELEvaluator
     from assemblix_api.core.template_evaluator import TemplateEvaluator
-    from assemblix_api.schemas.debug_events import AlignmentData
     from assemblix_api.enums import PlanTier
     from assemblix_api.execution.credential_resolver import CredentialResolver
+    from assemblix_api.schemas.debug_events import AlignmentData
     from assemblix_api.schemas.workflow import WorkflowDefinition
     from assemblix_api.services.chat_message_service import ChatMessageService
     from assemblix_api.services.credentials_service import CredentialsService
