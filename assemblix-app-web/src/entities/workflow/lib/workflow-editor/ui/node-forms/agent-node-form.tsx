@@ -4,6 +4,7 @@ import { useSelector } from "react-redux";
 import { BaseForm } from "./base-form";
 import { FallbackModelRow } from "./fallback-model-row";
 import { useNodeDataChange } from "./useNodeDataChange";
+import { VoiceOutputPicker } from "./voice-output-picker";
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
 import { Button } from "@/shared/ui/button";
@@ -837,6 +838,55 @@ export const AgentNodeForm = ({
                 }
                 showIcons={false}
               />
+            </div>
+          )}
+
+          {/* Output modality: text or realtime voice (text format only) */}
+          {(formData.responseFormat ?? "text") === "text" && (
+            <div className="space-y-3">
+              <div className="space-y-2">
+                <Label className="text-xs">
+                  {t("nodeForms.agent.outputType")}
+                </Label>
+                <Select
+                  value={formData.outputType ?? "text"}
+                  onValueChange={(value) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      outputType: value as "text" | "voice",
+                    }))
+                  }
+                >
+                  <SelectTrigger className="text-xs">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="text" className="text-xs">
+                      {t("nodeForms.agent.outputTypeText")}
+                    </SelectItem>
+                    <SelectItem value="voice" className="text-xs">
+                      {t("nodeForms.agent.outputTypeVoice")}
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {formData.outputType === "voice" && (
+                <>
+                  <VoiceOutputPicker
+                    value={formData.voice}
+                    onChange={(voice) =>
+                      setFormData((prev) => ({ ...prev, voice }))
+                    }
+                    capability="realtime"
+                  />
+                  {!(formData.stream ?? false) && (
+                    <p className="text-xs text-amber-600">
+                      {t("nodeForms.agent.voiceStreamHint")}
+                    </p>
+                  )}
+                </>
+              )}
             </div>
           )}
 

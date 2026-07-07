@@ -1,6 +1,7 @@
 import { useState, useCallback, useRef, useEffect } from "react";
 import { useSelector, useStore } from "react-redux";
 import { useAppDispatch, type RootState } from "@/app/store";
+import { usePcmPlayer } from "./use-pcm-player";
 import {
   updateNodeStatus,
   setExecutionId,
@@ -50,6 +51,7 @@ export const useWorkflowDebug = (props?: UseWorkflowDebugProps) => {
   const [error, setError] = useState<string | null>(null);
   const [isSessionClosed, setIsSessionClosed] = useState(false);
   const abortControllerRef = useRef<AbortController | null>(null);
+  const pcmPlayer = usePcmPlayer();
   const dispatch = useAppDispatch();
   const store = useStore<RootState>();
 
@@ -212,6 +214,12 @@ export const useWorkflowDebug = (props?: UseWorkflowDebugProps) => {
             switch (eventData.event_type) {
               case "execution_started":
                 dispatch(setExecutionId(eventData.execution_id));
+                pcmPlayer.reset();
+                break;
+
+              case "audio_delta":
+                // Realtime voice: play the streamed PCM chunk (best-effort).
+                pcmPlayer.pushChunk(eventData.data?.audio as string | undefined);
                 break;
 
               case "step_start":

@@ -90,6 +90,12 @@ export interface AgentNodeConfig {
   // Стримить текстовый вывод по токенам (только для responseFormat === "text")
   stream?: boolean;
 
+  // Output modality (moved from the END node). "voice" streams realtime audio while the
+  // agent generates when the run streams and a realtime model is selected; otherwise it
+  // synthesizes one buffered clip. `voice.provider` is a voice-provider id, not the LLM enum.
+  outputType?: "text" | "voice";
+  voice?: VoiceOutputConfig;
+
   // Список инструментов
   tools?: string[]; // Список названий инструментов, например ["web_search"]
 
@@ -183,13 +189,8 @@ export interface EndNodeConfig extends Record<string, unknown> {
   // Session
   isSessionEnd?: boolean;
 
-  // Output format. "text" (default) keeps existing behavior; "voice" also
-  // synthesizes the final message into audio via `voice`.
-  outputFormat?: "text" | "voice";
-  voice?: VoiceOutputConfig;
-  // Per-node character cap for synthesis; the effective cap is min(this, the
-  // server-side ceiling).
-  voiceMaxChars?: number;
+  // Voice output moved to the AGENT node (phase 2b); END is text-only and passes through
+  // whatever the selected source produced (including a voiced agent's audio).
 }
 
 export interface StickerNodeConfig extends Record<string, unknown> {
