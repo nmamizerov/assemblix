@@ -5,6 +5,30 @@ All notable changes to this project are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.7](https://github.com/nmamizerov/assemblix/compare/v0.2.6...v0.2.7) (2026-07-07)
+
+
+### Features
+
+* **streaming:** AgentRunner streams text deltas via event_stream_handler ([f815c94](https://github.com/nmamizerov/assemblix/commit/f815c94377eba305ca659fb008f71adffcff0fa9))
+* **streaming:** buffer lifecycle - open_buffer (no queue) + TTL cleanup ([802772f](https://github.com/nmamizerov/assemblix/commit/802772f17ecc2aba2c0466ebd19235dbd7ea228b))
+* **streaming:** buffer-backed DebugEventManager (emit_stream_delta/subscribe/is_streaming) ([ab11f46](https://github.com/nmamizerov/assemblix/commit/ab11f46b4c1c14a68070753952cfc243c183bed0))
+* **streaming:** debug-runner streaming toggle + live token rendering ([8578def](https://github.com/nmamizerov/assemblix/commit/8578def018e3e7e9cfd2d99a75e9a74daa113869))
+* **streaming:** GET /executions/{id}/stream SSE endpoint with cursor replay ([93fecf6](https://github.com/nmamizerov/assemblix/commit/93fecf676cda548d2443f70aa479918680048dae))
+* **streaming:** in-memory sequence-numbered replayable stream buffer ([573a255](https://github.com/nmamizerov/assemblix/commit/573a255076e118f0da427b740d6c63c77ab74c78))
+* **streaming:** litellm shim supports stream=True via _StreamShim ([93c8fae](https://github.com/nmamizerov/assemblix/commit/93c8fae9568f4a7fc74b04c427bccb04513dc4f6))
+* **streaming:** per-node stream flag with three-gate delta emission ([1924417](https://github.com/nmamizerov/assemblix/commit/1924417e552ee17d6f7b539b7269f5175b1bf457))
+* **streaming:** Redis Stream buffer backend with in-memory parity ([f68a30b](https://github.com/nmamizerov/assemblix/commit/f68a30bcd2cca9cc15a80df1d1c42c964f91301b))
+* **streaming:** request stream flag threads to context and opens the buffer ([d95a940](https://github.com/nmamizerov/assemblix/commit/d95a9408399e09c6ae78929e4724b272244ffc60))
+* **streaming:** STREAM_DELTA event type + seq on DebugEvent ([3efe2d0](https://github.com/nmamizerov/assemblix/commit/3efe2d0568e30295d25048fe8976fd9ee47be5b8))
+* **streaming:** token-level text streaming, debug-first (Phase 2a) ([51aae65](https://github.com/nmamizerov/assemblix/commit/51aae65c50d57a3e6ee220a7502ef91cacf65925))
+
+
+### Documentation
+
+* **streaming:** Phase 2a text streaming design spec ([95fee0e](https://github.com/nmamizerov/assemblix/commit/95fee0eba9b9ba4d6f50c708131fbc68a465759d))
+* **streaming:** Phase 2a text streaming implementation plan ([7a3ece6](https://github.com/nmamizerov/assemblix/commit/7a3ece68d478c4f4a3dfefe1cae87deaa6c7883a))
+
 ## [0.2.6](https://github.com/nmamizerov/assemblix/compare/v0.2.5...v0.2.6) (2026-07-06)
 
 
