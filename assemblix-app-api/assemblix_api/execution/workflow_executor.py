@@ -284,8 +284,9 @@ class WorkflowExecutor:
         """
         from assemblix_api.schemas.workflow import WorkflowDefinition
 
-        # 1. Check if debug mode
+        # 1. Check if debug mode / streaming
         is_debug = input_data.get("is_debug", False)
+        stream_enabled = input_data.get("stream", False)
 
         # 2. Handle client_id (create/get ClientSession if needed)
         client_id = input_data.get("client_id")
@@ -467,12 +468,15 @@ class WorkflowExecutor:
             organization_plan=organization.plan,
             chat_history=chat_history,
             db_checkpoint=self._db_checkpoint,
+            stream_enabled=stream_enabled,
         )
 
-        # 11. Create debug stream if debug mode
-        if is_debug:
+        # 11. Open the event buffer for a debug OR a streaming run.
+        if is_debug or stream_enabled:
             self._debug_event_manager.create_stream(execution.id)
-            # Wait for client to connect (max 10 seconds) so no events are missed.
+        # Only the legacy single-request debug SSE waits for the client; a streaming run
+        # (task=true) runs freely and the buffer lets a late subscriber catch up.
+        if is_debug:
             await self._debug_event_manager.wait_for_client(execution.id, timeout=10.0)
 
         return execution, context, resume_point

@@ -189,6 +189,8 @@ def _build_input_data(request: ExecuteWorkflowRequest, *, is_debug: bool) -> dic
 
     if is_debug:
         input_data["is_debug"] = True
+    if request.stream:
+        input_data["stream"] = True
 
     if request.create_session:
         input_data["create_session"] = True
