@@ -316,7 +316,7 @@ export const useWorkflowDebug = (props?: UseWorkflowDebugProps) => {
   }, []);
 
   const startDebugExecution = useCallback(
-    async (workflowId: string, inputMessage: string) => {
+    async (workflowId: string, inputMessage: string, streaming = false) => {
       const assistantMsgId = prepareRun(inputMessage);
 
       try {
@@ -326,6 +326,8 @@ export const useWorkflowDebug = (props?: UseWorkflowDebugProps) => {
         };
         const { state, projectState } = buildStateOverrides();
 
+        // `stream: true` makes streamable agent nodes emit token deltas on the same
+        // inline debug SSE (as stream_delta events), rendered live by the viewer.
         const response = await fetch(
           `/api/workflows/${workflowId}/execute/debug`,
           {
@@ -338,6 +340,7 @@ export const useWorkflowDebug = (props?: UseWorkflowDebugProps) => {
               clientId: clientIdRef.current,
               state,
               projectState,
+              stream: streaming,
             }),
             signal: abortControllerRef.current!.signal,
           },

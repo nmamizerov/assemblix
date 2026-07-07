@@ -18,6 +18,8 @@ interface DebugStepItemProps {
   isCompleted: boolean;
   data?: Record<string, unknown>;
   isRunning?: boolean;
+  // Live token text streamed from a streamable agent node (before completion).
+  streamedText?: string;
 }
 
 export const DebugStepItem = ({
@@ -25,6 +27,7 @@ export const DebugStepItem = ({
   isCompleted,
   data,
   isRunning,
+  streamedText,
 }: DebugStepItemProps) => {
   const { t } = useTranslation();
   const [isExpanded, setIsExpanded] = useState(false);
@@ -163,6 +166,15 @@ export const DebugStepItem = ({
             ))}
         </div>
       </div>
+
+      {/* Живой стриминг токенов (до завершения ноды) */}
+      {streamedText && !isCompleted && (
+        <div className="px-3 pb-3">
+          <p className="text-sm text-foreground whitespace-pre-wrap wrap-anywhere rounded border border-orange-200 dark:border-orange-800 bg-white dark:bg-gray-800 p-2">
+            {streamedText}
+          </p>
+        </div>
+      )}
 
       {/* Раскрываемый контент */}
       {isExpanded && hasExpandableData && (

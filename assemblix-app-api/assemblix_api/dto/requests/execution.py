@@ -47,6 +47,10 @@ class ExecuteWorkflowRequest(DTOModel):
         default=False,
         description="If true, returns execution_id immediately without waiting for the result (async mode)",
     )
+    stream: bool = Field(
+        default=False,
+        description="If true, stream text deltas from streamable agent nodes over SSE (subscribe via GET /executions/{id}/stream)",
+    )
 
 
 class ExecutionFilters(DTOModel):

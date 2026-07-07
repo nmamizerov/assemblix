@@ -68,6 +68,9 @@ class ExecutionContext:
     # Voice (TTS) cost, tracked separately so it can be itemized as VOICE_USAGE.
     system_voice_cost_usd: Decimal = Decimal("0")
     own_voice_cost_usd: Decimal = Decimal("0")
+    # True when the run was dispatched with request.stream — the per-node delta sink is only
+    # built when this is set (the request-level gate; the node-level gate lives on the node).
+    stream_enabled: bool = False
     # In-memory chat history (OpenAI format), built once in preparation phase.
     # Includes prior session messages (if continuing a session) plus the
     # current user message. Agent nodes read from here, not from the DB.
@@ -150,6 +153,9 @@ class ExecutionContext:
 class NodeInput:
     data: dict
     context: ExecutionContext
+    # Per-run delta sink, set by NodeRunner when the run streams; agent nodes forward it to
+    # AgentRunner. None for non-streaming runs and for non-agent nodes.
+    on_delta: Callable[[str], Awaitable[None]] | None = None
 
 
 @dataclass

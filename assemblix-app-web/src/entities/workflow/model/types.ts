@@ -87,6 +87,9 @@ export interface AgentNodeConfig {
   responseFormat?: "text" | "json_object";
   responseSchema?: Record<string, unknown>;
 
+  // Стримить текстовый вывод по токенам (только для responseFormat === "text")
+  stream?: boolean;
+
   // Список инструментов
   tools?: string[]; // Список названий инструментов, например ["web_search"]
 

@@ -15,6 +15,7 @@ from decimal import Decimal
 from typing import TYPE_CHECKING
 from uuid import UUID
 
+from assemblix_api.core.settings import get_settings
 from assemblix_api.schemas.debug_events import (
     DebugEvent,
     DebugEventType,
@@ -22,10 +23,17 @@ from assemblix_api.schemas.debug_events import (
     ExecutionCompleteEventData,
     StepCompleteEventData,
     StepStartEventData,
+    StreamDeltaEventData,
 )
 
 if TYPE_CHECKING:
+    from collections.abc import AsyncIterator
+
     from assemblix_api.execution.debug_pubsub import RedisDebugEventTransport
+    from assemblix_api.execution.stream_buffer import (
+        InMemoryStreamBuffer,
+        RedisStreamBuffer,
+    )
 
 
 class DebugEventManager:
@@ -36,12 +44,22 @@ class DebugEventManager:
     (the default), the original in-process queue path is used unchanged.
     """
 
-    def __init__(self, redis_transport: RedisDebugEventTransport | None = None) -> None:
+    def __init__(
+        self,
+        redis_transport: RedisDebugEventTransport | None = None,
+        buffer: InMemoryStreamBuffer | RedisStreamBuffer | None = None,
+    ) -> None:
         # execution_id -> asyncio.Queue (used only without Redis transport)
         self._streams: dict[UUID, asyncio.Queue] = {}
         self._client_ready: dict[UUID, asyncio.Event] = {}
         # Optional Redis Pub/Sub transport for cross-replica SSE
         self._redis_transport = redis_transport
+        # Sequence-numbered, replayable buffer backing the subscribe-by-id SSE endpoint.
+        if buffer is None:
+            from assemblix_api.execution.stream_buffer import InMemoryStreamBuffer
+
+            buffer = InMemoryStreamBuffer()
+        self._buffer = buffer
 
     @property
     def has_redis_transport(self) -> bool:
@@ -56,6 +74,7 @@ class DebugEventManager:
         queue: asyncio.Queue = asyncio.Queue()
         self._streams[execution_id] = queue
         self._client_ready[execution_id] = asyncio.Event()
+        self._buffer.open(execution_id)
         return queue
 
     def get_stream(self, execution_id: UUID) -> asyncio.Queue | None:
@@ -68,7 +87,12 @@ class DebugEventManager:
         published to the Redis channel for *execution_id*; the local queue is
         not touched.  Without a transport the event is placed on the local
         asyncio.Queue as before.
+
+        The event is first appended to the replayable buffer, which assigns its
+        monotonic ``seq`` (used by the subscribe-by-id SSE endpoint).
         """
+        await self._buffer.append(execution_id, event)
+
         if self._redis_transport is not None:
             await self._redis_transport.publish(execution_id, event.model_dump(mode="json"))
             return
@@ -77,11 +101,55 @@ class DebugEventManager:
         if queue:
             await queue.put(event)
 
+    def is_streaming(self, execution_id: UUID) -> bool:
+        """Whether a replayable buffer exists for this execution (subscribe target)."""
+        return self._buffer.is_open(execution_id)
+
+    def subscribe(self, execution_id: UUID, after_seq: int) -> AsyncIterator[DebugEvent]:
+        """Replay buffered events after *after_seq*, then tail live until the terminal event."""
+        return self._buffer.subscribe(execution_id, after_seq)
+
+    async def emit_stream_delta(
+        self, execution_id: UUID, *, step_number: int, node_id: str, delta: str
+    ) -> None:
+        """Emit a text-delta event from a streaming agent node."""
+        event_data = StreamDeltaEventData(node_id=node_id, step_number=step_number, delta=delta)
+        event = DebugEvent(
+            event_type=DebugEventType.STREAM_DELTA,
+            execution_id=execution_id,
+            timestamp=datetime.now(),
+            data=event_data.model_dump(),
+        )
+        await self.emit_event(execution_id, event)
+
+    def open_buffer(self, execution_id: UUID) -> None:
+        """Open the replayable buffer for a streaming-only run (no legacy queue).
+
+        Unlike create_stream, this does NOT allocate an asyncio.Queue — a streaming run is
+        consumed via subscribe(), so a queue would just accumulate undrained events.
+        """
+        self._buffer.open(execution_id)
+
     def cleanup_stream(self, execution_id: UUID) -> None:
         if execution_id in self._streams:
             del self._streams[execution_id]
         if execution_id in self._client_ready:
             del self._client_ready[execution_id]
+        self._buffer.drop(execution_id)
+
+    def schedule_stream_cleanup(self, execution_id: UUID) -> None:
+        """Drop the buffer (and any legacy queue) a TTL after the execution completes.
+
+        The delay lets a late or reconnecting subscriber still replay just after the run
+        finishes; after the TTL the endpoint 404s and the client falls back to task polling.
+        """
+        ttl = get_settings().stream_buffer_ttl_seconds
+
+        async def _drop_later() -> None:
+            await asyncio.sleep(ttl)
+            self.cleanup_stream(execution_id)
+
+        asyncio.create_task(_drop_later())
 
     def mark_client_ready(self, execution_id: UUID) -> None:
         """Signal that the client connected and is ready to receive events."""

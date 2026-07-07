@@ -11,6 +11,7 @@ from assemblix_api.dto.base import DTOModel
 class DebugEventType(str, Enum):
     STEP_START = "step_start"
     STEP_COMPLETE = "step_complete"
+    STREAM_DELTA = "stream_delta"
     EXECUTION_COMPLETE = "execution_complete"
     ERROR = "error"
 
@@ -22,6 +23,14 @@ class DebugEvent(DTOModel):
     execution_id: UUID
     timestamp: datetime
     data: dict[str, Any]
+    # Monotonic per-execution sequence number; the SSE `id:` and the cursor for replay.
+    seq: int = 0
+
+
+class StreamDeltaEventData(DTOModel):
+    node_id: str
+    step_number: int
+    delta: str
 
 
 class StepStartEventData(DTOModel):

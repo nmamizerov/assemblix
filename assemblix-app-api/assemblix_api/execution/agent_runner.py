@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+from collections.abc import Awaitable, Callable
 
 import structlog
 from pydantic_ai import Agent
@@ -19,7 +20,10 @@ from pydantic_ai.messages import (
     ModelMessage,
     ModelRequest,
     ModelResponse,
+    PartDeltaEvent,
+    PartStartEvent,
     TextPart,
+    TextPartDelta,
     ToolCallPart,
     ToolReturnPart,
     UserPromptPart,
@@ -88,6 +92,25 @@ def _extract_tool_executions(messages: list[ModelMessage]) -> list[dict]:
     return [calls[cid] for cid in order]
 
 
+def _make_text_delta_handler(on_delta: Callable[[str], Awaitable[None]]):
+    """Build a pydantic-ai event_stream_handler that forwards ONLY assistant text.
+
+    Fires once per model-request node (again after each tool round). The first chunk of a
+    new text part arrives as PartStartEvent(TextPart) — it must not be dropped — and the rest
+    as PartDeltaEvent(TextPartDelta). Tool-call / thinking events are ignored.
+    """
+
+    async def handler(ctx: object, events: object) -> None:
+        async for event in events:  # type: ignore[attr-defined]
+            if isinstance(event, PartStartEvent) and isinstance(event.part, TextPart):
+                if event.part.content:
+                    await on_delta(event.part.content)
+            elif isinstance(event, PartDeltaEvent) and isinstance(event.delta, TextPartDelta):
+                await on_delta(event.delta.content_delta)
+
+    return handler
+
+
 class AgentRunner:
     """Executes an agent call via Pydantic AI and maps the result."""
 
@@ -103,6 +126,7 @@ class AgentRunner:
         parse_json: bool = False,
         model_settings: ModelSettings | None = None,
         total_timeout: float | None = None,
+        on_delta: Callable[[str], Awaitable[None]] | None = None,
     ) -> AgentExecutionResult:
         history, prompt = to_pydantic_messages(conversation)
 
@@ -112,6 +136,10 @@ class AgentRunner:
             toolsets=toolsets or [],
         )
 
+        # When on_delta is supplied, pydantic-ai streams text via the handler (identical
+        # return contract, full tool loop). Otherwise the buffered path runs unchanged.
+        event_stream_handler = _make_text_delta_handler(on_delta) if on_delta else None
+
         # `total_timeout` bounds the whole agent loop (many completions + tool calls), unlike
         # the per-completion litellm `timeout`. On breach we raise a FATAL AgentRunTimeoutError
         # (do NOT retry — it would re-run already-executed tools).
@@ -119,6 +147,7 @@ class AgentRunner:
             prompt,
             message_history=history,
             model_settings=model_settings,
+            event_stream_handler=event_stream_handler,
         )
         try:
             if total_timeout is not None:
