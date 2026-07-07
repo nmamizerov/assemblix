@@ -20,6 +20,6 @@ class VoiceModelMetadata(DTOModel):
     label: str
     description: str | None = None
     capability: Literal["transcription", "speech", "realtime"]
-    route: Literal["transcription", "completion", "speech"]
+    route: Literal["transcription", "completion", "speech", "realtime"]
     cost_per_minute: float | None = None
     cost_per_char: float | None = None

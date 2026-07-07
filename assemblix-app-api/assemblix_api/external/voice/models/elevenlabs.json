@@ -23,6 +23,22 @@
       "capability": "speech",
       "route": "speech",
       "cost_per_char": 0.000015
+    },
+    {
+      "id": "eleven_flash_v2_5",
+      "label": "Flash v2.5 (realtime)",
+      "description": "Realtime low-latency streaming speech.",
+      "capability": "realtime",
+      "route": "realtime",
+      "cost_per_char": 0.000015
+    },
+    {
+      "id": "eleven_turbo_v2_5",
+      "label": "Turbo v2.5 (realtime)",
+      "description": "Realtime multilingual streaming speech.",
+      "capability": "realtime",
+      "route": "realtime",
+      "cost_per_char": 0.000015
     }
   ]
 }
