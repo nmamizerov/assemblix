@@ -14,6 +14,7 @@ Keeping this in one place removes the copy that the sequential and parallel loop
 carry, and lets each loop read as pure traversal.
 """
 
+import base64
 from collections.abc import Awaitable, Callable
 from datetime import datetime
 from decimal import Decimal
@@ -71,6 +72,17 @@ class NodeRunner:
                 )
 
             node_input.on_delta = _sink
+
+            async def _audio_sink(pcm: bytes, alignment) -> None:
+                await self._debug_event_manager.emit_audio_delta(
+                    execution_id,
+                    step_number=step_number,
+                    node_id=node_id,
+                    audio=base64.b64encode(pcm).decode("ascii"),
+                    alignment=alignment,
+                )
+
+            node_input.on_audio = _audio_sink
 
         set_nodes_in_progress(+1)
         try:
