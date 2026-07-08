@@ -23,6 +23,17 @@ def accumulate_step_cost(
     if not metadata:
         return context
 
+    # Voice cost is emitted under dedicated keys (a voiced agent step ALSO carries its own
+    # LLM `cost`), so add it separately to the voice bucket before the LLM cost below.
+    voice_cost = Decimal(str(metadata.get("voice_cost", 0) or 0))
+    if voice_cost > 0:
+        if metadata.get("voice_used_system_key", False):
+            context = replace(
+                context, system_voice_cost_usd=context.system_voice_cost_usd + voice_cost
+            )
+        else:
+            context = replace(context, own_voice_cost_usd=context.own_voice_cost_usd + voice_cost)
+
     step_cost = Decimal(str(metadata.get("cost", 0) or 0))
     if step_cost == 0:
         return context

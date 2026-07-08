@@ -23,6 +23,7 @@ if TYPE_CHECKING:
     from assemblix_api.core.template_evaluator import TemplateEvaluator
     from assemblix_api.enums import PlanTier
     from assemblix_api.execution.credential_resolver import CredentialResolver
+    from assemblix_api.schemas.debug_events import AlignmentData
     from assemblix_api.schemas.workflow import WorkflowDefinition
     from assemblix_api.services.chat_message_service import ChatMessageService
     from assemblix_api.services.credentials_service import CredentialsService
@@ -156,6 +157,8 @@ class NodeInput:
     # Per-run delta sink, set by NodeRunner when the run streams; agent nodes forward it to
     # AgentRunner. None for non-streaming runs and for non-agent nodes.
     on_delta: Callable[[str], Awaitable[None]] | None = None
+    # Per-run PCM audio sink for streaming voice; set by NodeRunner alongside on_delta.
+    on_audio: Callable[[bytes, AlignmentData | None], Awaitable[None]] | None = None
 
 
 @dataclass

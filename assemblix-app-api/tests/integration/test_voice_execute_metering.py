@@ -27,22 +27,18 @@ from tests.fixtures.workflows import agent_config, edge, node
 
 
 def _voice_output_workflow() -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
-    """START (non-voice) -> AGENT -> END (voice output, system ElevenLabs key)."""
+    """START (non-voice) -> AGENT (voice output, system ElevenLabs key) -> END (passthrough)."""
+    voice_agent = agent_config(instructions="Reply to the user.")
+    voice_agent["output_type"] = "voice"
+    voice_agent["voice"] = {
+        "provider": "elevenlabs",
+        "model": "eleven_multilingual_v2",
+        "voiceId": "v1",
+    }
     nodes = [
         node("start", "start", {}),
-        node("agent", "agent", agent_config(instructions="Reply to the user.")),
-        node(
-            "end",
-            "end",
-            {
-                "outputFormat": "voice",
-                "voice": {
-                    "provider": "elevenlabs",
-                    "model": "eleven_multilingual_v2",
-                    "voiceId": "v1",
-                },
-            },
-        ),
+        node("agent", "agent", voice_agent),
+        node("end", "end", {}),
     ]
     edges = [edge("start", "agent"), edge("agent", "end")]
     return nodes, edges
@@ -103,9 +99,9 @@ async def test_voice_run_meters_system_key_and_scrubs_audio(
 
     monkeypatch.setattr(get_settings(), "system_elevenlabs_api_key", "xi-system")
     mock_llm.set_response("Hello from the agent")
-    mocker.patch("assemblix_api.nodes.end_node.synthesize", side_effect=_fake_synth)
+    mocker.patch("assemblix_api.nodes.agent_voice.synthesize", side_effect=_fake_synth)
 
-    # Register + mint key + build a workflow whose END node emits voice (no credential -> system key).
+    # Register + mint key + build a workflow whose AGENT emits voice (no credential -> system key).
     setup = await _voice_execute_setup(api_client)
 
     # Give the org a paid plan + balance so the system-key voice cost can be charged.

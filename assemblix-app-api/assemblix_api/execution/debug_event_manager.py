@@ -17,6 +17,8 @@ from uuid import UUID
 
 from assemblix_api.core.settings import get_settings
 from assemblix_api.schemas.debug_events import (
+    AlignmentData,
+    AudioDeltaEventData,
     DebugEvent,
     DebugEventType,
     ErrorEventData,
@@ -58,7 +60,9 @@ class DebugEventManager:
         if buffer is None:
             from assemblix_api.execution.stream_buffer import InMemoryStreamBuffer
 
-            buffer = InMemoryStreamBuffer()
+            buffer = InMemoryStreamBuffer(
+                audio_max_chunks=get_settings().stream_audio_buffer_max_chunks
+            )
         self._buffer = buffer
 
     @property
@@ -121,6 +125,41 @@ class DebugEventManager:
             data=event_data.model_dump(),
         )
         await self.emit_event(execution_id, event)
+
+    async def emit_audio_delta(
+        self,
+        execution_id: UUID,
+        *,
+        step_number: int,
+        node_id: str,
+        audio: str,
+        alignment: AlignmentData | None = None,
+    ) -> None:
+        """Emit a live-only PCM audio chunk from a streaming voice agent node.
+
+        Routed to the buffer's transient path (not the retained log), so heavy PCM never
+        starves cursor replay of text/control events.
+        """
+        event_data = AudioDeltaEventData(
+            node_id=node_id, step_number=step_number, audio=audio, alignment=alignment
+        )
+        event = DebugEvent(
+            event_type=DebugEventType.AUDIO_DELTA,
+            execution_id=execution_id,
+            timestamp=datetime.now(),
+            data=event_data.model_dump(),
+        )
+        # Transient ring for the subscribe-by-id endpoint (live + tiny replay window; never
+        # retained in the cursor-replay log so heavy PCM can't starve text/control).
+        await self._buffer.append_transient(execution_id, event)
+        # Also deliver live to the inline /execute/debug queue / Redis Pub/Sub transport so
+        # that SSE consumer carries audio too. Live-only: the queue is drained, not retained.
+        if self._redis_transport is not None:
+            await self._redis_transport.publish(execution_id, event.model_dump(mode="json"))
+        else:
+            queue = self._streams.get(execution_id)
+            if queue:
+                await queue.put(event)
 
     def open_buffer(self, execution_id: UUID) -> None:
         """Open the replayable buffer for a streaming-only run (no legacy queue).

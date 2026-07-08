@@ -28,6 +28,7 @@ pytest_plugins = [
     "tests.plugins.app",
     "tests.plugins.auth",
     "tests.plugins.llm",
+    "tests.plugins.tts_ws",
 ]
 
 # assemblix-app-api/ — one level up from tests/.

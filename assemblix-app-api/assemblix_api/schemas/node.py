@@ -86,6 +86,11 @@ class AgentNodeConfig(DTOModel):
     # Stream this agent's free-form text output token-by-token when the run is dispatched
     # with request.stream=true. Only honored for response_format="text".
     stream: bool = False
+    # Output modality (voice moved here from the END node). "text" (default) unchanged;
+    # "voice" streams realtime audio when the run streams + a realtime model is set, else
+    # synthesizes one buffered base64 blob at the end of the run.
+    output_type: Literal["text", "voice"] = "text"
+    voice: VoiceOutputConfig | None = None
     tools: list[str] | None = None  # List of tool names, e.g. ["web_search"]
     # MCP servers (backend seam): accepted in the config, but a real client is not connected yet.
     mcp_servers: list[MCPServerConfig] = Field(default_factory=list)
@@ -171,12 +176,8 @@ class EndNodeConfig(DTOModel):
     project_filter: Literal["all", "none", "selected"] = "all"
     project_variables: list[str] = []  # variables for "selected"
 
-    # Output format. "text" (default) keeps existing behavior; "voice" also
-    # synthesizes the final text via `voice` into base64 audio on the output.
-    output_format: Literal["text", "voice"] = "text"
-    voice: VoiceOutputConfig | None = None
-    # Per-node character cap for synthesis; effective cap is min(this, settings ceiling).
-    voice_max_chars: int | None = None
+    # Voice output moved to the AGENT node (phase 2b). END is text-only: it selects the
+    # source output (which may already carry `audio` from a voiced agent) and passes it through.
 
     is_error: bool = False  # business error (not a technical one)
 

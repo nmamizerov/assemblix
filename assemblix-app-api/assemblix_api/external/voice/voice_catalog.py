@@ -48,3 +48,10 @@ def list_voice_models(provider: str, capability: str = "transcription") -> list[
 def list_voice_providers(capability: str = "transcription") -> list[str]:
     """Providers that expose at least one model with the given ``capability``."""
     return [p for p in VOICE_PROVIDER_LABELS if list_voice_models(p, capability)]
+
+
+def has_realtime_route(provider: str, model: str) -> bool:
+    """True when ``(provider, model)`` is registered as a realtime (WS-streaming) voice model."""
+    if provider not in VOICE_PROVIDER_LABELS:
+        return False
+    return any(m.id == model and m.capability == "realtime" for m in _provider_models(provider))
