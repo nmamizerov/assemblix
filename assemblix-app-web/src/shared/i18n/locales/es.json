@@ -608,6 +608,9 @@
       "variableDeleteError": "Error al eliminar la variable",
       "variableDeleted": "Variable eliminada"
     },
+    "avatar": {
+      "connectError": "No se pudo iniciar la sesión del avatar"
+    },
     "end": {
       "title": "Fin",
       "endpointPlaceholder": "p. ej., Éxito, Error",

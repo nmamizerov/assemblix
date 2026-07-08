@@ -1,4 +1,6 @@
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
+import { toast } from "sonner";
 import { useMintAvatarSessionMutation } from "@/entities/avatar-model";
 import { createRenderer, type AvatarRenderer, type AvatarTalkStream } from "./avatar-renderer";
 
@@ -13,20 +15,24 @@ export interface AvatarStreamDelta {
 // renderer's talk stream (lip-sync). See avatar-renderer/ (Task 14) for the
 // provider-specific implementation.
 export const useAvatarSession = (workflowId: string) => {
+  const { t } = useTranslation();
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const rendererRef = useRef<AvatarRenderer | null>(null);
   const talkRef = useRef<AvatarTalkStream | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const [mint] = useMintAvatarSessionMutation();
 
-  const connect = useCallback(async () => {
-    if (!videoRef.current || rendererRef.current) return;
-    const session = await mint({ workflowId }).unwrap();
-    const renderer = createRenderer(session.provider);
-    await renderer.connect(session.sessionToken, videoRef.current);
-    rendererRef.current = renderer;
-    setIsConnected(true);
-  }, [mint, workflowId]);
+  // Guards against the effect unmounting (or React StrictMode double-invoking
+  // it) while `connect()` is still awaiting the mint/renderer.connect calls —
+  // without it, a connect that resolves after unmount would store a live
+  // renderer that disconnect() (already run by cleanup) never tears down.
+  const cancelledRef = useRef(false);
+  useEffect(() => {
+    cancelledRef.current = false;
+    return () => {
+      cancelledRef.current = true;
+    };
+  }, []);
 
   const disconnect = useCallback(() => {
     talkRef.current?.end();
@@ -35,6 +41,29 @@ export const useAvatarSession = (workflowId: string) => {
     rendererRef.current = null;
     setIsConnected(false);
   }, []);
+
+  const connect = useCallback(async () => {
+    if (!videoRef.current || rendererRef.current) return;
+    let renderer: AvatarRenderer | null = null;
+    try {
+      const session = await mint({ workflowId }).unwrap();
+      if (cancelledRef.current) return;
+      renderer = createRenderer(session.provider);
+      await renderer.connect(session.sessionToken, videoRef.current);
+      if (cancelledRef.current) {
+        renderer.disconnect();
+        return;
+      }
+      rendererRef.current = renderer;
+      setIsConnected(true);
+    } catch (err) {
+      console.error("Error connecting avatar session:", err);
+      renderer?.disconnect();
+      rendererRef.current = null;
+      setIsConnected(false);
+      toast.error(t("nodeForms.avatar.connectError"));
+    }
+  }, [mint, workflowId, t]);
 
   // Forward one avatar-flagged STREAM_DELTA into the renderer, lazily opening
   // a talk stream on the first chunk of a reply.

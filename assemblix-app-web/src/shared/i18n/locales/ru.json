@@ -610,6 +610,9 @@
       "variableDeleteError": "Ошибка удаления переменной",
       "variableDeleted": "Переменная удалена"
     },
+    "avatar": {
+      "connectError": "Не удалось запустить сессию аватара"
+    },
     "end": {
       "title": "Конец",
       "endpointPlaceholder": "например, Успех, Ошибка",
