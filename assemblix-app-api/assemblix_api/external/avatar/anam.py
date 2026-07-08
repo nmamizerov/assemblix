@@ -16,7 +16,7 @@ _TIMEOUT = httpx.Timeout(30.0, connect=10.0)
 
 
 def _base_url() -> str:
-    return getattr(get_settings(), "anam_api_base_url", "https://api.anam.ai").rstrip("/")
+    return get_settings().anam_api_base_url.rstrip("/")
 
 
 def _client() -> httpx.AsyncClient:
