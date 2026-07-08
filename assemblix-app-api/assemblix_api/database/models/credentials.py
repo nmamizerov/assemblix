@@ -21,6 +21,7 @@ class CredentialsType(str, Enum):
     GEMINI_TOKEN = "gemini_token"
     DEEPSEEK_TOKEN = "deepseek_token"
     ELEVENLABS_TOKEN = "elevenlabs_token"
+    ANAM_TOKEN = "anam_token"
 
 
 class Credentials(UUIDMixin, TimestampMixin, Base):
