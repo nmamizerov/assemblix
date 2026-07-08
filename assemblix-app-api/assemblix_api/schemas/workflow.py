@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING, Literal
 from uuid import UUID
 
 from assemblix_api.dto.base import DTOModel
+from assemblix_api.schemas.node import WorkflowAvatarConfig
 
 if TYPE_CHECKING:
     from assemblix_api.database.models import Workflow
@@ -41,3 +42,11 @@ class WorkflowDefinition(DTOModel):
             state_schema=[StateVariable(**s) for s in workflow.state],
             config=workflow.config or {},
         )
+
+
+def parse_avatar_config(config: dict) -> WorkflowAvatarConfig | None:
+    """Parse the workflow-global avatar persona from ``workflow.config``, or None."""
+    raw = (config or {}).get("avatar")
+    if not raw:
+        return None
+    return WorkflowAvatarConfig.model_validate(raw)
