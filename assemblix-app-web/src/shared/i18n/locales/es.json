@@ -621,7 +621,11 @@
       "loadingAvatars": "Cargando avatares...",
       "selectAvatar": "Seleccionar avatar",
       "noAvatars": "No hay avatares disponibles",
-      "missingWarning": "Seleccione un avatar para habilitar la salida de avatar.",
+      "voice": "Voz",
+      "selectVoice": "Seleccionar voz",
+      "loadingVoices": "Cargando voces...",
+      "noVoices": "No hay voces disponibles",
+      "missingWarning": "Seleccione un avatar y una voz para habilitar la salida de avatar.",
       "headerEntry": "Avatar de IA",
       "connectError": "No se pudo iniciar la sesión del avatar"
     },

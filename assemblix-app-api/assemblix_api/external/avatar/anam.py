@@ -40,6 +40,22 @@ class AnamAvatar(BaseModel):
     name: str
 
 
+class AnamVoice(BaseModel):
+    id: str
+    name: str
+
+
+def _items(payload: object) -> list[dict]:
+    """anam list endpoints return either a bare array or a {"data": [...]} envelope."""
+    if isinstance(payload, list):
+        return payload
+    if isinstance(payload, dict):
+        data = payload.get("data")
+        if isinstance(data, list):
+            return data
+    return []
+
+
 def _avatar_label(item: dict) -> str:
     """Human label from an anam avatar item: 'displayName (variantName)'.
 
@@ -59,7 +75,21 @@ async def list_avatars(api_key: str) -> list[AnamAvatar]:
         )
         _raise_for_anam(resp, "avatar listing")
         data = resp.json()
-    return [AnamAvatar(id=a["id"], name=_avatar_label(a)) for a in data.get("data", [])]
+    return [AnamAvatar(id=a["id"], name=_avatar_label(a)) for a in _items(data)]
+
+
+async def list_voices(api_key: str) -> list[AnamVoice]:
+    """Return the voices available to ``api_key`` (GET /v1/voices)."""
+    async with _client() as client:
+        resp = await client.get(
+            f"{_base_url()}/v1/voices", headers={"Authorization": f"Bearer {api_key}"}
+        )
+        _raise_for_anam(resp, "voice listing")
+        data = resp.json()
+    return [
+        AnamVoice(id=v["id"], name=v.get("name") or v.get("displayName") or v["id"])
+        for v in _items(data)
+    ]
 
 
 async def mint_session_token(*, api_key: str, persona_config: dict) -> str:

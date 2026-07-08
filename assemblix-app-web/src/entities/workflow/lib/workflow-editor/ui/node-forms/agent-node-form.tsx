@@ -61,6 +61,7 @@ import {
   getCredentialTypeForProvider,
 } from "@/entities/credential";
 import { selectCurrentProjectId } from "@/entities/organization";
+import { selectHasAvatarConfig } from "../../model/editor-mode.slice";
 import { useGetServerConfigQuery } from "@/entities/config";
 import { useGetBillingUsageQuery } from "@/entities/billing";
 import { useGetKnowledgeBasesQuery } from "@/entities/knowledge-base";
@@ -140,6 +141,7 @@ export const AgentNodeForm = ({
 
   const handleDataChange = useNodeDataChange(nodeId);
   const currentProjectId = useSelector(selectCurrentProjectId);
+  const hasAvatarConfig = useSelector(selectHasAvatarConfig);
 
   // Получаем информацию о биллинге для проверки canUseOwnKeys
   const { data: billingUsage } = useGetBillingUsageQuery(undefined, {
@@ -895,7 +897,7 @@ export const AgentNodeForm = ({
                   not per node) — only surface a warning here if it's missing. */}
               {formData.outputType === "avatar" && (
                 <>
-                  {!workflow.config?.avatar?.avatarModel && (
+                  {!hasAvatarConfig && (
                     <p className="text-xs text-amber-600">
                       {t("nodeForms.agent.avatarNotConfigured")}
                     </p>

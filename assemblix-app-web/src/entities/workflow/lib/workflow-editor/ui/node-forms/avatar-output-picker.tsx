@@ -11,6 +11,7 @@ import {
   useGetAvatarProvidersQuery,
   useGetAvatarProviderModelsQuery,
   useGetCredentialAvatarsQuery,
+  useGetCredentialVoicesQuery,
   type WorkflowAvatarConfig,
 } from "@/entities/avatar-model";
 import {
@@ -65,6 +66,15 @@ export const AvatarOutputPicker = ({
       voiceId: value?.voiceId,
     });
   };
+  const handleVoiceIdChange = (voiceId: string) => {
+    onChange({
+      provider: value?.provider ?? "",
+      avatarModel: value?.avatarModel ?? "",
+      credentialId: value?.credentialId,
+      avatarId: value?.avatarId,
+      voiceId,
+    });
+  };
 
   const { data: providers = [] } = useGetAvatarProvidersQuery();
   const { data: models = [], isLoading: isLoadingModels } =
@@ -74,6 +84,11 @@ export const AvatarOutputPicker = ({
     );
   const { data: avatars = [], isLoading: isLoadingAvatars } =
     useGetCredentialAvatarsQuery(
+      { credentialId: value?.credentialId ?? "" },
+      { skip: !value?.credentialId },
+    );
+  const { data: voices = [], isLoading: isLoadingVoices } =
+    useGetCredentialVoicesQuery(
       { credentialId: value?.credentialId ?? "" },
       { skip: !value?.credentialId },
     );
@@ -179,7 +194,41 @@ export const AvatarOutputPicker = ({
         </div>
       )}
 
-      {!value?.avatarModel && (
+      {value?.credentialId && (
+        <div className="space-y-2">
+          <Label className="text-xs">{t("nodeForms.avatar.voice")}</Label>
+          <Select
+            value={value?.voiceId ?? ""}
+            onValueChange={handleVoiceIdChange}
+            disabled={isLoadingVoices}
+          >
+            <SelectTrigger className="text-xs">
+              <SelectValue
+                placeholder={
+                  isLoadingVoices
+                    ? t("nodeForms.avatar.loadingVoices")
+                    : t("nodeForms.avatar.selectVoice")
+                }
+              />
+            </SelectTrigger>
+            <SelectContent position="popper" sideOffset={5} align="end">
+              {voices.length === 0 && !isLoadingVoices ? (
+                <div className="px-2 py-1.5 text-xs text-muted-foreground">
+                  {t("nodeForms.avatar.noVoices")}
+                </div>
+              ) : (
+                voices.map((v) => (
+                  <SelectItem key={v.id} value={v.id} className="text-xs">
+                    {v.name}
+                  </SelectItem>
+                ))
+              )}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
+
+      {(!value?.avatarId || !value?.voiceId) && (
         <p className="text-xs text-amber-600">
           {t("nodeForms.avatar.missingWarning")}
         </p>

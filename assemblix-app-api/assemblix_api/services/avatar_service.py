@@ -40,6 +40,14 @@ class AvatarService:
                 detail="This workflow has no avatar configured",
             )
 
+        # anam rejects an under-defined persona (it mints a now-unsupported legacy
+        # token), so a real avatar and voice must both be selected.
+        if not avatar.avatar_id or not avatar.voice_id:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Select both an avatar and a voice for this workflow's avatar",
+            )
+
         api_key = await self._credentials.get_avatar_api_key_with_fallback(
             credentials_id=UUID(avatar.credential_id) if avatar.credential_id else None,
             project_id=workflow.project_id,

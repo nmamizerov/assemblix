@@ -110,4 +110,8 @@ export const selectAvatarConfig = (state: { editorMode: EditorModeState }) =>
 
 export const selectHasAvatarConfig = (state: {
   editorMode: EditorModeState;
-}) => Boolean(state.editorMode.avatarConfig?.avatarModel);
+}) =>
+  Boolean(
+    state.editorMode.avatarConfig?.avatarId &&
+      state.editorMode.avatarConfig?.voiceId
+  );

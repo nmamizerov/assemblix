@@ -621,7 +621,11 @@
       "loadingAvatars": "Loading avatars...",
       "selectAvatar": "Select avatar",
       "noAvatars": "No avatars available",
-      "missingWarning": "Select an avatar to enable avatar output.",
+      "voice": "Voice",
+      "selectVoice": "Select voice",
+      "loadingVoices": "Loading voices...",
+      "noVoices": "No voices available",
+      "missingWarning": "Select an avatar and a voice to enable avatar output.",
       "headerEntry": "AI avatar",
       "connectError": "Failed to start the avatar session"
     },

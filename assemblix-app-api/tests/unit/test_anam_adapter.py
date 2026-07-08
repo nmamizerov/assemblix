@@ -49,3 +49,20 @@ async def test_list_avatars_maps_items(monkeypatch):
     avatars = await anam.list_avatars("anam-key")
 
     assert [(a.id, a.name) for a in avatars] == [("a1", "Cara (desk)"), ("a2", "Leo")]
+
+
+@pytest.mark.asyncio
+async def test_list_voices_maps_items_and_bare_array(monkeypatch):
+    # Voices may come back as a bare array; name falls back to displayName/id.
+    async def _handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(
+            200,
+            json=[{"id": "v1", "name": "Aurora"}, {"id": "v2", "displayName": "Leo"}],
+        )
+
+    transport = httpx.MockTransport(_handler)
+    monkeypatch.setattr(anam, "_client", lambda: httpx.AsyncClient(transport=transport))
+
+    voices = await anam.list_voices("anam-key")
+
+    assert [(v.id, v.name) for v in voices] == [("v1", "Aurora"), ("v2", "Leo")]

@@ -30,6 +30,15 @@ export const avatarModelApi = baseApi.injectEndpoints({
         { type: "AvatarModels", id: `avatars:${credentialId}` },
       ],
     }),
+    getCredentialVoices: build.query<AvatarListItem[], { credentialId: string }>({
+      query: ({ credentialId }) => ({
+        url: `/avatar/credentials/${credentialId}/voices`,
+        method: "GET",
+      }),
+      providesTags: (_r, _e, { credentialId }) => [
+        { type: "AvatarModels", id: `voices:${credentialId}` },
+      ],
+    }),
     mintAvatarSession: build.mutation<AvatarSessionResponse, { workflowId: string }>({
       query: ({ workflowId }) => ({
         url: `/workflows/${workflowId}/avatar/session`,
@@ -43,5 +52,6 @@ export const {
   useGetAvatarProvidersQuery,
   useGetAvatarProviderModelsQuery,
   useGetCredentialAvatarsQuery,
+  useGetCredentialVoicesQuery,
   useMintAvatarSessionMutation,
 } = avatarModelApi;

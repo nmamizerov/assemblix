@@ -24,7 +24,7 @@ from assemblix_api.dto.responses.avatar import (
     AvatarProviderListItem,
     AvatarSessionResponse,
 )
-from assemblix_api.external.avatar.anam import list_avatars
+from assemblix_api.external.avatar.anam import list_avatars, list_voices
 from assemblix_api.external.avatar.avatar_catalog import (
     AVATAR_PROVIDER_LABELS,
     list_avatar_models,
@@ -87,6 +87,28 @@ async def list_credential_avatars(
     )
     avatars = await list_avatars(api_key)
     return [AvatarListItem(id=a.id, name=a.name) for a in avatars]
+
+
+@router.get("/avatar/credentials/{credentials_id}/voices", response_model=list[AvatarListItem])
+async def list_credential_voices(
+    credentials_id: UUID,
+    current_user: User = Depends(get_current_user),
+    credentials_service: CredentialsService = Depends(get_credentials_service),
+    project_service: ProjectService = Depends(get_project_service),
+) -> list[AvatarListItem]:
+    """List the anam voices available to a stored credential."""
+    credentials = await credentials_service.get_by_id(credentials_id)
+    await project_service.verify_user_project_access(current_user, credentials.project_id)
+    if credentials.type != CredentialsType.ANAM_TOKEN:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="This credential is not an anam token",
+        )
+    api_key = await credentials_service.get_decrypted_api_key(
+        credentials_id, credentials.project_id
+    )
+    voices = await list_voices(api_key)
+    return [AvatarListItem(id=v.id, name=v.name) for v in voices]
 
 
 @router.post("/workflows/{workflow_id}/avatar/session", response_model=AvatarSessionResponse)
