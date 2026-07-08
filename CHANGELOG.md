@@ -5,6 +5,42 @@ All notable changes to this project are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.8](https://github.com/nmamizerov/assemblix/compare/v0.2.7...v0.2.8) (2026-07-08)
+
+
+### Features
+
+* **voice-streaming:** agent voice helper (live gate, tee, buffered fallback, cost) ([007405c](https://github.com/nmamizerov/assemblix/commit/007405c7b1fd49a65e609eac48305d875f298fc8))
+* **voice-streaming:** AgentNodeConfig output_type + voice + validation ([5b1ca64](https://github.com/nmamizerov/assemblix/commit/5b1ca649006be2401313d89889a8a0b74f882524))
+* **voice-streaming:** AUDIO_DELTA event type + AlignmentData schema ([2e358b3](https://github.com/nmamizerov/assemblix/commit/2e358b37e4e6022d4afe21c37753a794a5dc9d18))
+* **voice-streaming:** DebugEventManager.emit_audio_delta (transient) ([77f65e7](https://github.com/nmamizerov/assemblix/commit/77f65e789e27d0784ded95d2be05beec89843c52))
+* **voice-streaming:** frontend — agent voice picker + Web Audio PCM player ([ad06570](https://github.com/nmamizerov/assemblix/commit/ad06570ba4ef4cae9833154ab8b6cb2ee58f02c2))
+* **voice-streaming:** in-memory transient audio ring (live-only, no replay starvation) ([0e17a3b](https://github.com/nmamizerov/assemblix/commit/0e17a3b61181ef2745454d1054e433cdb350ba5b))
+* **voice-streaming:** NodeInput.on_audio + node_runner PCM sink ([c115662](https://github.com/nmamizerov/assemblix/commit/c115662988821ba92faacfd756bde0548cfa076e))
+* **voice-streaming:** realtime agent→TTS streaming voice output (phase 2b) ([a56cc21](https://github.com/nmamizerov/assemblix/commit/a56cc2164448598220a6724fc150871d575a2106))
+* **voice-streaming:** realtime voice route + catalog entries ([769ddb5](https://github.com/nmamizerov/assemblix/commit/769ddb5e7ad23294cf5e6a74efc1e66d3678e41b))
+* **voice-streaming:** RealtimeTTSSession EL stream-input client + fake WS seam ([88ca990](https://github.com/nmamizerov/assemblix/commit/88ca9908500c1005e9af584ad57a4ae3a76064b5))
+* **voice-streaming:** Redis transient audio stream + seq-merged subscribe ([2948e4b](https://github.com/nmamizerov/assemblix/commit/2948e4b974ce0ddba19088537ed8e573f29efb69))
+* **voice-streaming:** settings for realtime TTS + audio buffer ([976c924](https://github.com/nmamizerov/assemblix/commit/976c924663dfa0b8ea8f19e26d2f7587423c21d5))
+* **voice-streaming:** wire live + buffered voice into AgentNode.execute ([504ece0](https://github.com/nmamizerov/assemblix/commit/504ece0e8abb24277295e4f2c97c7a1c97292d41))
+
+
+### Bug Fixes
+
+* **voice-streaming:** add agent voice i18n keys to ru/es locales (build green) ([45689a3](https://github.com/nmamizerov/assemblix/commit/45689a3f4627ba612571cc4325485f3f17488a17))
+
+
+### Documentation
+
+* **voice-streaming:** Phase 2b implementation plan (17 tasks, TDD) ([d666ada](https://github.com/nmamizerov/assemblix/commit/d666adaac4f8b70265d7df67e7670013dc222d02))
+* **voice-streaming:** Phase 2b realtime agent→TTS design spec ([e77d1f1](https://github.com/nmamizerov/assemblix/commit/e77d1f1bc70a66b08ff43603f8923cba16b67796))
+* **voice-streaming:** spike results — EL stream-input WS + Web Audio PCM ([0f54d20](https://github.com/nmamizerov/assemblix/commit/0f54d203ae619a8e9c9cb8ea121ac8f0acbf653e))
+
+
+### Refactoring
+
+* **voice-streaming:** remove synthesis from END (moved to agent) ([88fcd22](https://github.com/nmamizerov/assemblix/commit/88fcd22a7af76589bba447e6910558b5f597de0e))
+
 ## [0.2.7](https://github.com/nmamizerov/assemblix/compare/v0.2.6...v0.2.7) (2026-07-07)
 
 
