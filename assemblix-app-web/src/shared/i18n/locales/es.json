@@ -609,6 +609,18 @@
       "variableDeleted": "Variable eliminada"
     },
     "avatar": {
+      "provider": "Proveedor de avatar",
+      "selectProvider": "Seleccionar proveedor de avatar",
+      "credential": "Credencial del proveedor de avatar",
+      "selectCredential": "Seleccionar credencial",
+      "model": "Modelo de avatar",
+      "loadingModels": "Cargando modelos...",
+      "selectModel": "Seleccionar modelo de avatar",
+      "avatar": "Avatar",
+      "loadingAvatars": "Cargando avatares...",
+      "selectAvatar": "Seleccionar avatar",
+      "noAvatars": "No hay avatares disponibles",
+      "missingWarning": "Seleccione un avatar para habilitar la salida de avatar.",
       "connectError": "No se pudo iniciar la sesión del avatar"
     },
     "end": {
@@ -763,7 +775,9 @@
       "outputType": "Salida",
       "outputTypeText": "Texto",
       "outputTypeVoice": "Voz (tiempo real)",
+      "outputTypeAvatar": "Avatar de IA",
       "voiceStreamHint": "Active \"Transmitir salida\" para audio en tiempo real; de lo contrario, la voz se sintetiza como un solo clip.",
+      "avatarNotConfigured": "Este flujo de trabajo no tiene un avatar configurado. Configure uno en el encabezado del flujo de trabajo.",
       "historyField": "Campo del historial",
       "historyFieldTooltip": "Cuando la respuesta es JSON, guarda solo este campo del esquema en el historial compartido en lugar del JSON completo. La respuesta completa sigue fluyendo hacia adelante y hacia la salida final.",
       "historyFieldFull": "Respuesta completa",

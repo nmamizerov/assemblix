@@ -104,7 +104,6 @@ export interface AgentNodeConfig {
   // "avatar" additionally renders a talking-head video stream via `avatar` config.
   outputType?: "text" | "voice" | "avatar";
   voice?: VoiceOutputConfig;
-  avatar?: WorkflowAvatarConfig;
 
   // Список инструментов
   tools?: string[]; // Список названий инструментов, например ["web_search"]

@@ -609,6 +609,18 @@
       "variableDeleted": "Variable deleted"
     },
     "avatar": {
+      "provider": "Avatar provider",
+      "selectProvider": "Select avatar provider",
+      "credential": "Avatar provider credential",
+      "selectCredential": "Select credential",
+      "model": "Avatar model",
+      "loadingModels": "Loading models...",
+      "selectModel": "Select avatar model",
+      "avatar": "Avatar",
+      "loadingAvatars": "Loading avatars...",
+      "selectAvatar": "Select avatar",
+      "noAvatars": "No avatars available",
+      "missingWarning": "Select an avatar to enable avatar output.",
       "connectError": "Failed to start the avatar session"
     },
     "end": {
@@ -763,7 +775,9 @@
       "outputType": "Output",
       "outputTypeText": "Text",
       "outputTypeVoice": "Voice (realtime)",
+      "outputTypeAvatar": "AI avatar",
       "voiceStreamHint": "Enable \"Stream output\" for realtime audio; otherwise the voice is synthesized as one clip.",
+      "avatarNotConfigured": "This workflow has no avatar configured. Set one in the workflow header.",
       "historyField": "History field",
       "historyFieldTooltip": "When the answer is JSON, save only this schema field to the shared history instead of the whole JSON. The full answer still flows downstream and to the final output.",
       "historyFieldFull": "Whole answer",
