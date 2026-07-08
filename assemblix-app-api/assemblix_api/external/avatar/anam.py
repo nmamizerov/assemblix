@@ -8,6 +8,7 @@ disables anam's brain so the avatar only speaks text we push client-side.
 from __future__ import annotations
 
 import httpx
+from fastapi import HTTPException, status
 from pydantic import BaseModel
 
 from assemblix_api.core.settings import get_settings
@@ -22,6 +23,16 @@ def _base_url() -> str:
 def _client() -> httpx.AsyncClient:
     """Factory kept as a seam so tests can inject a MockTransport."""
     return httpx.AsyncClient(timeout=_TIMEOUT)
+
+
+def _raise_for_anam(resp: httpx.Response, action: str) -> None:
+    """Surface anam's response body on error instead of an opaque 500."""
+    if resp.is_success:
+        return
+    raise HTTPException(
+        status_code=status.HTTP_502_BAD_GATEWAY,
+        detail=f"anam {action} failed ({resp.status_code}): {resp.text[:500]}",
+    )
 
 
 class AnamAvatar(BaseModel):
@@ -46,7 +57,7 @@ async def list_avatars(api_key: str) -> list[AnamAvatar]:
         resp = await client.get(
             f"{_base_url()}/v1/avatars", headers={"Authorization": f"Bearer {api_key}"}
         )
-        resp.raise_for_status()
+        _raise_for_anam(resp, "avatar listing")
         data = resp.json()
     return [AnamAvatar(id=a["id"], name=_avatar_label(a)) for a in data.get("data", [])]
 
@@ -59,5 +70,12 @@ async def mint_session_token(*, api_key: str, persona_config: dict) -> str:
             headers={"Authorization": f"Bearer {api_key}"},
             json={"personaConfig": persona_config},
         )
-        resp.raise_for_status()
-        return resp.json()["sessionToken"]
+        _raise_for_anam(resp, "session-token minting")
+        body = resp.json()
+    token = body.get("sessionToken")
+    if not token:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail=f"anam session-token response missing 'sessionToken': {str(body)[:500]}",
+        )
+    return token
