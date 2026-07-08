@@ -28,5 +28,8 @@ export interface WorkflowAvatarConfig {
   avatarModel: string;
   avatarId?: string;
   voiceId?: string;
+  // Display name of the selected voice, kept so the picker can still show it when
+  // the voice isn't in the current (searched/paginated) results.
+  voiceName?: string;
   credentialId?: string;
 }

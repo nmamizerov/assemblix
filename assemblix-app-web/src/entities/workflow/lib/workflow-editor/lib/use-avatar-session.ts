@@ -19,6 +19,10 @@ export const useAvatarSession = (workflowId: string) => {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const rendererRef = useRef<AvatarRenderer | null>(null);
   const talkRef = useRef<AvatarTalkStream | null>(null);
+  // Buffers the start of a reply until it forms a phrase before opening the talk
+  // stream — sending single tokens as the first chunk makes the TTS engine clip
+  // the opening words while it warms up.
+  const pendingRef = useRef("");
   const [isConnected, setIsConnected] = useState(false);
   const [mint] = useMintAvatarSessionMutation();
 
@@ -37,6 +41,7 @@ export const useAvatarSession = (workflowId: string) => {
     connectEpochRef.current += 1;
     talkRef.current?.end();
     talkRef.current = null;
+    pendingRef.current = "";
     rendererRef.current?.disconnect();
     rendererRef.current = null;
     setIsConnected(false);
@@ -66,20 +71,40 @@ export const useAvatarSession = (workflowId: string) => {
     }
   }, [mint, workflowId, t]);
 
-  // Forward one avatar-flagged STREAM_DELTA into the renderer, lazily opening
-  // a talk stream on the first chunk of a reply.
-  const onDelta = useCallback(({ avatar, delta }: AvatarStreamDelta) => {
-    if (!avatar || !rendererRef.current) return;
-    if (!talkRef.current) talkRef.current = rendererRef.current.speak();
-    talkRef.current.chunk(delta);
+  // Open the talk stream with the buffered lead-in text (first phrase of a reply).
+  const flushPending = useCallback(() => {
+    if (!rendererRef.current || !pendingRef.current) return;
+    talkRef.current = rendererRef.current.speak();
+    talkRef.current.chunk(pendingRef.current);
+    pendingRef.current = "";
   }, []);
 
-  // Called when the avatar-emitting node's step completes: closes the talk
-  // stream so the renderer knows the utterance is finished.
+  // Forward one avatar-flagged STREAM_DELTA into the renderer. Buffer the reply's
+  // start until it forms a phrase (a boundary char or ~20 chars), then stream the
+  // rest directly — avoids the TTS engine clipping the opening words.
+  const onDelta = useCallback(
+    ({ avatar, delta }: AvatarStreamDelta) => {
+      if (!avatar || !rendererRef.current) return;
+      if (talkRef.current) {
+        talkRef.current.chunk(delta);
+        return;
+      }
+      pendingRef.current += delta;
+      if (pendingRef.current.length >= 20 || /[.!?\n]/.test(pendingRef.current)) {
+        flushPending();
+      }
+    },
+    [flushPending],
+  );
+
+  // Called when the avatar-emitting node's step completes: flush any lead-in that
+  // never reached the threshold (short reply), then close the talk stream.
   const onAvatarNodeComplete = useCallback(() => {
+    if (!talkRef.current) flushPending();
     talkRef.current?.end();
     talkRef.current = null;
-  }, []);
+    pendingRef.current = "";
+  }, [flushPending]);
 
   // Diagnostic: make the avatar speak a fixed phrase directly, bypassing the
   // workflow — isolates the provider talk path from the streaming pipeline.

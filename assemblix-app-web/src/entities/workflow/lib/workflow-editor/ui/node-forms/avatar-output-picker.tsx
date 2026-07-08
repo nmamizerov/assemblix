@@ -72,13 +72,14 @@ export const AvatarOutputPicker = ({
       voiceId: value?.voiceId,
     });
   };
-  const handleVoiceIdChange = (voiceId: string) => {
+  const handleVoiceIdChange = (voiceId: string, voiceName?: string) => {
     onChange({
       provider: value?.provider ?? "",
       avatarModel: value?.avatarModel ?? "",
       credentialId: value?.credentialId,
       avatarId: value?.avatarId,
       voiceId,
+      voiceName,
     });
   };
 
@@ -105,6 +106,14 @@ export const AvatarOutputPicker = ({
   const avatarCredentialType = provider
     ? getCredentialTypeForProvider(provider)
     : undefined;
+
+  // Keep the selected voice renderable even when it isn't in the current
+  // (searched/paginated) results, so the trigger doesn't blank out and the
+  // selection isn't lost. Uses the stored voiceName for its label.
+  const displayedVoices =
+    value?.voiceId && !voices.some((v) => v.id === value.voiceId)
+      ? [{ id: value.voiceId, name: value.voiceName ?? value.voiceId }, ...voices]
+      : voices;
 
   return (
     <div className="space-y-3">
@@ -208,7 +217,12 @@ export const AvatarOutputPicker = ({
           <Label className="text-xs">{t("nodeForms.avatar.voice")}</Label>
           <Select
             value={value?.voiceId ?? ""}
-            onValueChange={handleVoiceIdChange}
+            onValueChange={(id) =>
+              handleVoiceIdChange(
+                id,
+                displayedVoices.find((v) => v.id === id)?.name,
+              )
+            }
             onOpenChange={(open) => {
               if (!open) setVoiceSearch("");
             }}
@@ -240,12 +254,12 @@ export const AvatarOutputPicker = ({
                   <div className="px-2 py-1.5 text-xs text-muted-foreground">
                     {t("nodeForms.avatar.loadingVoices")}
                   </div>
-                ) : voices.length === 0 ? (
+                ) : displayedVoices.length === 0 ? (
                   <div className="px-2 py-1.5 text-xs text-muted-foreground">
                     {t("nodeForms.avatar.noVoices")}
                   </div>
                 ) : (
-                  voices.map((v) => (
+                  displayedVoices.map((v) => (
                     <SelectItem key={v.id} value={v.id} className="text-xs">
                       {v.name}
                     </SelectItem>

@@ -38,6 +38,7 @@ class WorkflowAvatarConfig(DTOModel):
     avatar_model: str
     avatar_id: str | None = None
     voice_id: str | None = None
+    voice_name: str | None = None  # display-only, kept so the UI can render it
     credential_id: str | None = None
 
 

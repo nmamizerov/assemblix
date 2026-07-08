@@ -180,6 +180,7 @@ export interface WorkflowAvatarConfig {
   avatarModel: string;
   avatarId?: string;
   voiceId?: string;
+  voiceName?: string;
   credentialId?: string;
 }
 
