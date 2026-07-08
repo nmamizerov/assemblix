@@ -5,6 +5,51 @@ All notable changes to this project are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.9](https://github.com/nmamizerov/assemblix/compare/v0.2.8...v0.2.9) (2026-07-08)
+
+
+### Features
+
+* **avatars:** add ANAM_TOKEN credentials type ([20fd6b6](https://github.com/nmamizerov/assemblix/commit/20fd6b6ce3ce71cb4fb50b8e13aaf3b531a91811))
+* **avatars:** AI avatar output modality (anam.ai, phase 3) ([e6019b2](https://github.com/nmamizerov/assemblix/commit/e6019b2fb42b5ec904f7a0a671f27401fd9cb0fc))
+* **avatars:** anam adapter (list_avatars + mint_session_token) ([fe34df4](https://github.com/nmamizerov/assemblix/commit/fe34df4473c90ce4f881b7eee6572e4bfe7c4f93))
+* **avatars:** anam credential mapping + avatar config types ([4fd5862](https://github.com/nmamizerov/assemblix/commit/4fd58629d9af0bb25dac12bb825872a4d778db86))
+* **avatars:** anam_api_base_url setting ([4ed6af3](https://github.com/nmamizerov/assemblix/commit/4ed6af315053ef53cac0df438b906f15601c8f98))
+* **avatars:** avatar picker in header + agent-node avatar output option ([71b4dcd](https://github.com/nmamizerov/assemblix/commit/71b4dcd2fb8a6f93b79695c6edae5029039849f7))
+* **avatars:** avatar session hook + conversational wiring ([901034b](https://github.com/nmamizerov/assemblix/commit/901034bfba42b918c144f2ea27ac56bafab456d9))
+* **avatars:** avatar-model RTK entity ([ec3f385](https://github.com/nmamizerov/assemblix/commit/ec3f3857f9971ebcc50c4be276d9f88e1f097f8a))
+* **avatars:** AvatarRenderer interface + AnamRenderer ([0470a50](https://github.com/nmamizerov/assemblix/commit/0470a50782084c5dc468074b09cde35d8f73ae1a))
+* **avatars:** BYO-only avatar API key resolver ([34221e1](https://github.com/nmamizerov/assemblix/commit/34221e1c27d90b42d0e0b6836cbfb58f3453e7df))
+* **avatars:** data-driven avatar model catalog (anam) ([19ea2a1](https://github.com/nmamizerov/assemblix/commit/19ea2a17ee8e44199d71d6c65cd3f2d058b9a5d3))
+* **avatars:** debounced server-side voice search in the picker ([616b50b](https://github.com/nmamizerov/assemblix/commit/616b50bd036cda0e46d955dd1203cd7161a707a1))
+* **avatars:** discovery + session response DTOs ([f462468](https://github.com/nmamizerov/assemblix/commit/f462468412973dcb75ef4a938dd5469c803c06b1))
+* **avatars:** discovery + workflow session-mint API ([67a7542](https://github.com/nmamizerov/assemblix/commit/67a7542238a81acb827eb676c2e01ea8e15af7da))
+* **avatars:** expose workflow config on CRUD DTOs so avatar persona persists ([e175fff](https://github.com/nmamizerov/assemblix/commit/e175fff69d4a656c60e9b023f069c1b8d859f9e7))
+* **avatars:** i18n keys for avatar output (en/es/ru) + drop stray per-node avatar field ([60bae4c](https://github.com/nmamizerov/assemblix/commit/60bae4cfb1a4c87888bffaacac42f56113177a68))
+* **avatars:** provider dispatch for session minting ([37119ff](https://github.com/nmamizerov/assemblix/commit/37119fff27dceba0fdfbc74d70b8c37ac0f88a36))
+* **avatars:** show output-format badge (voice/avatar) on the agent node ([006c3dd](https://github.com/nmamizerov/assemblix/commit/006c3dd5b975ecd4c79c00f2aecbe17a3f383aea))
+* **avatars:** tag avatar-node stream deltas for client forwarding ([73220fe](https://github.com/nmamizerov/assemblix/commit/73220fe50d78bbbe41821cd7e14dca23fd41b47d))
+* **avatars:** workflow-global avatar config + avatar output_type ([4874fae](https://github.com/nmamizerov/assemblix/commit/4874fae32133367178184074f13bd786f72f76b4))
+
+
+### Bug Fixes
+
+* **avatars:** header tooltip key, optimistic avatar config, node warning ([1d42ad5](https://github.com/nmamizerov/assemblix/commit/1d42ad5d02ca3fb6613b5c4231f0da8231262fad))
+* **avatars:** keep selected voice on search/node-edit + buffer first speech chunk ([4be07fb](https://github.com/nmamizerov/assemblix/commit/4be07fb620aac66c54ff65f1d7eddbdf457abb75))
+* **avatars:** make avatar actually speak + user-initiated debug session ([c66904d](https://github.com/nmamizerov/assemblix/commit/c66904db9a49acb006023c7f43f7842e1b52f4ba))
+* **avatars:** map anam avatar name from displayName/variantName (no 'name' field) ([cb971af](https://github.com/nmamizerov/assemblix/commit/cb971af7eadf28f9d9b082bd4d4c6b98e846786b))
+* **avatars:** per-invocation epoch guard for avatar session connect race ([5a6a65c](https://github.com/nmamizerov/assemblix/commit/5a6a65cd77186a33e08eb55af8dbf8808f252750))
+* **avatars:** require real avatarId+voiceId persona (anam dropped legacy tokens) ([9c2a706](https://github.com/nmamizerov/assemblix/commit/9c2a7063fb3a342da6dfcfce3acca6e9f15ab9a3))
+* **avatars:** surface anam error body on session-mint/list failures ([f6769c7](https://github.com/nmamizerov/assemblix/commit/f6769c75fee48a10ffea91a23adb880cc7ab00b1))
+* **avatars:** surface avatar connect errors + guard session lifecycle race ([7f23e59](https://github.com/nmamizerov/assemblix/commit/7f23e59b475ad8f49610962986e199d6ec69a957))
+* **avatars:** warn when avatar output has streaming off + log talk-stream errors ([3975f3c](https://github.com/nmamizerov/assemblix/commit/3975f3c4bc8672cd76b6054db9e3c79917af9c11))
+
+
+### Documentation
+
+* **avatars:** phase-3 AI avatars design spec ([0ffcbd0](https://github.com/nmamizerov/assemblix/commit/0ffcbd0ecb14bc54fac0574c730b7de82a23283d))
+* **avatars:** phase-3 implementation plan (16 TDD tasks) ([a7ac3a9](https://github.com/nmamizerov/assemblix/commit/a7ac3a94937d822a6640b582671ca09f15d10046))
+
 ## [0.2.8](https://github.com/nmamizerov/assemblix/compare/v0.2.7...v0.2.8) (2026-07-08)
 
 
