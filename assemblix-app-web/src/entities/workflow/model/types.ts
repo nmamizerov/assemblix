@@ -93,8 +93,10 @@ export interface AgentNodeConfig {
   // Output modality (moved from the END node). "voice" streams realtime audio while the
   // agent generates when the run streams and a realtime model is selected; otherwise it
   // synthesizes one buffered clip. `voice.provider` is a voice-provider id, not the LLM enum.
-  outputType?: "text" | "voice";
+  // "avatar" additionally renders a talking-head video stream via `avatar` config.
+  outputType?: "text" | "voice" | "avatar";
   voice?: VoiceOutputConfig;
+  avatar?: WorkflowAvatarConfig;
 
   // Список инструментов
   tools?: string[]; // Список названий инструментов, например ["web_search"]
@@ -162,6 +164,14 @@ export type FilterMode = "all" | "none" | "selected";
 export interface VoiceOutputConfig {
   provider: string;
   model: string;
+  voiceId?: string;
+  credentialId?: string;
+}
+
+export interface WorkflowAvatarConfig {
+  provider: string;
+  avatarModel: string;
+  avatarId?: string;
   voiceId?: string;
   credentialId?: string;
 }

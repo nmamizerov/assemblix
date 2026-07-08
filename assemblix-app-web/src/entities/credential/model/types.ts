@@ -3,6 +3,7 @@ export enum CredentialType {
   GEMINI_TOKEN = "gemini_token",
   DEEPSEEK_TOKEN = "deepseek_token",
   ELEVENLABS_TOKEN = "elevenlabs_token",
+  ANAM_TOKEN = "anam_token",
 }
 
 export type Credential = {
