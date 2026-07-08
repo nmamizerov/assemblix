@@ -42,6 +42,7 @@ import {
   selectNodeStatuses,
   setEditorMode,
   setNodeWarnings,
+  setAvatarConfig,
   resetExecution,
 } from "../model/editor-mode.slice";
 import { analyzeGraph } from "../helpers/graph-analysis";
@@ -140,6 +141,13 @@ const FlowCanvas = ({
   const isDebugMode = mode === "DEBUG";
   const isViewMode = viewMode === "view";
   const dispatch = useAppDispatch();
+
+  // Seed the session avatar config from the loaded workflow. updateWorkflow does
+  // not invalidate the workflow cache, so after this the header updates the slice
+  // optimistically; this effect only reseeds on load / workflow switch.
+  useEffect(() => {
+    dispatch(setAvatarConfig(workflow.config?.avatar ?? null));
+  }, [workflow.config?.avatar, dispatch]);
 
   // State для временной ноды
   const [tempNodeId, setTempNodeId] = useState<string | null>(null);

@@ -21,6 +21,7 @@ import {
 } from "@/entities/workflow/model/types";
 import { cn } from "@/shared/lib/utils";
 import { selectCurrentProjectId } from "@/entities/organization";
+import { selectAvatarConfig } from "../../model/editor-mode.slice";
 
 interface DebugPanelProps {
   workflow: Workflow;
@@ -33,8 +34,10 @@ export const DebugPanel = ({ workflow }: DebugPanelProps) => {
   const currentProjectId = useSelector(selectCurrentProjectId);
 
   // Avatar mode: the workflow has a configured AI-avatar persona (set from the
-  // editor header). Renders a live talking-head video wired to the streaming run.
-  const hasAvatar = Boolean(workflow.config?.avatar);
+  // editor header). Read from the slice (seeded from workflow.config.avatar,
+  // updated optimistically) so it reflects a just-set persona without a reload.
+  const avatarConfig = useSelector(selectAvatarConfig);
+  const hasAvatar = Boolean(avatarConfig);
   const avatarSession = useAvatarSession(workflow.id);
 
   const {

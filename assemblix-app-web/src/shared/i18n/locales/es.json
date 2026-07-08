@@ -246,7 +246,8 @@
     "node": {
       "agent": {
         "warnings": {
-          "modelNotSelected": "Modelo no seleccionado"
+          "modelNotSelected": "Modelo no seleccionado",
+          "avatarNotConfigured": "Salida de avatar seleccionada pero no hay avatar configurado para este flujo de trabajo"
         }
       },
       "warnings": {
@@ -621,6 +622,7 @@
       "selectAvatar": "Seleccionar avatar",
       "noAvatars": "No hay avatares disponibles",
       "missingWarning": "Seleccione un avatar para habilitar la salida de avatar.",
+      "headerEntry": "Avatar de IA",
       "connectError": "No se pudo iniciar la sesión del avatar"
     },
     "end": {

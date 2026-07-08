@@ -246,7 +246,8 @@
     "node": {
       "agent": {
         "warnings": {
-          "modelNotSelected": "Модель не выбрана"
+          "modelNotSelected": "Модель не выбрана",
+          "avatarNotConfigured": "Выбран вывод через аватар, но аватар не настроен в этом воркфлоу"
         }
       },
       "warnings": {
@@ -623,6 +624,7 @@
       "selectAvatar": "Выберите аватар",
       "noAvatars": "Нет доступных аватаров",
       "missingWarning": "Выберите аватар, чтобы включить вывод через аватар.",
+      "headerEntry": "ИИ-аватар",
       "connectError": "Не удалось запустить сессию аватара"
     },
     "end": {

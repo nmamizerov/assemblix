@@ -26,7 +26,9 @@ import { useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
 import {
   selectEditorMode,
+  selectAvatarConfig,
   setEditorMode,
+  setAvatarConfig,
   resetExecution,
 } from "../../model/editor-mode.slice";
 import { cn } from "@/shared/lib/utils";
@@ -61,6 +63,7 @@ export const WorkflowEditorHeader = ({
   const dispatch = useAppDispatch();
   const { t } = useTranslation();
   const mode = useSelector(selectEditorMode);
+  const avatarConfig = useSelector(selectAvatarConfig);
   const [publishWorkflow, { isLoading: isPublishing }] =
     usePublishWorkflowMutation();
   const [updateWorkflow] = useUpdateWorkflowMutation();
@@ -109,6 +112,9 @@ export const WorkflowEditorHeader = ({
   };
 
   const handleAvatarConfigChange = async (avatar: WorkflowAvatarConfig) => {
+    // Optimistic: the picker cascade and the agent-node warning read this from the
+    // slice and must react instantly (updateWorkflow does not refetch the workflow).
+    dispatch(setAvatarConfig(avatar));
     try {
       await updateWorkflow({
         ...workflow,
@@ -195,7 +201,7 @@ export const WorkflowEditorHeader = ({
               <TooltipTrigger asChild>
                 <PopoverTrigger asChild>
                   <Button
-                    variant={workflow.config?.avatar ? "secondary" : "ghost"}
+                    variant={avatarConfig ? "secondary" : "ghost"}
                     size="icon"
                   >
                     <UserRound className="size-4" />
@@ -208,7 +214,7 @@ export const WorkflowEditorHeader = ({
             </Tooltip>
             <PopoverContent align="end" className="w-80">
               <AvatarOutputPicker
-                value={workflow.config?.avatar}
+                value={avatarConfig ?? undefined}
                 onChange={handleAvatarConfigChange}
               />
             </PopoverContent>

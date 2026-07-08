@@ -246,7 +246,8 @@
     "node": {
       "agent": {
         "warnings": {
-          "modelNotSelected": "Model not selected"
+          "modelNotSelected": "Model not selected",
+          "avatarNotConfigured": "Avatar output selected but no avatar is configured for this workflow"
         }
       },
       "warnings": {
@@ -621,6 +622,7 @@
       "selectAvatar": "Select avatar",
       "noAvatars": "No avatars available",
       "missingWarning": "Select an avatar to enable avatar output.",
+      "headerEntry": "AI avatar",
       "connectError": "Failed to start the avatar session"
     },
     "end": {
