@@ -405,7 +405,12 @@ export const useWorkflowDebug = (props?: UseWorkflowDebugProps) => {
   );
 
   const startDebugAudioExecution = useCallback(
-    async (workflowId: string, audio: Blob, filename: string) => {
+    async (
+      workflowId: string,
+      audio: Blob,
+      filename: string,
+      streaming = false,
+    ) => {
       // Show the actual recording in the history so it can be played back —
       // the transcript itself is produced server-side.
       const audioUrl = URL.createObjectURL(audio);
@@ -427,6 +432,7 @@ export const useWorkflowDebug = (props?: UseWorkflowDebugProps) => {
             clientId: clientIdRef.current,
             state,
             projectState,
+            stream: streaming,
           }),
         );
 

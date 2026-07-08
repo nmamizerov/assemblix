@@ -61,10 +61,9 @@ export const DebugPanel = ({ workflow }: DebugPanelProps) => {
   const recorder = useVoiceRecorder();
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  // Mint + connect the avatar renderer for the lifetime of avatar mode.
+  // Connecting mints + bills an anam session, so it is user-initiated (a button).
+  // This effect only tears the session down when leaving avatar mode / unmounting.
   useEffect(() => {
-    if (!hasAvatar) return;
-    avatarSession.connect();
     return () => avatarSession.disconnect();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hasAvatar, workflow.id]);
@@ -78,12 +77,21 @@ export const DebugPanel = ({ workflow }: DebugPanelProps) => {
     (startNode?.data as StartNodeConfig | undefined)?.acceptVoice,
   );
 
+  // Avatar output only speaks streamed deltas, so a run in avatar mode must
+  // stream regardless of the manual toggle.
+  const shouldStream = streaming || hasAvatar;
+
   const handleMicToggle = async () => {
     if (isRunning) return;
     if (recorder.isRecording) {
       const audio = await recorder.stop();
       if (audio) {
-        startDebugAudioExecution(workflow.id, audio.blob, audio.filename);
+        startDebugAudioExecution(
+          workflow.id,
+          audio.blob,
+          audio.filename,
+          shouldStream,
+        );
       } else {
         // Empty recording — the mic captured nothing.
         toast.error(t("debug.noAudioRecorded"));
@@ -109,7 +117,7 @@ export const DebugPanel = ({ workflow }: DebugPanelProps) => {
 
   const handleExecute = () => {
     if (!inputMessage.trim() || isRunning) return;
-    startDebugExecution(workflow.id, inputMessage, streaming);
+    startDebugExecution(workflow.id, inputMessage, shouldStream);
     setInputMessage("");
   };
 
@@ -158,15 +166,46 @@ export const DebugPanel = ({ workflow }: DebugPanelProps) => {
           </div>
         </div>
 
-        {/* Аватар: рендерится, когда у workflow настроена AI-avatar персона */}
+        {/* Аватар: рендерится, когда у workflow настроена AI-avatar персона.
+            Видео всегда в DOM (videoRef нужен до подключения); сессия — по кнопке. */}
         {hasAvatar && (
-          <div className="px-4 pt-4 shrink-0">
+          <div className="px-4 pt-4 shrink-0 space-y-2">
             <video
               ref={avatarSession.videoRef}
               autoPlay
               playsInline
               className="w-full aspect-video rounded-lg bg-black object-cover"
             />
+            {avatarSession.isConnected ? (
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="flex-1"
+                  onClick={() =>
+                    avatarSession.testSpeak(t("debug.avatarTestPhrase"))
+                  }
+                >
+                  {t("debug.avatarTestSpeak")}
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => avatarSession.disconnect()}
+                >
+                  {t("debug.avatarDisconnect")}
+                </Button>
+              </div>
+            ) : (
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full"
+                onClick={() => avatarSession.connect()}
+              >
+                {t("debug.avatarConnect")}
+              </Button>
+            )}
           </div>
         )}
 

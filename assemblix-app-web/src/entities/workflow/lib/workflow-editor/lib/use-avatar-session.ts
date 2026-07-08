@@ -81,6 +81,15 @@ export const useAvatarSession = (workflowId: string) => {
     talkRef.current = null;
   }, []);
 
+  // Diagnostic: make the avatar speak a fixed phrase directly, bypassing the
+  // workflow — isolates the provider talk path from the streaming pipeline.
+  const testSpeak = useCallback((text: string) => {
+    if (!rendererRef.current) return;
+    const stream = rendererRef.current.speak();
+    stream.chunk(text);
+    stream.end();
+  }, []);
+
   return {
     videoRef,
     connect,
@@ -88,5 +97,6 @@ export const useAvatarSession = (workflowId: string) => {
     isConnected,
     onDelta,
     onAvatarNodeComplete,
+    testSpeak,
   };
 };
