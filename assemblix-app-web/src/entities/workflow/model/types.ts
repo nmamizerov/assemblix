@@ -20,6 +20,14 @@ export interface Workflow {
   edges: Edge[];
   state?: StateVariable[];
   versions?: WorkflowVersion[];
+  // Workflow-global settings not tied to any single node. Currently only holds
+  // the AI-avatar persona, set from the editor header (see WorkflowAvatarConfig).
+  config?: WorkflowConfig;
+}
+
+export interface WorkflowConfig {
+  avatar?: WorkflowAvatarConfig;
+  [key: string]: unknown;
 }
 
 export enum NodeType {

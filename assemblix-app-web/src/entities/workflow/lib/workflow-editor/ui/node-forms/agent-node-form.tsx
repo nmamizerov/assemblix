@@ -853,7 +853,7 @@ export const AgentNodeForm = ({
                   onValueChange={(value) =>
                     setFormData((prev) => ({
                       ...prev,
-                      outputType: value as "text" | "voice",
+                      outputType: value as "text" | "voice" | "avatar",
                     }))
                   }
                 >
@@ -866,6 +866,9 @@ export const AgentNodeForm = ({
                     </SelectItem>
                     <SelectItem value="voice" className="text-xs">
                       {t("nodeForms.agent.outputTypeVoice")}
+                    </SelectItem>
+                    <SelectItem value="avatar" className="text-xs">
+                      {t("nodeForms.agent.outputTypeAvatar")}
                     </SelectItem>
                   </SelectContent>
                 </Select>
@@ -887,6 +890,15 @@ export const AgentNodeForm = ({
                   )}
                 </>
               )}
+
+              {/* Avatar config is workflow-global (set once in the editor header,
+                  not per node) — only surface a warning here if it's missing. */}
+              {formData.outputType === "avatar" &&
+                !workflow.config?.avatar?.avatarModel && (
+                  <p className="text-xs text-amber-600">
+                    {t("nodeForms.agent.avatarNotConfigured")}
+                  </p>
+                )}
             </div>
           )}
 
