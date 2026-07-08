@@ -32,6 +32,9 @@ class StreamDeltaEventData(DTOModel):
     node_id: str
     step_number: int
     delta: str
+    # True when the delta comes from an agent node with output_type=="avatar";
+    # the client forwards only these into the avatar SDK's streamMessageChunk.
+    avatar: bool = False
 
 
 class AlignmentData(DTOModel):
