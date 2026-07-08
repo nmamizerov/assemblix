@@ -225,6 +225,10 @@ class Settings(BaseSettings):
     # ElevenLabs chunk_length_schedule — server-side batching to natural boundaries.
     voice_realtime_chunk_schedule: list[int] = [50, 120, 200, 300]
 
+    # anam.ai (avatar output). BYO-key only this phase — no platform key. Override
+    # the base URL to route through a proxy/gateway.
+    anam_api_base_url: str = os.getenv("ANAM_API_BASE_URL", "https://api.anam.ai")
+
     @field_validator("voice_realtime_chunk_schedule", mode="before")
     @classmethod
     def _parse_chunk_schedule(cls, v: object) -> object:

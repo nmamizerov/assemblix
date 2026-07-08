@@ -32,6 +32,10 @@ class WorkflowCreateRequest(DTOModel):
         default_factory=list,
         description="List of state variable definitions available to the workflow during execution",
     )
+    config: dict = Field(
+        default_factory=dict,
+        description="Workflow-level config object (e.g. `config.avatar`)",
+    )
     webhook_url: str | None = Field(
         default=None,
         max_length=500,
@@ -66,6 +70,11 @@ class WorkflowUpdateRequest(DTOModel):
     state: list[StateVariable] | None = Field(
         default=None,
         description="Full replacement list of state variable definitions; pass null to leave unchanged",
+    )
+    config: dict | None = Field(
+        default=None,
+        description="Full replacement of the workflow-level config object (e.g. the "
+        "avatar persona under `config.avatar`); pass null to leave unchanged",
     )
     webhook_url: str | None = Field(
         default=None,

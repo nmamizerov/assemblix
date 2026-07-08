@@ -246,7 +246,8 @@
     "node": {
       "agent": {
         "warnings": {
-          "modelNotSelected": "Модель не выбрана"
+          "modelNotSelected": "Модель не выбрана",
+          "avatarNotConfigured": "Выбран вывод через аватар, но аватар не настроен в этом воркфлоу"
         }
       },
       "warnings": {
@@ -610,6 +611,27 @@
       "variableDeleteError": "Ошибка удаления переменной",
       "variableDeleted": "Переменная удалена"
     },
+    "avatar": {
+      "provider": "Провайдер аватара",
+      "selectProvider": "Выберите провайдера аватара",
+      "credential": "Учётные данные провайдера аватара",
+      "selectCredential": "Выберите учётные данные",
+      "model": "Модель аватара",
+      "loadingModels": "Загрузка моделей...",
+      "selectModel": "Выберите модель аватара",
+      "avatar": "Аватар",
+      "loadingAvatars": "Загрузка аватаров...",
+      "selectAvatar": "Выберите аватар",
+      "noAvatars": "Нет доступных аватаров",
+      "voice": "Голос",
+      "selectVoice": "Выберите голос",
+      "searchVoice": "Поиск голоса...",
+      "loadingVoices": "Загрузка голосов...",
+      "noVoices": "Нет доступных голосов",
+      "missingWarning": "Выберите аватар и голос, чтобы включить вывод через аватар.",
+      "headerEntry": "ИИ-аватар",
+      "connectError": "Не удалось запустить сессию аватара"
+    },
     "end": {
       "title": "Конец",
       "endpointPlaceholder": "например, Успех, Ошибка",
@@ -762,7 +784,10 @@
       "outputType": "Вывод",
       "outputTypeText": "Текст",
       "outputTypeVoice": "Голос (realtime)",
+      "outputTypeAvatar": "ИИ-аватар",
       "voiceStreamHint": "Включите «Стримить вывод» для realtime-аудио; иначе голос синтезируется одним клипом.",
+      "avatarNotConfigured": "В этом воркфлоу не настроен аватар. Настройте его в шапке воркфлоу.",
+      "avatarStreamHint": "Включите «Стримить вывод» для этого агента — аватар озвучивает только стримингом.",
       "historyField": "Поле для истории",
       "historyFieldTooltip": "Если ответ в формате JSON, в общую историю сохраняется только это поле схемы, а не весь JSON. Полный ответ по-прежнему передается дальше и в итоговый результат.",
       "historyFieldFull": "Весь ответ",
@@ -812,6 +837,10 @@
     "recording": "Запись…",
     "noAudioRecorded": "Аудио не записано — проверьте доступ к микрофону.",
     "micError": "Ошибка микрофона: {{error}}",
+    "avatarConnect": "Подключиться к аватару",
+    "avatarDisconnect": "Отключиться",
+    "avatarTestSpeak": "Проверить речь аватара",
+    "avatarTestPhrase": "Привет! Это проверка голоса аватара.",
     "execute": "Выполнить",
     "stop": "Остановить",
     "streaming": "Стриминг",

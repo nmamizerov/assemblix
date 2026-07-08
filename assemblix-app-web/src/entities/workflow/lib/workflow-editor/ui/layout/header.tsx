@@ -1,7 +1,16 @@
 import { useAppDispatch } from "@/app/store";
-import { NodeType, type Workflow } from "@/entities/workflow/model/types";
+import {
+  NodeType,
+  type Workflow,
+  type WorkflowAvatarConfig,
+} from "@/entities/workflow/model/types";
 import { Button } from "@/shared/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/shared/ui/tooltip";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/shared/ui/popover";
 import { Panel, useNodes } from "@xyflow/react";
 import {
   ChevronLeft,
@@ -10,22 +19,29 @@ import {
   Loader2,
   History,
   FileText,
+  UserRound,
 } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
 import {
   selectEditorMode,
+  selectAvatarConfig,
   setEditorMode,
+  setAvatarConfig,
   resetExecution,
 } from "../../model/editor-mode.slice";
 import { cn } from "@/shared/lib/utils";
 import { WorkflowActions } from "@/entities/workflow/ui/actions";
-import { usePublishWorkflowMutation } from "@/entities/workflow";
+import {
+  usePublishWorkflowMutation,
+  useUpdateWorkflowMutation,
+} from "@/entities/workflow";
 import { PublishSuccessDialog } from "@/entities/workflow/ui/actions/publish-success-dialog";
 import { VersionsDropdown } from "@/entities/workflow/ui/versions-dropdown";
 import { AgentCallsDialog } from "@/entities/workflow/ui/agent-calls-dialog";
 import { BulkInstructionsDialog } from "@/entities/workflow/ui/bulk-instructions-dialog";
+import { AvatarOutputPicker } from "../node-forms/avatar-output-picker";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -47,12 +63,15 @@ export const WorkflowEditorHeader = ({
   const dispatch = useAppDispatch();
   const { t } = useTranslation();
   const mode = useSelector(selectEditorMode);
+  const avatarConfig = useSelector(selectAvatarConfig);
   const [publishWorkflow, { isLoading: isPublishing }] =
     usePublishWorkflowMutation();
+  const [updateWorkflow] = useUpdateWorkflowMutation();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [publishedVersion, setPublishedVersion] = useState<number>(1);
   const [isAgentCallsOpen, setIsAgentCallsOpen] = useState(false);
   const [isBulkInstructionsOpen, setIsBulkInstructionsOpen] = useState(false);
+  const [isAvatarPopoverOpen, setIsAvatarPopoverOpen] = useState(false);
 
   const nodes = useNodes();
   const hasAgents = nodes.some((node) => node.type === NodeType.AGENT);
@@ -89,6 +108,24 @@ export const WorkflowEditorHeader = ({
   const handleVersionLoad = (versionId: string) => {
     if (onLoadVersion) {
       onLoadVersion(versionId);
+    }
+  };
+
+  const handleAvatarConfigChange = async (avatar: WorkflowAvatarConfig) => {
+    // Optimistic: the picker cascade and the agent-node warning read this from the
+    // slice and must react instantly (updateWorkflow does not refetch the workflow).
+    dispatch(setAvatarConfig(avatar));
+    try {
+      await updateWorkflow({
+        ...workflow,
+        config: { ...workflow.config, avatar },
+        state: undefined,
+      }).unwrap();
+    } catch (error) {
+      console.error(error);
+      toast.error(t("errors.generic"), {
+        description: t("workflow.header.avatarConfigError"),
+      });
     }
   };
 
@@ -156,6 +193,33 @@ export const WorkflowEditorHeader = ({
         </div>
 
         <div className="flex items-center gap-1">
+          <Popover
+            open={isAvatarPopoverOpen}
+            onOpenChange={setIsAvatarPopoverOpen}
+          >
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant={avatarConfig ? "secondary" : "ghost"}
+                    size="icon"
+                  >
+                    <UserRound className="size-4" />
+                  </Button>
+                </PopoverTrigger>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>{t("nodeForms.avatar.headerEntry")}</p>
+              </TooltipContent>
+            </Tooltip>
+            <PopoverContent align="end" className="w-80">
+              <AvatarOutputPicker
+                value={avatarConfig ?? undefined}
+                onChange={handleAvatarConfigChange}
+              />
+            </PopoverContent>
+          </Popover>
+
           <Tooltip>
             <TooltipTrigger asChild>
               <span tabIndex={0}>

@@ -3,6 +3,7 @@ import OpenAIIcon from "../assets/openai.svg";
 import GeminiIcon from "../assets/google.svg";
 import DeepSeekIcon from "../assets/deepseek.svg";
 import ElevenLabsIcon from "../assets/elevenlabs.svg";
+import AnamIcon from "../assets/anam.svg";
 
 export interface CredentialTypeConfigItem {
   type: CredentialType;
@@ -38,6 +39,12 @@ export const CREDENTIAL_TYPE_CONFIG: Record<
     label: "ElevenLabs Token",
     icon: ElevenLabsIcon,
     color: "text-zinc-900",
+  },
+  [CredentialType.ANAM_TOKEN]: {
+    type: CredentialType.ANAM_TOKEN,
+    label: "Anam Token",
+    icon: AnamIcon,
+    color: "text-sky-600",
   },
 };
 

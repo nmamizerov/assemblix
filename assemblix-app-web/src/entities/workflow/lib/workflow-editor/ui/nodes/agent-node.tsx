@@ -5,10 +5,13 @@ import { BaseNode } from "./base-node";
 import { NODE_CONFIG } from "../../model/config";
 import { NodeType, type AgentNodeConfig } from "../../../../model/types";
 import { useTranslation } from "react-i18next";
+import { useSelector } from "react-redux";
+import { Volume2, UserRound } from "lucide-react";
 import {
   CREDENTIAL_TYPE_CONFIG,
   getCredentialTypeForProvider,
 } from "@/entities/credential";
+import { selectHasAvatarConfig } from "../../model/editor-mode.slice";
 
 export const AgentNode = memo(
   ({
@@ -18,10 +21,13 @@ export const AgentNode = memo(
   }: NodeProps<Node<AgentNodeConfig, NodeType.AGENT>>) => {
     const config = NODE_CONFIG[NodeType.AGENT];
     const { t } = useTranslation();
+    const hasAvatarConfig = useSelector(selectHasAvatarConfig);
 
     const warning = !data.model
       ? { message: t("workflow.node.agent.warnings.modelNotSelected") }
-      : undefined;
+      : data.outputType === "avatar" && !hasAvatarConfig
+        ? { message: t("workflow.node.agent.warnings.avatarNotConfigured") }
+        : undefined;
 
     const credentialType = getCredentialTypeForProvider(data.provider);
     const providerIcon = credentialType
@@ -52,6 +58,22 @@ export const AgentNode = memo(
               />
             )}
             <span className="text-xs text-muted-foreground">{data.model}</span>
+          </div>
+        )}
+        {(data.outputType === "voice" || data.outputType === "avatar") && (
+          <div className="mt-1.5 inline-flex items-center gap-1 rounded-md bg-muted px-1.5 py-0.5 text-xs text-muted-foreground">
+            {data.outputType === "voice" ? (
+              <Volume2 className="size-3 shrink-0" />
+            ) : (
+              <UserRound className="size-3 shrink-0" />
+            )}
+            <span>
+              {t(
+                data.outputType === "voice"
+                  ? "nodeForms.agent.outputTypeVoice"
+                  : "nodeForms.agent.outputTypeAvatar",
+              )}
+            </span>
           </div>
         )}
       </BaseNode>

@@ -17,6 +17,8 @@ const PROVIDER_TO_CREDENTIAL_TYPE: Record<string, CredentialType> = {
   deepseek: CredentialType.DEEPSEEK_TOKEN,
   // Voice (TTS) provider — used by the END-node voice-output credential picker.
   elevenlabs: CredentialType.ELEVENLABS_TOKEN,
+  // Avatar provider — used by the AGENT-node avatar-output credential picker.
+  anam: CredentialType.ANAM_TOKEN,
 };
 
 export const getCredentialTypeForProvider = (

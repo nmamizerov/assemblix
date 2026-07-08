@@ -12,6 +12,7 @@ import { Label } from "@/shared/ui/label";
 import { Play, Square, AlertCircle, Trash2, MessageCircle, Mic } from "lucide-react";
 import { useWorkflowDebug } from "../../lib/use-workflow-debug";
 import { useVoiceRecorder } from "../../lib/use-voice-recorder";
+import { useAvatarSession } from "../../lib/use-avatar-session";
 import { ExecutionViewer } from "./execution-viewer";
 import {
   NodeType,
@@ -20,6 +21,7 @@ import {
 } from "@/entities/workflow/model/types";
 import { cn } from "@/shared/lib/utils";
 import { selectCurrentProjectId } from "@/entities/organization";
+import { selectAvatarConfig } from "../../model/editor-mode.slice";
 
 interface DebugPanelProps {
   workflow: Workflow;
@@ -30,6 +32,14 @@ export const DebugPanel = ({ workflow }: DebugPanelProps) => {
   const [inputMessage, setInputMessage] = useState("");
   const [streaming, setStreaming] = useState(false);
   const currentProjectId = useSelector(selectCurrentProjectId);
+
+  // Avatar mode: the workflow has a configured AI-avatar persona (set from the
+  // editor header). Read from the slice (seeded from workflow.config.avatar,
+  // updated optimistically) so it reflects a just-set persona without a reload.
+  const avatarConfig = useSelector(selectAvatarConfig);
+  const hasAvatar = Boolean(avatarConfig);
+  const avatarSession = useAvatarSession(workflow.id);
+
   const {
     history,
     isRunning,
@@ -40,9 +50,23 @@ export const DebugPanel = ({ workflow }: DebugPanelProps) => {
     stopExecution,
     clearSession,
     continueSession,
-  } = useWorkflowDebug({ workflow, projectId: currentProjectId || undefined });
+  } = useWorkflowDebug({
+    workflow,
+    projectId: currentProjectId || undefined,
+    onStreamDelta: hasAvatar ? avatarSession.onDelta : undefined,
+    onAvatarNodeComplete: hasAvatar
+      ? avatarSession.onAvatarNodeComplete
+      : undefined,
+  });
   const recorder = useVoiceRecorder();
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  // Connecting mints + bills an anam session, so it is user-initiated (a button).
+  // This effect only tears the session down when leaving avatar mode / unmounting.
+  useEffect(() => {
+    return () => avatarSession.disconnect();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hasAvatar, workflow.id]);
 
   // Voice input is available only when the workflow's START node accepts it.
   // Read from the live ReactFlow nodes (not the persisted `workflow` prop) so a
@@ -53,12 +77,21 @@ export const DebugPanel = ({ workflow }: DebugPanelProps) => {
     (startNode?.data as StartNodeConfig | undefined)?.acceptVoice,
   );
 
+  // Avatar output only speaks streamed deltas, so a run in avatar mode must
+  // stream regardless of the manual toggle.
+  const shouldStream = streaming || hasAvatar;
+
   const handleMicToggle = async () => {
     if (isRunning) return;
     if (recorder.isRecording) {
       const audio = await recorder.stop();
       if (audio) {
-        startDebugAudioExecution(workflow.id, audio.blob, audio.filename);
+        startDebugAudioExecution(
+          workflow.id,
+          audio.blob,
+          audio.filename,
+          shouldStream,
+        );
       } else {
         // Empty recording — the mic captured nothing.
         toast.error(t("debug.noAudioRecorded"));
@@ -84,7 +117,7 @@ export const DebugPanel = ({ workflow }: DebugPanelProps) => {
 
   const handleExecute = () => {
     if (!inputMessage.trim() || isRunning) return;
-    startDebugExecution(workflow.id, inputMessage, streaming);
+    startDebugExecution(workflow.id, inputMessage, shouldStream);
     setInputMessage("");
   };
 
@@ -132,6 +165,49 @@ export const DebugPanel = ({ workflow }: DebugPanelProps) => {
             </Button>
           </div>
         </div>
+
+        {/* Аватар: рендерится, когда у workflow настроена AI-avatar персона.
+            Видео всегда в DOM (videoRef нужен до подключения); сессия — по кнопке. */}
+        {hasAvatar && (
+          <div className="px-4 pt-4 shrink-0 space-y-2">
+            <video
+              ref={avatarSession.videoRef}
+              autoPlay
+              playsInline
+              className="w-full aspect-video rounded-lg bg-black object-cover"
+            />
+            {avatarSession.isConnected ? (
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="flex-1"
+                  onClick={() =>
+                    avatarSession.testSpeak(t("debug.avatarTestPhrase"))
+                  }
+                >
+                  {t("debug.avatarTestSpeak")}
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => avatarSession.disconnect()}
+                >
+                  {t("debug.avatarDisconnect")}
+                </Button>
+              </div>
+            ) : (
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full"
+                onClick={() => avatarSession.connect()}
+              >
+                {t("debug.avatarConnect")}
+              </Button>
+            )}
+          </div>
+        )}
 
         {/* Список сообщений чата */}
         <div className="flex-1 min-h-0 overflow-hidden">

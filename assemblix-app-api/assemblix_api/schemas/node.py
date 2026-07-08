@@ -30,6 +30,18 @@ class VoiceOutputConfig(DTOModel):
     credential_id: str | None = None
 
 
+class WorkflowAvatarConfig(DTOModel):
+    """Workflow-global avatar persona. Set in the editor header, stored in
+    ``workflow.config["avatar"]``. Avatars are BYO-key only (credential_id)."""
+
+    provider: str
+    avatar_model: str
+    avatar_id: str | None = None
+    voice_id: str | None = None
+    voice_name: str | None = None  # display-only, kept so the UI can render it
+    credential_id: str | None = None
+
+
 class StartNodeConfig(DTOModel):
     # On a new session this greeting is stored as an assistant message and
     # becomes part of the chat history.
@@ -88,8 +100,9 @@ class AgentNodeConfig(DTOModel):
     stream: bool = False
     # Output modality (voice moved here from the END node). "text" (default) unchanged;
     # "voice" streams realtime audio when the run streams + a realtime model is set, else
-    # synthesizes one buffered base64 blob at the end of the run.
-    output_type: Literal["text", "voice"] = "text"
+    # synthesizes one buffered base64 blob at the end of the run. "avatar" reuses the
+    # text streaming (2a) for a workflow-level avatar; no per-node avatar config.
+    output_type: Literal["text", "voice", "avatar"] = "text"
     voice: VoiceOutputConfig | None = None
     tools: list[str] | None = None  # List of tool names, e.g. ["web_search"]
     # MCP servers (backend seam): accepted in the config, but a real client is not connected yet.

@@ -114,10 +114,18 @@ class DebugEventManager:
         return self._buffer.subscribe(execution_id, after_seq)
 
     async def emit_stream_delta(
-        self, execution_id: UUID, *, step_number: int, node_id: str, delta: str
+        self,
+        execution_id: UUID,
+        *,
+        step_number: int,
+        node_id: str,
+        delta: str,
+        avatar: bool = False,
     ) -> None:
         """Emit a text-delta event from a streaming agent node."""
-        event_data = StreamDeltaEventData(node_id=node_id, step_number=step_number, delta=delta)
+        event_data = StreamDeltaEventData(
+            node_id=node_id, step_number=step_number, delta=delta, avatar=avatar
+        )
         event = DebugEvent(
             event_type=DebugEventType.STREAM_DELTA,
             execution_id=execution_id,

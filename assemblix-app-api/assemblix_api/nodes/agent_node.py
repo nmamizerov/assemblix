@@ -134,8 +134,11 @@ class AgentNode(BaseNode):
             context.organization_id, cfg.provider.value, hold_timeout=total_timeout
         ):
             # Format gate: stream only free-form text (parse_json False) when the node opts in.
+            # avatar output implies streaming — the avatar has no buffered path and only
+            # speaks streamed deltas, so it must stream regardless of the node's stream flag.
             # The request-level gate already decided whether node_input.on_delta exists.
-            on_delta = node_input.on_delta if (cfg.stream and not parse_json) else None
+            wants_stream = cfg.stream or cfg.output_type == "avatar"
+            on_delta = node_input.on_delta if (wants_stream and not parse_json) else None
             on_audio = node_input.on_audio
 
             # Live voice: when the run streams a realtime-voice agent, tee each text delta into

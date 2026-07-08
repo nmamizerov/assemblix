@@ -20,6 +20,14 @@ export interface Workflow {
   edges: Edge[];
   state?: StateVariable[];
   versions?: WorkflowVersion[];
+  // Workflow-global settings not tied to any single node. Currently only holds
+  // the AI-avatar persona, set from the editor header (see WorkflowAvatarConfig).
+  config?: WorkflowConfig;
+}
+
+export interface WorkflowConfig {
+  avatar?: WorkflowAvatarConfig;
+  [key: string]: unknown;
 }
 
 export enum NodeType {
@@ -93,7 +101,8 @@ export interface AgentNodeConfig {
   // Output modality (moved from the END node). "voice" streams realtime audio while the
   // agent generates when the run streams and a realtime model is selected; otherwise it
   // synthesizes one buffered clip. `voice.provider` is a voice-provider id, not the LLM enum.
-  outputType?: "text" | "voice";
+  // "avatar" additionally renders a talking-head video stream via `avatar` config.
+  outputType?: "text" | "voice" | "avatar";
   voice?: VoiceOutputConfig;
 
   // Список инструментов
@@ -163,6 +172,15 @@ export interface VoiceOutputConfig {
   provider: string;
   model: string;
   voiceId?: string;
+  credentialId?: string;
+}
+
+export interface WorkflowAvatarConfig {
+  provider: string;
+  avatarModel: string;
+  avatarId?: string;
+  voiceId?: string;
+  voiceName?: string;
   credentialId?: string;
 }
 

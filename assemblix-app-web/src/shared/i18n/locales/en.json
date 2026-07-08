@@ -246,7 +246,8 @@
     "node": {
       "agent": {
         "warnings": {
-          "modelNotSelected": "Model not selected"
+          "modelNotSelected": "Model not selected",
+          "avatarNotConfigured": "Avatar output selected but no avatar is configured for this workflow"
         }
       },
       "warnings": {
@@ -608,6 +609,27 @@
       "variableDeleteError": "Error deleting variable",
       "variableDeleted": "Variable deleted"
     },
+    "avatar": {
+      "provider": "Avatar provider",
+      "selectProvider": "Select avatar provider",
+      "credential": "Avatar provider credential",
+      "selectCredential": "Select credential",
+      "model": "Avatar model",
+      "loadingModels": "Loading models...",
+      "selectModel": "Select avatar model",
+      "avatar": "Avatar",
+      "loadingAvatars": "Loading avatars...",
+      "selectAvatar": "Select avatar",
+      "noAvatars": "No avatars available",
+      "voice": "Voice",
+      "selectVoice": "Select voice",
+      "searchVoice": "Search voice...",
+      "loadingVoices": "Loading voices...",
+      "noVoices": "No voices available",
+      "missingWarning": "Select an avatar and a voice to enable avatar output.",
+      "headerEntry": "AI avatar",
+      "connectError": "Failed to start the avatar session"
+    },
     "end": {
       "title": "End",
       "endpointPlaceholder": "e.g., Success, Error",
@@ -760,7 +782,10 @@
       "outputType": "Output",
       "outputTypeText": "Text",
       "outputTypeVoice": "Voice (realtime)",
+      "outputTypeAvatar": "AI avatar",
       "voiceStreamHint": "Enable \"Stream output\" for realtime audio; otherwise the voice is synthesized as one clip.",
+      "avatarNotConfigured": "This workflow has no avatar configured. Set one in the workflow header.",
+      "avatarStreamHint": "Turn on \"Stream output\" for this agent — the avatar only speaks streamed text.",
       "historyField": "History field",
       "historyFieldTooltip": "When the answer is JSON, save only this schema field to the shared history instead of the whole JSON. The full answer still flows downstream and to the final output.",
       "historyFieldFull": "Whole answer",
@@ -810,6 +835,10 @@
     "recording": "Recording…",
     "noAudioRecorded": "No audio captured — check microphone access.",
     "micError": "Microphone error: {{error}}",
+    "avatarConnect": "Connect to avatar",
+    "avatarDisconnect": "Disconnect",
+    "avatarTestSpeak": "Test avatar speech",
+    "avatarTestPhrase": "Hello! This is a test of the avatar voice.",
     "execute": "Execute",
     "stop": "Stop",
     "streaming": "Streaming",

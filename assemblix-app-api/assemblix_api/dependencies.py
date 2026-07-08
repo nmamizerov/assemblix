@@ -62,6 +62,7 @@ from assemblix_api.database.repositories.workflow_repository import WorkflowRepo
 from assemblix_api.execution.debug_event_manager import DebugEventManager
 from assemblix_api.execution.workflow_executor import WorkflowExecutor
 from assemblix_api.services.api_key_service import APIKeyService
+from assemblix_api.services.avatar_service import AvatarService
 from assemblix_api.services.chat_message_service import ChatMessageService
 from assemblix_api.services.chat_service import ChatService
 from assemblix_api.services.client_session_service import ClientSessionService
@@ -414,6 +415,14 @@ async def get_project_service(
     ),
 ) -> ProjectService:
     return ProjectService(project_repository, organization_user_repository)
+
+
+async def get_avatar_service(
+    workflow_service: WorkflowService = Depends(get_workflow_service),
+    credentials_service: CredentialsService = Depends(get_credentials_service),
+    project_service: ProjectService = Depends(get_project_service),
+) -> AvatarService:
+    return AvatarService(workflow_service, credentials_service, project_service)
 
 
 async def get_execution_service(

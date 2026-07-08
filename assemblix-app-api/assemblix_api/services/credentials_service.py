@@ -176,6 +176,38 @@ class CredentialsService(BaseService[Credentials, CredentialsRepository]):
 
         return self._get_voice_system_key(voice_provider, settings), True
 
+    _AVATAR_PROVIDER_TO_CREDENTIALS_TYPE = {"anam": CredentialsType.ANAM_TOKEN}
+
+    async def get_avatar_api_key_with_fallback(
+        self,
+        credentials_id: UUID | None,
+        project_id: UUID,
+        avatar_provider: str,
+    ) -> str:
+        """Resolve an avatar-provider API key. BYO-only: no system key.
+
+        A missing, unowned, or incompatible credential is a hard 400 (unlike the
+        voice resolver, avatars have no system-key fallback this phase).
+        """
+        expected = self._AVATAR_PROVIDER_TO_CREDENTIALS_TYPE.get(avatar_provider)
+        if expected is None:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Unknown avatar provider {avatar_provider!r}",
+            )
+        if not credentials_id:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"An avatar provider credential is required for {avatar_provider}",
+            )
+        credentials = await self._check_ownership(credentials_id, project_id)
+        if credentials.type != expected:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Credentials type is not compatible with avatar provider {avatar_provider}",
+            )
+        return await self.get_decrypted_api_key(credentials_id, project_id)
+
     def _get_voice_system_key(self, voice_provider: str, settings) -> str:
         """Return the configured system key for a voice provider, or raise 503."""
         key_map = {"elevenlabs": settings.system_elevenlabs_api_key}

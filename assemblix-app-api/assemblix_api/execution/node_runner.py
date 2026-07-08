@@ -65,10 +65,17 @@ class NodeRunner:
         ctx = node_input.context
         if ctx.stream_enabled and self._debug_event_manager.is_streaming(ctx.execution_id):
             execution_id = ctx.execution_id
+            is_avatar = (
+                getattr(getattr(node, "typed_config", None), "output_type", None) == "avatar"
+            )
 
             async def _sink(text: str) -> None:
                 await self._debug_event_manager.emit_stream_delta(
-                    execution_id, step_number=step_number, node_id=node_id, delta=text
+                    execution_id,
+                    step_number=step_number,
+                    node_id=node_id,
+                    delta=text,
+                    avatar=is_avatar,
                 )
 
             node_input.on_delta = _sink
