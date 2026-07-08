@@ -38,9 +38,18 @@ export interface HistoryItem {
   audioUrl?: string;
 }
 
+export interface StreamDeltaPayload {
+  avatar: boolean;
+  delta: string;
+}
+
 interface UseWorkflowDebugProps {
   workflow?: Workflow;
   projectId?: string;
+  // Forwarded per STREAM_DELTA event (avatar mode: fed into the talk stream).
+  onStreamDelta?: (payload: StreamDeltaPayload) => void;
+  // Fired once the avatar-emitting node's step completes (closes the talk stream).
+  onAvatarNodeComplete?: () => void;
 }
 
 export const useWorkflowDebug = (props?: UseWorkflowDebugProps) => {
@@ -48,6 +57,9 @@ export const useWorkflowDebug = (props?: UseWorkflowDebugProps) => {
   const [isRunning, setIsRunning] = useState(false);
   const sessionIdRef = useRef<string | null>(null);
   const clientIdRef = useRef<string | null>(null);
+  // Node ids that have emitted at least one avatar-flagged stream_delta in the
+  // current run, so step_complete can tell whether to close the talk stream.
+  const avatarNodeIdsRef = useRef<Set<string>>(new Set());
   const [error, setError] = useState<string | null>(null);
   const [isSessionClosed, setIsSessionClosed] = useState(false);
   const abortControllerRef = useRef<AbortController | null>(null);
@@ -87,6 +99,7 @@ export const useWorkflowDebug = (props?: UseWorkflowDebugProps) => {
     clientIdRef.current = `debug-${crypto.randomUUID()}`;
     setError(null);
     setIsSessionClosed(false);
+    avatarNodeIdsRef.current.clear();
 
     dispatch(
       resetRuntimeState({
@@ -215,12 +228,25 @@ export const useWorkflowDebug = (props?: UseWorkflowDebugProps) => {
               case "execution_started":
                 dispatch(setExecutionId(eventData.execution_id));
                 pcmPlayer.reset();
+                avatarNodeIdsRef.current.clear();
                 break;
 
               case "audio_delta":
                 // Realtime voice: play the streamed PCM chunk (best-effort).
                 pcmPlayer.pushChunk(eventData.data?.audio as string | undefined);
                 break;
+
+              case "stream_delta": {
+                // Text-delta from a streaming agent node. Existing consumers
+                // (e.g. ExecutionViewer) read it off `history[].events`; here we
+                // additionally forward avatar-flagged deltas for lip-sync.
+                const avatar = Boolean(eventData.data?.avatar);
+                const delta = (eventData.data?.delta as string) || "";
+                const nodeId = eventData.data?.node_id as string | undefined;
+                if (avatar && nodeId) avatarNodeIdsRef.current.add(nodeId);
+                if (delta) props?.onStreamDelta?.({ avatar, delta });
+                break;
+              }
 
               case "step_start":
                 if (eventData.data?.node_id) {
@@ -235,12 +261,18 @@ export const useWorkflowDebug = (props?: UseWorkflowDebugProps) => {
 
               case "step_complete":
                 if (eventData.data?.node_id) {
+                  const nodeId = eventData.data.node_id as string;
                   dispatch(
                     updateNodeStatus({
-                      nodeId: eventData.data.node_id as string,
+                      nodeId,
                       status: "completed",
                     }),
                   );
+                  // The avatar-emitting node finished its step: close the talk
+                  // stream so the renderer knows the utterance ended.
+                  if (avatarNodeIdsRef.current.delete(nodeId)) {
+                    props?.onAvatarNodeComplete?.();
+                  }
                 }
                 // Real-time обновление state по мере выполнения шагов
                 if (
@@ -313,7 +345,7 @@ export const useWorkflowDebug = (props?: UseWorkflowDebugProps) => {
         }
       }
     },
-    [dispatch],
+    [dispatch, props?.onStreamDelta, props?.onAvatarNodeComplete],
   );
 
   const handleRunError = useCallback((err: unknown) => {

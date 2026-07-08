@@ -3,6 +3,7 @@ import type {
   AvatarListItem,
   AvatarModelMetadata,
   AvatarProviderListItem,
+  AvatarSessionResponse,
 } from "../model/types";
 
 export const avatarModelApi = baseApi.injectEndpoints({
@@ -29,6 +30,12 @@ export const avatarModelApi = baseApi.injectEndpoints({
         { type: "AvatarModels", id: `avatars:${credentialId}` },
       ],
     }),
+    mintAvatarSession: build.mutation<AvatarSessionResponse, { workflowId: string }>({
+      query: ({ workflowId }) => ({
+        url: `/workflows/${workflowId}/avatar/session`,
+        method: "POST",
+      }),
+    }),
   }),
 });
 
@@ -36,4 +43,5 @@ export const {
   useGetAvatarProvidersQuery,
   useGetAvatarProviderModelsQuery,
   useGetCredentialAvatarsQuery,
+  useMintAvatarSessionMutation,
 } = avatarModelApi;

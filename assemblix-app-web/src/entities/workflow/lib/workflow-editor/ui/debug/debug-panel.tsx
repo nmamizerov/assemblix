@@ -12,6 +12,7 @@ import { Label } from "@/shared/ui/label";
 import { Play, Square, AlertCircle, Trash2, MessageCircle, Mic } from "lucide-react";
 import { useWorkflowDebug } from "../../lib/use-workflow-debug";
 import { useVoiceRecorder } from "../../lib/use-voice-recorder";
+import { useAvatarSession } from "../../lib/use-avatar-session";
 import { ExecutionViewer } from "./execution-viewer";
 import {
   NodeType,
@@ -30,6 +31,12 @@ export const DebugPanel = ({ workflow }: DebugPanelProps) => {
   const [inputMessage, setInputMessage] = useState("");
   const [streaming, setStreaming] = useState(false);
   const currentProjectId = useSelector(selectCurrentProjectId);
+
+  // Avatar mode: the workflow has a configured AI-avatar persona (set from the
+  // editor header). Renders a live talking-head video wired to the streaming run.
+  const hasAvatar = Boolean(workflow.config?.avatar);
+  const avatarSession = useAvatarSession(workflow.id);
+
   const {
     history,
     isRunning,
@@ -40,9 +47,24 @@ export const DebugPanel = ({ workflow }: DebugPanelProps) => {
     stopExecution,
     clearSession,
     continueSession,
-  } = useWorkflowDebug({ workflow, projectId: currentProjectId || undefined });
+  } = useWorkflowDebug({
+    workflow,
+    projectId: currentProjectId || undefined,
+    onStreamDelta: hasAvatar ? avatarSession.onDelta : undefined,
+    onAvatarNodeComplete: hasAvatar
+      ? avatarSession.onAvatarNodeComplete
+      : undefined,
+  });
   const recorder = useVoiceRecorder();
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  // Mint + connect the avatar renderer for the lifetime of avatar mode.
+  useEffect(() => {
+    if (!hasAvatar) return;
+    avatarSession.connect();
+    return () => avatarSession.disconnect();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hasAvatar, workflow.id]);
 
   // Voice input is available only when the workflow's START node accepts it.
   // Read from the live ReactFlow nodes (not the persisted `workflow` prop) so a
@@ -132,6 +154,18 @@ export const DebugPanel = ({ workflow }: DebugPanelProps) => {
             </Button>
           </div>
         </div>
+
+        {/* Аватар: рендерится, когда у workflow настроена AI-avatar персона */}
+        {hasAvatar && (
+          <div className="px-4 pt-4 shrink-0">
+            <video
+              ref={avatarSession.videoRef}
+              autoPlay
+              playsInline
+              className="w-full aspect-video rounded-lg bg-black object-cover"
+            />
+          </div>
+        )}
 
         {/* Список сообщений чата */}
         <div className="flex-1 min-h-0 overflow-hidden">
