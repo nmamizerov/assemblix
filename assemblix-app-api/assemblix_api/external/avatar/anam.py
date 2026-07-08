@@ -29,6 +29,17 @@ class AnamAvatar(BaseModel):
     name: str
 
 
+def _avatar_label(item: dict) -> str:
+    """Human label from an anam avatar item: 'displayName (variantName)'.
+
+    anam avatars carry ``displayName`` + optional ``variantName`` (there is no
+    single ``name`` field); the variant disambiguates same-named avatars.
+    """
+    display = item.get("displayName") or item["id"]
+    variant = item.get("variantName")
+    return f"{display} ({variant})" if variant else display
+
+
 async def list_avatars(api_key: str) -> list[AnamAvatar]:
     """Return the avatars available to ``api_key`` (GET /v1/avatars)."""
     async with _client() as client:
@@ -37,7 +48,7 @@ async def list_avatars(api_key: str) -> list[AnamAvatar]:
         )
         resp.raise_for_status()
         data = resp.json()
-    return [AnamAvatar(id=a["id"], name=a["name"]) for a in data.get("data", [])]
+    return [AnamAvatar(id=a["id"], name=_avatar_label(a)) for a in data.get("data", [])]
 
 
 async def mint_session_token(*, api_key: str, persona_config: dict) -> str:
