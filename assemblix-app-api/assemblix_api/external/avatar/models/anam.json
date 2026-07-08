@@ -1,0 +1,11 @@
+{
+  "models": [
+    {
+      "id": "cara",
+      "label": "Cara",
+      "description": "Default anam avatar persona.",
+      "avatar_model": "cara-4",
+      "cost_per_minute": null
+    }
+  ]
+}
