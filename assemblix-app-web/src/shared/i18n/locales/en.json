@@ -623,6 +623,7 @@
       "noAvatars": "No avatars available",
       "voice": "Voice",
       "selectVoice": "Select voice",
+      "searchVoice": "Search voice...",
       "loadingVoices": "Loading voices...",
       "noVoices": "No voices available",
       "missingWarning": "Select an avatar and a voice to enable avatar output.",

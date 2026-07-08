@@ -52,17 +52,23 @@ async def test_list_avatars_maps_items(monkeypatch):
 
 
 @pytest.mark.asyncio
-async def test_list_voices_maps_items_and_bare_array(monkeypatch):
-    # Voices may come back as a bare array; name falls back to displayName/id.
+async def test_list_voices_maps_items_and_forwards_search(monkeypatch):
+    # Voices come back under {data:[]}; name falls back to displayName/id. The
+    # request forwards perPage=100 and the search term.
+    captured = {}
+
     async def _handler(request: httpx.Request) -> httpx.Response:
+        captured["params"] = dict(request.url.params)
         return httpx.Response(
             200,
-            json=[{"id": "v1", "name": "Aurora"}, {"id": "v2", "displayName": "Leo"}],
+            json={"data": [{"id": "v1", "displayName": "Aurora"}, {"id": "v2", "name": "Leo"}]},
         )
 
     transport = httpx.MockTransport(_handler)
     monkeypatch.setattr(anam, "_client", lambda: httpx.AsyncClient(transport=transport))
 
-    voices = await anam.list_voices("anam-key")
+    voices = await anam.list_voices("anam-key", search="aur")
 
     assert [(v.id, v.name) for v in voices] == [("v1", "Aurora"), ("v2", "Leo")]
+    assert captured["params"]["perPage"] == "100"
+    assert captured["params"]["search"] == "aur"

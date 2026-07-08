@@ -78,11 +78,20 @@ async def list_avatars(api_key: str) -> list[AnamAvatar]:
     return [AnamAvatar(id=a["id"], name=_avatar_label(a)) for a in _items(data)]
 
 
-async def list_voices(api_key: str) -> list[AnamVoice]:
-    """Return the voices available to ``api_key`` (GET /v1/voices)."""
+async def list_voices(api_key: str, *, search: str | None = None) -> list[AnamVoice]:
+    """Return the voices available to ``api_key`` (GET /v1/voices).
+
+    anam paginates voices (default 10/page) and supports a server-side ``search``
+    over the display name; request the max page size and forward the search term.
+    """
+    params: dict[str, str | int] = {"perPage": 100}
+    if search:
+        params["search"] = search
     async with _client() as client:
         resp = await client.get(
-            f"{_base_url()}/v1/voices", headers={"Authorization": f"Bearer {api_key}"}
+            f"{_base_url()}/v1/voices",
+            headers={"Authorization": f"Bearer {api_key}"},
+            params=params,
         )
         _raise_for_anam(resp, "voice listing")
         data = resp.json()

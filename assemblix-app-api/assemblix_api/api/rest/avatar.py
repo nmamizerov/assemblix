@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from assemblix_api.database.models.credentials import CredentialsType
 from assemblix_api.database.models.user import User
@@ -92,11 +92,12 @@ async def list_credential_avatars(
 @router.get("/avatar/credentials/{credentials_id}/voices", response_model=list[AvatarListItem])
 async def list_credential_voices(
     credentials_id: UUID,
+    search: str | None = Query(default=None, description="Filter voices by display name"),
     current_user: User = Depends(get_current_user),
     credentials_service: CredentialsService = Depends(get_credentials_service),
     project_service: ProjectService = Depends(get_project_service),
 ) -> list[AvatarListItem]:
-    """List the anam voices available to a stored credential."""
+    """List the anam voices available to a stored credential (optional name search)."""
     credentials = await credentials_service.get_by_id(credentials_id)
     await project_service.verify_user_project_access(current_user, credentials.project_id)
     if credentials.type != CredentialsType.ANAM_TOKEN:
@@ -107,7 +108,7 @@ async def list_credential_voices(
     api_key = await credentials_service.get_decrypted_api_key(
         credentials_id, credentials.project_id
     )
-    voices = await list_voices(api_key)
+    voices = await list_voices(api_key, search=search)
     return [AvatarListItem(id=v.id, name=v.name) for v in voices]
 
 

@@ -623,6 +623,7 @@
       "noAvatars": "No hay avatares disponibles",
       "voice": "Voz",
       "selectVoice": "Seleccionar voz",
+      "searchVoice": "Buscar voz...",
       "loadingVoices": "Cargando voces...",
       "noVoices": "No hay voces disponibles",
       "missingWarning": "Seleccione un avatar y una voz para habilitar la salida de avatar.",

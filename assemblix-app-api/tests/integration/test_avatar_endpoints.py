@@ -59,22 +59,27 @@ async def test_list_credential_avatars(client, auth_user, auth_headers, mocker, 
 
 
 async def test_list_credential_voices(client, auth_user, auth_headers, mocker, db_session) -> None:
-    """GET /api/avatar/credentials/{id}/voices returns the account's voices."""
+    """GET /api/avatar/credentials/{id}/voices forwards the search term and maps voices."""
     # Arrange
     cred = await _make_credential(db_session, auth_user.project_id)
+    captured = {}
 
-    async def _fake(api_key):
+    async def _fake(api_key, *, search=None):
         assert api_key == "anam-key"
+        captured["search"] = search
         from assemblix_api.external.avatar.anam import AnamVoice
 
         return [AnamVoice(id="v1", name="Aurora")]
 
     mocker.patch("assemblix_api.api.rest.avatar.list_voices", side_effect=_fake)
     # Act
-    resp = await client.get(f"/api/avatar/credentials/{cred.id}/voices", headers=auth_headers)
+    resp = await client.get(
+        f"/api/avatar/credentials/{cred.id}/voices?search=aur", headers=auth_headers
+    )
     # Assert
     assert resp.status_code == 200
     assert resp.json() == [{"id": "v1", "name": "Aurora"}]
+    assert captured["search"] == "aur"
 
 
 async def test_mint_workflow_session(client, auth_user, auth_headers, mocker, db_session) -> None:

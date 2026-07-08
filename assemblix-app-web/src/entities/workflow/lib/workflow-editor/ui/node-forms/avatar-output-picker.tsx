@@ -1,5 +1,9 @@
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { Search } from "lucide-react";
 import { Label } from "@/shared/ui/label";
+import { Input } from "@/shared/ui/input";
+import { useDebouncedValue } from "@/shared/lib/use-debounced-value";
 import {
   Select,
   SelectContent,
@@ -34,6 +38,8 @@ export const AvatarOutputPicker = ({
   onChange,
 }: AvatarOutputPickerProps) => {
   const { t } = useTranslation();
+  const [voiceSearch, setVoiceSearch] = useState("");
+  const debouncedVoiceSearch = useDebouncedValue(voiceSearch, 300);
 
   const provider = value?.provider;
 
@@ -89,7 +95,10 @@ export const AvatarOutputPicker = ({
     );
   const { data: voices = [], isLoading: isLoadingVoices } =
     useGetCredentialVoicesQuery(
-      { credentialId: value?.credentialId ?? "" },
+      {
+        credentialId: value?.credentialId ?? "",
+        search: debouncedVoiceSearch.trim() || undefined,
+      },
       { skip: !value?.credentialId },
     );
 
@@ -200,29 +209,49 @@ export const AvatarOutputPicker = ({
           <Select
             value={value?.voiceId ?? ""}
             onValueChange={handleVoiceIdChange}
-            disabled={isLoadingVoices}
+            onOpenChange={(open) => {
+              if (!open) setVoiceSearch("");
+            }}
           >
             <SelectTrigger className="text-xs">
-              <SelectValue
-                placeholder={
-                  isLoadingVoices
-                    ? t("nodeForms.avatar.loadingVoices")
-                    : t("nodeForms.avatar.selectVoice")
-                }
-              />
+              <SelectValue placeholder={t("nodeForms.avatar.selectVoice")} />
             </SelectTrigger>
-            <SelectContent position="popper" sideOffset={5} align="end">
-              {voices.length === 0 && !isLoadingVoices ? (
-                <div className="px-2 py-1.5 text-xs text-muted-foreground">
-                  {t("nodeForms.avatar.noVoices")}
+            <SelectContent
+              className="h-[300px] flex flex-col p-0"
+              position="popper"
+              sideOffset={5}
+              align="end"
+            >
+              <div className="sticky top-0 z-10 bg-popover p-2 border-b">
+                <div className="relative">
+                  <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                  <Input
+                    placeholder={t("nodeForms.avatar.searchVoice")}
+                    value={voiceSearch}
+                    onChange={(e) => setVoiceSearch(e.target.value)}
+                    className="pl-8 h-8 text-xs"
+                    onClick={(e) => e.stopPropagation()}
+                    onKeyDown={(e) => e.stopPropagation()}
+                  />
                 </div>
-              ) : (
-                voices.map((v) => (
-                  <SelectItem key={v.id} value={v.id} className="text-xs">
-                    {v.name}
-                  </SelectItem>
-                ))
-              )}
+              </div>
+              <div className="overflow-y-auto flex-1 min-h-0">
+                {isLoadingVoices ? (
+                  <div className="px-2 py-1.5 text-xs text-muted-foreground">
+                    {t("nodeForms.avatar.loadingVoices")}
+                  </div>
+                ) : voices.length === 0 ? (
+                  <div className="px-2 py-1.5 text-xs text-muted-foreground">
+                    {t("nodeForms.avatar.noVoices")}
+                  </div>
+                ) : (
+                  voices.map((v) => (
+                    <SelectItem key={v.id} value={v.id} className="text-xs">
+                      {v.name}
+                    </SelectItem>
+                  ))
+                )}
+              </div>
             </SelectContent>
           </Select>
         </div>
