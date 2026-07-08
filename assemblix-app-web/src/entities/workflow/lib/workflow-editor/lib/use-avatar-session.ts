@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { useMintAvatarSessionMutation } from "@/entities/avatar-model";
@@ -22,19 +22,19 @@ export const useAvatarSession = (workflowId: string) => {
   const [isConnected, setIsConnected] = useState(false);
   const [mint] = useMintAvatarSessionMutation();
 
-  // Guards against the effect unmounting (or React StrictMode double-invoking
-  // it) while `connect()` is still awaiting the mint/renderer.connect calls —
-  // without it, a connect that resolves after unmount would store a live
-  // renderer that disconnect() (already run by cleanup) never tears down.
-  const cancelledRef = useRef(false);
-  useEffect(() => {
-    cancelledRef.current = false;
-    return () => {
-      cancelledRef.current = true;
-    };
-  }, []);
+  // Per-invocation epoch guards against the effect unmounting (or React
+  // StrictMode double-invoking it) while `connect()` is still awaiting the
+  // mint/renderer.connect calls. A component-scoped boolean flag isn't
+  // enough here: a cleanup that resets the flag on remount would make an
+  // in-flight call from the *previous* mount believe it's still valid,
+  // letting it store a second live renderer. Each connect() call captures
+  // the epoch at its start; disconnect() (and a fresh connect()) bumps it,
+  // invalidating any older in-flight call so it tears itself down instead
+  // of storing its renderer.
+  const connectEpochRef = useRef(0);
 
   const disconnect = useCallback(() => {
+    connectEpochRef.current += 1;
     talkRef.current?.end();
     talkRef.current = null;
     rendererRef.current?.disconnect();
@@ -44,13 +44,14 @@ export const useAvatarSession = (workflowId: string) => {
 
   const connect = useCallback(async () => {
     if (!videoRef.current || rendererRef.current) return;
+    const myEpoch = ++connectEpochRef.current;
     let renderer: AvatarRenderer | null = null;
     try {
       const session = await mint({ workflowId }).unwrap();
-      if (cancelledRef.current) return;
+      if (connectEpochRef.current !== myEpoch) return;
       renderer = createRenderer(session.provider);
       await renderer.connect(session.sessionToken, videoRef.current);
-      if (cancelledRef.current) {
+      if (connectEpochRef.current !== myEpoch) {
         renderer.disconnect();
         return;
       }
