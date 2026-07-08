@@ -11,7 +11,9 @@ async def test_mint_session_token_posts_persona_and_returns_token(monkeypatch):
     async def _handler(request: httpx.Request) -> httpx.Response:
         captured["url"] = str(request.url)
         captured["auth"] = request.headers.get("authorization")
-        captured["json"] = httpx.Request(request.method, request.url, content=request.content).content
+        captured["json"] = httpx.Request(
+            request.method, request.url, content=request.content
+        ).content
         return httpx.Response(200, json={"sessionToken": "sess-123"})
 
     transport = httpx.MockTransport(_handler)

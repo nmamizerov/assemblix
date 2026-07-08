@@ -1,11 +1,9 @@
-from assemblix_api.schemas.node import AgentNodeConfig, WorkflowAvatarConfig
+from assemblix_api.schemas.node import AgentNodeConfig
 from assemblix_api.schemas.workflow import parse_avatar_config
 
 
 def test_agent_output_type_accepts_avatar():
-    cfg = AgentNodeConfig(
-        provider="openai", model="gpt-4o", instructions=[], output_type="avatar"
-    )
+    cfg = AgentNodeConfig(provider="openai", model="gpt-4o", instructions=[], output_type="avatar")
     assert cfg.output_type == "avatar"
 
 

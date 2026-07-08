@@ -24,9 +24,7 @@ async def test_emit_stream_delta_sets_avatar_flag() -> None:
     mgr.create_stream(execution_id)
 
     # Act
-    await mgr.emit_stream_delta(
-        execution_id, step_number=1, node_id="n1", delta="hi", avatar=True
-    )
+    await mgr.emit_stream_delta(execution_id, step_number=1, node_id="n1", delta="hi", avatar=True)
     await mgr.emit_execution_complete(
         execution_id,
         status="completed",
