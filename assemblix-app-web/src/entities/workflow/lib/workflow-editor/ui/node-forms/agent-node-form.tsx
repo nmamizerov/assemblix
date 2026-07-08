@@ -893,12 +893,20 @@ export const AgentNodeForm = ({
 
               {/* Avatar config is workflow-global (set once in the editor header,
                   not per node) — only surface a warning here if it's missing. */}
-              {formData.outputType === "avatar" &&
-                !workflow.config?.avatar?.avatarModel && (
-                  <p className="text-xs text-amber-600">
-                    {t("nodeForms.agent.avatarNotConfigured")}
-                  </p>
-                )}
+              {formData.outputType === "avatar" && (
+                <>
+                  {!workflow.config?.avatar?.avatarModel && (
+                    <p className="text-xs text-amber-600">
+                      {t("nodeForms.agent.avatarNotConfigured")}
+                    </p>
+                  )}
+                  {!(formData.stream ?? false) && (
+                    <p className="text-xs text-amber-600">
+                      {t("nodeForms.agent.avatarStreamHint")}
+                    </p>
+                  )}
+                </>
+              )}
             </div>
           )}
 

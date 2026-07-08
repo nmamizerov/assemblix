@@ -778,6 +778,7 @@
       "outputTypeAvatar": "Avatar de IA",
       "voiceStreamHint": "Active \"Transmitir salida\" para audio en tiempo real; de lo contrario, la voz se sintetiza como un solo clip.",
       "avatarNotConfigured": "Este flujo de trabajo no tiene un avatar configurado. Configure uno en el encabezado del flujo de trabajo.",
+      "avatarStreamHint": "Active \"Transmitir salida\" para este agente; el avatar solo habla el texto transmitido.",
       "historyField": "Campo del historial",
       "historyFieldTooltip": "Cuando la respuesta es JSON, guarda solo este campo del esquema en el historial compartido en lugar del JSON completo. La respuesta completa sigue fluyendo hacia adelante y hacia la salida final.",
       "historyFieldFull": "Respuesta completa",

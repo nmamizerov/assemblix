@@ -3,10 +3,12 @@ import { createClient, type AnamClient } from "@anam-ai/js-sdk";
 import type { AvatarRenderer, AvatarTalkStream } from "./types";
 
 // Anam's client methods (streamMessageChunk/endMessage/stopStreaming) return
-// Promise<void>; the AvatarRenderer interface is fire-and-forget, so errors
-// are swallowed here and surfaced via the client's own event emitter instead.
+// Promise<void>; the AvatarRenderer interface is fire-and-forget, so we don't
+// await them here, but rejections are still logged instead of swallowed.
 const fireAndForget = (promise: Promise<void>): void => {
-  void promise;
+  promise.catch((error: unknown) => {
+    console.error("anam avatar stream error", error);
+  });
 };
 
 export const createAnamRenderer = (): AvatarRenderer => {

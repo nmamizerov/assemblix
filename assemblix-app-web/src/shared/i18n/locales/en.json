@@ -778,6 +778,7 @@
       "outputTypeAvatar": "AI avatar",
       "voiceStreamHint": "Enable \"Stream output\" for realtime audio; otherwise the voice is synthesized as one clip.",
       "avatarNotConfigured": "This workflow has no avatar configured. Set one in the workflow header.",
+      "avatarStreamHint": "Turn on \"Stream output\" for this agent — the avatar only speaks streamed text.",
       "historyField": "History field",
       "historyFieldTooltip": "When the answer is JSON, save only this schema field to the shared history instead of the whole JSON. The full answer still flows downstream and to the final output.",
       "historyFieldFull": "Whole answer",
