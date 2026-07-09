@@ -32,12 +32,8 @@ def test_should_stream_voice_requires_all_conditions():
     text_cfg = cfg.model_copy(update={"output_type": "text"})
     assert agent_voice.should_stream_voice(text_cfg, on_delta=_noop, on_audio=_noop_audio) is False
     # Without the explicit realtime opt-in, a realtime-capable model stays buffered.
-    buffered = cfg.model_copy(
-        update={"voice": cfg.voice.model_copy(update={"realtime": False})}
-    )
-    assert (
-        agent_voice.should_stream_voice(buffered, on_delta=_noop, on_audio=_noop_audio) is False
-    )
+    buffered = cfg.model_copy(update={"voice": cfg.voice.model_copy(update={"realtime": False})})
+    assert agent_voice.should_stream_voice(buffered, on_delta=_noop, on_audio=_noop_audio) is False
 
 
 def test_voice_cost_metadata():

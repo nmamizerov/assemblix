@@ -36,7 +36,12 @@ def _voice_stream_workflow() -> tuple[list[dict], list[dict]]:
     voice_agent = agent_config(instructions="Reply.")
     voice_agent["stream"] = True
     voice_agent["output_type"] = "voice"
-    voice_agent["voice"] = {"provider": "elevenlabs", "model": "eleven_flash_v2_5", "voiceId": "v1"}
+    voice_agent["voice"] = {
+        "provider": "elevenlabs",
+        "model": "eleven_flash_v2_5",
+        "voiceId": "v1",
+        "realtime": True,
+    }
     nodes = [
         node("start", "start", {}),
         node("agent", "agent", voice_agent),

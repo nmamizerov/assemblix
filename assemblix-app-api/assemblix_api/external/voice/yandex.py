@@ -87,9 +87,7 @@ def split_credential(value: str) -> tuple[str, str]:
     """
     folder_id, sep, api_key = value.partition(":")
     if not sep or not folder_id or not api_key:
-        raise ValueError(
-            "Yandex credential must be in the form '<folderId>:<apiKey>'"
-        )
+        raise ValueError("Yandex credential must be in the form '<folderId>:<apiKey>'")
     return folder_id, api_key
 
 
@@ -134,9 +132,7 @@ def _to_lpcm16k(audio_bytes: bytes) -> bytes:
     except (av.FFmpegError, IndexError) as exc:
         raise ValueError(f"Could not decode audio for Yandex recognition: {exc}") from exc
     if len(pcm) > _STT_MAX_LPCM_BYTES:
-        raise ValueError(
-            "Audio is too long for Yandex synchronous recognition (max ~30 s)"
-        )
+        raise ValueError("Audio is too long for Yandex synchronous recognition (max ~30 s)")
     return bytes(pcm)
 
 
