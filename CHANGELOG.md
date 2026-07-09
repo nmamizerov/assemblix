@@ -5,6 +5,14 @@ All notable changes to this project are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.10](https://github.com/nmamizerov/assemblix/compare/v0.2.9...v0.2.10) (2026-07-09)
+
+
+### Features
+
+* AI avatars + Yandex SpeechKit voice (TTS+STT) ([3e2afea](https://github.com/nmamizerov/assemblix/commit/3e2afea2b38ecc1f4fa3c06dcdce05d177c3606c))
+* **voice:** add Yandex SpeechKit TTS+STT provider with data-driven realtime toggle ([c778b03](https://github.com/nmamizerov/assemblix/commit/c778b03ccc40d0991302fa6d5d4272d02137ee64))
+
 ## [0.2.9](https://github.com/nmamizerov/assemblix/compare/v0.2.8...v0.2.9) (2026-07-08)
 
 
