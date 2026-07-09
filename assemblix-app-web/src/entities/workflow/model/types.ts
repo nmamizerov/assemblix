@@ -52,7 +52,9 @@ export type StartNodeConfig = {
 };
 
 export interface VoiceModelConfig {
-  provider: Provider;
+  // Voice-provider id (e.g. "openai", "yandex") — a plain string, not the
+  // `Provider` LLM enum, so voice-only providers like Yandex are representable.
+  provider: string;
   model: string;
   credentialId?: string;
 }
@@ -173,6 +175,9 @@ export interface VoiceOutputConfig {
   model: string;
   voiceId?: string;
   credentialId?: string;
+  // Explicit opt-in to live WS streaming. Only offered for providers that
+  // expose a realtime route (e.g. ElevenLabs); ignored/absent otherwise.
+  realtime?: boolean;
 }
 
 export interface WorkflowAvatarConfig {

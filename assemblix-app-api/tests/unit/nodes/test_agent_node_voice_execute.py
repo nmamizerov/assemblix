@@ -39,7 +39,12 @@ def _voice_agent(*, stream: bool, model: str) -> AgentNode:
             "instructions": [{"role": "system", "content": "You are helpful."}],
             "stream": stream,
             "output_type": "voice",
-            "voice": {"provider": "elevenlabs", "model": model, "voice_id": "v1"},
+            "voice": {
+                "provider": "elevenlabs",
+                "model": model,
+                "voice_id": "v1",
+                "realtime": stream,
+            },
         },
     )
 

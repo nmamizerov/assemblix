@@ -9,7 +9,9 @@ def _voice_cfg():
         instructions=[{"role": "system", "content": "x"}],
         output_type="voice",
         stream=True,
-        voice=VoiceOutputConfig(provider="elevenlabs", model="eleven_flash_v2_5", voice_id="v1"),
+        voice=VoiceOutputConfig(
+            provider="elevenlabs", model="eleven_flash_v2_5", voice_id="v1", realtime=True
+        ),
     )
 
 
@@ -29,6 +31,9 @@ def test_should_stream_voice_requires_all_conditions():
     assert agent_voice.should_stream_voice(cfg, on_delta=None, on_audio=_noop_audio) is False
     text_cfg = cfg.model_copy(update={"output_type": "text"})
     assert agent_voice.should_stream_voice(text_cfg, on_delta=_noop, on_audio=_noop_audio) is False
+    # Without the explicit realtime opt-in, a realtime-capable model stays buffered.
+    buffered = cfg.model_copy(update={"voice": cfg.voice.model_copy(update={"realtime": False})})
+    assert agent_voice.should_stream_voice(buffered, on_delta=_noop, on_audio=_noop_audio) is False
 
 
 def test_voice_cost_metadata():

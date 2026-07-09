@@ -4,6 +4,7 @@ import { useSelector } from "react-redux";
 import { Search } from "lucide-react";
 import { Label } from "@/shared/ui/label";
 import { Input } from "@/shared/ui/input";
+import { Switch } from "@/shared/ui/switch";
 import {
   Select,
   SelectContent,
@@ -29,26 +30,53 @@ import type { VoiceOutputConfig } from "../../../../model/types";
 interface VoiceOutputPickerProps {
   value: VoiceOutputConfig | undefined;
   onChange: (voice: VoiceOutputConfig) => void;
-  // Voice route to list: "speech" (buffered) or "realtime" (streaming WS).
-  capability: "speech" | "realtime";
 }
 
 /**
- * Provider → credential → model → voice cascade for TTS output. Shared by the agent
- * node (realtime) and reusable elsewhere; mirrors the start node's voice-input picker.
+ * Provider → credential → model → voice cascade for TTS output (agent node).
+ *
+ * Data-driven realtime: the provider list is every voice-output provider (the
+ * "speech" capability). A provider that also exposes a "realtime" route gets a
+ * Realtime toggle; flipping it switches the model list to that provider's
+ * realtime models and records `realtime` on the config so the backend streams.
+ * Providers without a realtime route (e.g. Yandex) simply never show the toggle —
+ * new providers slot in with zero picker changes.
  */
 export const VoiceOutputPicker = ({
   value,
   onChange,
-  capability,
 }: VoiceOutputPickerProps) => {
   const { t } = useTranslation();
   const [voiceSearchQuery, setVoiceSearchQuery] = useState("");
 
   const provider = value?.provider;
+  const realtime = value?.realtime ?? false;
+
+  const { data: providers = [] } = useGetVoiceProvidersQuery({
+    capability: "speech",
+  });
+  const { data: realtimeProviders = [] } = useGetVoiceProvidersQuery({
+    capability: "realtime",
+  });
+  const providerSupportsRealtime = useMemo(
+    () => realtimeProviders.some((p) => p.name === provider),
+    [realtimeProviders, provider],
+  );
+  const effectiveRealtime = providerSupportsRealtime && realtime;
+  const capability = effectiveRealtime ? "realtime" : "speech";
 
   const handleProviderChange = (nextProvider: string) => {
-    onChange({ provider: nextProvider, model: "" });
+    onChange({ provider: nextProvider, model: "", realtime: false });
+  };
+  const handleRealtimeToggle = (next: boolean) => {
+    // Model lists differ between routes — reset the model on toggle.
+    onChange({
+      provider: value?.provider ?? "",
+      model: "",
+      credentialId: value?.credentialId,
+      voiceId: value?.voiceId,
+      realtime: next,
+    });
   };
   const handleCredentialChange = (credentialId: string) => {
     onChange({
@@ -56,6 +84,7 @@ export const VoiceOutputPicker = ({
       model: value?.model ?? "",
       credentialId,
       voiceId: undefined,
+      realtime,
     });
   };
   const handleModelChange = (model: string) => {
@@ -64,6 +93,7 @@ export const VoiceOutputPicker = ({
       model,
       credentialId: value?.credentialId,
       voiceId: value?.voiceId,
+      realtime,
     });
   };
   const handleVoiceIdChange = (voiceId: string) => {
@@ -72,10 +102,10 @@ export const VoiceOutputPicker = ({
       model: value?.model ?? "",
       credentialId: value?.credentialId,
       voiceId,
+      realtime,
     });
   };
 
-  const { data: providers = [] } = useGetVoiceProvidersQuery({ capability });
   const { data: models = [], isLoading: isLoadingModels } =
     useGetVoiceProviderModelsQuery(
       { providerName: provider ?? "", capability },
@@ -137,6 +167,22 @@ export const VoiceOutputPicker = ({
           </SelectContent>
         </Select>
       </div>
+
+      {providerSupportsRealtime && (
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex flex-col">
+            <Label className="text-xs">{t("nodeForms.end.realtime")}</Label>
+            <span className="text-[11px] text-muted-foreground">
+              {t("nodeForms.end.realtimeHint")}
+            </span>
+          </div>
+          <Switch
+            checked={realtime}
+            onCheckedChange={handleRealtimeToggle}
+            showIcons={false}
+          />
+        </div>
+      )}
 
       {canUseOwnKeys && voiceCredentialType && (
         <div className="space-y-2">

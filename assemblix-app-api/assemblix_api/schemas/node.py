@@ -13,21 +13,25 @@ from assemblix_api.schemas.execution import NodeInput, NodeOutput
 
 class VoiceModelConfig(DTOModel):
     """Provider/model that transcribes inbound audio when a workflow accepts voice
-    input on its START node (mirrors :class:`FallbackModelConfig`)."""
+    input on its START node. ``provider`` is a voice-provider id (e.g. "openai",
+    "yandex") — intentionally not an AgentProvider, mirroring VoiceOutputConfig."""
 
-    provider: AgentProvider
+    provider: str
     model: str
     credential_id: str | None = None
 
 
 class VoiceOutputConfig(DTOModel):
-    """TTS provider/voice for the END node. ``provider`` is a voice-provider id
-    (e.g. "elevenlabs"), intentionally not an AgentProvider."""
+    """TTS provider/voice for the agent node. ``provider`` is a voice-provider id
+    (e.g. "elevenlabs"), intentionally not an AgentProvider. ``realtime`` is the
+    user's explicit opt-in to live WS streaming; it only takes effect for a
+    provider/model that actually has a realtime route (buffered otherwise)."""
 
     provider: str
     model: str
     voice_id: str | None = None
     credential_id: str | None = None
+    realtime: bool = False
 
 
 class WorkflowAvatarConfig(DTOModel):

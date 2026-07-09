@@ -15,7 +15,7 @@ import {
   useGetAvatarProvidersQuery,
   useGetAvatarProviderModelsQuery,
   useGetCredentialAvatarsQuery,
-  useGetCredentialVoicesQuery,
+  useGetAvatarCredentialVoicesQuery,
   type WorkflowAvatarConfig,
 } from "@/entities/avatar-model";
 import {
@@ -95,7 +95,7 @@ export const AvatarOutputPicker = ({
       { skip: !value?.credentialId },
     );
   const { data: voices = [], isLoading: isLoadingVoices } =
-    useGetCredentialVoicesQuery(
+    useGetAvatarCredentialVoicesQuery(
       {
         credentialId: value?.credentialId ?? "",
         search: debouncedVoiceSearch.trim() || undefined,

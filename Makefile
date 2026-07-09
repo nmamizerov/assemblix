@@ -13,7 +13,7 @@ setup: ## One-command bootstrap: checks Docker, generates secrets, writes .env, 
 	./setup.sh
 
 dev: ## Start the full dev stack with live reload (web :5173, api :8000)
-	$(DEV) up --build
+	$(DEV) up
 
 prod: up ## Alias for `up` — start the lean prod stack
 up: ## Start the lean prod stack in the background (web :8080, api :8000)

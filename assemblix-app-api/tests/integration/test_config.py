@@ -16,6 +16,7 @@ async def test_get_config(client, auth_user, auth_headers) -> None:
         "gemini",
         "deepseek",
         "elevenlabs",
+        "yandex",
     }
     assert all(isinstance(v, bool) for v in body["systemApiKeys"].values())
     assert isinstance(body["billingEnabled"], bool)

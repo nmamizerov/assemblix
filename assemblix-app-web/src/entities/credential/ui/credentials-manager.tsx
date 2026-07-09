@@ -52,6 +52,9 @@ type FormValues = {
   type: CredentialType;
   name: string;
   value?: string;
+  // Yandex SpeechKit needs two secrets; they are joined into `value` on submit.
+  apiKey?: string;
+  folderId?: string;
 };
 
 type CredentialsManagerProps = {
@@ -200,6 +203,8 @@ const CredentialEditForm = ({
         }),
         name: z.string().min(3, { message: t("credentials.nameMinLength") }),
         value: z.string().optional(),
+        apiKey: z.string().optional(),
+        folderId: z.string().optional(),
       }),
     [t]
   );
@@ -210,12 +215,41 @@ const CredentialEditForm = ({
       type: credential?.type || CredentialType.OPENAI_TOKEN,
       name: credential?.name || "",
       value: "",
+      apiKey: "",
+      folderId: "",
     },
   });
 
+  const isYandex =
+    form.watch("type") === CredentialType.YANDEX_SPEECHKIT_TOKEN;
+
   const onSubmit = async (values: FormValues) => {
     try {
-      if (!isEditing && (!values.value || values.value.trim() === "")) {
+      // Yandex stores two secrets in one credential as "<folderId>:<apiKey>".
+      let value = values.value;
+      if (values.type === CredentialType.YANDEX_SPEECHKIT_TOKEN) {
+        const apiKey = (values.apiKey ?? "").trim();
+        const folderId = (values.folderId ?? "").trim();
+        if (isEditing && !apiKey && !folderId) {
+          value = undefined; // leave the stored value unchanged
+        } else if (!apiKey || !folderId) {
+          if (!apiKey)
+            form.setError("apiKey", {
+              type: "manual",
+              message: t("credentials.valueRequired"),
+            });
+          if (!folderId)
+            form.setError("folderId", {
+              type: "manual",
+              message: t("credentials.valueRequired"),
+            });
+          return;
+        } else {
+          value = `${folderId}:${apiKey}`;
+        }
+      }
+
+      if (!isEditing && (!value || value.trim() === "")) {
         form.setError("value", {
           type: "manual",
           message: t("credentials.valueRequired"),
@@ -227,7 +261,7 @@ const CredentialEditForm = ({
         await updateCredential({
           id: credential.id,
           name: values.name,
-          value: values.value || undefined,
+          value: value || undefined,
         }).unwrap();
         toast.success(t("credentials.updateSuccess"));
       } else {
@@ -238,7 +272,7 @@ const CredentialEditForm = ({
         const newCredential = await createCredential({
           type: values.type,
           name: values.name,
-          value: values.value!,
+          value: value!,
           projectId: currentProjectId,
         }).unwrap();
         toast.success(t("credentials.createSuccess"));
@@ -323,31 +357,73 @@ const CredentialEditForm = ({
             )}
           />
 
-          <FormField
-            control={form.control}
-            name="value"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>
-                  {isEditing
-                    ? t("credentials.newValue")
-                    : t("credentials.value")}
-                </FormLabel>
-                <FormControl>
-                  <Input
-                    type="password"
-                    placeholder={
-                      isEditing
-                        ? t("credentials.newValuePlaceholder")
-                        : t("credentials.valuePlaceholder")
-                    }
-                    {...field}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+          {isYandex ? (
+            <>
+              <FormField
+                control={form.control}
+                name="folderId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t("credentials.yandexFolderId")}</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder={t("credentials.yandexFolderIdPlaceholder")}
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="apiKey"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t("credentials.yandexApiKey")}</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="password"
+                        placeholder={
+                          isEditing
+                            ? t("credentials.newValuePlaceholder")
+                            : t("credentials.yandexApiKeyPlaceholder")
+                        }
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </>
+          ) : (
+            <FormField
+              control={form.control}
+              name="value"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>
+                    {isEditing
+                      ? t("credentials.newValue")
+                      : t("credentials.value")}
+                  </FormLabel>
+                  <FormControl>
+                    <Input
+                      type="password"
+                      placeholder={
+                        isEditing
+                          ? t("credentials.newValuePlaceholder")
+                          : t("credentials.valuePlaceholder")
+                      }
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          )}
 
           <div className="flex gap-2 pt-2">
             <Button type="submit" disabled={isLoading} className="gap-2">
