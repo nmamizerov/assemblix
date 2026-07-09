@@ -883,9 +883,8 @@ export const AgentNodeForm = ({
                     onChange={(voice) =>
                       setFormData((prev) => ({ ...prev, voice }))
                     }
-                    capability="realtime"
                   />
-                  {!(formData.stream ?? false) && (
+                  {formData.voice?.realtime && !(formData.stream ?? false) && (
                     <p className="text-xs text-amber-600">
                       {t("nodeForms.agent.voiceStreamHint")}
                     </p>

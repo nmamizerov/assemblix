@@ -30,7 +30,7 @@ export const avatarModelApi = baseApi.injectEndpoints({
         { type: "AvatarModels", id: `avatars:${credentialId}` },
       ],
     }),
-    getCredentialVoices: build.query<
+    getAvatarCredentialVoices: build.query<
       AvatarListItem[],
       { credentialId: string; search?: string }
     >({
@@ -56,6 +56,6 @@ export const {
   useGetAvatarProvidersQuery,
   useGetAvatarProviderModelsQuery,
   useGetCredentialAvatarsQuery,
-  useGetCredentialVoicesQuery,
+  useGetAvatarCredentialVoicesQuery,
   useMintAvatarSessionMutation,
 } = avatarModelApi;

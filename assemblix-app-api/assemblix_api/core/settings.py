@@ -229,6 +229,19 @@ class Settings(BaseSettings):
     # the base URL to route through a proxy/gateway.
     anam_api_base_url: str = os.getenv("ANAM_API_BASE_URL", "https://api.anam.ai")
 
+    # Yandex SpeechKit (voice input + output). Needs two secrets: an API key and a
+    # folder id. Both are optional platform values for the hosted build; when unset,
+    # only user-supplied credentials work (self-host default).
+    system_yandex_speechkit_api_key: str = os.getenv("SYSTEM_YANDEX_SPEECHKIT_API_KEY", "")
+    system_yandex_speechkit_folder_id: str = os.getenv("SYSTEM_YANDEX_SPEECHKIT_FOLDER_ID", "")
+    # SpeechKit REST base URLs. Override to route through a proxy/gateway.
+    yandex_tts_api_base_url: str = os.getenv(
+        "YANDEX_TTS_API_BASE_URL", "https://tts.api.cloud.yandex.net/speech/v1"
+    )
+    yandex_stt_api_base_url: str = os.getenv(
+        "YANDEX_STT_API_BASE_URL", "https://stt.api.cloud.yandex.net/speech/v1"
+    )
+
     @field_validator("voice_realtime_chunk_schedule", mode="before")
     @classmethod
     def _parse_chunk_schedule(cls, v: object) -> object:

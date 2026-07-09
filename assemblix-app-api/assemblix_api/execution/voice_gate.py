@@ -10,12 +10,12 @@ and never sees audio.
 
 from __future__ import annotations
 
+from uuid import UUID
+
 from fastapi import HTTPException, UploadFile, status
 
 from assemblix_api.core.settings import get_settings
 from assemblix_api.database.models.workflow import Workflow
-from assemblix_api.enums import AgentProvider
-from assemblix_api.execution.credential_resolver import CredentialResolver
 from assemblix_api.execution.graph_navigator import GraphNavigator
 from assemblix_api.external.voice import transcribe
 from assemblix_api.schemas.node import StartNodeConfig
@@ -23,7 +23,7 @@ from assemblix_api.services.credentials_service import CredentialsService
 from assemblix_api.services.organization_service import OrganizationService
 from assemblix_api.services.project_service import ProjectService
 
-_DEFAULT_VOICE_PROVIDER = AgentProvider.OPENAI
+_DEFAULT_VOICE_PROVIDER = "openai"
 _DEFAULT_VOICE_MODEL = "whisper-1"
 
 
@@ -67,17 +67,17 @@ async def transcribe_into_input_data(
 
     project = await project_service.get_by_id(workflow.project_id)
     organization = await organization_service.get_by_id(project.organization_id)
-    api_key, _ = await CredentialResolver(credential_service).resolve(
-        credential_id=credential_id,
-        provider=provider,
+    api_key, _ = await credential_service.get_voice_api_key_with_fallback(
+        credentials_id=UUID(credential_id) if credential_id else None,
         project_id=workflow.project_id,
+        voice_provider=provider,
         organization_plan=organization.plan,
     )
 
     transcript = await transcribe(
         audio_bytes=audio_bytes,
         filename=file.filename or "audio",
-        provider=provider.value,
+        provider=provider,
         model=model,
         api_key=api_key,
     )

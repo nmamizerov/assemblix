@@ -17,6 +17,7 @@ from pydantic import BaseModel
 
 from assemblix_api.core.settings import get_settings
 from assemblix_api.external.llm.provider_config import get_provider_config
+from assemblix_api.external.voice import yandex
 from assemblix_api.external.voice.voice_catalog import find_voice_model
 
 
@@ -54,6 +55,11 @@ async def transcribe(
     meta = find_voice_model(provider, model)
     if meta is None:
         raise ValueError(f"Unknown or unsupported voice model: {provider}/{model}")
+
+    if provider == "yandex":
+        # SpeechKit is not OpenAI-compatible; call its REST recognizer directly.
+        text = await yandex.transcribe(credential=api_key, audio_bytes=audio_bytes)
+        return Transcript(text=text)
 
     if meta.route == "transcription":
         response = await litellm.atranscription(

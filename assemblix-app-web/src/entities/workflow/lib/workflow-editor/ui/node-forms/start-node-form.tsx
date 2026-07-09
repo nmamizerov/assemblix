@@ -4,7 +4,6 @@ import { BaseForm } from "./base-form";
 import { useNodeDataChange } from "./useNodeDataChange";
 import {
   NodeType,
-  Provider,
   type Workflow,
   type StateVariable,
   type StartNodeConfig,
@@ -85,7 +84,7 @@ export const StartNodeForm = ({
       acceptVoice: checked,
       voiceModel:
         checked && !prev.voiceModel
-          ? { provider: Provider.OPENAI, model: "whisper-1" }
+          ? { provider: "openai", model: "whisper-1" }
           : prev.voiceModel,
     }));
 
@@ -93,14 +92,14 @@ export const StartNodeForm = ({
     setFormData((prev) => ({
       ...prev,
       // Reset model + credential when the provider changes (same as the agent node).
-      voiceModel: { provider: value as Provider, model: "", credentialId: "" },
+      voiceModel: { provider: value, model: "", credentialId: "" },
     }));
 
   const handleVoiceModelChange = (value: string) =>
     setFormData((prev) => ({
       ...prev,
       voiceModel: {
-        provider: prev.voiceModel?.provider ?? Provider.OPENAI,
+        provider: prev.voiceModel?.provider ?? "openai",
         model: value,
         credentialId: prev.voiceModel?.credentialId,
       },
@@ -110,7 +109,7 @@ export const StartNodeForm = ({
     setFormData((prev) => ({
       ...prev,
       voiceModel: {
-        provider: prev.voiceModel?.provider ?? Provider.OPENAI,
+        provider: prev.voiceModel?.provider ?? "openai",
         model: prev.voiceModel?.model ?? "",
         credentialId,
       },

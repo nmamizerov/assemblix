@@ -19,6 +19,8 @@ const PROVIDER_TO_CREDENTIAL_TYPE: Record<string, CredentialType> = {
   elevenlabs: CredentialType.ELEVENLABS_TOKEN,
   // Avatar provider — used by the AGENT-node avatar-output credential picker.
   anam: CredentialType.ANAM_TOKEN,
+  // Voice provider (TTS + STT) — used by both voice-input and voice-output pickers.
+  yandex: CredentialType.YANDEX_SPEECHKIT_TOKEN,
 };
 
 export const getCredentialTypeForProvider = (

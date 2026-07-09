@@ -26,7 +26,7 @@
     },
     {
       "id": "eleven_flash_v2_5",
-      "label": "Flash v2.5 (realtime)",
+      "label": "Flash v2.5",
       "description": "Realtime low-latency streaming speech.",
       "capability": "realtime",
       "route": "realtime",
@@ -34,7 +34,7 @@
     },
     {
       "id": "eleven_turbo_v2_5",
-      "label": "Turbo v2.5 (realtime)",
+      "label": "Turbo v2.5",
       "description": "Realtime multilingual streaming speech.",
       "capability": "realtime",
       "route": "realtime",

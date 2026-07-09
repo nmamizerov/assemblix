@@ -138,7 +138,11 @@ class CredentialsService(BaseService[Credentials, CredentialsRepository]):
 
         return self._get_system_key(provider, settings), True
 
-    _VOICE_PROVIDER_TO_CREDENTIALS_TYPE = {"elevenlabs": CredentialsType.ELEVENLABS_TOKEN}
+    _VOICE_PROVIDER_TO_CREDENTIALS_TYPE = {
+        "openai": CredentialsType.OPENAI_TOKEN,
+        "elevenlabs": CredentialsType.ELEVENLABS_TOKEN,
+        "yandex": CredentialsType.YANDEX_SPEECHKIT_TOKEN,
+    }
 
     async def get_voice_api_key_with_fallback(
         self,
@@ -209,9 +213,21 @@ class CredentialsService(BaseService[Credentials, CredentialsRepository]):
         return await self.get_decrypted_api_key(credentials_id, project_id)
 
     def _get_voice_system_key(self, voice_provider: str, settings) -> str:
-        """Return the configured system key for a voice provider, or raise 503."""
-        key_map = {"elevenlabs": settings.system_elevenlabs_api_key}
-        api_key = key_map.get(voice_provider, "")
+        """Return the configured system key for a voice provider, or raise 503.
+
+        Yandex needs two secrets, so its system value is packed as
+        ``"<folderId>:<apiKey>"`` — the same shape stored in a BYO credential.
+        """
+        if voice_provider == "yandex":
+            key = settings.system_yandex_speechkit_api_key
+            folder = settings.system_yandex_speechkit_folder_id
+            api_key = f"{folder}:{key}" if key and folder else ""
+        else:
+            key_map = {
+                "openai": settings.system_openai_api_key,
+                "elevenlabs": settings.system_elevenlabs_api_key,
+            }
+            api_key = key_map.get(voice_provider, "")
         if not api_key:
             raise HTTPException(
                 status_code=status.HTTP_503_SERVICE_UNAVAILABLE,

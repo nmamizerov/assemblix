@@ -2,7 +2,7 @@ export {
   useGetAvatarProvidersQuery,
   useGetAvatarProviderModelsQuery,
   useGetCredentialAvatarsQuery,
-  useGetCredentialVoicesQuery,
+  useGetAvatarCredentialVoicesQuery,
   useMintAvatarSessionMutation,
 } from "./api/avatar-model.api";
 export type {

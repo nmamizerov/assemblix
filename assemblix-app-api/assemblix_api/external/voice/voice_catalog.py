@@ -18,7 +18,11 @@ _VOICE_MODELS_DIR = Path(__file__).parent / "models"
 
 # Registered voice providers → display label. This is the gate for what the API
 # exposes; a provider without an entry here is invisible even if a JSON exists.
-VOICE_PROVIDER_LABELS: dict[str, str] = {"openai": "OpenAI", "elevenlabs": "ElevenLabs"}
+VOICE_PROVIDER_LABELS: dict[str, str] = {
+    "openai": "OpenAI",
+    "elevenlabs": "ElevenLabs",
+    "yandex": "Yandex SpeechKit",
+}
 
 
 @cache

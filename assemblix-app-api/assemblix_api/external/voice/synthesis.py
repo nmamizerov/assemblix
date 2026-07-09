@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from pydantic import BaseModel
 
-from assemblix_api.external.voice import elevenlabs
+from assemblix_api.external.voice import elevenlabs, yandex
 from assemblix_api.external.voice.voice_catalog import find_voice_model
 
 
@@ -46,6 +46,12 @@ async def synthesize(
         audio = await elevenlabs.synthesize(
             api_key=api_key, voice_id=voice_id, model=model, text=text
         )
+        return SynthesisResult(audio_bytes=audio, chars=len(text), provider=provider, model=model)
+
+    if provider == "yandex":
+        if not voice_id:
+            raise ValueError("A voice_id is required for Yandex synthesis")
+        audio = await yandex.synthesize(credential=api_key, voice=voice_id, text=text)
         return SynthesisResult(audio_bytes=audio, chars=len(text), provider=provider, model=model)
 
     raise NotImplementedError(f"No synthesis route for provider {provider!r}")

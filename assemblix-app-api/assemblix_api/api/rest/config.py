@@ -24,6 +24,7 @@ _SYSTEM_KEY_BY_PROVIDER: dict[str, str] = {
     "gemini": "system_gemini_api_key",
     "deepseek": "system_deepseek_api_key",
     "elevenlabs": "system_elevenlabs_api_key",
+    "yandex": "system_yandex_speechkit_api_key",
 }
 
 

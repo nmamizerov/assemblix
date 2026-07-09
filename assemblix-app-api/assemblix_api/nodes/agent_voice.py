@@ -31,12 +31,13 @@ def _voice_ready(cfg: AgentNodeConfig) -> bool:
 def should_stream_voice(
     cfg: AgentNodeConfig, *, on_delta: OnDelta | None, on_audio: OnAudio | None
 ) -> bool:
-    """Live-audio gate: voice-ready, realtime model, and both sinks present (which already
-    encode request.stream x node.stream x text-format from the caller)."""
+    """Live-audio gate: voice-ready, user opted into realtime, the provider/model has a
+    realtime route, and both sinks are present (which already encode
+    request.stream x node.stream x text-format from the caller)."""
     if not _voice_ready(cfg) or on_delta is None or on_audio is None:
         return False
     assert cfg.voice is not None
-    return has_realtime_route(cfg.voice.provider, cfg.voice.model)
+    return bool(cfg.voice.realtime) and has_realtime_route(cfg.voice.provider, cfg.voice.model)
 
 
 async def _resolve_key(cfg: AgentNodeConfig, context: ExecutionContext) -> tuple[str, bool]:
