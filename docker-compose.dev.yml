@@ -75,6 +75,8 @@ services:
     environment:
       # Vite proxies /api to the in-network api service (not localhost).
       DEV_PROXY_TARGET: http://api:8000
+      # Vite proxies /docs to the in-network docs service.
+      DEV_DOCS_TARGET: http://docs:80
     volumes:
       - ./assemblix-app-web:/app
       - /app/node_modules
@@ -82,6 +84,17 @@ services:
       - "5173:5173"
     depends_on:
       - api
+      - docs
+
+  # Docs (MkDocs Material) with live reload. Mounts the source so edits under
+  # docs/ or mkdocs.yml hot-reload; Vite proxies /docs here.
+  docs:
+    image: python:3.13-slim
+    working_dir: /app
+    command: sh -c "pip install --no-cache-dir mkdocs-material && mkdocs serve -a 0.0.0.0:80"
+    volumes:
+      - ./docs:/app/docs
+      - ./mkdocs.yml:/app/mkdocs.yml:ro
 
   worker:
     build: *api-build
