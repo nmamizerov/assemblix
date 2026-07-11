@@ -1,17 +1,27 @@
 import { useState, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
-import { Panel } from "@xyflow/react";
+import { toast } from "sonner";
+import { Panel, useNodes } from "@xyflow/react";
 import { motion } from "framer-motion";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
 import { ScrollArea } from "@/shared/ui/scroll-area";
-import { Play, Square, AlertCircle, Trash2, MessageCircle } from "lucide-react";
+import { Switch } from "@/shared/ui/switch";
+import { Label } from "@/shared/ui/label";
+import { Play, Square, AlertCircle, Trash2, MessageCircle, Mic } from "lucide-react";
 import { useWorkflowDebug } from "../../lib/use-workflow-debug";
+import { useVoiceRecorder } from "../../lib/use-voice-recorder";
+import { useAvatarSession } from "../../lib/use-avatar-session";
 import { ExecutionViewer } from "./execution-viewer";
-import type { Workflow } from "@/entities/workflow/model/types";
+import {
+  NodeType,
+  type StartNodeConfig,
+  type Workflow,
+} from "@/entities/workflow/model/types";
 import { cn } from "@/shared/lib/utils";
 import { selectCurrentProjectId } from "@/entities/organization";
+import { selectAvatarConfig } from "../../model/editor-mode.slice";
 
 interface DebugPanelProps {
   workflow: Workflow;
@@ -20,18 +30,83 @@ interface DebugPanelProps {
 export const DebugPanel = ({ workflow }: DebugPanelProps) => {
   const { t } = useTranslation();
   const [inputMessage, setInputMessage] = useState("");
+  const [streaming, setStreaming] = useState(false);
   const currentProjectId = useSelector(selectCurrentProjectId);
+
+  // Avatar mode: the workflow has a configured AI-avatar persona (set from the
+  // editor header). Read from the slice (seeded from workflow.config.avatar,
+  // updated optimistically) so it reflects a just-set persona without a reload.
+  const avatarConfig = useSelector(selectAvatarConfig);
+  const hasAvatar = Boolean(avatarConfig);
+  const avatarSession = useAvatarSession(workflow.id);
+
   const {
     history,
     isRunning,
     error,
     isSessionClosed,
     startDebugExecution,
+    startDebugAudioExecution,
     stopExecution,
     clearSession,
     continueSession,
-  } = useWorkflowDebug({ workflow, projectId: currentProjectId || undefined });
+  } = useWorkflowDebug({
+    workflow,
+    projectId: currentProjectId || undefined,
+    onStreamDelta: hasAvatar ? avatarSession.onDelta : undefined,
+    onAvatarNodeComplete: hasAvatar
+      ? avatarSession.onAvatarNodeComplete
+      : undefined,
+  });
+  const recorder = useVoiceRecorder();
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  // Connecting mints + bills an anam session, so it is user-initiated (a button).
+  // This effect only tears the session down when leaving avatar mode / unmounting.
+  useEffect(() => {
+    return () => avatarSession.disconnect();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hasAvatar, workflow.id]);
+
+  // Voice input is available only when the workflow's START node accepts it.
+  // Read from the live ReactFlow nodes (not the persisted `workflow` prop) so a
+  // freshly toggled "accept voice" reflects immediately, without a page reload.
+  const nodes = useNodes();
+  const startNode = nodes.find((node) => node.type === NodeType.START);
+  const acceptVoice = Boolean(
+    (startNode?.data as StartNodeConfig | undefined)?.acceptVoice,
+  );
+
+  // Avatar output only speaks streamed deltas, so a run in avatar mode must
+  // stream regardless of the manual toggle.
+  const shouldStream = streaming || hasAvatar;
+
+  const handleMicToggle = async () => {
+    if (isRunning) return;
+    if (recorder.isRecording) {
+      const audio = await recorder.stop();
+      if (audio) {
+        startDebugAudioExecution(
+          workflow.id,
+          audio.blob,
+          audio.filename,
+          shouldStream,
+        );
+      } else {
+        // Empty recording — the mic captured nothing.
+        toast.error(t("debug.noAudioRecorded"));
+      }
+    } else {
+      await recorder.start();
+    }
+  };
+
+  // Surface microphone access / recording failures.
+  useEffect(() => {
+    if (recorder.error) {
+      toast.error(t("debug.micError", { error: recorder.error }));
+    }
+  }, [recorder.error, t]);
 
   // Автоскролл к последнему событию
   useEffect(() => {
@@ -42,7 +117,7 @@ export const DebugPanel = ({ workflow }: DebugPanelProps) => {
 
   const handleExecute = () => {
     if (!inputMessage.trim() || isRunning) return;
-    startDebugExecution(workflow.id, inputMessage);
+    startDebugExecution(workflow.id, inputMessage, shouldStream);
     setInputMessage("");
   };
 
@@ -91,6 +166,49 @@ export const DebugPanel = ({ workflow }: DebugPanelProps) => {
           </div>
         </div>
 
+        {/* Аватар: рендерится, когда у workflow настроена AI-avatar персона.
+            Видео всегда в DOM (videoRef нужен до подключения); сессия — по кнопке. */}
+        {hasAvatar && (
+          <div className="px-4 pt-4 shrink-0 space-y-2">
+            <video
+              ref={avatarSession.videoRef}
+              autoPlay
+              playsInline
+              className="w-full aspect-video rounded-lg bg-black object-cover"
+            />
+            {avatarSession.isConnected ? (
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="flex-1"
+                  onClick={() =>
+                    avatarSession.testSpeak(t("debug.avatarTestPhrase"))
+                  }
+                >
+                  {t("debug.avatarTestSpeak")}
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => avatarSession.disconnect()}
+                >
+                  {t("debug.avatarDisconnect")}
+                </Button>
+              </div>
+            ) : (
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full"
+                onClick={() => avatarSession.connect()}
+              >
+                {t("debug.avatarConnect")}
+              </Button>
+            )}
+          </div>
+        )}
+
         {/* Список сообщений чата */}
         <div className="flex-1 min-h-0 overflow-hidden">
           <ScrollArea className="h-full">
@@ -111,9 +229,17 @@ export const DebugPanel = ({ workflow }: DebugPanelProps) => {
                       )}
                     >
                       {item.type === "user" ? (
-                        <div className="max-w-[85%] rounded-2xl rounded-tr-sm bg-primary px-4 py-2 text-primary-foreground text-sm">
-                          {item.content}
-                        </div>
+                        item.audioUrl ? (
+                          <audio
+                            controls
+                            src={item.audioUrl}
+                            className="max-w-[85%] h-9"
+                          />
+                        ) : (
+                          <div className="max-w-[85%] rounded-2xl rounded-tr-sm bg-primary px-4 py-2 text-primary-foreground text-sm">
+                            {item.content}
+                          </div>
+                        )
                       ) : (
                         <div className="w-full space-y-2">
                           {/* Индикатор бота */}
@@ -190,14 +316,53 @@ export const DebugPanel = ({ workflow }: DebugPanelProps) => {
         ) : (
           <div className="p-4 border-t border-border bg-background/50">
             <div className="flex flex-col gap-2">
-              <Input
-                placeholder={t("debug.inputPlaceholder")}
-                value={inputMessage}
-                onChange={(e) => setInputMessage(e.target.value)}
-                onKeyDown={handleKeyPress}
-                disabled={isRunning}
-                className="text-sm"
-              />
+              <div className="flex items-center gap-2">
+                <Input
+                  placeholder={
+                    recorder.isRecording
+                      ? t("debug.recording")
+                      : t("debug.inputPlaceholder")
+                  }
+                  value={inputMessage}
+                  onChange={(e) => setInputMessage(e.target.value)}
+                  onKeyDown={handleKeyPress}
+                  disabled={isRunning || recorder.isRecording}
+                  className="text-sm flex-1"
+                />
+                {acceptVoice && (
+                  <Button
+                    type="button"
+                    variant={recorder.isRecording ? "destructive" : "ghost"}
+                    size="icon"
+                    onClick={handleMicToggle}
+                    disabled={isRunning}
+                    title={
+                      recorder.isRecording
+                        ? t("debug.stopRecording")
+                        : t("debug.recordVoice")
+                    }
+                    className={cn(recorder.isRecording && "animate-pulse")}
+                  >
+                    <Mic className="size-4" />
+                  </Button>
+                )}
+              </div>
+              <div className="flex items-center gap-2">
+                <Switch
+                  id="debug-streaming"
+                  checked={streaming}
+                  onCheckedChange={setStreaming}
+                  disabled={isRunning}
+                  showIcons={false}
+                />
+                <Label
+                  htmlFor="debug-streaming"
+                  className="text-xs text-muted-foreground cursor-pointer"
+                  title={t("debug.streamingHint")}
+                >
+                  {t("debug.streaming")}
+                </Label>
+              </div>
               <div className="flex gap-2">
                 {!isRunning ? (
                   <Button

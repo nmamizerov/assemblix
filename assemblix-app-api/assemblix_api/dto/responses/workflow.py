@@ -51,6 +51,10 @@ class WorkflowResponse(WorkflowBaseResponse):
     state: list[StateVariable] = Field(
         description="List of state variable definitions used by the workflow"
     )
+    config: dict = Field(
+        default_factory=dict,
+        description="Workflow-level config object (e.g. the avatar persona under `config.avatar`)",
+    )
     # Published versions (only for drafts)
     versions: list[WorkflowVersionInfo] = Field(
         default=[],

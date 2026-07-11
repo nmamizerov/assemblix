@@ -1,4 +1,5 @@
 import { createSlice, type PayloadAction } from "@reduxjs/toolkit";
+import type { WorkflowAvatarConfig } from "../../../model/types";
 
 export type NodeStatus = "pending" | "running" | "completed" | "error";
 
@@ -13,6 +14,11 @@ interface EditorModeState {
   // editor from the graph structure (e.g. parallel END nodes, a join on a loop) and
   // rendered as an orange badge/border by BaseNode. Independent of execution status.
   nodeWarnings: Record<string, string>;
+  // Workflow-global avatar persona for the current editor session. Seeded from
+  // workflow.config.avatar and updated optimistically by the header so the picker
+  // cascade and the agent-node warning react instantly (updateWorkflow does not
+  // invalidate the workflow cache, so the prop alone would stay stale).
+  avatarConfig: WorkflowAvatarConfig | null;
 }
 
 const initialState: EditorModeState = {
@@ -21,6 +27,7 @@ const initialState: EditorModeState = {
   nodeStatuses: {},
   isExecuting: false,
   nodeWarnings: {},
+  avatarConfig: null,
 };
 
 export const editorModeSlice = createSlice({
@@ -62,6 +69,12 @@ export const editorModeSlice = createSlice({
     ) => {
       state.nodeWarnings = action.payload;
     },
+    setAvatarConfig: (
+      state,
+      action: PayloadAction<WorkflowAvatarConfig | null>
+    ) => {
+      state.avatarConfig = action.payload;
+    },
   },
 });
 
@@ -73,6 +86,7 @@ export const {
   resetExecution,
   clearNodeStatuses,
   setNodeWarnings,
+  setAvatarConfig,
 } = editorModeSlice.actions;
 
 // Селекторы
@@ -90,3 +104,14 @@ export const selectExecutionId = (state: { editorMode: EditorModeState }) =>
 
 export const selectNodeWarnings = (state: { editorMode: EditorModeState }) =>
   state.editorMode.nodeWarnings;
+
+export const selectAvatarConfig = (state: { editorMode: EditorModeState }) =>
+  state.editorMode.avatarConfig;
+
+export const selectHasAvatarConfig = (state: {
+  editorMode: EditorModeState;
+}) =>
+  Boolean(
+    state.editorMode.avatarConfig?.avatarId &&
+      state.editorMode.avatarConfig?.voiceId
+  );

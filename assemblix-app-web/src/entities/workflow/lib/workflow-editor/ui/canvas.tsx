@@ -40,8 +40,10 @@ import { useSelector } from "react-redux";
 import {
   selectEditorMode,
   selectNodeStatuses,
+  selectAvatarConfig,
   setEditorMode,
   setNodeWarnings,
+  setAvatarConfig,
   resetExecution,
 } from "../model/editor-mode.slice";
 import { analyzeGraph } from "../helpers/graph-analysis";
@@ -140,6 +142,15 @@ const FlowCanvas = ({
   const isDebugMode = mode === "DEBUG";
   const isViewMode = viewMode === "view";
   const dispatch = useAppDispatch();
+
+  // Seed the session avatar config ONCE per loaded workflow. The slice is the
+  // source of truth afterwards (header updates it optimistically); depending on
+  // workflow.config.avatar would re-clobber a freshly-picked voice whenever a
+  // node edit rebuilds the (stale-avatar) workflow prop.
+  useEffect(() => {
+    dispatch(setAvatarConfig(workflow.config?.avatar ?? null));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [workflow.id, dispatch]);
 
   // State для временной ноды
   const [tempNodeId, setTempNodeId] = useState<string | null>(null);
@@ -1023,6 +1034,10 @@ export const WorkflowEditorCanvas = ({
   isDraft,
 }: WorkflowEditorCanvasProps) => {
   const [updateWorkflow] = useUpdateWorkflowMutation();
+  // The workflow prop's config.avatar is stale (updateWorkflow doesn't refetch it),
+  // so any node-edit save must carry the live avatar config from the slice —
+  // otherwise it would overwrite a freshly-picked voice with the loaded-time one.
+  const avatarConfig = useSelector(selectAvatarConfig);
 
   const onSaveWorkflow = useCallback(
     async (updatedWorkflow: Workflow) => {
@@ -1031,13 +1046,14 @@ export const WorkflowEditorCanvas = ({
 
       const response = await updateWorkflow({
         ...updatedWorkflow,
+        config: { ...updatedWorkflow.config, avatar: avatarConfig ?? undefined },
         state: undefined,
       });
       if (response.error) {
         toast.error("Ошибка сохранения агента");
       }
     },
-    [updateWorkflow, mode],
+    [updateWorkflow, mode, avatarConfig],
   );
 
   return (

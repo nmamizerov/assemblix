@@ -284,8 +284,9 @@ class WorkflowExecutor:
         """
         from assemblix_api.schemas.workflow import WorkflowDefinition
 
-        # 1. Check if debug mode
+        # 1. Check if debug mode / streaming
         is_debug = input_data.get("is_debug", False)
+        stream_enabled = input_data.get("stream", False)
 
         # 2. Handle client_id (create/get ClientSession if needed)
         client_id = input_data.get("client_id")
@@ -467,13 +468,18 @@ class WorkflowExecutor:
             organization_plan=organization.plan,
             chat_history=chat_history,
             db_checkpoint=self._db_checkpoint,
+            stream_enabled=stream_enabled,
         )
 
-        # 11. Create debug stream if debug mode
+        # 11. Open the event stream. Debug uses the legacy queue+buffer (create_stream);
+        # a streaming-only run opens the buffer alone (no undrained queue).
         if is_debug:
             self._debug_event_manager.create_stream(execution.id)
-            # Wait for client to connect (max 10 seconds) so no events are missed.
+            # Only the legacy single-request debug SSE waits for the client; a streaming run
+            # (task=true) runs freely and the buffer lets a late subscriber catch up.
             await self._debug_event_manager.wait_for_client(execution.id, timeout=10.0)
+        elif stream_enabled:
+            self._debug_event_manager.open_buffer(execution.id)
 
         return execution, context, resume_point
 
@@ -636,7 +642,9 @@ class WorkflowExecutor:
             )
 
             try:
-                node_output = await self._node_runner.run(node, node_input)
+                node_output = await self._node_runner.run(
+                    node, node_input, node_id=current_node_id, step_number=assigned_step
+                )
             except Exception as e:
                 from assemblix_api.execution.exceptions import NodeExecutionError
 
@@ -816,7 +824,11 @@ class WorkflowExecutor:
                         step_number=assigned_step,
                     )
 
-                    task = asyncio.create_task(self._node_runner.run(node, node_input))
+                    task = asyncio.create_task(
+                        self._node_runner.run(
+                            node, node_input, node_id=node_id, step_number=assigned_step
+                        )
+                    )
                     running[task] = {
                         "node_id": node_id,
                         "node_type": node_type_str,
@@ -963,6 +975,8 @@ class WorkflowExecutor:
                 execution_id=execution.id,
                 system_key_cost_usd=context.system_key_cost_usd,
                 own_key_cost_usd=context.own_key_cost_usd,
+                system_voice_cost_usd=context.system_voice_cost_usd,
+                own_voice_cost_usd=context.own_voice_cost_usd,
                 metadata={
                     "steps_count": context.step_number,
                 },
@@ -1024,11 +1038,16 @@ class WorkflowExecutor:
         # 5. Update execution status (COMPLETED or ERROR)
         status = ExecutionStatus.ERROR if is_error else ExecutionStatus.COMPLETED
 
+        # Audio rides the live response / SSE only — keep it out of the DB.
+        persisted_output = final_output
+        if isinstance(final_output, dict) and "audio" in final_output:
+            persisted_output = {k: v for k, v in final_output.items() if k != "audio"}
+
         await self._execution_service.update_execution_status(
             execution_id=execution.id,
             status=status,
             final_state=context.state,
-            output=final_output,
+            output=persisted_output,
             final_project_state=context.project_state,
             is_session_closed=is_session_end,
             total_credits=total_credits,
@@ -1042,7 +1061,7 @@ class WorkflowExecutor:
             await self._chat_service.end_session(context.chat_session_id)
 
         # 7. Emit execution_complete event for debug mode
-        if self._debug_event_manager.get_stream(execution.id):
+        if self._debug_event_manager.is_streaming(execution.id):
             debug_status = "error" if is_error else "completed"
             await self._debug_event_manager.emit_execution_complete(
                 execution_id=execution.id,
@@ -1057,8 +1076,9 @@ class WorkflowExecutor:
                 own_key_cost_usd=context.own_key_cost_usd,
                 is_session_closed=is_session_end,
             )
-            # Cleanup stream
-            self._debug_event_manager.cleanup_stream(execution.id)
+            # Drop the stream buffer a TTL later, so a late/reconnecting subscriber can
+            # still replay the completed run before falling back to task polling.
+            self._debug_event_manager.schedule_stream_cleanup(execution.id)
 
     @staticmethod
     def _resolve_node_type(workflow, node_id: str) -> str:
@@ -1170,7 +1190,7 @@ class WorkflowExecutor:
                 )
 
         # 2.6. Emit error event for debug mode (ALWAYS, even if DB update failed)
-        if self._debug_event_manager.get_stream(execution.id):
+        if self._debug_event_manager.is_streaming(execution.id):
             await self._debug_event_manager.emit_error(
                 execution_id=execution.id,
                 error_message=str(error),
@@ -1178,8 +1198,8 @@ class WorkflowExecutor:
                 failed_node_id=failed_node_id,
                 step_number=context.step_number,
             )
-            # Cleanup stream
-            self._debug_event_manager.cleanup_stream(execution.id)
+            # Drop the stream buffer a TTL later (see the success path above).
+            self._debug_event_manager.schedule_stream_cleanup(execution.id)
 
         # 3. Return ExecutionResult with error information
         return ExecutionResult(

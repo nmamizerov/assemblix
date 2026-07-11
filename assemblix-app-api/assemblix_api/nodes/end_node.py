@@ -94,6 +94,15 @@ class EndNode(BaseNode):
                 context.execution_id
             )
             if last_agent_output:
+                # Base64 audio (buffered voice on the agent) is scrubbed from persisted steps;
+                # restore it from the live predecessor output so a voiced agent's clip still
+                # reaches the final reply. (Streaming voice carries audio as events, not here.)
+                if (
+                    "audio" not in last_agent_output
+                    and isinstance(node_input.data, dict)
+                    and "audio" in node_input.data
+                ):
+                    return {**last_agent_output, "audio": node_input.data["audio"]}
                 return last_agent_output
 
         # Fallback to input data

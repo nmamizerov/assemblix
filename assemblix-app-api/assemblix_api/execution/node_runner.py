@@ -14,6 +14,7 @@ Keeping this in one place removes the copy that the sequential and parallel loop
 carry, and lets each loop read as pure traversal.
 """
 
+import base64
 from collections.abc import Awaitable, Callable
 from datetime import datetime
 from decimal import Decimal
@@ -52,8 +53,44 @@ class NodeRunner:
         # released during long external awaits. No-op outside the queue/isolated path.
         self._db_checkpoint = db_checkpoint
 
-    async def run(self, node, node_input: NodeInput) -> NodeOutput:
-        """Execute the node under the in-progress gauge. Errors propagate."""
+    async def run(
+        self, node, node_input: NodeInput, *, node_id: str, step_number: int
+    ) -> NodeOutput:
+        """Execute the node under the in-progress gauge. Errors propagate.
+
+        On a streaming run, build the per-node delta sink here (the single choke point for
+        every node) so agent nodes can forward it to AgentRunner. The request-level gate is
+        ``context.stream_enabled``; the node-level and format gates live in the agent node.
+        """
+        ctx = node_input.context
+        if ctx.stream_enabled and self._debug_event_manager.is_streaming(ctx.execution_id):
+            execution_id = ctx.execution_id
+            is_avatar = (
+                getattr(getattr(node, "typed_config", None), "output_type", None) == "avatar"
+            )
+
+            async def _sink(text: str) -> None:
+                await self._debug_event_manager.emit_stream_delta(
+                    execution_id,
+                    step_number=step_number,
+                    node_id=node_id,
+                    delta=text,
+                    avatar=is_avatar,
+                )
+
+            node_input.on_delta = _sink
+
+            async def _audio_sink(pcm: bytes, alignment) -> None:
+                await self._debug_event_manager.emit_audio_delta(
+                    execution_id,
+                    step_number=step_number,
+                    node_id=node_id,
+                    audio=base64.b64encode(pcm).decode("ascii"),
+                    alignment=alignment,
+                )
+
+            node_input.on_audio = _audio_sink
+
         set_nodes_in_progress(+1)
         try:
             return await node.execute(node_input)
@@ -78,7 +115,7 @@ class NodeRunner:
             node_type=node_type,
             step_number=step_number,
         )
-        if self._debug_event_manager.get_stream(context.execution_id):
+        if self._debug_event_manager.is_streaming(context.execution_id):
             await self._debug_event_manager.emit_step_start(
                 execution_id=context.execution_id,
                 step_number=step_number,
@@ -176,7 +213,7 @@ class NodeRunner:
         context = accumulate_step_cost(context, node_output.metadata)
 
         meta = node_output.metadata
-        if self._debug_event_manager.get_stream(context.execution_id):
+        if self._debug_event_manager.is_streaming(context.execution_id):
             # Credits are charged only when system keys are used.
             step_credits = None
             if meta and get_settings().billing_enabled:
@@ -204,6 +241,11 @@ class NodeRunner:
 
         # Log the COMPLETED ExecutionStep (idempotency guard against a resumed run that
         # already wrote this step_number).
+        # Audio rides the live response / SSE only — keep it out of the persisted step.
+        persisted_step_output = node_output.data
+        if isinstance(node_output.data, dict) and "audio" in node_output.data:
+            persisted_step_output = {k: v for k, v in node_output.data.items() if k != "audio"}
+
         if not await self._tracer.has_step(
             execution_id=context.execution_id, step_number=step_number
         ):
@@ -214,7 +256,7 @@ class NodeRunner:
                     node_id=node_id,
                     node_type=node_type,
                     input_data=node_data,
-                    output_data=node_output.data,
+                    output_data=persisted_step_output,
                     state_before=state_before,
                     state_after=context.state,
                     status=StepStatus.COMPLETED.value,

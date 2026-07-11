@@ -43,6 +43,8 @@ export const baseApi = createApi({
     "KnowledgeBases",
     "KBDocuments",
     "LLMProviders",
+    "VoiceModels",
+    "AvatarModels",
     "NotificationChannels",
     "Nodes",
     "Config",

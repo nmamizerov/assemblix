@@ -2,6 +2,9 @@ import { CredentialType } from "./types";
 import OpenAIIcon from "../assets/openai.svg";
 import GeminiIcon from "../assets/google.svg";
 import DeepSeekIcon from "../assets/deepseek.svg";
+import ElevenLabsIcon from "../assets/elevenlabs.svg";
+import AnamIcon from "../assets/anam.svg";
+import YandexIcon from "../assets/yandex.svg";
 
 export interface CredentialTypeConfigItem {
   type: CredentialType;
@@ -31,6 +34,24 @@ export const CREDENTIAL_TYPE_CONFIG: Record<
     label: "DeepSeek Token",
     icon: DeepSeekIcon,
     color: "text-purple-600",
+  },
+  [CredentialType.ELEVENLABS_TOKEN]: {
+    type: CredentialType.ELEVENLABS_TOKEN,
+    label: "ElevenLabs Token",
+    icon: ElevenLabsIcon,
+    color: "text-zinc-900",
+  },
+  [CredentialType.ANAM_TOKEN]: {
+    type: CredentialType.ANAM_TOKEN,
+    label: "Anam Token",
+    icon: AnamIcon,
+    color: "text-sky-600",
+  },
+  [CredentialType.YANDEX_SPEECHKIT_TOKEN]: {
+    type: CredentialType.YANDEX_SPEECHKIT_TOKEN,
+    label: "Yandex SpeechKit",
+    icon: YandexIcon,
+    color: "text-red-600",
   },
 };
 

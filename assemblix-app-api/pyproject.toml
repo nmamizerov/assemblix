@@ -1,6 +1,6 @@
 [project]
 name = "assemblix-api"
-version = "0.2.4"
+version = "0.2.10"
 description = "Assemblix API — FastAPI backend for a visual workflow automation platform"
 readme = "README.md"
 # Source-available: MIT + Commons Clause (see ../LICENSE.md). Files marked
@@ -37,6 +37,8 @@ dependencies = [
     "arq>=0.28.0",
     "prometheus-client>=0.25.0",
     "prometheus-fastapi-instrumentator>=7.1.0",
+    "websockets>=15.0.1",
+    "av>=18.0.0",
 ]
 
 [project.optional-dependencies]

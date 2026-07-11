@@ -24,8 +24,17 @@ assemblix/
   assemblix-app-api/    — FastAPI backend (Python 3.13, async SQLAlchemy, PostgreSQL)
   assemblix-app-web/    — React 19 + Vite frontend (TypeScript, Feature-Sliced Design)
   .github/workflows/    — CI (backend pipeline + repo-wide secret scan)
-  docs/                 — documentation site (MkDocs) + node-authoring guide
+  docs/                 — PUBLIC documentation site (MkDocs) + node-authoring guide
+  internal-docs/        — internal, NOT published: superpowers plans/specs, dev notes
 ```
+
+> **`docs/` is published** — it is the source for the public MkDocs site served at
+> `/docs`. Put **only** user-facing product/self-hosting docs there. **Internal**
+> material (superpowers plans & specs, maintainer notes) goes in **`internal-docs/`**,
+> never `docs/`. In particular, override the superpowers `writing-plans` default:
+> save plans to `internal-docs/superpowers/plans/…` and specs to
+> `internal-docs/superpowers/specs/…` (NOT `docs/superpowers/…`). `mkdocs.yml`'s
+> `exclude_docs` is a backstop, but keep internal files out of `docs/` in the first place.
 
 **Each app has its own `CLAUDE.md` with the detail you need before working in it** — read
 the relevant one first; this file is only the umbrella:

@@ -14,6 +14,15 @@ type DebugStep = {
   nodeType: NodeType;
   isCompleted: boolean;
   data?: Record<string, unknown>;
+  // Live token text accumulated from stream_delta events (streamable agent nodes).
+  streamedText?: string;
+};
+
+// Shape of `execution_complete.data.output.audio` when the workflow
+// synthesizes a voice reply (ElevenLabs TTS on the END node).
+type CompletionAudio = {
+  base64?: string;
+  format?: string;
 };
 
 export const ExecutionViewer = ({
@@ -22,86 +31,115 @@ export const ExecutionViewer = ({
 }: ExecutionViewerProps) => {
   const { t } = useTranslation();
   // Преобразуем события в степы
-  const { steps, finalMessage, totalCredits, ownKeyCostUsd, executionStatus } =
-    useMemo((): {
-      steps: DebugStep[];
-      finalMessage: string | null;
-      totalCredits: number | null;
-      ownKeyCostUsd: number | null;
-      executionStatus: string | null;
-    } => {
-      const newSteps: DebugStep[] = [];
-      let completionMessage: string | null = null;
-      let execTotalCredits: number | null = null;
-      let execOwnKeyCostUsd: number | null = null;
-      let execStatus: string | null = null;
+  const {
+    steps,
+    finalMessage,
+    finalAudioUrl,
+    totalCredits,
+    ownKeyCostUsd,
+    executionStatus,
+  } = useMemo((): {
+    steps: DebugStep[];
+    finalMessage: string | null;
+    finalAudioUrl: string | null;
+    totalCredits: number | null;
+    ownKeyCostUsd: number | null;
+    executionStatus: string | null;
+  } => {
+    const newSteps: DebugStep[] = [];
+    let completionMessage: string | null = null;
+    let completionAudioUrl: string | null = null;
+    let execTotalCredits: number | null = null;
+    let execOwnKeyCostUsd: number | null = null;
+    let execStatus: string | null = null;
 
-      // Создаем карту нод по node_id для отслеживания
-      const nodeMap = new Map<
-        string,
-        { start?: Record<string, unknown>; complete?: Record<string, unknown> }
-      >();
+    // Создаем карту нод по node_id для отслеживания
+    const nodeMap = new Map<
+      string,
+      {
+        start?: Record<string, unknown>;
+        complete?: Record<string, unknown>;
+        streamed?: string;
+      }
+    >();
 
-      events.forEach((event) => {
-        if (event.event_type === "step_start") {
-          const nodeId = event.data?.node_id as string;
-          if (nodeId) {
-            if (!nodeMap.has(nodeId)) {
-              nodeMap.set(nodeId, {});
-            }
-            nodeMap.get(nodeId)!.start = event.data;
+    events.forEach((event) => {
+      if (event.event_type === "step_start") {
+        const nodeId = event.data?.node_id as string;
+        if (nodeId) {
+          if (!nodeMap.has(nodeId)) {
+            nodeMap.set(nodeId, {});
           }
-        } else if (event.event_type === "step_complete") {
-          const nodeId = event.data?.node_id as string;
-          if (nodeId) {
-            if (!nodeMap.has(nodeId)) {
-              nodeMap.set(nodeId, {});
-            }
-            nodeMap.get(nodeId)!.complete = event.data;
+          nodeMap.get(nodeId)!.start = event.data;
+        }
+      } else if (event.event_type === "stream_delta") {
+        const nodeId = event.data?.node_id as string;
+        const delta = event.data?.delta as string;
+        if (nodeId && delta) {
+          if (!nodeMap.has(nodeId)) {
+            nodeMap.set(nodeId, {});
           }
-        } else if (event.event_type === "execution_complete") {
-          const output = event.data?.output as
-            | Record<string, unknown>
-            | undefined;
-          completionMessage = (output?.message as string) || null;
-          execTotalCredits = (event.data?.total_credits as number) ?? null;
-          execOwnKeyCostUsd = (event.data?.own_key_cost_usd as number) ?? null;
-          execStatus = (event.data?.status as string) ?? null;
+          const entry = nodeMap.get(nodeId)!;
+          entry.streamed = (entry.streamed || "") + delta;
         }
-      });
-
-      // Преобразуем карту в массив степов
-      nodeMap.forEach((nodeData) => {
-        const nodeType = (nodeData.start?.node_type ||
-          nodeData.complete?.node_type) as NodeType;
-        const nodeName = (nodeData.start?.node_name ||
-          nodeData.complete?.node_name) as string;
-
-        if (nodeData.complete) {
-          // Нода завершена
-          newSteps.push({
-            nodeType,
-            isCompleted: true,
-            data: { ...nodeData.complete, node_name: nodeName },
-          });
-        } else if (nodeData.start) {
-          // Нода начата но не завершена
-          newSteps.push({
-            nodeType,
-            isCompleted: false,
-            data: undefined,
-          });
+      } else if (event.event_type === "step_complete") {
+        const nodeId = event.data?.node_id as string;
+        if (nodeId) {
+          if (!nodeMap.has(nodeId)) {
+            nodeMap.set(nodeId, {});
+          }
+          nodeMap.get(nodeId)!.complete = event.data;
         }
-      });
+      } else if (event.event_type === "execution_complete") {
+        const output = event.data?.output as
+          | Record<string, unknown>
+          | undefined;
+        completionMessage = (output?.message as string) || null;
+        const audio = output?.audio as CompletionAudio | undefined;
+        if (audio?.base64) {
+          completionAudioUrl = `data:audio/${audio.format ?? "mp3"};base64,${audio.base64}`;
+        }
+        execTotalCredits = (event.data?.total_credits as number) ?? null;
+        execOwnKeyCostUsd = (event.data?.own_key_cost_usd as number) ?? null;
+        execStatus = (event.data?.status as string) ?? null;
+      }
+    });
 
-      return {
-        steps: newSteps,
-        finalMessage: completionMessage,
-        totalCredits: execTotalCredits,
-        ownKeyCostUsd: execOwnKeyCostUsd,
-        executionStatus: execStatus,
-      };
-    }, [events]);
+    // Преобразуем карту в массив степов
+    nodeMap.forEach((nodeData) => {
+      const nodeType = (nodeData.start?.node_type ||
+        nodeData.complete?.node_type) as NodeType;
+      const nodeName = (nodeData.start?.node_name ||
+        nodeData.complete?.node_name) as string;
+
+      if (nodeData.complete) {
+        // Нода завершена
+        newSteps.push({
+          nodeType,
+          isCompleted: true,
+          data: { ...nodeData.complete, node_name: nodeName },
+          streamedText: nodeData.streamed,
+        });
+      } else if (nodeData.start) {
+        // Нода начата но не завершена
+        newSteps.push({
+          nodeType,
+          isCompleted: false,
+          data: undefined,
+          streamedText: nodeData.streamed,
+        });
+      }
+    });
+
+    return {
+      steps: newSteps,
+      finalMessage: completionMessage,
+      finalAudioUrl: completionAudioUrl,
+      totalCredits: execTotalCredits,
+      ownKeyCostUsd: execOwnKeyCostUsd,
+      executionStatus: execStatus,
+    };
+  }, [events]);
 
   return (
     <div className="space-y-2">
@@ -111,6 +149,7 @@ export const ExecutionViewer = ({
           nodeType={step.nodeType}
           isCompleted={step.isCompleted}
           data={step.data}
+          streamedText={step.streamedText}
           isRunning={
             isRunning && index === steps.length - 1 && !step.isCompleted
           }
@@ -154,6 +193,9 @@ export const ExecutionViewer = ({
             <p className="text-sm text-foreground whitespace-pre-wrap wrap-anywhere">
               {finalMessage}
             </p>
+            {finalAudioUrl && (
+              <audio controls src={finalAudioUrl} className="mt-2 w-full" />
+            )}
           </div>
 
           {/* Информация о стоимости */}

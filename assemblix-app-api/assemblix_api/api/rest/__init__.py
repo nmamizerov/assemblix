@@ -8,6 +8,7 @@ from assemblix_api.core.settings import get_settings
 
 from .api_keys import router as api_keys_router
 from .auth import router as auth_router
+from .avatar import router as avatar_router
 from .billing import router as billing_router
 from .chat_sessions import router as chat_sessions_router
 from .client_sessions import router as client_sessions_router
@@ -23,6 +24,7 @@ from .notification_channels import router as notification_channels_router
 from .organizations import router as organizations_router
 from .payments import router as payments_router
 from .projects import router as projects_router
+from .voice import router as voice_router
 from .workflows import router as workflows_router
 
 settings = get_settings()
@@ -47,6 +49,8 @@ api_router.include_router(chat_sessions_router, prefix="/api")
 api_router.include_router(client_sessions_router, prefix="/api")
 api_router.include_router(knowledge_bases_router, prefix="/api")
 api_router.include_router(llm_router, prefix="/api")
+api_router.include_router(voice_router, prefix="/api")
+api_router.include_router(avatar_router, prefix="/api")
 api_router.include_router(notification_channels_router, prefix="/api")
 api_router.include_router(config_router, prefix="/api")
 __all__ = ["api_router"]

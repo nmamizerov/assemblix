@@ -20,6 +20,14 @@ export interface Workflow {
   edges: Edge[];
   state?: StateVariable[];
   versions?: WorkflowVersion[];
+  // Workflow-global settings not tied to any single node. Currently only holds
+  // the AI-avatar persona, set from the editor header (see WorkflowAvatarConfig).
+  config?: WorkflowConfig;
+}
+
+export interface WorkflowConfig {
+  avatar?: WorkflowAvatarConfig;
+  [key: string]: unknown;
 }
 
 export enum NodeType {
@@ -37,7 +45,19 @@ export enum NodeType {
 
 export type StartNodeConfig = {
   firstPhrase?: string;
+  // Voice input: when enabled, the /execute/audio endpoints transcribe an
+  // inbound audio blob into the run's message using `voiceModel`.
+  acceptVoice?: boolean;
+  voiceModel?: VoiceModelConfig;
 };
+
+export interface VoiceModelConfig {
+  // Voice-provider id (e.g. "openai", "yandex") — a plain string, not the
+  // `Provider` LLM enum, so voice-only providers like Yandex are representable.
+  provider: string;
+  model: string;
+  credentialId?: string;
+}
 
 export enum Role {
   SYSTEM = "system",
@@ -76,6 +96,16 @@ export interface AgentNodeConfig {
   // JSON Schema для структурированного вывода
   responseFormat?: "text" | "json_object";
   responseSchema?: Record<string, unknown>;
+
+  // Стримить текстовый вывод по токенам (только для responseFormat === "text")
+  stream?: boolean;
+
+  // Output modality (moved from the END node). "voice" streams realtime audio while the
+  // agent generates when the run streams and a realtime model is selected; otherwise it
+  // synthesizes one buffered clip. `voice.provider` is a voice-provider id, not the LLM enum.
+  // "avatar" additionally renders a talking-head video stream via `avatar` config.
+  outputType?: "text" | "voice" | "avatar";
+  voice?: VoiceOutputConfig;
 
   // Список инструментов
   tools?: string[]; // Список названий инструментов, например ["web_search"]
@@ -137,6 +167,28 @@ export interface SetVariableNodeConfig extends Record<string, unknown> {
 export type OutputMode = "last_agent" | "specific_agent" | "custom";
 export type FilterMode = "all" | "none" | "selected";
 
+// TTS provider/voice for the END node. `provider` is a voice-provider id
+// (e.g. "elevenlabs"), intentionally a plain string and not the `Provider`
+// enum (which only covers LLM providers).
+export interface VoiceOutputConfig {
+  provider: string;
+  model: string;
+  voiceId?: string;
+  credentialId?: string;
+  // Explicit opt-in to live WS streaming. Only offered for providers that
+  // expose a realtime route (e.g. ElevenLabs); ignored/absent otherwise.
+  realtime?: boolean;
+}
+
+export interface WorkflowAvatarConfig {
+  provider: string;
+  avatarModel: string;
+  avatarId?: string;
+  voiceId?: string;
+  voiceName?: string;
+  credentialId?: string;
+}
+
 export interface EndNodeConfig extends Record<string, unknown> {
   name?: string;
 
@@ -159,6 +211,9 @@ export interface EndNodeConfig extends Record<string, unknown> {
 
   // Session
   isSessionEnd?: boolean;
+
+  // Voice output moved to the AGENT node (phase 2b); END is text-only and passes through
+  // whatever the selected source produced (including a voiced agent's audio).
 }
 
 export interface StickerNodeConfig extends Record<string, unknown> {

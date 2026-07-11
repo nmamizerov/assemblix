@@ -4,6 +4,7 @@ import { useSelector } from "react-redux";
 import { BaseForm } from "./base-form";
 import { FallbackModelRow } from "./fallback-model-row";
 import { useNodeDataChange } from "./useNodeDataChange";
+import { VoiceOutputPicker } from "./voice-output-picker";
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
 import { Button } from "@/shared/ui/button";
@@ -60,6 +61,7 @@ import {
   getCredentialTypeForProvider,
 } from "@/entities/credential";
 import { selectCurrentProjectId } from "@/entities/organization";
+import { selectHasAvatarConfig } from "../../model/editor-mode.slice";
 import { useGetServerConfigQuery } from "@/entities/config";
 import { useGetBillingUsageQuery } from "@/entities/billing";
 import { useGetKnowledgeBasesQuery } from "@/entities/knowledge-base";
@@ -139,6 +141,7 @@ export const AgentNodeForm = ({
 
   const handleDataChange = useNodeDataChange(nodeId);
   const currentProjectId = useSelector(selectCurrentProjectId);
+  const hasAvatarConfig = useSelector(selectHasAvatarConfig);
 
   // Получаем информацию о биллинге для проверки canUseOwnKeys
   const { data: billingUsage } = useGetBillingUsageQuery(undefined, {
@@ -403,7 +406,7 @@ export const AgentNodeForm = ({
   };
 
   const handleBooleanFieldChange = (
-    field: "enforceTimeoutOnLast" | "saveToHistory",
+    field: "enforceTimeoutOnLast" | "saveToHistory" | "stream",
     checked: boolean,
   ) => {
     setFormData((prev) => ({ ...prev, [field]: checked }));
@@ -807,6 +810,106 @@ export const AgentNodeForm = ({
               showIcons={false}
             />
           </div>
+
+          {/* Stream token output (text format only) */}
+          {(formData.responseFormat ?? "text") === "text" && (
+            <div className="flex justify-between gap-4 items-center">
+              <div className="flex items-center gap-1.5">
+                <Label htmlFor="agent-stream">
+                  {t("nodeForms.agent.stream")}
+                </Label>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      type="button"
+                      className="text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      <HelpCircle className="h-3.5 w-3.5" />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent side="right" className="max-w-[250px]">
+                    <p>{t("nodeForms.agent.streamTooltip")}</p>
+                  </TooltipContent>
+                </Tooltip>
+              </div>
+              <Switch
+                id="agent-stream"
+                checked={formData.stream ?? false}
+                onCheckedChange={(checked) =>
+                  handleBooleanFieldChange("stream", checked)
+                }
+                showIcons={false}
+              />
+            </div>
+          )}
+
+          {/* Output modality: text or realtime voice (text format only) */}
+          {(formData.responseFormat ?? "text") === "text" && (
+            <div className="space-y-3">
+              <div className="space-y-2">
+                <Label className="text-xs">
+                  {t("nodeForms.agent.outputType")}
+                </Label>
+                <Select
+                  value={formData.outputType ?? "text"}
+                  onValueChange={(value) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      outputType: value as "text" | "voice" | "avatar",
+                    }))
+                  }
+                >
+                  <SelectTrigger className="text-xs">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="text" className="text-xs">
+                      {t("nodeForms.agent.outputTypeText")}
+                    </SelectItem>
+                    <SelectItem value="voice" className="text-xs">
+                      {t("nodeForms.agent.outputTypeVoice")}
+                    </SelectItem>
+                    <SelectItem value="avatar" className="text-xs">
+                      {t("nodeForms.agent.outputTypeAvatar")}
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {formData.outputType === "voice" && (
+                <>
+                  <VoiceOutputPicker
+                    value={formData.voice}
+                    onChange={(voice) =>
+                      setFormData((prev) => ({ ...prev, voice }))
+                    }
+                  />
+                  {formData.voice?.realtime && !(formData.stream ?? false) && (
+                    <p className="text-xs text-amber-600">
+                      {t("nodeForms.agent.voiceStreamHint")}
+                    </p>
+                  )}
+                </>
+              )}
+
+              {/* Avatar config is workflow-global (set once in the editor header,
+                  not per node) — only surface a warning here if it's missing. */}
+              {formData.outputType === "avatar" && (
+                <>
+                  {!hasAvatarConfig && (
+                    <p className="text-xs text-amber-600">
+                      {t("nodeForms.agent.avatarNotConfigured")}
+                    </p>
+                  )}
+                  {!(formData.stream ?? false) && (
+                    <p className="text-xs text-amber-600">
+                      {t("nodeForms.agent.avatarStreamHint")}
+                    </p>
+                  )}
+                </>
+              )}
+            </div>
+          )}
 
           {/* History field (only for JSON answers with a schema) */}
           {(formData.saveToHistory ?? true) && schemaFieldNames.length > 0 && (

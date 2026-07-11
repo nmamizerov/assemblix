@@ -1,7 +1,7 @@
 {
   "name": "assemblix-app-web",
   "private": true,
-  "version": "0.2.4",
+  "version": "0.2.10",
   "type": "module",
   "license": "SEE LICENSE IN LICENSE.md",
   "scripts": {
@@ -11,6 +11,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@anam-ai/js-sdk": "^4.19.0",
     "@babel/runtime": "^7.28.4",
     "@codemirror/lang-json": "^6.0.2",
     "@hookform/resolvers": "^5.2.2",

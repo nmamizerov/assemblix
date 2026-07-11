@@ -1,0 +1,19 @@
+{
+  "models": [
+    {
+      "id": "yandex-tts-v1",
+      "label": "SpeechKit v1",
+      "description": "Yandex SpeechKit v1 speech synthesis.",
+      "capability": "speech",
+      "route": "speech",
+      "cost_per_char": 0.0000075
+    },
+    {
+      "id": "general",
+      "label": "SpeechKit General",
+      "description": "Yandex SpeechKit short-audio speech recognition (≤ 1 MB / 30 s).",
+      "capability": "transcription",
+      "route": "transcription"
+    }
+  ]
+}

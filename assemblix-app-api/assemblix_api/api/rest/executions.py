@@ -10,28 +10,41 @@ from datetime import datetime
 from uuid import UUID
 
 import structlog
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import (
+    APIRouter,
+    Depends,
+    File,
+    Form,
+    HTTPException,
+    Query,
+    Request,
+    UploadFile,
+    status,
+)
 from fastapi.responses import StreamingResponse
+from pydantic import ValidationError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from assemblix_api.billing.service import BillingService
 from assemblix_api.core.settings import get_settings
 from assemblix_api.database.models.user import User
+from assemblix_api.database.models.workflow import Workflow
 from assemblix_api.dependencies import (
     get_arq_pool,
     get_billing_service,
     get_chat_service,
     get_client_session_service,
+    get_credentials_service,
     get_current_user,
     get_db_session,
     get_debug_event_manager,
     get_execution_service,
+    get_organization_service,
     get_project_id_from_token,
     get_project_id_from_token_with_access_check,
     get_project_service,
     get_token_id_from_request,
     get_token_id_optional,
-    get_workflow_executor,
     get_workflow_service,
     run_workflow_isolated,
 )
@@ -51,11 +64,13 @@ from assemblix_api.dto.responses.execution import (
 )
 from assemblix_api.enums import ExecutionStatus
 from assemblix_api.execution.debug_event_manager import DebugEventManager
-from assemblix_api.execution.workflow_executor import WorkflowExecutor
+from assemblix_api.execution.voice_gate import transcribe_into_input_data
 from assemblix_api.queue.enqueue import enqueue_execution
 from assemblix_api.services.chat_service import ChatService
 from assemblix_api.services.client_session_service import ClientSessionService
+from assemblix_api.services.credentials_service import CredentialsService
 from assemblix_api.services.execution_service import ExecutionService
+from assemblix_api.services.organization_service import OrganizationService
 from assemblix_api.services.project_service import ProjectService
 from assemblix_api.services.workflow_service import WorkflowService
 
@@ -112,40 +127,24 @@ async def _await_queued_result(
         await close_completion_subscription(pubsub, execution_id)
 
 
-@router.post(
-    "/{workflow_id}/execute",
-    response_model=ExecutionResponse | ExecutionErrorResponse | TaskExecutionResponse,
-    status_code=status.HTTP_200_OK,
-)
-async def execute_workflow(
+async def _load_and_authorize(
     workflow_id: UUID,
-    request: ExecuteWorkflowRequest,
-    workflow_service: WorkflowService = Depends(get_workflow_service),
-    executor: WorkflowExecutor = Depends(get_workflow_executor),
-    project_id_from_token: UUID = Depends(get_project_id_from_token),
-    token_id: UUID = Depends(get_token_id_from_request),
-    billing_service: BillingService = Depends(get_billing_service),
-    chat_service: ChatService = Depends(get_chat_service),
-    project_service: ProjectService = Depends(get_project_service),
-    execution_service: ExecutionService = Depends(get_execution_service),
-    session: AsyncSession = Depends(get_db_session),
-):
-    """
-    Execute a workflow with the given input data.
+    *,
+    project_id_from_token: UUID,
+    session_id: UUID | None,
+    resolve_published: bool,
+    workflow_service: WorkflowService,
+    chat_service: ChatService,
+    billing_service: BillingService,
+    project_service: ProjectService,
+    current_user: User | None = None,
+) -> Workflow:
+    """Shared entry checks for every execute variant (text and audio).
 
-    Supports:
-    - **Stateless execution**: no state persistence (session_id=None, create_session=False)
-    - **Stateful execution**: continue an existing session (session_id provided)
-    - **Create session**: create a new chat session (create_session=True)
-    - **Task mode** (task=True): return execution_id immediately, result via polling
-
-    With task=False (default) the behavior depends on duration:
-    - Workflow finished within TASK_TIMEOUT_SECONDS → 200 ExecutionResponse
-    - Workflow not finished → 202 TaskExecutionResponse (continues in background)
-
-    Returns:
-        200 ExecutionResponse — synchronous completion (task=False, finished within timeout)
-        202 TaskExecutionResponse — async mode (task=True or timeout exceeded)
+    Loads the workflow (404), verifies the caller's token owns it (403; admins
+    bypass in debug), validates an optional existing session (400), applies the
+    billing/RPM check, and — for the sync path — resolves the latest published
+    version. Returns the workflow that should actually run.
     """
     try:
         workflow = await workflow_service.get_by_id(workflow_id)
@@ -156,20 +155,22 @@ async def execute_workflow(
         ) from e
 
     # Checked for all workflows (published and draft) to prevent unauthorized
-    # access to a workflow via API keys belonging to other projects.
-    if workflow.project_id != project_id_from_token:
+    # access to a workflow via API keys belonging to other projects. Admins may
+    # run any workflow in debug mode.
+    is_admin = bool(current_user and current_user.is_admin)
+    if not is_admin and workflow.project_id != project_id_from_token:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Токен не принадлежит проекту workflow",
         )
 
-    if request.session_id:
+    if session_id:
         try:
-            await chat_service.get_by_id(request.session_id)
+            await chat_service.get_by_id(session_id)
         except HTTPException as e:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Chat session с ID {request.session_id} не найдена",
+                detail=f"Chat session с ID {session_id} не найдена",
             ) from e
 
     # Check RPM limit and credit balance (FREE plans)
@@ -177,8 +178,10 @@ async def execute_workflow(
     if project:
         await billing_service.check_and_deduct_credits(project.organization_id)
 
-    # If this is a draft, resolve the latest published version (required)
-    if workflow.published_for_workflow_id is None:
+    # If this is a draft, resolve the latest published version (required).
+    # Debug mode runs exactly the workflow given (draft); no version is resolved,
+    # since the developer is testing this specific workflow.
+    if resolve_published and workflow.published_for_workflow_id is None:
         published_workflow = await workflow_service.get_latest_published(workflow_id)
         if not published_workflow:
             raise HTTPException(
@@ -187,27 +190,53 @@ async def execute_workflow(
             )
         workflow = published_workflow
 
+    return workflow
+
+
+def _build_input_data(request: ExecuteWorkflowRequest, *, is_debug: bool) -> dict:
+    """Assemble the executor's ``input_data`` bag from the request (shared)."""
     input_data = request.input.copy()
+
+    if is_debug:
+        input_data["is_debug"] = True
+    if request.stream:
+        input_data["stream"] = True
 
     if request.create_session:
         input_data["create_session"] = True
-
     if request.session_name is not None:
         input_data["session_name"] = request.session_name
-
     if request.state is not None:
         input_data["state"] = request.state
-
     if request.project_state is not None:
         input_data["project_state"] = request.project_state
-
     if request.client_id:
         input_data["client_id"] = request.client_id
     if request.metadata:
         input_data["metadata"] = request.metadata
 
-    # 5a. Queue branch: when the Arq queue is enabled, enqueue the job onto the
-    # Arq worker.  With task=True we return immediately (fire-and-forget).  With
+    return input_data
+
+
+async def _dispatch_sync(
+    workflow: Workflow,
+    input_data: dict,
+    *,
+    request: ExecuteWorkflowRequest,
+    project_id: UUID,
+    token_id: UUID,
+    execution_service: ExecutionService,
+    session: AsyncSession,
+) -> ExecutionResponse | ExecutionErrorResponse | TaskExecutionResponse:
+    """Run a workflow synchronously and shape the response (shared by /execute
+    and /execute/audio).
+
+    With task=False (default) the behavior depends on duration:
+    - Workflow finished within TASK_TIMEOUT_SECONDS → 200 ExecutionResponse
+    - Workflow not finished → TaskExecutionResponse (continues in background)
+    """
+    # Queue branch: when the Arq queue is enabled, enqueue the job onto the Arq
+    # worker. With task=True we return immediately (fire-and-forget). With
     # task=False we preserve the synchronous contract of the in-process path:
     # wait for the worker to finish (via a Redis completion signal) up to
     # TASK_TIMEOUT_SECONDS, then return the result — falling back to async mode
@@ -235,7 +264,7 @@ async def execute_workflow(
             execution_service=execution_service,
             session=session,
             execution_id=execution_id,
-            project_id=project_id_from_token,
+            project_id=project_id,
             timeout=float(settings.task_timeout_seconds),
         )
 
@@ -311,85 +340,16 @@ async def execute_workflow(
     )
 
 
-@router.post(
-    "/{workflow_id}/execute/debug",
-    status_code=status.HTTP_200_OK,
-)
-async def execute_workflow_debug(
-    workflow_id: UUID,
-    request: ExecuteWorkflowRequest,
-    current_user: User = Depends(get_current_user),
-    workflow_service: WorkflowService = Depends(get_workflow_service),
-    debug_event_manager: DebugEventManager = Depends(get_debug_event_manager),
-    project_id_from_token: UUID = Depends(get_project_id_from_token_with_access_check),
-    token_id: UUID | None = Depends(get_token_id_optional),
-    billing_service: BillingService = Depends(get_billing_service),
-    chat_service: ChatService = Depends(get_chat_service),
-    project_service: ProjectService = Depends(get_project_service),
-):
-    """
-    Execute a workflow in debug mode with real-time SSE streaming.
-
-    Starts the workflow and immediately returns an SSE stream of execution
-    events in real time.
-
-    Returns:
-        StreamingResponse with Content-Type: text/event-stream
-    """
-    try:
-        workflow = await workflow_service.get_by_id(workflow_id)
-    except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Workflow с ID {workflow_id} не найден",
-        ) from e
-
-    # For JWT tokens access is checked in get_project_id_from_token_with_access_check;
-    # for API keys we still verify the workflow belongs to the key's project.
-    # Admins may run any workflow in debug mode.
-    if not current_user.is_admin and workflow.project_id != project_id_from_token:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Токен не принадлежит проекту workflow",
-        )
-
-    if request.session_id:
-        try:
-            await chat_service.get_by_id(request.session_id)
-        except HTTPException as e:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Chat session с ID {request.session_id} не найдена",
-            ) from e
-
-    # Check RPM limit and credit balance (FREE plans), same as regular execute
-    project = await project_service.get_by_id(workflow.project_id)
-    if project:
-        await billing_service.check_and_deduct_credits(project.organization_id)
-
-    # Debug mode runs exactly the workflow given (draft); no published version
-    # is resolved, since the developer is testing this specific workflow.
-
-    input_data = request.input.copy()
-    input_data["is_debug"] = True
-
-    if request.create_session:
-        input_data["create_session"] = True
-
-    if request.session_name is not None:
-        input_data["session_name"] = request.session_name
-
-    if request.state is not None:
-        input_data["state"] = request.state
-
-    if request.project_state is not None:
-        input_data["project_state"] = request.project_state
-
-    if request.client_id:
-        input_data["client_id"] = request.client_id
-    if request.metadata:
-        input_data["metadata"] = request.metadata
-
+def _dispatch_debug_stream(
+    workflow: Workflow,
+    input_data: dict,
+    *,
+    session_id: UUID | None,
+    token_id: UUID | None,
+    debug_event_manager: DebugEventManager,
+) -> StreamingResponse:
+    """Start a debug run and return its SSE event stream (shared by
+    /execute/debug and /execute/debug/audio)."""
     # The stream is created inside WorkflowExecutor._preparation_phase.
     # Pass workflow_id rather than the object: SQLAlchemy objects are bound to
     # a session, and run_workflow_isolated opens its own DB session.
@@ -400,7 +360,7 @@ async def execute_workflow_debug(
             workflow_id=workflow.id,
             input_data=input_data,
             token_id=token_id,
-            chat_session_id=request.session_id,
+            chat_session_id=session_id,
         )
     )
     background_task_registry.track(_sse_task)
@@ -436,7 +396,7 @@ async def execute_workflow_debug(
                 "execution_id": str(execution_id),
                 "workflow_id": str(workflow.id),
                 "timestamp": datetime.now().isoformat(),
-                "session_id": str(request.session_id) if request.session_id else None,
+                "session_id": str(session_id) if session_id else None,
             }
             yield "event: execution_started\n"
             yield f"data: {json.dumps(initial_event)}\n\n"
@@ -491,6 +451,246 @@ async def execute_workflow_debug(
             "Connection": "keep-alive",
             "X-Accel-Buffering": "no",  # Disable nginx buffering
         },
+    )
+
+
+def _parse_execute_payload(payload: str) -> ExecuteWorkflowRequest:
+    """Parse the multipart ``payload`` form field (JSON of ExecuteWorkflowRequest).
+
+    The audio endpoints carry the request body as one JSON string alongside the
+    file part, so the whole ``ExecuteWorkflowRequest`` DTO is reused verbatim.
+    """
+    try:
+        return ExecuteWorkflowRequest.model_validate_json(payload)
+    except ValidationError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid execute payload",
+        ) from e
+
+
+@router.post(
+    "/{workflow_id}/execute",
+    response_model=ExecutionResponse | ExecutionErrorResponse | TaskExecutionResponse,
+    status_code=status.HTTP_200_OK,
+)
+async def execute_workflow(
+    workflow_id: UUID,
+    request: ExecuteWorkflowRequest,
+    workflow_service: WorkflowService = Depends(get_workflow_service),
+    project_id_from_token: UUID = Depends(get_project_id_from_token),
+    token_id: UUID = Depends(get_token_id_from_request),
+    billing_service: BillingService = Depends(get_billing_service),
+    chat_service: ChatService = Depends(get_chat_service),
+    project_service: ProjectService = Depends(get_project_service),
+    execution_service: ExecutionService = Depends(get_execution_service),
+    session: AsyncSession = Depends(get_db_session),
+):
+    """
+    Execute a workflow with the given input data.
+
+    Supports:
+    - **Stateless execution**: no state persistence (session_id=None, create_session=False)
+    - **Stateful execution**: continue an existing session (session_id provided)
+    - **Create session**: create a new chat session (create_session=True)
+    - **Task mode** (task=True): return execution_id immediately, result via polling
+
+    Returns:
+        200 ExecutionResponse — synchronous completion (task=False, finished within timeout)
+        202 TaskExecutionResponse — async mode (task=True or timeout exceeded)
+    """
+    workflow = await _load_and_authorize(
+        workflow_id,
+        project_id_from_token=project_id_from_token,
+        session_id=request.session_id,
+        resolve_published=True,
+        workflow_service=workflow_service,
+        chat_service=chat_service,
+        billing_service=billing_service,
+        project_service=project_service,
+    )
+
+    input_data = _build_input_data(request, is_debug=False)
+
+    return await _dispatch_sync(
+        workflow,
+        input_data,
+        request=request,
+        project_id=project_id_from_token,
+        token_id=token_id,
+        execution_service=execution_service,
+        session=session,
+    )
+
+
+@router.post(
+    "/{workflow_id}/execute/debug",
+    status_code=status.HTTP_200_OK,
+)
+async def execute_workflow_debug(
+    workflow_id: UUID,
+    request: ExecuteWorkflowRequest,
+    current_user: User = Depends(get_current_user),
+    workflow_service: WorkflowService = Depends(get_workflow_service),
+    debug_event_manager: DebugEventManager = Depends(get_debug_event_manager),
+    project_id_from_token: UUID = Depends(get_project_id_from_token_with_access_check),
+    token_id: UUID | None = Depends(get_token_id_optional),
+    billing_service: BillingService = Depends(get_billing_service),
+    chat_service: ChatService = Depends(get_chat_service),
+    project_service: ProjectService = Depends(get_project_service),
+):
+    """
+    Execute a workflow in debug mode with real-time SSE streaming.
+
+    Starts the workflow and immediately returns an SSE stream of execution
+    events in real time.
+
+    Returns:
+        StreamingResponse with Content-Type: text/event-stream
+    """
+    workflow = await _load_and_authorize(
+        workflow_id,
+        project_id_from_token=project_id_from_token,
+        session_id=request.session_id,
+        resolve_published=False,
+        workflow_service=workflow_service,
+        chat_service=chat_service,
+        billing_service=billing_service,
+        project_service=project_service,
+        current_user=current_user,
+    )
+
+    input_data = _build_input_data(request, is_debug=True)
+
+    return _dispatch_debug_stream(
+        workflow,
+        input_data,
+        session_id=request.session_id,
+        token_id=token_id,
+        debug_event_manager=debug_event_manager,
+    )
+
+
+@router.post(
+    "/{workflow_id}/execute/audio",
+    response_model=ExecutionResponse | ExecutionErrorResponse | TaskExecutionResponse,
+    status_code=status.HTTP_200_OK,
+)
+async def execute_workflow_audio(
+    workflow_id: UUID,
+    file: UploadFile = File(..., description="Audio blob to transcribe into the run input"),
+    payload: str = Form("{}", description="JSON of ExecuteWorkflowRequest (without audio)"),
+    workflow_service: WorkflowService = Depends(get_workflow_service),
+    project_id_from_token: UUID = Depends(get_project_id_from_token),
+    token_id: UUID = Depends(get_token_id_from_request),
+    billing_service: BillingService = Depends(get_billing_service),
+    chat_service: ChatService = Depends(get_chat_service),
+    project_service: ProjectService = Depends(get_project_service),
+    execution_service: ExecutionService = Depends(get_execution_service),
+    credential_service: CredentialsService = Depends(get_credentials_service),
+    organization_service: OrganizationService = Depends(get_organization_service),
+    session: AsyncSession = Depends(get_db_session),
+):
+    """
+    Execute a workflow from an audio message (multipart).
+
+    Same contract as ``POST /execute`` but the run input is a transcribed audio
+    blob. The target workflow's START node must have ``acceptVoice=true`` (else
+    400); the audio is transcribed server-side into ``input.message`` before the
+    run, so everything downstream behaves like a normal text execution.
+    """
+    request = _parse_execute_payload(payload)
+
+    workflow = await _load_and_authorize(
+        workflow_id,
+        project_id_from_token=project_id_from_token,
+        session_id=request.session_id,
+        resolve_published=True,
+        workflow_service=workflow_service,
+        chat_service=chat_service,
+        billing_service=billing_service,
+        project_service=project_service,
+    )
+
+    input_data = _build_input_data(request, is_debug=False)
+
+    await transcribe_into_input_data(
+        workflow=workflow,
+        input_data=input_data,
+        file=file,
+        credential_service=credential_service,
+        organization_service=organization_service,
+        project_service=project_service,
+    )
+
+    return await _dispatch_sync(
+        workflow,
+        input_data,
+        request=request,
+        project_id=project_id_from_token,
+        token_id=token_id,
+        execution_service=execution_service,
+        session=session,
+    )
+
+
+@router.post(
+    "/{workflow_id}/execute/debug/audio",
+    status_code=status.HTTP_200_OK,
+)
+async def execute_workflow_debug_audio(
+    workflow_id: UUID,
+    file: UploadFile = File(..., description="Audio blob to transcribe into the run input"),
+    payload: str = Form("{}", description="JSON of ExecuteWorkflowRequest (without audio)"),
+    current_user: User = Depends(get_current_user),
+    workflow_service: WorkflowService = Depends(get_workflow_service),
+    debug_event_manager: DebugEventManager = Depends(get_debug_event_manager),
+    project_id_from_token: UUID = Depends(get_project_id_from_token_with_access_check),
+    token_id: UUID | None = Depends(get_token_id_optional),
+    billing_service: BillingService = Depends(get_billing_service),
+    chat_service: ChatService = Depends(get_chat_service),
+    project_service: ProjectService = Depends(get_project_service),
+    credential_service: CredentialsService = Depends(get_credentials_service),
+    organization_service: OrganizationService = Depends(get_organization_service),
+):
+    """
+    Execute a workflow from an audio message in debug mode (multipart → SSE).
+
+    The audio-input twin of ``POST /execute/debug``: transcribes the blob into
+    ``input.message`` (START must have ``acceptVoice=true``), then streams the
+    run's SSE events exactly as the text debug endpoint does.
+    """
+    request = _parse_execute_payload(payload)
+
+    workflow = await _load_and_authorize(
+        workflow_id,
+        project_id_from_token=project_id_from_token,
+        session_id=request.session_id,
+        resolve_published=False,
+        workflow_service=workflow_service,
+        chat_service=chat_service,
+        billing_service=billing_service,
+        project_service=project_service,
+        current_user=current_user,
+    )
+
+    input_data = _build_input_data(request, is_debug=True)
+
+    await transcribe_into_input_data(
+        workflow=workflow,
+        input_data=input_data,
+        file=file,
+        credential_service=credential_service,
+        organization_service=organization_service,
+        project_service=project_service,
+    )
+
+    return _dispatch_debug_stream(
+        workflow,
+        input_data,
+        session_id=request.session_id,
+        token_id=token_id,
+        debug_event_manager=debug_event_manager,
     )
 
 
@@ -632,4 +832,60 @@ async def get_execution_detail(
     return await execution_service.get_execution_detail(
         execution_id=execution_id,
         current_user=current_user,
+    )
+
+
+@execution_detail_router.get("/{execution_id}/stream")
+async def stream_execution_events(
+    execution_id: UUID,
+    request: Request,
+    current_user: User = Depends(get_current_user),
+    execution_service: ExecutionService = Depends(get_execution_service),
+    debug_event_manager: DebugEventManager = Depends(get_debug_event_manager),
+) -> StreamingResponse:
+    """Subscribe to an execution's event stream (step events + text deltas) over SSE.
+
+    Replays from the ``Last-Event-ID`` cursor, then tails live until the terminal event.
+    404 when no live buffer exists (expired or a non-streaming run) — the client then falls
+    back to GET /workflows/task/{execution_id} for the final result.
+    """
+    # Authorize: raises 404 if the execution is unknown, 403 if not in the caller's project.
+    await execution_service.get_execution_detail(
+        execution_id=execution_id, current_user=current_user
+    )
+
+    # A task=true run returns its id before the executor opens the buffer; wait briefly.
+    for _ in range(200):  # up to ~10s
+        if debug_event_manager.is_streaming(execution_id):
+            break
+        await asyncio.sleep(0.05)
+    if not debug_event_manager.is_streaming(execution_id):
+        raise HTTPException(status_code=404, detail="No active stream for this execution")
+
+    last_event_id = request.headers.get("last-event-id")
+    try:
+        cursor = int(last_event_id) if last_event_id else int(request.query_params.get("cursor", 0))
+    except (TypeError, ValueError):
+        cursor = 0
+
+    async def event_generator():
+        subscription = debug_event_manager.subscribe(execution_id, after_seq=cursor).__aiter__()
+        while True:
+            try:
+                event = await asyncio.wait_for(subscription.__anext__(), timeout=25.0)
+            except StopAsyncIteration:
+                break
+            except TimeoutError:
+                yield ": keepalive\n\n"
+                continue
+            yield (
+                f"id: {event.seq}\n"
+                f"event: {event.event_type.value}\n"
+                f"data: {event.model_dump_json()}\n\n"
+            )
+
+    return StreamingResponse(
+        event_generator(),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
     )

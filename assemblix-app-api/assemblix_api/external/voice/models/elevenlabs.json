@@ -1,0 +1,44 @@
+{
+  "models": [
+    {
+      "id": "eleven_multilingual_v2",
+      "label": "Multilingual v2",
+      "description": "High-quality multilingual speech.",
+      "capability": "speech",
+      "route": "speech",
+      "cost_per_char": 0.00003
+    },
+    {
+      "id": "eleven_turbo_v2_5",
+      "label": "Turbo v2.5",
+      "description": "Low-latency multilingual speech.",
+      "capability": "speech",
+      "route": "speech",
+      "cost_per_char": 0.000015
+    },
+    {
+      "id": "eleven_flash_v2_5",
+      "label": "Flash v2.5",
+      "description": "Fastest, lowest-latency speech.",
+      "capability": "speech",
+      "route": "speech",
+      "cost_per_char": 0.000015
+    },
+    {
+      "id": "eleven_flash_v2_5",
+      "label": "Flash v2.5",
+      "description": "Realtime low-latency streaming speech.",
+      "capability": "realtime",
+      "route": "realtime",
+      "cost_per_char": 0.000015
+    },
+    {
+      "id": "eleven_turbo_v2_5",
+      "label": "Turbo v2.5",
+      "description": "Realtime multilingual streaming speech.",
+      "capability": "realtime",
+      "route": "realtime",
+      "cost_per_char": 0.000015
+    }
+  ]
+}

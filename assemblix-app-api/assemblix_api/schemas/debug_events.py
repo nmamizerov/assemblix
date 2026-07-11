@@ -11,6 +11,8 @@ from assemblix_api.dto.base import DTOModel
 class DebugEventType(str, Enum):
     STEP_START = "step_start"
     STEP_COMPLETE = "step_complete"
+    STREAM_DELTA = "stream_delta"
+    AUDIO_DELTA = "audio_delta"
     EXECUTION_COMPLETE = "execution_complete"
     ERROR = "error"
 
@@ -22,6 +24,36 @@ class DebugEvent(DTOModel):
     execution_id: UUID
     timestamp: datetime
     data: dict[str, Any]
+    # Monotonic per-execution sequence number; the SSE `id:` and the cursor for replay.
+    seq: int = 0
+
+
+class StreamDeltaEventData(DTOModel):
+    node_id: str
+    step_number: int
+    delta: str
+    # True when the delta comes from an agent node with output_type=="avatar";
+    # the client forwards only these into the avatar SDK's streamMessageChunk.
+    avatar: bool = False
+
+
+class AlignmentData(DTOModel):
+    """Character-level timing from the TTS provider (ElevenLabs normalizedAlignment).
+
+    Carried through for phase-3 avatars/lip-sync; the phase-2b debug player ignores it.
+    """
+
+    chars: list[str]
+    char_start_times_ms: list[int]
+    char_durations_ms: list[int]
+
+
+class AudioDeltaEventData(DTOModel):
+    node_id: str
+    step_number: int
+    audio: str  # base64-encoded PCM chunk
+    format: str = "pcm_16000"
+    alignment: AlignmentData | None = None
 
 
 class StepStartEventData(DTOModel):

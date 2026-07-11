@@ -69,12 +69,15 @@ class CreditService:
         system_key_cost_usd: Decimal,
         own_key_cost_usd: Decimal,
         *,
+        system_voice_cost_usd: Decimal = Decimal(0),
+        own_voice_cost_usd: Decimal = Decimal(0),
         metadata: dict | None = None,
     ) -> dict:
         """Deduct credits for a workflow execution.
 
-        Only system-key LLM usage is charged (with margin); own-key usage is free
-        (the user pays the provider directly). No per-request fee.
+        Only system-key LLM usage and system-key voice (TTS) usage are charged
+        (with margin); own-key usage is free (the user pays the provider directly).
+        No per-request fee.
         """
         organization = await self._org_repo.get_by_id(organization_id)
         if not organization:
@@ -86,9 +89,12 @@ class CreditService:
             system_key_credits = credit_config.usd_to_credits(system_key_cost_usd, with_margin=True)
         own_key_credits: Decimal = Decimal(0)
 
-        # Total may be 0 when only own keys were used
-        total_credits = system_key_credits
-        total_usd = system_key_cost_usd
+        voice_credits: Decimal = Decimal(0)
+        if system_voice_cost_usd > 0:
+            voice_credits = credit_config.usd_to_credits(system_voice_cost_usd, with_margin=True)
+
+        total_credits = system_key_credits + voice_credits
+        total_usd = system_key_cost_usd + system_voice_cost_usd
 
         if total_credits > 0:
             if organization.credits_balance < total_credits:
@@ -103,6 +109,7 @@ class CreditService:
         full_metadata = {
             "system_key_cost_usd": float(system_key_cost_usd),
             "own_key_cost_usd": float(own_key_cost_usd),
+            "own_voice_cost_usd": float(own_voice_cost_usd),
             "credit_value_usd": float(credit_config.credit_value_usd),
             "margin_multiplier": float(credit_config.margin_multiplier),
             **(metadata or {}),
@@ -118,6 +125,18 @@ class CreditService:
                 execution_id=execution_id,
                 description=f"LLM usage (system keys) for execution {execution_id}",
                 meta=full_metadata,
+            )
+
+        # Voice (TTS) usage is itemized separately from LLM usage
+        if voice_credits > 0:
+            await self._tx_repo.create(
+                organization_id=organization_id,
+                amount_credits=-voice_credits,
+                amount_usd=-system_voice_cost_usd,
+                type=CreditTransactionType.VOICE_USAGE,
+                execution_id=execution_id,
+                description=f"Voice (TTS) usage for execution {execution_id}",
+                meta={"system_voice_cost_usd": float(system_voice_cost_usd), **(metadata or {})},
             )
 
         return {

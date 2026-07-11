@@ -5,6 +5,164 @@ All notable changes to this project are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.10](https://github.com/nmamizerov/assemblix/compare/v0.2.9...v0.2.10) (2026-07-09)
+
+
+### Features
+
+* AI avatars + Yandex SpeechKit voice (TTS+STT) ([3e2afea](https://github.com/nmamizerov/assemblix/commit/3e2afea2b38ecc1f4fa3c06dcdce05d177c3606c))
+* **voice:** add Yandex SpeechKit TTS+STT provider with data-driven realtime toggle ([c778b03](https://github.com/nmamizerov/assemblix/commit/c778b03ccc40d0991302fa6d5d4272d02137ee64))
+
+## [0.2.9](https://github.com/nmamizerov/assemblix/compare/v0.2.8...v0.2.9) (2026-07-08)
+
+
+### Features
+
+* **avatars:** add ANAM_TOKEN credentials type ([20fd6b6](https://github.com/nmamizerov/assemblix/commit/20fd6b6ce3ce71cb4fb50b8e13aaf3b531a91811))
+* **avatars:** AI avatar output modality (anam.ai, phase 3) ([e6019b2](https://github.com/nmamizerov/assemblix/commit/e6019b2fb42b5ec904f7a0a671f27401fd9cb0fc))
+* **avatars:** anam adapter (list_avatars + mint_session_token) ([fe34df4](https://github.com/nmamizerov/assemblix/commit/fe34df4473c90ce4f881b7eee6572e4bfe7c4f93))
+* **avatars:** anam credential mapping + avatar config types ([4fd5862](https://github.com/nmamizerov/assemblix/commit/4fd58629d9af0bb25dac12bb825872a4d778db86))
+* **avatars:** anam_api_base_url setting ([4ed6af3](https://github.com/nmamizerov/assemblix/commit/4ed6af315053ef53cac0df438b906f15601c8f98))
+* **avatars:** avatar picker in header + agent-node avatar output option ([71b4dcd](https://github.com/nmamizerov/assemblix/commit/71b4dcd2fb8a6f93b79695c6edae5029039849f7))
+* **avatars:** avatar session hook + conversational wiring ([901034b](https://github.com/nmamizerov/assemblix/commit/901034bfba42b918c144f2ea27ac56bafab456d9))
+* **avatars:** avatar-model RTK entity ([ec3f385](https://github.com/nmamizerov/assemblix/commit/ec3f3857f9971ebcc50c4be276d9f88e1f097f8a))
+* **avatars:** AvatarRenderer interface + AnamRenderer ([0470a50](https://github.com/nmamizerov/assemblix/commit/0470a50782084c5dc468074b09cde35d8f73ae1a))
+* **avatars:** BYO-only avatar API key resolver ([34221e1](https://github.com/nmamizerov/assemblix/commit/34221e1c27d90b42d0e0b6836cbfb58f3453e7df))
+* **avatars:** data-driven avatar model catalog (anam) ([19ea2a1](https://github.com/nmamizerov/assemblix/commit/19ea2a17ee8e44199d71d6c65cd3f2d058b9a5d3))
+* **avatars:** debounced server-side voice search in the picker ([616b50b](https://github.com/nmamizerov/assemblix/commit/616b50bd036cda0e46d955dd1203cd7161a707a1))
+* **avatars:** discovery + session response DTOs ([f462468](https://github.com/nmamizerov/assemblix/commit/f462468412973dcb75ef4a938dd5469c803c06b1))
+* **avatars:** discovery + workflow session-mint API ([67a7542](https://github.com/nmamizerov/assemblix/commit/67a7542238a81acb827eb676c2e01ea8e15af7da))
+* **avatars:** expose workflow config on CRUD DTOs so avatar persona persists ([e175fff](https://github.com/nmamizerov/assemblix/commit/e175fff69d4a656c60e9b023f069c1b8d859f9e7))
+* **avatars:** i18n keys for avatar output (en/es/ru) + drop stray per-node avatar field ([60bae4c](https://github.com/nmamizerov/assemblix/commit/60bae4cfb1a4c87888bffaacac42f56113177a68))
+* **avatars:** provider dispatch for session minting ([37119ff](https://github.com/nmamizerov/assemblix/commit/37119fff27dceba0fdfbc74d70b8c37ac0f88a36))
+* **avatars:** show output-format badge (voice/avatar) on the agent node ([006c3dd](https://github.com/nmamizerov/assemblix/commit/006c3dd5b975ecd4c79c00f2aecbe17a3f383aea))
+* **avatars:** tag avatar-node stream deltas for client forwarding ([73220fe](https://github.com/nmamizerov/assemblix/commit/73220fe50d78bbbe41821cd7e14dca23fd41b47d))
+* **avatars:** workflow-global avatar config + avatar output_type ([4874fae](https://github.com/nmamizerov/assemblix/commit/4874fae32133367178184074f13bd786f72f76b4))
+
+
+### Bug Fixes
+
+* **avatars:** header tooltip key, optimistic avatar config, node warning ([1d42ad5](https://github.com/nmamizerov/assemblix/commit/1d42ad5d02ca3fb6613b5c4231f0da8231262fad))
+* **avatars:** keep selected voice on search/node-edit + buffer first speech chunk ([4be07fb](https://github.com/nmamizerov/assemblix/commit/4be07fb620aac66c54ff65f1d7eddbdf457abb75))
+* **avatars:** make avatar actually speak + user-initiated debug session ([c66904d](https://github.com/nmamizerov/assemblix/commit/c66904db9a49acb006023c7f43f7842e1b52f4ba))
+* **avatars:** map anam avatar name from displayName/variantName (no 'name' field) ([cb971af](https://github.com/nmamizerov/assemblix/commit/cb971af7eadf28f9d9b082bd4d4c6b98e846786b))
+* **avatars:** per-invocation epoch guard for avatar session connect race ([5a6a65c](https://github.com/nmamizerov/assemblix/commit/5a6a65cd77186a33e08eb55af8dbf8808f252750))
+* **avatars:** require real avatarId+voiceId persona (anam dropped legacy tokens) ([9c2a706](https://github.com/nmamizerov/assemblix/commit/9c2a7063fb3a342da6dfcfce3acca6e9f15ab9a3))
+* **avatars:** surface anam error body on session-mint/list failures ([f6769c7](https://github.com/nmamizerov/assemblix/commit/f6769c75fee48a10ffea91a23adb880cc7ab00b1))
+* **avatars:** surface avatar connect errors + guard session lifecycle race ([7f23e59](https://github.com/nmamizerov/assemblix/commit/7f23e59b475ad8f49610962986e199d6ec69a957))
+* **avatars:** warn when avatar output has streaming off + log talk-stream errors ([3975f3c](https://github.com/nmamizerov/assemblix/commit/3975f3c4bc8672cd76b6054db9e3c79917af9c11))
+
+
+### Documentation
+
+* **avatars:** phase-3 AI avatars design spec ([0ffcbd0](https://github.com/nmamizerov/assemblix/commit/0ffcbd0ecb14bc54fac0574c730b7de82a23283d))
+* **avatars:** phase-3 implementation plan (16 TDD tasks) ([a7ac3a9](https://github.com/nmamizerov/assemblix/commit/a7ac3a94937d822a6640b582671ca09f15d10046))
+
+## [0.2.8](https://github.com/nmamizerov/assemblix/compare/v0.2.7...v0.2.8) (2026-07-08)
+
+
+### Features
+
+* **voice-streaming:** agent voice helper (live gate, tee, buffered fallback, cost) ([007405c](https://github.com/nmamizerov/assemblix/commit/007405c7b1fd49a65e609eac48305d875f298fc8))
+* **voice-streaming:** AgentNodeConfig output_type + voice + validation ([5b1ca64](https://github.com/nmamizerov/assemblix/commit/5b1ca649006be2401313d89889a8a0b74f882524))
+* **voice-streaming:** AUDIO_DELTA event type + AlignmentData schema ([2e358b3](https://github.com/nmamizerov/assemblix/commit/2e358b37e4e6022d4afe21c37753a794a5dc9d18))
+* **voice-streaming:** DebugEventManager.emit_audio_delta (transient) ([77f65e7](https://github.com/nmamizerov/assemblix/commit/77f65e789e27d0784ded95d2be05beec89843c52))
+* **voice-streaming:** frontend — agent voice picker + Web Audio PCM player ([ad06570](https://github.com/nmamizerov/assemblix/commit/ad06570ba4ef4cae9833154ab8b6cb2ee58f02c2))
+* **voice-streaming:** in-memory transient audio ring (live-only, no replay starvation) ([0e17a3b](https://github.com/nmamizerov/assemblix/commit/0e17a3b61181ef2745454d1054e433cdb350ba5b))
+* **voice-streaming:** NodeInput.on_audio + node_runner PCM sink ([c115662](https://github.com/nmamizerov/assemblix/commit/c115662988821ba92faacfd756bde0548cfa076e))
+* **voice-streaming:** realtime agent→TTS streaming voice output (phase 2b) ([a56cc21](https://github.com/nmamizerov/assemblix/commit/a56cc2164448598220a6724fc150871d575a2106))
+* **voice-streaming:** realtime voice route + catalog entries ([769ddb5](https://github.com/nmamizerov/assemblix/commit/769ddb5e7ad23294cf5e6a74efc1e66d3678e41b))
+* **voice-streaming:** RealtimeTTSSession EL stream-input client + fake WS seam ([88ca990](https://github.com/nmamizerov/assemblix/commit/88ca9908500c1005e9af584ad57a4ae3a76064b5))
+* **voice-streaming:** Redis transient audio stream + seq-merged subscribe ([2948e4b](https://github.com/nmamizerov/assemblix/commit/2948e4b974ce0ddba19088537ed8e573f29efb69))
+* **voice-streaming:** settings for realtime TTS + audio buffer ([976c924](https://github.com/nmamizerov/assemblix/commit/976c924663dfa0b8ea8f19e26d2f7587423c21d5))
+* **voice-streaming:** wire live + buffered voice into AgentNode.execute ([504ece0](https://github.com/nmamizerov/assemblix/commit/504ece0e8abb24277295e4f2c97c7a1c97292d41))
+
+
+### Bug Fixes
+
+* **voice-streaming:** add agent voice i18n keys to ru/es locales (build green) ([45689a3](https://github.com/nmamizerov/assemblix/commit/45689a3f4627ba612571cc4325485f3f17488a17))
+
+
+### Documentation
+
+* **voice-streaming:** Phase 2b implementation plan (17 tasks, TDD) ([d666ada](https://github.com/nmamizerov/assemblix/commit/d666adaac4f8b70265d7df67e7670013dc222d02))
+* **voice-streaming:** Phase 2b realtime agent→TTS design spec ([e77d1f1](https://github.com/nmamizerov/assemblix/commit/e77d1f1bc70a66b08ff43603f8923cba16b67796))
+* **voice-streaming:** spike results — EL stream-input WS + Web Audio PCM ([0f54d20](https://github.com/nmamizerov/assemblix/commit/0f54d203ae619a8e9c9cb8ea121ac8f0acbf653e))
+
+
+### Refactoring
+
+* **voice-streaming:** remove synthesis from END (moved to agent) ([88fcd22](https://github.com/nmamizerov/assemblix/commit/88fcd22a7af76589bba447e6910558b5f597de0e))
+
+## [0.2.7](https://github.com/nmamizerov/assemblix/compare/v0.2.6...v0.2.7) (2026-07-07)
+
+
+### Features
+
+* **streaming:** AgentRunner streams text deltas via event_stream_handler ([f815c94](https://github.com/nmamizerov/assemblix/commit/f815c94377eba305ca659fb008f71adffcff0fa9))
+* **streaming:** buffer lifecycle - open_buffer (no queue) + TTL cleanup ([802772f](https://github.com/nmamizerov/assemblix/commit/802772f17ecc2aba2c0466ebd19235dbd7ea228b))
+* **streaming:** buffer-backed DebugEventManager (emit_stream_delta/subscribe/is_streaming) ([ab11f46](https://github.com/nmamizerov/assemblix/commit/ab11f46b4c1c14a68070753952cfc243c183bed0))
+* **streaming:** debug-runner streaming toggle + live token rendering ([8578def](https://github.com/nmamizerov/assemblix/commit/8578def018e3e7e9cfd2d99a75e9a74daa113869))
+* **streaming:** GET /executions/{id}/stream SSE endpoint with cursor replay ([93fecf6](https://github.com/nmamizerov/assemblix/commit/93fecf676cda548d2443f70aa479918680048dae))
+* **streaming:** in-memory sequence-numbered replayable stream buffer ([573a255](https://github.com/nmamizerov/assemblix/commit/573a255076e118f0da427b740d6c63c77ab74c78))
+* **streaming:** litellm shim supports stream=True via _StreamShim ([93c8fae](https://github.com/nmamizerov/assemblix/commit/93c8fae9568f4a7fc74b04c427bccb04513dc4f6))
+* **streaming:** per-node stream flag with three-gate delta emission ([1924417](https://github.com/nmamizerov/assemblix/commit/1924417e552ee17d6f7b539b7269f5175b1bf457))
+* **streaming:** Redis Stream buffer backend with in-memory parity ([f68a30b](https://github.com/nmamizerov/assemblix/commit/f68a30bcd2cca9cc15a80df1d1c42c964f91301b))
+* **streaming:** request stream flag threads to context and opens the buffer ([d95a940](https://github.com/nmamizerov/assemblix/commit/d95a9408399e09c6ae78929e4724b272244ffc60))
+* **streaming:** STREAM_DELTA event type + seq on DebugEvent ([3efe2d0](https://github.com/nmamizerov/assemblix/commit/3efe2d0568e30295d25048fe8976fd9ee47be5b8))
+* **streaming:** token-level text streaming, debug-first (Phase 2a) ([51aae65](https://github.com/nmamizerov/assemblix/commit/51aae65c50d57a3e6ee220a7502ef91cacf65925))
+
+
+### Documentation
+
+* **streaming:** Phase 2a text streaming design spec ([95fee0e](https://github.com/nmamizerov/assemblix/commit/95fee0eba9b9ba4d6f50c708131fbc68a465759d))
+* **streaming:** Phase 2a text streaming implementation plan ([7a3ece6](https://github.com/nmamizerov/assemblix/commit/7a3ece68d478c4f4a3dfefe1cae87deaa6c7883a))
+
+## [0.2.6](https://github.com/nmamizerov/assemblix/compare/v0.2.5...v0.2.6) (2026-07-06)
+
+
+### Features
+
+* **voice:** add direct ElevenLabs client (list voices + synthesize) ([c1883e1](https://github.com/nmamizerov/assemblix/commit/c1883e1fcc4a71ea2b565c3d20a0a73f274b3711))
+* **voice:** add elevenlabs credential type and voice-output settings ([b11fd9f](https://github.com/nmamizerov/assemblix/commit/b11fd9ff9f9fa9eef425d8e4de45993ef841cd40))
+* **voice:** add ElevenLabs credential type to the web UI ([108e4c1](https://github.com/nmamizerov/assemblix/commit/108e4c18256e7e93295f716c47a9682b8eabd1bb))
+* **voice:** add per-character TTS cost helper ([587c188](https://github.com/nmamizerov/assemblix/commit/587c188cfa90c188bf7df8a01cdbafe7bd40a75c))
+* **voice:** add provider-agnostic synthesize() seam ([6230b6c](https://github.com/nmamizerov/assemblix/commit/6230b6c2f4770b480d1e638272a9518992217a48))
+* **voice:** add voice output config to the END node schema ([5376cba](https://github.com/nmamizerov/assemblix/commit/5376cbae0cd688974a5a81e2549399a3a30639cf))
+* **voice:** configurable ElevenLabs base URL for proxy override ([8ab16ee](https://github.com/nmamizerov/assemblix/commit/8ab16ee98573e76fe7bc539f5314282ff14bbdc9))
+* **voice:** itemize TTS spend as VOICE_USAGE credit transactions ([cb99997](https://github.com/nmamizerov/assemblix/commit/cb999975735d09d8f71b46dcfbe4ecd2d011c39f))
+* **voice:** list ElevenLabs voices by credential ([0f285f7](https://github.com/nmamizerov/assemblix/commit/0f285f73430c86d6654d36eabaa4006ed7996089))
+* **voice:** meter TTS at finalization and keep audio out of the DB ([b2f87b1](https://github.com/nmamizerov/assemblix/commit/b2f87b12ff08bddc894c68cf323cdf9a7d441d51))
+* **voice:** play synthesized audio in the chat reply ([59d552a](https://github.com/nmamizerov/assemblix/commit/59d552a50340594ba89eae969c0347bdef105b48))
+* **voice:** register ElevenLabs speech models and capability-filtered discovery ([ba68f0c](https://github.com/nmamizerov/assemblix/commit/ba68f0c07d59c1a8c5002e1d5fef82a7d5df17db))
+* **voice:** server-side voice output on the END node (ElevenLabs TTS) ([7bc81d6](https://github.com/nmamizerov/assemblix/commit/7bc81d6b4f304652ec477ef8f3fe231b890a4f3d))
+* **voice:** synthesize audio in the END node with char cap and billing facts ([a335e85](https://github.com/nmamizerov/assemblix/commit/a335e855c04e969c7c70c1c266457443a40b6333))
+* **voice:** system-token voice list endpoint and END-form branch ([f911ed5](https://github.com/nmamizerov/assemblix/commit/f911ed55daa8b82a26e18150d15335be070cbb78))
+* **voice:** text/voice output picker on the END node form ([ae4c9ca](https://github.com/nmamizerov/assemblix/commit/ae4c9ca9b9ea871654df998364d1f016ffe6c31c))
+* **voice:** track TTS cost in dedicated voice buckets ([34079d5](https://github.com/nmamizerov/assemblix/commit/34079d53628ff702b4bc26cf24b2a99f33e47b8e))
+* **voice:** voice-aware credential resolution with system-key fallback ([84ca9e8](https://github.com/nmamizerov/assemblix/commit/84ca9e892cc5849c9b3e415863394b4fd4ad8eac))
+* **voice:** voice-model hooks for speech models and account voices ([a3464eb](https://github.com/nmamizerov/assemblix/commit/a3464ebcb07efb857f5188bbd5560c76660a3403))
+
+
+### Bug Fixes
+
+* **voice:** resolve lint gates, graceful voice fallback, and review nits ([c60bfe9](https://github.com/nmamizerov/assemblix/commit/c60bfe92db010a14e0085719da598059f0cb64c3))
+* **voice:** searchable, fixed-height voice select on the END node ([9ef5c50](https://github.com/nmamizerov/assemblix/commit/9ef5c502fdda386a2fb77c6e1f55870ced209693))
+
+
+### Documentation
+
+* **voice:** document voice-output env vars and read them via os.getenv ([7fead94](https://github.com/nmamizerov/assemblix/commit/7fead94c0da231ab9337830f2a316b72f922a6cd))
+* **voice:** spec and implementation plan for voice output on the END node ([ed41c78](https://github.com/nmamizerov/assemblix/commit/ed41c789dacb54ec56865288a82e64ed12af5b98))
+
+## [0.2.5](https://github.com/nmamizerov/assemblix/compare/v0.2.4...v0.2.5) (2026-07-06)
+
+
+### Features
+
+* **voice:** voice input via server-side transcription ([a07e5f2](https://github.com/nmamizerov/assemblix/commit/a07e5f22a8f9064c748676919c795aacfaabf144))
+* **voice:** voice input via server-side transcription ([37e070c](https://github.com/nmamizerov/assemblix/commit/37e070c551e06a2835307de2843312362a1cf1bb))
+
 ## [0.2.4](https://github.com/nmamizerov/assemblix/compare/v0.2.3...v0.2.4) (2026-07-06)
 
 

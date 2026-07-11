@@ -162,6 +162,10 @@ class Settings(BaseSettings):
     redis_url: str | None = os.getenv("REDIS_URL") or None
     execution_queue_enabled: bool = os.getenv("EXECUTION_QUEUE_ENABLED", "false").lower() == "true"
     debug_events_use_redis: bool = os.getenv("DEBUG_EVENTS_USE_REDIS", "false").lower() == "true"
+    # Streaming: how long an execution's replayable event buffer is retained after it
+    # completes, and the max events kept per execution (ring / Redis Stream MAXLEN).
+    stream_buffer_ttl_seconds: int = int(os.getenv("STREAM_BUFFER_TTL_SECONDS", "600"))
+    stream_buffer_max_events: int = int(os.getenv("STREAM_BUFFER_MAX_EVENTS", "2000"))
     execution_checkpointing_enabled: bool = (
         os.getenv("EXECUTION_CHECKPOINTING_ENABLED", "false").lower() == "true"
     )
@@ -194,6 +198,57 @@ class Settings(BaseSettings):
     )
     kb_max_pdf_pages: int = int(os.getenv("KB_MAX_PDF_PAGES", "500"))
     kb_pdf_parse_timeout_seconds: float = float(os.getenv("KB_PDF_PARSE_TIMEOUT_SECONDS", "30"))
+
+    # Max size of an inbound audio blob transcribed by the /execute/audio endpoints.
+    # Kept under the provider transcription ceiling (OpenAI Whisper caps at 25 MB).
+    voice_max_upload_bytes: int = int(
+        os.getenv("VOICE_MAX_UPLOAD_BYTES", str(20 * 1024 * 1024))  # 20 MB
+    )
+
+    # ElevenLabs (voice output). Optional platform key for the hosted build; when
+    # unset, only user-supplied credentials work (self-host default).
+    system_elevenlabs_api_key: str = os.getenv("SYSTEM_ELEVENLABS_API_KEY", "")
+    # ElevenLabs API base URL. Override to route through a proxy/gateway.
+    elevenlabs_api_base_url: str = os.getenv(
+        "ELEVENLABS_API_BASE_URL", "https://api.elevenlabs.io/v1"
+    )
+    # Hard ceiling on characters sent to TTS per END node (bounds payload + cost).
+    voice_output_max_chars: int = int(os.getenv("VOICE_OUTPUT_MAX_CHARS", "2000"))
+
+    # Streaming voice (phase 2b). Transient audio ring / Redis audio-stream MAXLEN — bounds
+    # memory so heavy PCM never starves the replayable text/control history.
+    stream_audio_buffer_max_chunks: int = int(os.getenv("STREAM_AUDIO_BUFFER_MAX_CHUNKS", "50"))
+    # ElevenLabs realtime WebSocket base URL (stream-input). Override for a proxy/gateway.
+    elevenlabs_ws_base_url: str = os.getenv("ELEVENLABS_WS_BASE_URL", "wss://api.elevenlabs.io/v1")
+    # PCM wire format for realtime audio (avatar-native; the debug player decodes via Web Audio).
+    voice_realtime_output_format: str = os.getenv("VOICE_REALTIME_OUTPUT_FORMAT", "pcm_16000")
+    # ElevenLabs chunk_length_schedule — server-side batching to natural boundaries.
+    voice_realtime_chunk_schedule: list[int] = [50, 120, 200, 300]
+
+    # anam.ai (avatar output). BYO-key only this phase — no platform key. Override
+    # the base URL to route through a proxy/gateway.
+    anam_api_base_url: str = os.getenv("ANAM_API_BASE_URL", "https://api.anam.ai")
+
+    # Yandex SpeechKit (voice input + output). Needs two secrets: an API key and a
+    # folder id. Both are optional platform values for the hosted build; when unset,
+    # only user-supplied credentials work (self-host default).
+    system_yandex_speechkit_api_key: str = os.getenv("SYSTEM_YANDEX_SPEECHKIT_API_KEY", "")
+    system_yandex_speechkit_folder_id: str = os.getenv("SYSTEM_YANDEX_SPEECHKIT_FOLDER_ID", "")
+    # SpeechKit REST base URLs. Override to route through a proxy/gateway.
+    yandex_tts_api_base_url: str = os.getenv(
+        "YANDEX_TTS_API_BASE_URL", "https://tts.api.cloud.yandex.net/speech/v1"
+    )
+    yandex_stt_api_base_url: str = os.getenv(
+        "YANDEX_STT_API_BASE_URL", "https://stt.api.cloud.yandex.net/speech/v1"
+    )
+
+    @field_validator("voice_realtime_chunk_schedule", mode="before")
+    @classmethod
+    def _parse_chunk_schedule(cls, v: object) -> object:
+        """Accept a CSV env override (e.g. "50,120,200") for the chunk schedule."""
+        if isinstance(v, str):
+            return [int(x) for x in v.split(",") if x.strip()]
+        return v
 
     # Phase 5: Observability / Prometheus metrics.
     # When true, the /metrics endpoint and worker scrape port are enabled.

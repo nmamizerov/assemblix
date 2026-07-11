@@ -11,10 +11,50 @@ from assemblix_api.enums import AgentProvider, NodeType
 from assemblix_api.schemas.execution import NodeInput, NodeOutput
 
 
+class VoiceModelConfig(DTOModel):
+    """Provider/model that transcribes inbound audio when a workflow accepts voice
+    input on its START node. ``provider`` is a voice-provider id (e.g. "openai",
+    "yandex") — intentionally not an AgentProvider, mirroring VoiceOutputConfig."""
+
+    provider: str
+    model: str
+    credential_id: str | None = None
+
+
+class VoiceOutputConfig(DTOModel):
+    """TTS provider/voice for the agent node. ``provider`` is a voice-provider id
+    (e.g. "elevenlabs"), intentionally not an AgentProvider. ``realtime`` is the
+    user's explicit opt-in to live WS streaming; it only takes effect for a
+    provider/model that actually has a realtime route (buffered otherwise)."""
+
+    provider: str
+    model: str
+    voice_id: str | None = None
+    credential_id: str | None = None
+    realtime: bool = False
+
+
+class WorkflowAvatarConfig(DTOModel):
+    """Workflow-global avatar persona. Set in the editor header, stored in
+    ``workflow.config["avatar"]``. Avatars are BYO-key only (credential_id)."""
+
+    provider: str
+    avatar_model: str
+    avatar_id: str | None = None
+    voice_id: str | None = None
+    voice_name: str | None = None  # display-only, kept so the UI can render it
+    credential_id: str | None = None
+
+
 class StartNodeConfig(DTOModel):
     # On a new session this greeting is stored as an assistant message and
     # becomes part of the chat history.
     first_phrase: str | None = None
+    # Voice input: when true, the /execute/audio endpoints transcribe an inbound
+    # audio blob into `input.message` before the run. `voice_model` selects the
+    # transcription provider/model; it defaults to openai/whisper-1 when unset.
+    accept_voice: bool = False
+    voice_model: VoiceModelConfig | None = None
 
 
 class AgentInstruction(DTOModel):
@@ -59,6 +99,15 @@ class AgentNodeConfig(DTOModel):
 
     response_format: Literal["json_object", "text"] = "text"
     response_schema: dict | None = None
+    # Stream this agent's free-form text output token-by-token when the run is dispatched
+    # with request.stream=true. Only honored for response_format="text".
+    stream: bool = False
+    # Output modality (voice moved here from the END node). "text" (default) unchanged;
+    # "voice" streams realtime audio when the run streams + a realtime model is set, else
+    # synthesizes one buffered base64 blob at the end of the run. "avatar" reuses the
+    # text streaming (2a) for a workflow-level avatar; no per-node avatar config.
+    output_type: Literal["text", "voice", "avatar"] = "text"
+    voice: VoiceOutputConfig | None = None
     tools: list[str] | None = None  # List of tool names, e.g. ["web_search"]
     # MCP servers (backend seam): accepted in the config, but a real client is not connected yet.
     mcp_servers: list[MCPServerConfig] = Field(default_factory=list)
@@ -143,6 +192,9 @@ class EndNodeConfig(DTOModel):
 
     project_filter: Literal["all", "none", "selected"] = "all"
     project_variables: list[str] = []  # variables for "selected"
+
+    # Voice output moved to the AGENT node (phase 2b). END is text-only: it selects the
+    # source output (which may already carry `audio` from a voiced agent) and passes it through.
 
     is_error: bool = False  # business error (not a technical one)
 
