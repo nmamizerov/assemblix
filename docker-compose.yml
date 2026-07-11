@@ -110,6 +110,16 @@ services:
       - "${WEB_PORT:-8080}:80"
     depends_on:
       - api
+      - docs
+    restart: unless-stopped
+
+  # Documentation site (MkDocs Material). Built from repo-root docs/ + mkdocs.yml
+  # and served internally; the web container proxies /docs -> here.
+  docs:
+    build:
+      context: .
+      dockerfile: docs-site/Dockerfile
+    image: assemblix-docs:latest
     restart: unless-stopped
 
   # --- Queue tier (opt-in via `COMPOSE_PROFILES=queue`) ---------------------

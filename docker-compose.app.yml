@@ -61,4 +61,14 @@ services:
       - "80"
     depends_on:
       - api
+      - docs
+    restart: unless-stopped
+
+  # Documentation site (MkDocs Material), built from repo-root docs/ + mkdocs.yml
+  # and served internally; `web` nginx proxies /docs -> here (same-origin /docs).
+  docs:
+    build:
+      context: .
+      dockerfile: docs-site/Dockerfile
+    image: assemblix-docs:latest
     restart: unless-stopped

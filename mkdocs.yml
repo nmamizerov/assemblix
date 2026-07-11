@@ -5,6 +5,13 @@ repo_name: nmamizerov/assemblix
 docs_dir: docs
 edit_uri: edit/main/docs/
 
+# Guard: never publish internal planning material even if it lands under docs/
+# again (the superpowers writing-plans skill defaults to docs/superpowers/).
+# Internal plans/specs live in the repo-root internal-docs/ directory instead.
+exclude_docs: |
+  superpowers/
+  assets/RECORDING.md
+
 theme:
   name: material
   palette:
