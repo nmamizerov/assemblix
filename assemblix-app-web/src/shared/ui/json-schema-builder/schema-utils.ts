@@ -1,9 +1,9 @@
 import type { SchemaProperty, OpenAPISchema } from "./types";
 
 /**
- * Конвертирует одно SchemaProperty в узел OpenAPI-схемы.
- * Симметрична parseSchemaNodeToProperty: generate → parse → generate
- * должен быть идемпотентным (см. schema-utils.test.ts).
+ * Converts a single SchemaProperty into an OpenAPI schema node.
+ * Symmetric with parseSchemaNodeToProperty: the generate → parse → generate
+ * round-trip must be idempotent (see schema-utils.test.ts).
  */
 const convertPropertyToSchemaNode = (
   prop: SchemaProperty
@@ -16,14 +16,14 @@ const convertPropertyToSchemaNode = (
     schemaProp.description = prop.description;
   }
 
-  // Обработка enum
+  // Enum handling
   if (prop.type === "enum" && prop.enumValues && prop.enumValues.length > 0) {
     schemaProp.enum = prop.enumValues.filter((v) => v !== "");
   }
 
-  // Обработка object: properties/additionalProperties пишем всегда, даже для
-  // пустого объекта — strict-провайдеры (OpenAI structured outputs) отклоняют
-  // {"type": "object"} без properties.
+  // Object handling: always emit properties/additionalProperties, even for an
+  // empty object — strict providers (OpenAI structured outputs) reject
+  // {"type": "object"} without properties.
   if (prop.type === "object") {
     schemaProp.properties = convertPropertiesToSchema(prop.properties || []);
     const requiredProps = (prop.properties || [])
@@ -35,8 +35,8 @@ const convertPropertyToSchemaNode = (
     schemaProp.additionalProperties = false;
   }
 
-  // Обработка array: элементы конвертируются рекурсивно, чтобы объекты,
-  // enum'ы и вложенные массивы внутри массива не терялись.
+  // Array handling: items are converted recursively so that objects, enums
+  // and nested arrays inside an array are not lost.
   if (prop.type === "array") {
     schemaProp.items = prop.items
       ? convertPropertyToSchemaNode(prop.items)
@@ -47,7 +47,7 @@ const convertPropertyToSchemaNode = (
 };
 
 /**
- * Конвертирует массив SchemaProperty в OpenAPI схему свойств
+ * Converts an array of SchemaProperty into an OpenAPI properties map
  */
 export const convertPropertiesToSchema = (
   properties: SchemaProperty[]
@@ -55,7 +55,7 @@ export const convertPropertiesToSchema = (
   const result: Record<string, unknown> = {};
 
   properties.forEach((prop) => {
-    if (!prop.name) return; // Пропускаем свойства без имени
+    if (!prop.name) return; // Skip unnamed properties
     result[prop.name] = convertPropertyToSchemaNode(prop);
   });
 
@@ -63,7 +63,7 @@ export const convertPropertiesToSchema = (
 };
 
 /**
- * Генерирует OpenAPI JSON Schema из массива свойств
+ * Generates an OpenAPI JSON Schema from an array of properties
  */
 export const generateSchema = (
   properties: SchemaProperty[],
@@ -88,9 +88,9 @@ export const generateSchema = (
 };
 
 /**
- * Парсит один узел схемы обратно в SchemaProperty.
- * Рекурсивно восстанавливает вложенные объекты, enum'ы и элементы массивов —
- * в том числе объекты внутри массивов (раньше их поля здесь терялись).
+ * Parses a single schema node back into a SchemaProperty.
+ * Recursively restores nested objects, enums and array items — including
+ * objects inside arrays (their fields used to be lost here).
  */
 const parseSchemaNodeToProperty = (
   name: string,
@@ -105,12 +105,12 @@ const parseSchemaNodeToProperty = (
     required,
   };
 
-  // Восстанавливаем enum значения
+  // Restore enum values
   if (property.type === "enum" && Array.isArray(node.enum)) {
     property.enumValues = node.enum as string[];
   }
 
-  // Восстанавливаем вложенные объекты
+  // Restore nested objects
   if (property.type === "object") {
     property.properties = parseSchemaToProperties({
       type: "object",
@@ -120,7 +120,7 @@ const parseSchemaNodeToProperty = (
     });
   }
 
-  // Восстанавливаем элементы массива (рекурсивно, включая object/enum/array)
+  // Restore array items (recursively, including object/enum/array)
   if (property.type === "array" && node.items) {
     property.items = parseSchemaNodeToProperty(
       "item",
@@ -133,7 +133,7 @@ const parseSchemaNodeToProperty = (
 };
 
 /**
- * Парсит OpenAPI схему обратно в массив SchemaProperty
+ * Parses an OpenAPI schema back into an array of SchemaProperty
  */
 export const parseSchemaToProperties = (
   schema?: OpenAPISchema

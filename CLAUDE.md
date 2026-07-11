@@ -113,9 +113,9 @@ yarn install && yarn dev                    # Vite → :5173, proxies /api → :
 
 CI spans both apps. The **backend** pipeline ([.github/workflows/ci.yml](.github/workflows/ci.yml))
 runs lint/ruff, mypy, bandit SAST, and pytest+coverage. The **frontend** pipeline
-([.github/workflows/web-ci.yml](.github/workflows/web-ci.yml)) runs the TypeScript build
-(type-check) as a hard gate and eslint as a non-blocking step (pre-existing react-hooks
-violations are being cleaned up). A **repo-wide gitleaks secret scan runs on every PR**
+([.github/workflows/web-ci.yml](.github/workflows/web-ci.yml)) runs vitest unit tests and
+the TypeScript build (type-check) as hard gates, and eslint as a non-blocking step
+(pre-existing react-hooks violations are being cleaned up). A **repo-wide gitleaks secret scan runs on every PR**
 regardless of which app changed. Each pipeline is path-filtered, so a frontend-only PR
 skips the Python jobs (and vice-versa) but is still secret-scanned. The docs site is built
 and deployed by [.github/workflows/docs.yml](.github/workflows/docs.yml).

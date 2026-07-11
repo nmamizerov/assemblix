@@ -12,6 +12,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 npm run dev          # Dev server (English locale)
 npm run build        # TypeScript check + production build
 npm run lint         # ESLint
+npm run test         # Unit tests (vitest)
 ```
 
 Backend is expected at `http://localhost:8000` — Vite proxies `/api/` requests there.

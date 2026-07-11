@@ -3,12 +3,12 @@ import type { SchemaProperty, OpenAPISchema } from "./types";
 import { generateSchema, parseSchemaToProperties } from "./schema-utils";
 
 /**
- * Регрессионные тесты на потерю данных в round-trip'е generate → parse →
- * generate: parseSchemaToProperties вызывается при каждом открытии модалки
- * схемы и при переключении Simple/Advanced, поэтому цикл обязан быть
- * идемпотентным. Раньше объекты (и enum'ы, и вложенные массивы) внутри
- * массива теряли содержимое, и на бэкенд уходил невалидный для strict-режима
- * {"type": "object"} без properties.
+ * Regression tests for data loss in the generate → parse → generate
+ * round-trip: parseSchemaToProperties runs every time the schema modal is
+ * opened and on every Simple/Advanced tab switch, so the cycle must be
+ * idempotent. Objects (and enums, and nested arrays) inside an array used to
+ * lose their contents, sending the backend a bare {"type": "object"} that is
+ * invalid in strict structured-output mode.
  */
 
 const prop = (overrides: Partial<SchemaProperty>): SchemaProperty => ({

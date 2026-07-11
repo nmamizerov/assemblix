@@ -37,4 +37,5 @@ install: ## First-time setup: sync backend deps + install frontend deps
 
 check: ## Run all quality gates across both apps (mirrors CI)
 	$(MAKE) -C $(API_DIR) check
+	$(MAKE) -C $(WEB_DIR) test
 	$(MAKE) -C $(WEB_DIR) lint
