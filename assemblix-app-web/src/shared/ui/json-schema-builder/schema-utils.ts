@@ -1,6 +1,52 @@
 import type { SchemaProperty, OpenAPISchema } from "./types";
 
 /**
+ * Конвертирует одно SchemaProperty в узел OpenAPI-схемы.
+ * Симметрична parseSchemaNodeToProperty: generate → parse → generate
+ * должен быть идемпотентным (см. schema-utils.test.ts).
+ */
+const convertPropertyToSchemaNode = (
+  prop: SchemaProperty
+): Record<string, unknown> => {
+  const schemaProp: Record<string, unknown> = {
+    type: prop.type === "enum" ? "string" : prop.type,
+  };
+
+  if (prop.description) {
+    schemaProp.description = prop.description;
+  }
+
+  // Обработка enum
+  if (prop.type === "enum" && prop.enumValues && prop.enumValues.length > 0) {
+    schemaProp.enum = prop.enumValues.filter((v) => v !== "");
+  }
+
+  // Обработка object: properties/additionalProperties пишем всегда, даже для
+  // пустого объекта — strict-провайдеры (OpenAI structured outputs) отклоняют
+  // {"type": "object"} без properties.
+  if (prop.type === "object") {
+    schemaProp.properties = convertPropertiesToSchema(prop.properties || []);
+    const requiredProps = (prop.properties || [])
+      .filter((p) => p.required && p.name)
+      .map((p) => p.name);
+    if (requiredProps.length > 0) {
+      schemaProp.required = requiredProps;
+    }
+    schemaProp.additionalProperties = false;
+  }
+
+  // Обработка array: элементы конвертируются рекурсивно, чтобы объекты,
+  // enum'ы и вложенные массивы внутри массива не терялись.
+  if (prop.type === "array") {
+    schemaProp.items = prop.items
+      ? convertPropertyToSchemaNode(prop.items)
+      : { type: "string" };
+  }
+
+  return schemaProp;
+};
+
+/**
  * Конвертирует массив SchemaProperty в OpenAPI схему свойств
  */
 export const convertPropertiesToSchema = (
@@ -10,47 +56,7 @@ export const convertPropertiesToSchema = (
 
   properties.forEach((prop) => {
     if (!prop.name) return; // Пропускаем свойства без имени
-
-    const schemaProp: Record<string, unknown> = {
-      type: prop.type === "enum" ? "string" : prop.type,
-    };
-
-    if (prop.description) {
-      schemaProp.description = prop.description;
-    }
-
-    // Обработка enum
-    if (
-      prop.type === "enum" &&
-      prop.enumValues &&
-      prop.enumValues.length > 0
-    ) {
-      schemaProp.enum = prop.enumValues.filter((v) => v !== "");
-    }
-
-    // Обработка object
-    if (
-      prop.type === "object" &&
-      prop.properties &&
-      prop.properties.length > 0
-    ) {
-      schemaProp.properties = convertPropertiesToSchema(prop.properties);
-      const requiredProps = prop.properties
-        .filter((p) => p.required && p.name)
-        .map((p) => p.name);
-      if (requiredProps.length > 0) {
-        schemaProp.required = requiredProps;
-      }
-      schemaProp.additionalProperties = false;
-    }
-
-    // Обработка array
-    if (prop.type === "array" && prop.items) {
-      const itemSchema = convertPropertiesToSchema([prop.items]);
-      schemaProp.items = itemSchema[prop.items.name] || { type: "string" };
-    }
-
-    result[prop.name] = schemaProp;
+    result[prop.name] = convertPropertyToSchemaNode(prop);
   });
 
   return result;
@@ -82,6 +88,51 @@ export const generateSchema = (
 };
 
 /**
+ * Парсит один узел схемы обратно в SchemaProperty.
+ * Рекурсивно восстанавливает вложенные объекты, enum'ы и элементы массивов —
+ * в том числе объекты внутри массивов (раньше их поля здесь терялись).
+ */
+const parseSchemaNodeToProperty = (
+  name: string,
+  node: Record<string, unknown>,
+  required: boolean
+): SchemaProperty => {
+  const property: SchemaProperty = {
+    id: crypto.randomUUID(),
+    name,
+    type: (node.enum ? "enum" : node.type) as SchemaProperty["type"],
+    description: (node.description as string) || "",
+    required,
+  };
+
+  // Восстанавливаем enum значения
+  if (property.type === "enum" && Array.isArray(node.enum)) {
+    property.enumValues = node.enum as string[];
+  }
+
+  // Восстанавливаем вложенные объекты
+  if (property.type === "object") {
+    property.properties = parseSchemaToProperties({
+      type: "object",
+      properties: (node.properties as Record<string, unknown>) || {},
+      required: (node.required as string[]) || [],
+      additionalProperties: false,
+    });
+  }
+
+  // Восстанавливаем элементы массива (рекурсивно, включая object/enum/array)
+  if (property.type === "array" && node.items) {
+    property.items = parseSchemaNodeToProperty(
+      "item",
+      node.items as Record<string, unknown>,
+      false
+    );
+  }
+
+  return property;
+};
+
+/**
  * Парсит OpenAPI схему обратно в массив SchemaProperty
  */
 export const parseSchemaToProperties = (
@@ -89,47 +140,13 @@ export const parseSchemaToProperties = (
 ): SchemaProperty[] => {
   if (!schema || !schema.properties) return [];
 
-  const properties: SchemaProperty[] = [];
   const required = schema.required || [];
 
-  Object.entries(schema.properties).forEach(([name, value]) => {
-    const prop = value as Record<string, unknown>;
-    const property: SchemaProperty = {
-      id: crypto.randomUUID(),
+  return Object.entries(schema.properties).map(([name, value]) =>
+    parseSchemaNodeToProperty(
       name,
-      type: (prop.enum ? "enum" : prop.type) as SchemaProperty["type"],
-      description: (prop.description as string) || "",
-      required: required.includes(name),
-    };
-
-    // Восстанавливаем enum значения
-    if (property.type === "enum" && Array.isArray(prop.enum)) {
-      property.enumValues = prop.enum as string[];
-    }
-
-    // Восстанавливаем вложенные объекты
-    if (property.type === "object" && prop.properties) {
-      property.properties = parseSchemaToProperties({
-        type: "object",
-        properties: prop.properties as Record<string, unknown>,
-        required: (prop.required as string[]) || [],
-        additionalProperties: false,
-      });
-    }
-
-    // Восстанавливаем массивы
-    if (property.type === "array" && prop.items) {
-      const items = prop.items as Record<string, unknown>;
-      property.items = {
-        id: crypto.randomUUID(),
-        name: "item",
-        type: items.type as SchemaProperty["type"],
-        description: (items.description as string) || "",
-      };
-    }
-
-    properties.push(property);
-  });
-
-  return properties;
+      value as Record<string, unknown>,
+      required.includes(name)
+    )
+  );
 };

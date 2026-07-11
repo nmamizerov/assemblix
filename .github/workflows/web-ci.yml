@@ -33,6 +33,8 @@ jobs:
           cache: yarn
           cache-dependency-path: assemblix-app-web/yarn.lock
       - run: yarn install --frozen-lockfile
+      # Blocking gate: unit tests (vitest).
+      - run: yarn test
       # Blocking gate: TypeScript type-check (tsc -b) + production build.
       - run: yarn build
 

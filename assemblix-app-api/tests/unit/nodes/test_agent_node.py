@@ -283,6 +283,37 @@ def test_enforce_strict_schema_recurses_nested_objects_and_arrays() -> None:
     assert out["properties"]["rows"]["items"]["additionalProperties"] is False
 
 
+def test_enforce_strict_schema_repairs_bare_objects() -> None:
+    """An object with no `properties` at all (old frontend builds lost array-item
+    fields) gets an empty `properties` + `additionalProperties: false`, so strict
+    providers accept the schema instead of rejecting the whole request."""
+    # Arrange
+    schema = {
+        "type": "object",
+        "properties": {
+            "blob": {"type": "object"},
+            "rows": {"type": "array", "items": {"type": "object"}},
+        },
+    }
+
+    # Act
+    out = _enforce_strict_schema(schema)
+
+    # Assert
+    assert out["properties"]["blob"] == {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": False,
+    }
+    assert out["properties"]["rows"]["items"] == {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": False,
+    }
+
+
 def test_enforce_strict_schema_overrides_partial_required() -> None:
     """A hand-written partial `required` is widened to all properties."""
     # Arrange
