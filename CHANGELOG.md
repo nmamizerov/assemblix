@@ -5,6 +5,15 @@ All notable changes to this project are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.12](https://github.com/nmamizerov/assemblix/compare/v0.2.11...v0.2.12) (2026-07-12)
+
+
+### Documentation
+
+* point README docs link to app.assmblx.com/docs ([2329949](https://github.com/nmamizerov/assemblix/commit/2329949737d6630c33d6d3050f5dc9296dbb875b))
+* restructure site into Home / Get started / Creating workflows ([91dcc8a](https://github.com/nmamizerov/assemblix/commit/91dcc8ad22dc699280de472a04b9c2ce426c7a2e))
+* restructure site into Home / Get started / Creating workflows ([614489c](https://github.com/nmamizerov/assemblix/commit/614489c38f603d1f78d846aa70dc9cb05698c770))
+
 ## [0.2.11](https://github.com/nmamizerov/assemblix/compare/v0.2.10...v0.2.11) (2026-07-12)
 
 
