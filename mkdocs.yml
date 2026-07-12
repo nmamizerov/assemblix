@@ -10,7 +10,6 @@ edit_uri: edit/main/docs/
 # Internal plans/specs live in the repo-root internal-docs/ directory instead.
 exclude_docs: |
   superpowers/
-  assets/RECORDING.md
 
 theme:
   name: material
@@ -41,14 +40,16 @@ markdown_extensions:
   - pymdownx.highlight
   - pymdownx.superfences
   - pymdownx.details
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.inlinehilite
+  - attr_list
+  - md_in_html
 
 nav:
   - Home: index.md
-  - Getting started: getting-started.md
-  - Self-hosting: self-hosting.md
-  - Configuration: configuration.md
-  - Architecture: architecture.md
-  - Git & releases: git-workflow.md
-  - Workflow nodes: CONTRIBUTING_NODES.md
-  - Observability: observability.md
-  - Troubleshooting: troubleshooting.md
+  - Get started: get-started.md
+  - Creating workflows:
+    - Node types: workflows/nodes.md
+    - Executing workflows: workflows/execute.md
+    - Debugging: workflows/debug.md

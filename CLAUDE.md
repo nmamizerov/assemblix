@@ -24,8 +24,8 @@ assemblix/
   assemblix-app-api/    — FastAPI backend (Python 3.13, async SQLAlchemy, PostgreSQL)
   assemblix-app-web/    — React 19 + Vite frontend (TypeScript, Feature-Sliced Design)
   .github/workflows/    — CI (backend pipeline + repo-wide secret scan)
-  docs/                 — PUBLIC documentation site (MkDocs) + node-authoring guide
-  internal-docs/        — internal, NOT published: superpowers plans/specs, dev notes
+  docs/                 — PUBLIC documentation site (MkDocs): home, get-started, workflows
+  internal-docs/        — internal, NOT published: node-authoring & git guides, superpowers plans/specs, dev notes
 ```
 
 > **`docs/` is published** — it is the source for the public MkDocs site served at
@@ -135,8 +135,8 @@ by **release-please**: do **not** hand-edit version numbers
 (`assemblix-app-api/pyproject.toml`, `assemblix-app-web/package.json`), `CHANGELOG.md`, or
 git tags. Merging Conventional-Commit PRs into `main` keeps a release PR open that bumps the
 single repo version in lockstep and regenerates the changelog; merging it cuts the `vX.Y.Z`
-tag + GitHub Release. **Full rules: [docs/git-workflow.md](docs/git-workflow.md)** (also in
-[CONTRIBUTING.md](CONTRIBUTING.md) for contributors).
+tag + GitHub Release. **Full rules: [internal-docs/git-workflow.md](internal-docs/git-workflow.md)**
+(also in [CONTRIBUTING.md](CONTRIBUTING.md) for contributors).
 
 ## Licensing model (important when adding/moving code)
 

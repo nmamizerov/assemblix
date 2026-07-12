@@ -202,7 +202,6 @@ then `docker compose up -d`. Full configuration reference lives in the [docs][do
 
 The frontend canvas produces the nodes-and-edges JSON; the backend is the source of truth
 for the node-graph schema and executes it. Deep dive in the
-[architecture docs](docs/architecture.md) and the
 per-app guides ([backend](assemblix-app-api/CLAUDE.md) · [frontend](assemblix-app-web/CLAUDE.md)).
 
 ## 📦 Use it
@@ -241,7 +240,7 @@ Billing/payments layer (separate EE license), off by default.
 Nodes register by string type and are auto-discovered at startup via the `assemblix.nodes`
 entry-point group — no core changes, no DB migration. New node types round-trip safely
 through a generic schema fallback. See the
-[node-authoring guide](docs/CONTRIBUTING_NODES.md) for a worked example and packaging steps.
+[node-authoring guide](internal-docs/CONTRIBUTING_NODES.md) for a worked example and packaging steps.
 
 ## 🤝 Contributing
 
