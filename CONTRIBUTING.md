@@ -86,12 +86,12 @@ opens/updates a **release PR** that bumps the version in lockstep (root manifest
 `pyproject.toml` + `package.json`) and regenerates [CHANGELOG.md](CHANGELOG.md). Merging
 that PR creates the `vX.Y.Z` tag and the GitHub Release.
 
-📖 **Full branching, commit, and release rules: [docs/git-workflow.md](docs/git-workflow.md).**
+📖 **Full branching, commit, and release rules: [internal-docs/git-workflow.md](internal-docs/git-workflow.md).**
 
 ## Adding a workflow node
 
 Custom node types are the main extension point. See
-[docs/CONTRIBUTING_NODES.md](docs/CONTRIBUTING_NODES.md) for a worked example and the
+[internal-docs/CONTRIBUTING_NODES.md](internal-docs/CONTRIBUTING_NODES.md) for a worked example and the
 packaging guide (nodes register by string type and can be auto-discovered via entry
 points — no core changes needed).
 

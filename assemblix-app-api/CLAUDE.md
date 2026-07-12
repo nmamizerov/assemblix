@@ -121,7 +121,7 @@ widgets. Out-of-tree packages are auto-discovered at startup via the entry-point
 `execution_steps` is a plain `VARCHAR(100)`, so new node types need no DB migration.
 Unknown types round-trip safely through the `GenericNode` schema fallback rather than
 failing validation. For a worked example and packaging guide see
-[CONTRIBUTING_NODES.md](../docs/CONTRIBUTING_NODES.md) in the repo's docs/.
+[CONTRIBUTING_NODES.md](../internal-docs/CONTRIBUTING_NODES.md) in the repo's internal-docs/.
 
 ## Adding a New Entity Checklist
 

@@ -1,53 +1,43 @@
 # Assemblix
 
-**Assemblix** is a visual AI agent / workflow automation platform. You build workflows as
-directed graphs of nodes on a [React Flow](https://reactflow.dev/) canvas, then execute and
-monitor them. Workflows can call multiple LLM providers and run end to end with
-observability built in.
+**Assemblix** is a visual builder for **chat-driven AI workflows**. You wire typed nodes
+into a directed graph on a [React Flow](https://reactflow.dev/) canvas, then run it as a
+conversation — with text, **voice**, or a talking **AI avatar** on either end.
 
-## What you can build
+![Chat workflow on the canvas](assets/chat.png)
 
-Workflows are directed graphs of typed nodes:
+## Chat-first by design
 
-| Node | Purpose |
-| --- | --- |
-| `START` | Entry point of the graph |
-| `AGENT` | An LLM agent loop (calls a provider, can use tools) |
-| `CONDITION` | Branch on a CEL expression |
-| `SET_VARIABLE` | Write values into the run's variable scope |
-| `HTTP_REQUEST` | Call an external HTTP endpoint |
-| `STICKER` | Annotation / note on the canvas (no execution effect) |
-| `END` | Terminal node of the graph |
+A workflow in Assemblix is something you *talk to*. Runs are conversational: a chat
+**session** keeps history and state across turns, the `START` node can greet the user with a
+first phrase, and each turn flows through your graph — agents, conditions, HTTP calls — until
+an `END` node produces the reply.
 
-New node types can be added without a DB migration — see the workflow nodes guide,
-[CONTRIBUTING_NODES.md](CONTRIBUTING_NODES.md).
+- **Voice input** — the `START` node can accept an audio blob and transcribe it server-side
+  (speech-to-text), so a spoken message drives the workflow just like typed text.
+- **Voice output** — an `AGENT` node can speak its answer back as synthesized audio, either
+  buffered at the end of the turn or streamed in real time.
+- **AI avatars** — an agent's output can drive a talking avatar persona, turning a workflow
+  into a face-to-face conversation.
 
-## Features
+## What else you can build
 
-- **Multiple LLM providers** — OpenAI, Gemini, DeepSeek (via LiteLLM).
-- **Multi-tenancy** — organizations and projects, scoped credentials and resources.
+- **Multiple LLM providers** — OpenAI, Gemini, DeepSeek, with fallbacks and per-credential
+  routing.
+- **Tools & MCP** — give agents tools and Model Context Protocol servers to act, not just
+  answer.
 - **Knowledge bases (RAG)** — upload documents and ground agents on them.
-- **Credentials** — encrypted-at-rest secrets for providers and integrations.
-- **Chat sessions** — conversational runs against your workflows.
-- **Observability** — Prometheus metrics, health/readiness probes, in-flight execution
-  view. See [observability](observability.md).
-
-## Architecture at a glance
-
-Two independently-built apps:
-
-- **Backend** — FastAPI (Python 3.13, async SQLAlchemy, PostgreSQL).
-- **Frontend** — React 19 + Vite (TypeScript, Feature-Sliced Design).
-
-The frontend talks to the backend over REST; the API is the source of truth for the node
-graph schema. Read the full breakdown in [architecture](architecture.md).
+- **Branching & state** — route on CEL conditions and read/write a shared variable scope
+  across the run.
+- **Credentials & multi-tenancy** — encrypted-at-rest secrets, scoped to organizations and
+  projects.
 
 ## Get going
 
-- [Getting started](getting-started.md) — fastest path to a running dev stack.
-- [Self-hosting](self-hosting.md) — production Docker Compose, queue tier, ops.
-- [Configuration](configuration.md) — the root `.env` reference.
-- [Troubleshooting](troubleshooting.md) — common issues and fixes.
+- **[Get started](get-started.md)** — dependencies, the example Docker Compose files, and
+  how to run a self-hosted instance.
+- **[Creating workflows](workflows/nodes.md)** — the node types, how execution works, and
+  how to debug a run.
 
 ## License
 
