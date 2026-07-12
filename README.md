@@ -293,4 +293,4 @@ small set of files (payments / acquiring) is under a separate **Enterprise licen
   Reference links — the live demo + docs URLs live here in one place.
 -->
 [demo]: https://app.assmblx.com
-[docs]: https://github.com/nmamizerov/assemblix/tree/main/docs
+[docs]: https://app.assmblx.com/docs
