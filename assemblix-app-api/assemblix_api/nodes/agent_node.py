@@ -350,6 +350,11 @@ def _enforce_strict_schema(node: object) -> object:
         return node
     result = {key: _enforce_strict_schema(value) for key, value in node.items()}
     properties = result.get("properties")
+    if not isinstance(properties, dict) and result.get("type") == "object":
+        # Bare {"type": "object"} — older frontend builds dropped array-item
+        # properties on re-parse; strict providers reject objects without them.
+        properties = {}
+        result["properties"] = properties
     if isinstance(properties, dict):
         result["required"] = list(properties.keys())
         result["additionalProperties"] = False

@@ -1,5 +1,5 @@
 .DEFAULT_GOAL := help
-.PHONY: help dev build lint preview install
+.PHONY: help dev build lint test preview install
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | \
@@ -13,6 +13,9 @@ build: ## Type-check and build the production bundle
 
 lint: ## Lint with ESLint
 	yarn lint
+
+test: ## Run unit tests (vitest)
+	yarn test
 
 preview: ## Preview the production build locally
 	yarn preview
