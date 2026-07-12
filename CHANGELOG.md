@@ -5,6 +5,20 @@ All notable changes to this project are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.11](https://github.com/nmamizerov/assemblix/compare/v0.2.10...v0.2.11) (2026-07-12)
+
+
+### Bug Fixes
+
+* **schema-builder:** english comments, make test target, docs for vitest gate ([903e311](https://github.com/nmamizerov/assemblix/commit/903e311591c78953520cefdc761e0f7713a021d0))
+* **schema-builder:** preserve array item objects in responseSchema round-trip ([191dce3](https://github.com/nmamizerov/assemblix/commit/191dce319df0022e2bcdf599d9f936dd7ebe7a87))
+
+
+### Documentation
+
+* serve MkDocs under /docs via nginx, drop GitHub Pages ([4ad2a74](https://github.com/nmamizerov/assemblix/commit/4ad2a74e06226edb5ad4ff535743bbf34e6236ee))
+* serve MkDocs under /docs via nginx, drop GitHub Pages ([d4c826d](https://github.com/nmamizerov/assemblix/commit/d4c826d42555757a99c5508c8e92932dc1c3980f))
+
 ## [0.2.10](https://github.com/nmamizerov/assemblix/compare/v0.2.9...v0.2.10) (2026-07-09)
 
 
