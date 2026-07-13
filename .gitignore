@@ -53,3 +53,6 @@
 *.sqlite3
 .claude/
 .claude/worktrees/
+
+# Separate, independent repo developed in-tree (MCP server, skills, Claude Code plugins)
+/assemblix-aitools/

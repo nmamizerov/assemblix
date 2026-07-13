@@ -26,6 +26,7 @@ assemblix/
   .github/workflows/    — CI (backend pipeline + repo-wide secret scan)
   docs/                 — PUBLIC documentation site (MkDocs): home, get-started, workflows
   internal-docs/        — internal, NOT published: node-authoring & git guides, superpowers plans/specs, dev notes
+  assemblix-aitools/    — SEPARATE, independent git repo (gitignored here): MCP server + skills + Claude Code plugins
 ```
 
 > **`docs/` is published** — it is the source for the public MkDocs site served at
@@ -35,6 +36,13 @@ assemblix/
 > save plans to `internal-docs/superpowers/plans/…` and specs to
 > `internal-docs/superpowers/specs/…` (NOT `docs/superpowers/…`). `mkdocs.yml`'s
 > `exclude_docs` is a backstop, but keep internal files out of `docs/` in the first place.
+
+> **`assemblix-aitools/` is NOT part of this repo.** It is developed in-tree for
+> convenience but is a **separate, independent git repository** (listed in this
+> repo's `.gitignore`) with its own toolchain and its own license (MIT). It holds
+> the standalone Assemblix MCP server (`assemblix-mcp` on PyPI) and, later, workflow
+> authoring skills and Claude Code plugins. The core scoping that the MCP server
+> relies on lives here in `assemblix-app-api`; everything client-side lives there.
 
 **Each app has its own `CLAUDE.md` with the detail you need before working in it** — read
 the relevant one first; this file is only the umbrella:
