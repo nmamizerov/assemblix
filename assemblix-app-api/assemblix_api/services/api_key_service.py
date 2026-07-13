@@ -70,29 +70,15 @@ class APIKeyService:
 
         return api_key, plain_key
 
-    async def verify_api_key(self, plain_key: str) -> User | None:
+    async def resolve_context(self, plain_key: str) -> tuple[User, APIKey] | None:
+        """Resolve a plain key to ``(owner_user, api_key)``.
+
+        Resolves key -> project -> organization -> owner. Increments usage as a
+        side effect. Returns ``None`` if the key is invalid/inactive or any link
+        in the chain is missing.
         """
-        Validate an API key and resolve it to the authenticated user.
-
-        Resolves key -> project -> organization -> owner; returns the org owner
-        as the authenticated user. Returns None if the key is invalid/inactive
-        or any link in the chain is missing.
-        """
-        if not plain_key.startswith("sk_") or len(plain_key) != 35:
-            return None
-
-        prefix = self.get_key_prefix(plain_key)
-
-        api_key = await self._api_keys.get_by_prefix(prefix)
-        if not api_key or not api_key.is_active:
-            return None
-
-        try:
-            is_valid = _password_hash.verify(plain_key, api_key.key_hash)
-        except Exception:
-            return None
-
-        if not is_valid:
+        api_key = await self.get_api_key_object(plain_key)
+        if not api_key:
             return None
 
         await self._api_keys.increment_usage(api_key.id)
@@ -106,7 +92,15 @@ class APIKeyService:
             return None
 
         user = await self._users.get_by_id(organization.owner_id)
-        return user
+        if not user:
+            return None
+
+        return user, api_key
+
+    async def verify_api_key(self, plain_key: str) -> User | None:
+        """Validate an API key and resolve it to the authenticated user."""
+        ctx = await self.resolve_context(plain_key)
+        return ctx[0] if ctx else None
 
     async def get_api_key_object(self, plain_key: str) -> APIKey | None:
         """Resolve a plain API key to its APIKey object if valid and active."""
