@@ -12,6 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from assemblix_api.billing.credit_service import CreditService
 from assemblix_api.billing.rate_limit_service import RateLimitService
 from assemblix_api.billing.service import BillingService
+from assemblix_api.core.auth_context import AuthContext
 from assemblix_api.core.cel_evaluator import CELEvaluator
 from assemblix_api.core.node_registry import NodeRegistry
 from assemblix_api.database import get_async_session
@@ -769,6 +770,35 @@ async def get_current_user(
     user = await user_service.get_user_from_token(token)
     structlog.contextvars.bind_contextvars(user_id=str(user.id), auth_method="jwt")
     return user
+
+
+async def get_auth_context(
+    credentials: HTTPAuthorizationCredentials = Depends(_http_bearer),
+    user_service: UserService = Depends(get_user_service),
+    api_key_service: APIKeyService = Depends(get_api_key_service),
+) -> AuthContext:
+    """Resolve the caller and their project scope.
+
+    ``sk_`` tokens are scoped to the key's project; JWT callers are unscoped
+    (``scoped_project_id is None``) and fall back to organization-level access checks.
+    """
+    token = credentials.credentials
+
+    if token.startswith("sk_"):
+        ctx = await api_key_service.resolve_context(token)
+        if ctx is None:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Невалидный API ключ",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+        user, api_key = ctx
+        structlog.contextvars.bind_contextvars(user_id=str(user.id), auth_method="api_key")
+        return AuthContext(user=user, scoped_project_id=api_key.project_id)
+
+    user = await user_service.get_user_from_token(token)
+    structlog.contextvars.bind_contextvars(user_id=str(user.id), auth_method="jwt")
+    return AuthContext(user=user, scoped_project_id=None)
 
 
 async def get_current_organization(

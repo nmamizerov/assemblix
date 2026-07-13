@@ -56,3 +56,43 @@ async def test_auth_context_dataclass_holds_scope() -> None:
 
     # Assert
     assert ctx.scoped_project_id is None
+
+
+async def test_get_auth_context_api_key_sets_scope(db_session: Any, api_key) -> None:
+    # Arrange
+    from fastapi.security import HTTPAuthorizationCredentials
+
+    from assemblix_api.database.repositories.api_key_repository import APIKeyRepository
+    from assemblix_api.database.repositories.organization_repository import (
+        OrganizationRepository,
+    )
+    from assemblix_api.database.repositories.project_repository import ProjectRepository
+    from assemblix_api.database.repositories.user_repository import UserRepository
+    from assemblix_api.dependencies import get_auth_context
+    from assemblix_api.services.api_key_service import APIKeyService
+    from assemblix_api.services.user_service import UserService
+
+    api_key_service = APIKeyService(
+        APIKeyRepository(db_session),
+        UserRepository(db_session),
+        ProjectRepository(db_session),
+        OrganizationRepository(db_session),
+    )
+    user_service = UserService(
+        UserRepository(db_session),
+        OrganizationRepository(db_session),
+        __import__(
+            "assemblix_api.database.repositories.organization_user_repository",
+            fromlist=["OrganizationUserRepository"],
+        ).OrganizationUserRepository(db_session),
+        ProjectRepository(db_session),
+    )
+    creds = HTTPAuthorizationCredentials(scheme="Bearer", credentials=api_key.plain)
+
+    # Act
+    ctx = await get_auth_context(
+        credentials=creds, user_service=user_service, api_key_service=api_key_service
+    )
+
+    # Assert
+    assert ctx.scoped_project_id == api_key.record.project_id
