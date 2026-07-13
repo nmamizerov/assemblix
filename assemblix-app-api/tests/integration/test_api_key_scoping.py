@@ -135,3 +135,38 @@ async def test_get_foreign_workflow_by_id_forbidden(
     resp = await client.get(f"/api/workflows/{wf_id}", headers=api_key.headers)
     # Assert
     assert resp.status_code == 403
+
+
+async def test_list_credentials_rejects_foreign_project(client, api_key, second_project) -> None:
+    resp = await client.get(
+        f"/api/credentials/?project_id={second_project}", headers=api_key.headers
+    )
+    assert resp.status_code == 403
+
+
+async def test_create_credentials_rejects_foreign_project(client, api_key, second_project) -> None:
+    resp = await client.post(
+        "/api/credentials/",
+        json={
+            "type": "openai_token",
+            "value": "sk-x",
+            "name": "x",
+            "projectId": str(second_project),
+        },
+        headers=api_key.headers,
+    )
+    assert resp.status_code == 403
+
+
+async def test_credentials_own_project_ok(client, api_key) -> None:
+    resp = await client.post(
+        "/api/credentials/",
+        json={
+            "type": "openai_token",
+            "value": "sk-x",
+            "name": "ok",
+            "projectId": str(api_key.record.project_id),
+        },
+        headers=api_key.headers,
+    )
+    assert resp.status_code == 201
