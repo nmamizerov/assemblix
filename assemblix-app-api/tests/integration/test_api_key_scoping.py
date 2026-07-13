@@ -170,3 +170,10 @@ async def test_credentials_own_project_ok(client, api_key) -> None:
         headers=api_key.headers,
     )
     assert resp.status_code == 201
+
+
+async def test_list_api_keys_rejects_foreign_project(client, api_key, second_project) -> None:
+    resp = await client.get(
+        f"/api/api-keys/?project_id={second_project}", headers=api_key.headers
+    )
+    assert resp.status_code == 403
