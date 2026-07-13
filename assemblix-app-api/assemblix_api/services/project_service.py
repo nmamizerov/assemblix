@@ -109,9 +109,7 @@ class ProjectService(BaseService[Project, ProjectRepository]):
         await self._verify_user_access(user, project.organization_id)
         return project
 
-    async def authorize_project_access(
-        self, auth: AuthContext, project_id: UUID
-    ) -> Project:
+    async def authorize_project_access(self, auth: AuthContext, project_id: UUID) -> Project:
         """Authorize a request against a project, honoring an API key's scope.
 
         For API-key callers (``auth.scoped_project_id`` set) any other project is

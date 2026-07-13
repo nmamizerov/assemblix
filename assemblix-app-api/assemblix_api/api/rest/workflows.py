@@ -174,9 +174,7 @@ async def move_workflow(
     await project_service.authorize_project_access(auth, workflow.project_id)
 
     # Verify access to the target project and get its organization_id.
-    target_project = await project_service.authorize_project_access(
-        auth, data.target_project_id
-    )
+    target_project = await project_service.authorize_project_access(auth, data.target_project_id)
 
     return await service.move_workflow(
         workflow_id=workflow_id,

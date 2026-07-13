@@ -108,9 +108,7 @@ async def _create_workflow(client, headers, project_id, name="WF"):
 
 async def test_list_workflows_rejects_foreign_project(client, api_key, second_project) -> None:
     # Act — key is scoped to auth_user.project; ask for the second project
-    resp = await client.get(
-        f"/api/workflows/?project_id={second_project}", headers=api_key.headers
-    )
+    resp = await client.get(f"/api/workflows/?project_id={second_project}", headers=api_key.headers)
     # Assert
     assert resp.status_code == 403
 
@@ -173,7 +171,5 @@ async def test_credentials_own_project_ok(client, api_key) -> None:
 
 
 async def test_list_api_keys_rejects_foreign_project(client, api_key, second_project) -> None:
-    resp = await client.get(
-        f"/api/api-keys/?project_id={second_project}", headers=api_key.headers
-    )
+    resp = await client.get(f"/api/api-keys/?project_id={second_project}", headers=api_key.headers)
     assert resp.status_code == 403
