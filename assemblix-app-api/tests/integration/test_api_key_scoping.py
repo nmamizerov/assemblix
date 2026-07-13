@@ -96,3 +96,42 @@ async def test_get_auth_context_api_key_sets_scope(db_session: Any, api_key) -> 
 
     # Assert
     assert ctx.scoped_project_id == api_key.record.project_id
+
+
+async def _create_workflow(client, headers, project_id, name="WF"):
+    return await client.post(
+        "/api/workflows/",
+        json={"name": name, "projectId": str(project_id)},
+        headers=headers,
+    )
+
+
+async def test_list_workflows_rejects_foreign_project(client, api_key, second_project) -> None:
+    # Act — key is scoped to auth_user.project; ask for the second project
+    resp = await client.get(
+        f"/api/workflows/?project_id={second_project}", headers=api_key.headers
+    )
+    # Assert
+    assert resp.status_code == 403
+
+
+async def test_list_workflows_allows_own_project(client, api_key) -> None:
+    # Act
+    resp = await client.get(
+        f"/api/workflows/?project_id={api_key.record.project_id}", headers=api_key.headers
+    )
+    # Assert
+    assert resp.status_code == 200
+
+
+async def test_get_foreign_workflow_by_id_forbidden(
+    client, api_key, auth_headers, second_project
+) -> None:
+    # Arrange — a draft workflow in the second project (created via JWT)
+    created = await _create_workflow(client, auth_headers, second_project)
+    assert created.status_code == 201
+    wf_id = created.json()["id"]
+    # Act — try to read it with the project-A key
+    resp = await client.get(f"/api/workflows/{wf_id}", headers=api_key.headers)
+    # Assert
+    assert resp.status_code == 403
