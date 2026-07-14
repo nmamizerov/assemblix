@@ -5,6 +5,30 @@ All notable changes to this project are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.13](https://github.com/nmamizerov/assemblix/compare/v0.2.12...v0.2.13) (2026-07-14)
+
+
+### Features
+
+* add AuthContext and APIKeyService.resolve_context ([b2f6781](https://github.com/nmamizerov/assemblix/commit/b2f67817cd0249d9484c8e8cfa85a2f27336094e))
+* add get_auth_context dependency resolving key project scope ([111c11c](https://github.com/nmamizerov/assemblix/commit/111c11c3a377936e180090a5b32cfc7b9e1884ad))
+* add ProjectService.authorize_project_access with key scope check ([98ec9cb](https://github.com/nmamizerov/assemblix/commit/98ec9cbaa081564ea4e89ee90fbe5ada3b6c63cc))
+* enforce API key project scope on api-key endpoints ([5175697](https://github.com/nmamizerov/assemblix/commit/5175697aa34204a6ef86724bbee70002ead62e11))
+* enforce API key project scope on avatar and voice credential endpoints ([2f70e61](https://github.com/nmamizerov/assemblix/commit/2f70e619b9b3f0792e7426a9fa5d96051f7d7332))
+* enforce API key project scope on credentials endpoints ([7e9a93a](https://github.com/nmamizerov/assemblix/commit/7e9a93ae866a69901d8973d523336f482b049022))
+* enforce API key project scope on execution list and detail ([171623b](https://github.com/nmamizerov/assemblix/commit/171623b1ae7a8cc018016c624b4929dfc61b0477))
+* enforce API key project scope on knowledge base / node template / notification routers ([c10ff8d](https://github.com/nmamizerov/assemblix/commit/c10ff8d7338d18c4e8d376150ebebc114152649d))
+* enforce API key project scope on project detail/update/delete ([8bcffae](https://github.com/nmamizerov/assemblix/commit/8bcffae556af1b142accd487fe5118179e6cedb4))
+* enforce API key project scope on session routers ([dc5ab3c](https://github.com/nmamizerov/assemblix/commit/dc5ab3c836d0452e6f7d257811af5684ff6280c0))
+* enforce API key project scope on workflow endpoints ([7b37335](https://github.com/nmamizerov/assemblix/commit/7b373355d45de1759e37a0f884ac955d1bf32dc0))
+* hard-scope project API keys to their project across the REST API ([8b87d0c](https://github.com/nmamizerov/assemblix/commit/8b87d0c818789e70709660d5a89a921216d416cb))
+
+
+### Documentation
+
+* plan to extend API key scoping to remaining routers ([73028d1](https://github.com/nmamizerov/assemblix/commit/73028d129c88bf5b15bff0a0ec9fa304a4586bc0))
+* spec + plans for project API key scoping and MCP server ([d8e8972](https://github.com/nmamizerov/assemblix/commit/d8e89725ce1621e1a92ed1bb2611608e14f7ba53))
+
 ## [0.2.12](https://github.com/nmamizerov/assemblix/compare/v0.2.11...v0.2.12) (2026-07-12)
 
 
