@@ -5,6 +5,16 @@ All notable changes to this project are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.14](https://github.com/nmamizerov/assemblix/compare/v0.2.13...v0.2.14) (2026-07-14)
+
+
+### Features
+
+* api-keys whoami returns the key's project ([6e3fb10](https://github.com/nmamizerov/assemblix/commit/6e3fb102c508981750f18b61be3fb749d3d06c69))
+* api-keys whoami returns the key's project ([8826ec0](https://github.com/nmamizerov/assemblix/commit/8826ec0b161278cf3fb7c0bcbadeb9461d2818d8))
+* default project_id from the API key (drop explicit param requirement) ([f07519f](https://github.com/nmamizerov/assemblix/commit/f07519f200311e5ecdfe947d36949679083d6eaa))
+* default project_id from the API key on workflow/execution list+create ([7279281](https://github.com/nmamizerov/assemblix/commit/72792819db3f213dfe6f471c7de2a988ae28b8f5))
+
 ## [0.2.13](https://github.com/nmamizerov/assemblix/compare/v0.2.12...v0.2.13) (2026-07-14)
 
 
