@@ -13,6 +13,7 @@ from assemblix_api.core.auth_context import AuthContext
 from assemblix_api.dependencies import (
     get_api_key_service,
     get_auth_context,
+    get_project_id_from_token,
     get_project_service,
 )
 from assemblix_api.dto.requests.api_key import CreateAPIKeyRequest
@@ -25,6 +26,14 @@ from assemblix_api.services.api_key_service import APIKeyService
 from assemblix_api.services.project_service import ProjectService
 
 router = APIRouter(prefix="/api-keys", tags=["API Keys"])
+
+
+@router.get("/whoami")
+async def whoami(
+    project_id: UUID = Depends(get_project_id_from_token),
+) -> dict[str, str]:
+    """Return the project the calling API key is scoped to."""
+    return {"projectId": str(project_id)}
 
 
 @router.get("/", response_model=APIKeyListResponse)
