@@ -25,6 +25,7 @@ from fastapi.responses import StreamingResponse
 from pydantic import ValidationError
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from assemblix_api.api.rest._scope import resolve_project_id
 from assemblix_api.billing.service import BillingService
 from assemblix_api.core.auth_context import AuthContext
 from assemblix_api.core.settings import get_settings
@@ -748,7 +749,11 @@ async def in_flight_executions(
 
 @execution_detail_router.get("/", response_model=PaginatedResponse[ExecutionInfoResponse])
 async def list_executions(
-    project_id: UUID = Query(..., description="Project ID"),
+    project_id: UUID | None = Query(
+        default=None,
+        description="Project ID. Optional when authenticated with a project-scoped "
+        "API key — defaults to the key's project.",
+    ),
     page: int = Query(default=1, ge=1, description="Page number"),
     limit: int = Query(default=50, ge=1, le=100, description="Page size"),
     workflow_id: UUID | None = Query(default=None, description="Filter by workflow ID"),
@@ -777,6 +782,7 @@ async def list_executions(
     - date_from/date_to: range of execution start dates
     - include_debug: whether to show debug executions
     """
+    project_id = resolve_project_id(project_id, auth)
     await project_service.authorize_project_access(auth, project_id)
 
     offset = (page - 1) * limit

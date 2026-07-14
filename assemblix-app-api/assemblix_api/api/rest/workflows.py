@@ -8,6 +8,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query, status
 
+from assemblix_api.api.rest._scope import resolve_project_id
 from assemblix_api.core.auth_context import AuthContext
 from assemblix_api.dependencies import (
     get_auth_context,
@@ -28,7 +29,11 @@ router = APIRouter(prefix="/workflows", tags=["Workflows"])
 
 @router.get("/", response_model=list[WorkflowBaseResponse])
 async def list_workflows(
-    project_id: UUID = Query(..., description="Project ID"),
+    project_id: UUID | None = Query(
+        default=None,
+        description="Project ID. Optional when authenticated with a project-scoped "
+        "API key — defaults to the key's project.",
+    ),
     skip: int = Query(default=0, ge=0, description="Number of records to skip"),
     limit: int = Query(default=100, ge=1, le=1000, description="Maximum number of records"),
     is_active: bool | None = Query(default=None, description="Filter by active status"),
@@ -39,10 +44,11 @@ async def list_workflows(
     project_service: ProjectService = Depends(get_project_service),
 ):
     """List project workflows with optional status filtering."""
-    await project_service.authorize_project_access(auth, project_id)
+    effective_project_id = resolve_project_id(project_id, auth)
+    await project_service.authorize_project_access(auth, effective_project_id)
 
     workflows = await service.get_project_workflows(
-        project_id,
+        effective_project_id,
         skip=skip,
         limit=limit,
         is_active=is_active,
@@ -84,6 +90,7 @@ async def create_workflow(
     """Create a new workflow."""
     language = "en"
 
+    data.project_id = resolve_project_id(data.project_id, auth)
     project = await project_service.authorize_project_access(auth, data.project_id)
 
     # Create the workflow, enforcing billing limits.
