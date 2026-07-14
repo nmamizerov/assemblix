@@ -187,3 +187,24 @@ async def test_list_chat_sessions_rejects_foreign_project(client, api_key, secon
         f"/api/chat-sessions/?project_id={second_project}", headers=api_key.headers
     )
     assert resp.status_code == 403
+
+
+async def test_list_knowledge_bases_rejects_foreign_project(client, api_key, second_project) -> None:
+    resp = await client.get(
+        f"/api/knowledge-bases/?project_id={second_project}", headers=api_key.headers
+    )
+    assert resp.status_code == 403
+
+
+async def test_list_node_templates_rejects_foreign_project(client, api_key, second_project) -> None:
+    resp = await client.get(
+        f"/api/node-templates/?project_id={second_project}", headers=api_key.headers
+    )
+    assert resp.status_code == 403
+
+
+async def test_list_notification_channels_rejects_foreign_project(client, api_key, second_project) -> None:
+    resp = await client.get(
+        f"/api/notification-channels/?project_id={second_project}", headers=api_key.headers
+    )
+    assert resp.status_code == 403
