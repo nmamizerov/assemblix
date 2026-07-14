@@ -173,3 +173,17 @@ async def test_credentials_own_project_ok(client, api_key) -> None:
 async def test_list_api_keys_rejects_foreign_project(client, api_key, second_project) -> None:
     resp = await client.get(f"/api/api-keys/?project_id={second_project}", headers=api_key.headers)
     assert resp.status_code == 403
+
+
+async def test_list_client_sessions_rejects_foreign_project(client, api_key, second_project) -> None:
+    resp = await client.get(
+        f"/api/projects/{second_project}/client-sessions", headers=api_key.headers
+    )
+    assert resp.status_code == 403
+
+
+async def test_list_chat_sessions_rejects_foreign_project(client, api_key, second_project) -> None:
+    resp = await client.get(
+        f"/api/chat-sessions/?project_id={second_project}", headers=api_key.headers
+    )
+    assert resp.status_code == 403

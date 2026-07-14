@@ -7,11 +7,11 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
-from assemblix_api.database.models.user import User
+from assemblix_api.core.auth_context import AuthContext
 from assemblix_api.dependencies import (
+    get_auth_context,
     get_chat_service,
     get_client_session_service,
-    get_current_user,
     get_execution_service,
     get_project_service,
 )
@@ -50,12 +50,12 @@ async def list_client_sessions(
         default=None, description="Filter by last activity date (>=)"
     ),
     date_to: datetime | None = Query(default=None, description="Filter by last activity date (<=)"),
-    current_user: User = Depends(get_current_user),
+    auth: AuthContext = Depends(get_auth_context),
     project_service: ProjectService = Depends(get_project_service),
     client_session_service: ClientSessionService = Depends(get_client_session_service),
 ):
     """List a project's client sessions with pagination and filtering."""
-    await project_service.verify_user_project_access(current_user, project_id)
+    await project_service.authorize_project_access(auth, project_id)
 
     offset = (page - 1) * limit
 
@@ -105,12 +105,12 @@ async def list_client_sessions(
 async def get_client_session(
     project_id: UUID,
     client_id: str,
-    current_user: User = Depends(get_current_user),
+    auth: AuthContext = Depends(get_auth_context),
     project_service: ProjectService = Depends(get_project_service),
     client_session_service: ClientSessionService = Depends(get_client_session_service),
 ):
     """Get a single client session."""
-    await project_service.verify_user_project_access(current_user, project_id)
+    await project_service.authorize_project_access(auth, project_id)
 
     session = await client_session_service.get_by_client_id(project_id, client_id)
 
@@ -144,13 +144,13 @@ async def list_client_session_executions(
     client_id: str,
     page: int = Query(default=1, ge=1, description="Page number"),
     limit: int = Query(default=50, ge=1, le=100, description="Page size"),
-    current_user: User = Depends(get_current_user),
+    auth: AuthContext = Depends(get_auth_context),
     project_service: ProjectService = Depends(get_project_service),
     client_session_service: ClientSessionService = Depends(get_client_session_service),
     execution_service: ExecutionService = Depends(get_execution_service),
 ):
     """List executions for a client session."""
-    await project_service.verify_user_project_access(current_user, project_id)
+    await project_service.authorize_project_access(auth, project_id)
 
     session = await client_session_service.get_by_client_id(project_id, client_id)
 
@@ -186,14 +186,14 @@ async def list_client_chat_sessions(
     client_id: str,
     page: int = Query(default=1, ge=1, description="Page number"),
     limit: int = Query(default=50, ge=1, le=100, description="Page size"),
-    current_user: User = Depends(get_current_user),
+    auth: AuthContext = Depends(get_auth_context),
     project_service: ProjectService = Depends(get_project_service),
     client_session_service: ClientSessionService = Depends(get_client_session_service),
     execution_service: ExecutionService = Depends(get_execution_service),
     chat_service: ChatService = Depends(get_chat_service),
 ):
     """List chat sessions for a client_id (unique chat sessions from its executions)."""
-    await project_service.verify_user_project_access(current_user, project_id)
+    await project_service.authorize_project_access(auth, project_id)
 
     session = await client_session_service.get_by_client_id(project_id, client_id)
 
@@ -251,12 +251,12 @@ async def update_client_session_metadata(
     project_id: UUID,
     client_id: str,
     request: UpdateClientSessionMetadataRequest,
-    current_user: User = Depends(get_current_user),
+    auth: AuthContext = Depends(get_auth_context),
     project_service: ProjectService = Depends(get_project_service),
     client_session_service: ClientSessionService = Depends(get_client_session_service),
 ):
     """Update client session metadata."""
-    await project_service.verify_user_project_access(current_user, project_id)
+    await project_service.authorize_project_access(auth, project_id)
 
     session = await client_session_service.get_by_client_id(project_id, client_id)
 
@@ -293,12 +293,12 @@ async def update_client_session_metadata(
 async def deactivate_client_session(
     project_id: UUID,
     client_id: str,
-    current_user: User = Depends(get_current_user),
+    auth: AuthContext = Depends(get_auth_context),
     project_service: ProjectService = Depends(get_project_service),
     client_session_service: ClientSessionService = Depends(get_client_session_service),
 ):
     """Deactivate a client session."""
-    await project_service.verify_user_project_access(current_user, project_id)
+    await project_service.authorize_project_access(auth, project_id)
 
     session = await client_session_service.get_by_client_id(project_id, client_id)
 
