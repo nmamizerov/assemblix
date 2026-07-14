@@ -9,10 +9,10 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
 
-from assemblix_api.database.models.user import User
+from assemblix_api.core.auth_context import AuthContext
 from assemblix_api.dependencies import (
     get_api_key_service,
-    get_current_user,
+    get_auth_context,
     get_project_service,
 )
 from assemblix_api.dto.requests.api_key import CreateAPIKeyRequest
@@ -30,7 +30,7 @@ router = APIRouter(prefix="/api-keys", tags=["API Keys"])
 @router.get("/", response_model=APIKeyListResponse)
 async def list_api_keys(
     project_id: UUID,
-    current_user: Annotated[User, Depends(get_current_user)],
+    auth: Annotated[AuthContext, Depends(get_auth_context)],
     service: Annotated[APIKeyService, Depends(get_api_key_service)],
     project_service: Annotated[ProjectService, Depends(get_project_service)],
 ):
@@ -40,7 +40,7 @@ async def list_api_keys(
     Plaintext keys are never returned - only metadata (name, prefix, usage stats,
     created/last-used dates).
     """
-    await project_service.verify_user_project_access(current_user, project_id)
+    await project_service.authorize_project_access(auth, project_id)
     keys = await service.list_project_keys(project_id)
 
     return APIKeyListResponse(
@@ -52,7 +52,7 @@ async def list_api_keys(
 @router.get("/{key_id}", response_model=APIKeyResponse)
 async def get_api_key(
     key_id: UUID,
-    current_user: Annotated[User, Depends(get_current_user)],
+    auth: Annotated[AuthContext, Depends(get_auth_context)],
     service: Annotated[APIKeyService, Depends(get_api_key_service)],
     project_service: Annotated[ProjectService, Depends(get_project_service)],
 ):
@@ -65,7 +65,7 @@ async def get_api_key(
     api_key_obj = await service._api_keys.get_by_id(key_id)
     if not api_key_obj:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="API key not found")
-    await project_service.verify_user_project_access(current_user, api_key_obj.project_id)
+    await project_service.authorize_project_access(auth, api_key_obj.project_id)
     api_key = await service.get_key_details(key_id, api_key_obj.project_id)
     return APIKeyResponse.model_validate(api_key)
 
@@ -73,7 +73,7 @@ async def get_api_key(
 @router.post("/", response_model=APIKeyCreatedResponse, status_code=status.HTTP_201_CREATED)
 async def create_api_key(
     data: CreateAPIKeyRequest,
-    current_user: Annotated[User, Depends(get_current_user)],
+    auth: Annotated[AuthContext, Depends(get_auth_context)],
     service: Annotated[APIKeyService, Depends(get_api_key_service)],
     project_service: Annotated[ProjectService, Depends(get_project_service)],
 ):
@@ -92,7 +92,7 @@ async def create_api_key(
          https://api.example.com/workflows
     ```
     """
-    await project_service.verify_user_project_access(current_user, data.project_id)
+    await project_service.authorize_project_access(auth, data.project_id)
     api_key, plain_key = await service.create_api_key(
         project_id=data.project_id,
         name=data.name,
@@ -110,7 +110,7 @@ async def create_api_key(
 @router.delete("/{key_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_api_key(
     key_id: UUID,
-    current_user: Annotated[User, Depends(get_current_user)],
+    auth: Annotated[AuthContext, Depends(get_auth_context)],
     service: Annotated[APIKeyService, Depends(get_api_key_service)],
     project_service: Annotated[ProjectService, Depends(get_project_service)],
 ):
@@ -124,5 +124,5 @@ async def delete_api_key(
     api_key = await service._api_keys.get_by_id(key_id)
     if not api_key:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="API key not found")
-    await project_service.verify_user_project_access(current_user, api_key.project_id)
+    await project_service.authorize_project_access(auth, api_key.project_id)
     await service.delete_api_key(key_id, api_key.project_id)

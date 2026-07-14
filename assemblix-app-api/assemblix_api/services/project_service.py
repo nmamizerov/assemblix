@@ -8,6 +8,7 @@ from uuid import UUID, uuid4
 
 from fastapi import HTTPException, status
 
+from assemblix_api.core.auth_context import AuthContext
 from assemblix_api.database.models.project import Project
 from assemblix_api.database.repositories.organization_user_repository import (
     OrganizationUserRepository,
@@ -107,6 +108,19 @@ class ProjectService(BaseService[Project, ProjectRepository]):
         project = await self.get_by_id(project_id)
         await self._verify_user_access(user, project.organization_id)
         return project
+
+    async def authorize_project_access(self, auth: AuthContext, project_id: UUID) -> Project:
+        """Authorize a request against a project, honoring an API key's scope.
+
+        For API-key callers (``auth.scoped_project_id`` set) any other project is
+        rejected outright. JWT callers fall back to organization-level access.
+        """
+        if auth.scoped_project_id is not None and auth.scoped_project_id != project_id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="API-ключ не имеет доступа к этому проекту",
+            )
+        return await self.verify_user_project_access(auth.user, project_id)
 
     async def _verify_user_access(self, user: User, organization_id: UUID) -> None:
         # Admins have access to all organizations

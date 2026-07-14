@@ -15,10 +15,12 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
+from assemblix_api.core.auth_context import AuthContext
 from assemblix_api.core.settings import get_settings
 from assemblix_api.database.models.credentials import CredentialsType
 from assemblix_api.database.models.user import User
 from assemblix_api.dependencies import (
+    get_auth_context,
     get_credentials_service,
     get_current_user,
     get_project_service,
@@ -74,7 +76,7 @@ async def list_provider_models(
 @router.get("/credentials/{credentials_id}/voices", response_model=list[VoiceListItem])
 async def list_credential_voices(
     credentials_id: UUID,
-    current_user: User = Depends(get_current_user),
+    auth: AuthContext = Depends(get_auth_context),
     credentials_service: CredentialsService = Depends(get_credentials_service),
     project_service: ProjectService = Depends(get_project_service),
 ) -> list[VoiceListItem]:
@@ -84,7 +86,7 @@ async def list_credential_voices(
     catalog and needs no API call.
     """
     credentials = await credentials_service.get_by_id(credentials_id)
-    await project_service.verify_user_project_access(current_user, credentials.project_id)
+    await project_service.authorize_project_access(auth, credentials.project_id)
 
     if credentials.type == CredentialsType.YANDEX_SPEECHKIT_TOKEN:
         return [

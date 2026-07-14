@@ -185,13 +185,15 @@ class ExecutionService(BaseService[Execution, ExecutionRepository]):
         self,
         execution_id: UUID,
         current_user: User,
+        scoped_project_id: UUID | None = None,
     ) -> ExecutionDetailInfoResponse:
         """
         Get full execution info with access control.
 
         The project is derived from the execution (via workflow); user access is
         verified through organization membership, so the X-Project-Id header is
-        not required for this endpoint.
+        not required for this endpoint. ``scoped_project_id`` additionally hard-scopes
+        a project-bound API key to its own project.
         """
         execution = await self._repository.get_with_details(execution_id)
 
@@ -204,6 +206,12 @@ class ExecutionService(BaseService[Execution, ExecutionRepository]):
         await self._project_service.verify_user_project_access(
             current_user, execution.workflow.project_id
         )
+
+        if scoped_project_id is not None and scoped_project_id != execution.workflow.project_id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="API-ключ не имеет доступа к этому проекту",
+            )
 
         steps = [
             ExecutionStepResponse.model_validate(step, from_attributes=True)

@@ -8,9 +8,9 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query, status
 
-from assemblix_api.database.models.user import User
+from assemblix_api.core.auth_context import AuthContext
 from assemblix_api.dependencies import (
-    get_current_user,
+    get_auth_context,
     get_project_service,
     get_workflow_service,
 )
@@ -34,12 +34,12 @@ async def list_workflows(
     is_active: bool | None = Query(default=None, description="Filter by active status"),
     is_published: bool | None = Query(default=None, description="Filter by published status"),
     is_template: bool | None = Query(default=None, description="Filter by template status"),
-    current_user: User = Depends(get_current_user),
+    auth: AuthContext = Depends(get_auth_context),
     service: WorkflowService = Depends(get_workflow_service),
     project_service: ProjectService = Depends(get_project_service),
 ):
     """List project workflows with optional status filtering."""
-    await project_service.verify_user_project_access(current_user, project_id)
+    await project_service.authorize_project_access(auth, project_id)
 
     workflows = await service.get_project_workflows(
         project_id,
@@ -55,7 +55,7 @@ async def list_workflows(
 @router.get("/{workflow_id}", response_model=WorkflowResponse)
 async def get_workflow(
     workflow_id: UUID,
-    current_user: User = Depends(get_current_user),
+    auth: AuthContext = Depends(get_auth_context),
     service: WorkflowService = Depends(get_workflow_service),
     project_service: ProjectService = Depends(get_project_service),
 ):
@@ -69,7 +69,7 @@ async def get_workflow(
 
     # Published workflows are public; drafts require project access.
     if not workflow.is_published:
-        await project_service.verify_user_project_access(current_user, workflow.project_id)
+        await project_service.authorize_project_access(auth, workflow.project_id)
 
     return await service.get_workflow_with_versions(workflow)
 
@@ -77,14 +77,14 @@ async def get_workflow(
 @router.post("/", response_model=WorkflowResponse, status_code=status.HTTP_201_CREATED)
 async def create_workflow(
     data: WorkflowCreateRequest,
-    current_user: User = Depends(get_current_user),
+    auth: AuthContext = Depends(get_auth_context),
     service: WorkflowService = Depends(get_workflow_service),
     project_service: ProjectService = Depends(get_project_service),
 ):
     """Create a new workflow."""
     language = "en"
 
-    project = await project_service.verify_user_project_access(current_user, data.project_id)
+    project = await project_service.authorize_project_access(auth, data.project_id)
 
     # Create the workflow, enforcing billing limits.
     workflow = await service.create_workflow(
@@ -100,13 +100,13 @@ async def create_workflow(
 async def update_workflow(
     workflow_id: UUID,
     data: WorkflowUpdateRequest,
-    current_user: User = Depends(get_current_user),
+    auth: AuthContext = Depends(get_auth_context),
     service: WorkflowService = Depends(get_workflow_service),
     project_service: ProjectService = Depends(get_project_service),
 ):
     """Update a workflow. All fields are optional."""
     workflow = await service.get_by_id(workflow_id)
-    await project_service.verify_user_project_access(current_user, workflow.project_id)
+    await project_service.authorize_project_access(auth, workflow.project_id)
 
     workflow = await service.update_workflow(
         workflow_id=workflow_id, project_id=workflow.project_id, data=data
@@ -117,13 +117,13 @@ async def update_workflow(
 @router.delete("/{workflow_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_workflow(
     workflow_id: UUID,
-    current_user: User = Depends(get_current_user),
+    auth: AuthContext = Depends(get_auth_context),
     service: WorkflowService = Depends(get_workflow_service),
     project_service: ProjectService = Depends(get_project_service),
 ):
     """Permanently delete a workflow and all related data."""
     workflow = await service.get_by_id(workflow_id)
-    await project_service.verify_user_project_access(current_user, workflow.project_id)
+    await project_service.authorize_project_access(auth, workflow.project_id)
 
     await service.delete_workflow(workflow_id, workflow.project_id)
 
@@ -131,7 +131,7 @@ async def delete_workflow(
 @router.post("/{workflow_id}/publish", response_model=WorkflowResponse)
 async def publish_workflow(
     workflow_id: UUID,
-    current_user: User = Depends(get_current_user),
+    auth: AuthContext = Depends(get_auth_context),
     service: WorkflowService = Depends(get_workflow_service),
     project_service: ProjectService = Depends(get_project_service),
 ):
@@ -146,7 +146,7 @@ async def publish_workflow(
     - Published versions are cascade-deleted together with the draft
     """
     workflow = await service.get_by_id(workflow_id)
-    await project_service.verify_user_project_access(current_user, workflow.project_id)
+    await project_service.authorize_project_access(auth, workflow.project_id)
 
     published = await service.publish_workflow(workflow_id, workflow.project_id)
     return published
@@ -156,7 +156,7 @@ async def publish_workflow(
 async def move_workflow(
     workflow_id: UUID,
     data: WorkflowMoveRequest,
-    current_user: User = Depends(get_current_user),
+    auth: AuthContext = Depends(get_auth_context),
     service: WorkflowService = Depends(get_workflow_service),
     project_service: ProjectService = Depends(get_project_service),
 ):
@@ -171,12 +171,10 @@ async def move_workflow(
     """
     workflow = await service.get_by_id(workflow_id)
 
-    await project_service.verify_user_project_access(current_user, workflow.project_id)
+    await project_service.authorize_project_access(auth, workflow.project_id)
 
     # Verify access to the target project and get its organization_id.
-    target_project = await project_service.verify_user_project_access(
-        current_user, data.target_project_id
-    )
+    target_project = await project_service.authorize_project_access(auth, data.target_project_id)
 
     return await service.move_workflow(
         workflow_id=workflow_id,
@@ -189,7 +187,7 @@ async def move_workflow(
 @router.post("/{workflow_id}/copy", response_model=WorkflowResponse)
 async def copy_workflow(
     workflow_id: UUID,
-    current_user: User = Depends(get_current_user),
+    auth: AuthContext = Depends(get_auth_context),
     service: WorkflowService = Depends(get_workflow_service),
     project_service: ProjectService = Depends(get_project_service),
 ):
@@ -205,7 +203,7 @@ async def copy_workflow(
     - The copy is always created as a draft (is_published=False, version=None)
     """
     workflow = await service.get_by_id(workflow_id)
-    project = await project_service.verify_user_project_access(current_user, workflow.project_id)
+    project = await project_service.authorize_project_access(auth, workflow.project_id)
 
     copied = await service.copy_workflow(workflow_id, workflow.project_id, project.organization_id)
     return copied

@@ -8,11 +8,11 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query, status
 
+from assemblix_api.core.auth_context import AuthContext
 from assemblix_api.database.models.credentials import CredentialsType
-from assemblix_api.database.models.user import User
 from assemblix_api.dependencies import (
+    get_auth_context,
     get_credentials_service,
-    get_current_user,
     get_project_service,
 )
 from assemblix_api.dto.requests.credentials import (
@@ -32,7 +32,7 @@ async def list_credentials(
     skip: int = Query(default=0, ge=0, description="Number of records to skip"),
     limit: int = Query(default=100, ge=1, le=1000, description="Maximum number of records"),
     type: CredentialsType | None = Query(default=None, description="Filter by provider type"),
-    current_user: User = Depends(get_current_user),
+    auth: AuthContext = Depends(get_auth_context),
     service: CredentialsService = Depends(get_credentials_service),
     project_service: ProjectService = Depends(get_project_service),
 ):
@@ -41,7 +41,7 @@ async def list_credentials(
 
     IMPORTANT: API key values are NEVER returned, for security.
     """
-    await project_service.verify_user_project_access(current_user, project_id)
+    await project_service.authorize_project_access(auth, project_id)
     credentials = await service.get_project_credentials(
         project_id,
         skip=skip,
@@ -54,7 +54,7 @@ async def list_credentials(
 @router.get("/{credentials_id}", response_model=CredentialsResponse)
 async def get_credentials(
     credentials_id: UUID,
-    current_user: User = Depends(get_current_user),
+    auth: AuthContext = Depends(get_auth_context),
     service: CredentialsService = Depends(get_credentials_service),
     project_service: ProjectService = Depends(get_project_service),
 ):
@@ -65,14 +65,14 @@ async def get_credentials(
     only on the backend for LLM provider calls.
     """
     credentials = await service.get_by_id(credentials_id)
-    await project_service.verify_user_project_access(current_user, credentials.project_id)
+    await project_service.authorize_project_access(auth, credentials.project_id)
     return credentials
 
 
 @router.post("/", response_model=CredentialsResponse, status_code=status.HTTP_201_CREATED)
 async def create_credentials(
     data: CredentialsCreateRequest,
-    current_user: User = Depends(get_current_user),
+    auth: AuthContext = Depends(get_auth_context),
     service: CredentialsService = Depends(get_credentials_service),
     project_service: ProjectService = Depends(get_project_service),
 ):
@@ -82,7 +82,7 @@ async def create_credentials(
     Multiple keys for the same provider are allowed. The API key is encrypted
     before being stored. The key value is not returned in the response, for security.
     """
-    await project_service.verify_user_project_access(current_user, data.project_id)
+    await project_service.authorize_project_access(auth, data.project_id)
     credentials = await service.create_credentials(project_id=data.project_id, data=data)
     return credentials
 
@@ -91,7 +91,7 @@ async def create_credentials(
 async def update_credentials(
     credentials_id: UUID,
     data: CredentialsUpdateRequest,
-    current_user: User = Depends(get_current_user),
+    auth: AuthContext = Depends(get_auth_context),
     service: CredentialsService = Depends(get_credentials_service),
     project_service: ProjectService = Depends(get_project_service),
 ):
@@ -104,7 +104,7 @@ async def update_credentials(
     """
     # Fetch credentials to resolve project_id
     credentials = await service.get_by_id(credentials_id)
-    await project_service.verify_user_project_access(current_user, credentials.project_id)
+    await project_service.authorize_project_access(auth, credentials.project_id)
 
     credentials = await service.update_credentials(
         credentials_id=credentials_id, project_id=credentials.project_id, data=data
@@ -115,7 +115,7 @@ async def update_credentials(
 @router.delete("/{credentials_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_credentials(
     credentials_id: UUID,
-    current_user: User = Depends(get_current_user),
+    auth: AuthContext = Depends(get_auth_context),
     service: CredentialsService = Depends(get_credentials_service),
     project_service: ProjectService = Depends(get_project_service),
 ):
@@ -124,5 +124,5 @@ async def delete_credentials(
     """
     # Fetch credentials to resolve project_id
     credentials = await service.get_by_id(credentials_id)
-    await project_service.verify_user_project_access(current_user, credentials.project_id)
+    await project_service.authorize_project_access(auth, credentials.project_id)
     await service.delete_credentials(credentials_id, credentials.project_id)

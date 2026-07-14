@@ -8,10 +8,10 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile, status
 
+from assemblix_api.core.auth_context import AuthContext
 from assemblix_api.core.settings import get_settings
-from assemblix_api.database.models.user import User
 from assemblix_api.dependencies import (
-    get_current_user,
+    get_auth_context,
     get_knowledge_base_service,
     get_project_service,
 )
@@ -34,34 +34,34 @@ router = APIRouter(prefix="/knowledge-bases", tags=["Knowledge Bases"])
 @router.get("/", response_model=list[KnowledgeBaseResponse])
 async def list_knowledge_bases(
     project_id: UUID = Query(..., description="Project ID"),
-    current_user: User = Depends(get_current_user),
+    auth: AuthContext = Depends(get_auth_context),
     service: KnowledgeBaseService = Depends(get_knowledge_base_service),
     project_service: ProjectService = Depends(get_project_service),
 ):
-    await project_service.verify_user_project_access(current_user, project_id)
+    await project_service.authorize_project_access(auth, project_id)
     return await service.get_project_knowledge_bases(project_id)
 
 
 @router.get("/{kb_id}", response_model=KnowledgeBaseResponse)
 async def get_knowledge_base(
     kb_id: UUID,
-    current_user: User = Depends(get_current_user),
+    auth: AuthContext = Depends(get_auth_context),
     service: KnowledgeBaseService = Depends(get_knowledge_base_service),
     project_service: ProjectService = Depends(get_project_service),
 ):
     kb = await service.get_knowledge_base(kb_id)
-    await project_service.verify_user_project_access(current_user, kb.project_id)
+    await project_service.authorize_project_access(auth, kb.project_id)
     return kb
 
 
 @router.post("/", response_model=KnowledgeBaseResponse, status_code=status.HTTP_201_CREATED)
 async def create_knowledge_base(
     data: KnowledgeBaseCreateRequest,
-    current_user: User = Depends(get_current_user),
+    auth: AuthContext = Depends(get_auth_context),
     service: KnowledgeBaseService = Depends(get_knowledge_base_service),
     project_service: ProjectService = Depends(get_project_service),
 ):
-    project = await project_service.verify_user_project_access(current_user, data.project_id)
+    project = await project_service.authorize_project_access(auth, data.project_id)
     return await service.create_knowledge_base(project_id=project.id, data=data)
 
 
@@ -69,25 +69,25 @@ async def create_knowledge_base(
 async def update_knowledge_base(
     kb_id: UUID,
     data: KnowledgeBaseUpdateRequest,
-    current_user: User = Depends(get_current_user),
+    auth: AuthContext = Depends(get_auth_context),
     service: KnowledgeBaseService = Depends(get_knowledge_base_service),
     project_service: ProjectService = Depends(get_project_service),
 ):
     kb = await service.get_knowledge_base(kb_id)
-    await project_service.verify_user_project_access(current_user, kb.project_id)
+    await project_service.authorize_project_access(auth, kb.project_id)
     return await service.update_knowledge_base(kb_id=kb_id, data=data)
 
 
 @router.delete("/{kb_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_knowledge_base(
     kb_id: UUID,
-    current_user: User = Depends(get_current_user),
+    auth: AuthContext = Depends(get_auth_context),
     service: KnowledgeBaseService = Depends(get_knowledge_base_service),
     project_service: ProjectService = Depends(get_project_service),
 ):
     """Delete a knowledge base together with all its documents."""
     kb = await service.get_knowledge_base(kb_id)
-    await project_service.verify_user_project_access(current_user, kb.project_id)
+    await project_service.authorize_project_access(auth, kb.project_id)
     await service.delete_knowledge_base(kb_id)
 
 
@@ -99,12 +99,12 @@ async def delete_knowledge_base(
 @router.get("/{kb_id}/documents", response_model=list[KnowledgeDocumentResponse])
 async def list_documents(
     kb_id: UUID,
-    current_user: User = Depends(get_current_user),
+    auth: AuthContext = Depends(get_auth_context),
     service: KnowledgeBaseService = Depends(get_knowledge_base_service),
     project_service: ProjectService = Depends(get_project_service),
 ):
     kb = await service.get_knowledge_base(kb_id)
-    await project_service.verify_user_project_access(current_user, kb.project_id)
+    await project_service.authorize_project_access(auth, kb.project_id)
     return await service.get_kb_documents(kb_id)
 
 
@@ -112,12 +112,12 @@ async def list_documents(
 async def get_document(
     kb_id: UUID,
     doc_id: UUID,
-    current_user: User = Depends(get_current_user),
+    auth: AuthContext = Depends(get_auth_context),
     service: KnowledgeBaseService = Depends(get_knowledge_base_service),
     project_service: ProjectService = Depends(get_project_service),
 ):
     kb = await service.get_knowledge_base(kb_id)
-    await project_service.verify_user_project_access(current_user, kb.project_id)
+    await project_service.authorize_project_access(auth, kb.project_id)
     return await service.get_document(kb_id=kb_id, doc_id=doc_id)
 
 
@@ -129,7 +129,7 @@ async def get_document(
 async def upload_text_document(
     kb_id: UUID,
     data: KnowledgeDocumentTextRequest,
-    current_user: User = Depends(get_current_user),
+    auth: AuthContext = Depends(get_auth_context),
     service: KnowledgeBaseService = Depends(get_knowledge_base_service),
     project_service: ProjectService = Depends(get_project_service),
 ):
@@ -140,7 +140,7 @@ async def upload_text_document(
             detail=f"Текст слишком большой (максимум {max_bytes} байт)",
         )
     kb = await service.get_knowledge_base(kb_id)
-    await project_service.verify_user_project_access(current_user, kb.project_id)
+    await project_service.authorize_project_access(auth, kb.project_id)
     return await service.upload_document_text(kb_id=kb_id, data=data)
 
 
@@ -152,7 +152,7 @@ async def upload_text_document(
 async def upload_pdf_document(
     kb_id: UUID,
     file: UploadFile = File(..., description="PDF file to upload"),
-    current_user: User = Depends(get_current_user),
+    auth: AuthContext = Depends(get_auth_context),
     service: KnowledgeBaseService = Depends(get_knowledge_base_service),
     project_service: ProjectService = Depends(get_project_service),
 ):
@@ -169,7 +169,7 @@ async def upload_pdf_document(
         )
 
     kb = await service.get_knowledge_base(kb_id)
-    await project_service.verify_user_project_access(current_user, kb.project_id)
+    await project_service.authorize_project_access(auth, kb.project_id)
 
     max_bytes = get_settings().kb_max_upload_bytes
     # Read at most max_bytes + 1 so we can detect an oversized file without
@@ -191,10 +191,10 @@ async def upload_pdf_document(
 async def delete_document(
     kb_id: UUID,
     doc_id: UUID,
-    current_user: User = Depends(get_current_user),
+    auth: AuthContext = Depends(get_auth_context),
     service: KnowledgeBaseService = Depends(get_knowledge_base_service),
     project_service: ProjectService = Depends(get_project_service),
 ):
     kb = await service.get_knowledge_base(kb_id)
-    await project_service.verify_user_project_access(current_user, kb.project_id)
+    await project_service.authorize_project_access(auth, kb.project_id)
     await service.delete_document(kb_id=kb_id, doc_id=doc_id)

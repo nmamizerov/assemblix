@@ -11,9 +11,11 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
+from assemblix_api.core.auth_context import AuthContext
 from assemblix_api.database.models.credentials import CredentialsType
 from assemblix_api.database.models.user import User
 from assemblix_api.dependencies import (
+    get_auth_context,
     get_avatar_service,
     get_credentials_service,
     get_current_user,
@@ -70,13 +72,13 @@ async def list_provider_models(
 @router.get("/avatar/credentials/{credentials_id}/avatars", response_model=list[AvatarListItem])
 async def list_credential_avatars(
     credentials_id: UUID,
-    current_user: User = Depends(get_current_user),
+    auth: AuthContext = Depends(get_auth_context),
     credentials_service: CredentialsService = Depends(get_credentials_service),
     project_service: ProjectService = Depends(get_project_service),
 ) -> list[AvatarListItem]:
     """List the anam avatars available to a stored credential."""
     credentials = await credentials_service.get_by_id(credentials_id)
-    await project_service.verify_user_project_access(current_user, credentials.project_id)
+    await project_service.authorize_project_access(auth, credentials.project_id)
     if credentials.type != CredentialsType.ANAM_TOKEN:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -93,13 +95,13 @@ async def list_credential_avatars(
 async def list_credential_voices(
     credentials_id: UUID,
     search: str | None = Query(default=None, description="Filter voices by display name"),
-    current_user: User = Depends(get_current_user),
+    auth: AuthContext = Depends(get_auth_context),
     credentials_service: CredentialsService = Depends(get_credentials_service),
     project_service: ProjectService = Depends(get_project_service),
 ) -> list[AvatarListItem]:
     """List the anam voices available to a stored credential (optional name search)."""
     credentials = await credentials_service.get_by_id(credentials_id)
-    await project_service.verify_user_project_access(current_user, credentials.project_id)
+    await project_service.authorize_project_access(auth, credentials.project_id)
     if credentials.type != CredentialsType.ANAM_TOKEN:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -115,8 +117,10 @@ async def list_credential_voices(
 @router.post("/workflows/{workflow_id}/avatar/session", response_model=AvatarSessionResponse)
 async def mint_avatar_session(
     workflow_id: UUID,
-    current_user: User = Depends(get_current_user),
+    auth: AuthContext = Depends(get_auth_context),
     avatar_service: AvatarService = Depends(get_avatar_service),
 ) -> AvatarSessionResponse:
     """Mint a client session token for the workflow's configured avatar persona."""
-    return await avatar_service.mint_workflow_session(workflow_id, current_user)
+    return await avatar_service.mint_workflow_session(
+        workflow_id, auth.user, scoped_project_id=auth.scoped_project_id
+    )

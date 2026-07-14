@@ -26,11 +26,13 @@ from pydantic import ValidationError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from assemblix_api.billing.service import BillingService
+from assemblix_api.core.auth_context import AuthContext
 from assemblix_api.core.settings import get_settings
 from assemblix_api.database.models.user import User
 from assemblix_api.database.models.workflow import Workflow
 from assemblix_api.dependencies import (
     get_arq_pool,
+    get_auth_context,
     get_billing_service,
     get_chat_service,
     get_client_session_service,
@@ -759,7 +761,7 @@ async def list_executions(
         default=False,
         description="Include debug executions (excluded by default)",
     ),
-    current_user: User = Depends(get_current_user),
+    auth: AuthContext = Depends(get_auth_context),
     execution_service: ExecutionService = Depends(get_execution_service),
     client_session_service: ClientSessionService = Depends(get_client_session_service),
     project_service: ProjectService = Depends(get_project_service),
@@ -775,7 +777,7 @@ async def list_executions(
     - date_from/date_to: range of execution start dates
     - include_debug: whether to show debug executions
     """
-    await project_service.verify_user_project_access(current_user, project_id)
+    await project_service.authorize_project_access(auth, project_id)
 
     offset = (page - 1) * limit
 
@@ -814,7 +816,7 @@ async def list_executions(
 @execution_detail_router.get("/{execution_id}", response_model=ExecutionDetailInfoResponse)
 async def get_execution_detail(
     execution_id: UUID,
-    current_user: User = Depends(get_current_user),
+    auth: AuthContext = Depends(get_auth_context),
     execution_service: ExecutionService = Depends(get_execution_service),
 ):
     """
@@ -831,7 +833,8 @@ async def get_execution_detail(
     """
     return await execution_service.get_execution_detail(
         execution_id=execution_id,
-        current_user=current_user,
+        current_user=auth.user,
+        scoped_project_id=auth.scoped_project_id,
     )
 
 
@@ -839,7 +842,7 @@ async def get_execution_detail(
 async def stream_execution_events(
     execution_id: UUID,
     request: Request,
-    current_user: User = Depends(get_current_user),
+    auth: AuthContext = Depends(get_auth_context),
     execution_service: ExecutionService = Depends(get_execution_service),
     debug_event_manager: DebugEventManager = Depends(get_debug_event_manager),
 ) -> StreamingResponse:
@@ -851,7 +854,9 @@ async def stream_execution_events(
     """
     # Authorize: raises 404 if the execution is unknown, 403 if not in the caller's project.
     await execution_service.get_execution_detail(
-        execution_id=execution_id, current_user=current_user
+        execution_id=execution_id,
+        current_user=auth.user,
+        scoped_project_id=auth.scoped_project_id,
     )
 
     # A task=true run returns its id before the executor opens the buffer; wait briefly.
