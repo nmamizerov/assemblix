@@ -9,7 +9,11 @@ from assemblix_api.schemas import Edge, Node, StateVariable
 
 
 class WorkflowCreateRequest(DTOModel):
-    project_id: UUID = Field(..., description="ID of the project this workflow belongs to")
+    project_id: UUID | None = Field(
+        default=None,
+        description="ID of the project this workflow belongs to. Optional when "
+        "authenticated with a project-scoped API key — defaults to the key's project.",
+    )
     name: str | None = Field(
         default=None,
         max_length=255,
