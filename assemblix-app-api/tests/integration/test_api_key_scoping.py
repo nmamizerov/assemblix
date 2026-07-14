@@ -253,7 +253,11 @@ async def test_list_credential_avatars_foreign_credential_forbidden(
     )
     assert created.status_code == 201
     cred_id = created.json()["id"]
-    resp = await client.get(
-        f"/api/avatar/credentials/{cred_id}/avatars", headers=api_key.headers
-    )
+    resp = await client.get(f"/api/avatar/credentials/{cred_id}/avatars", headers=api_key.headers)
     assert resp.status_code == 403
+
+
+async def test_jwt_can_access_second_project_in_org(client, auth_headers, second_project) -> None:
+    # A JWT caller (scoped_project_id=None) is NOT restricted to a single project.
+    resp = await client.get(f"/api/workflows/?project_id={second_project}", headers=auth_headers)
+    assert resp.status_code == 200
