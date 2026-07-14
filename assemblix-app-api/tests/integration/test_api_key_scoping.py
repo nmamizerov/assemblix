@@ -236,3 +236,24 @@ async def test_delete_foreign_project_forbidden(client, api_key, second_project)
 async def test_get_own_project_ok(client, api_key) -> None:
     resp = await client.get(f"/api/projects/{api_key.record.project_id}", headers=api_key.headers)
     assert resp.status_code == 200
+
+
+async def test_list_credential_avatars_foreign_credential_forbidden(
+    client, api_key, auth_headers, second_project
+) -> None:
+    created = await client.post(
+        "/api/credentials/",
+        json={
+            "type": "anam_token",
+            "value": "an-x",
+            "name": "foreign",
+            "projectId": str(second_project),
+        },
+        headers=auth_headers,
+    )
+    assert created.status_code == 201
+    cred_id = created.json()["id"]
+    resp = await client.get(
+        f"/api/avatar/credentials/{cred_id}/avatars", headers=api_key.headers
+    )
+    assert resp.status_code == 403

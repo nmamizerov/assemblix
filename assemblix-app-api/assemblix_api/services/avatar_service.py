@@ -29,9 +29,19 @@ class AvatarService:
         self._credentials = credentials_service
         self._projects = project_service
 
-    async def mint_workflow_session(self, workflow_id: UUID, user: User) -> AvatarSessionResponse:
+    async def mint_workflow_session(
+        self,
+        workflow_id: UUID,
+        user: User,
+        scoped_project_id: UUID | None = None,
+    ) -> AvatarSessionResponse:
         workflow = await self._workflows.get_by_id(workflow_id)
         await self._projects.verify_user_project_access(user, workflow.project_id)
+        if scoped_project_id is not None and scoped_project_id != workflow.project_id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="API-ключ не имеет доступа к этому проекту",
+            )
 
         avatar = parse_avatar_config(workflow.config or {})
         if avatar is None:
