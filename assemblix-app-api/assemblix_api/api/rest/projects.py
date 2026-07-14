@@ -9,9 +9,11 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, Query, status
 
 from assemblix_api.billing.service import BillingService
+from assemblix_api.core.auth_context import AuthContext
 from assemblix_api.database.models.organization import Organization
 from assemblix_api.database.models.user import User
 from assemblix_api.dependencies import (
+    get_auth_context,
     get_billing_service,
     get_current_organization,
     get_current_user,
@@ -37,6 +39,7 @@ async def list_projects(
     service: ProjectService = Depends(get_project_service),
 ):
     """List projects of the current organization, with optional filtering."""
+    # Intentional org-level access: an API key may enumerate all projects in its own organization.
     projects = await service.get_organization_projects(
         current_organization.id,
         current_user,
@@ -50,11 +53,11 @@ async def list_projects(
 @router.get("/{project_id}", response_model=ProjectResponse)
 async def get_project(
     project_id: UUID,
-    current_user: User = Depends(get_current_user),
+    auth: AuthContext = Depends(get_auth_context),
     service: ProjectService = Depends(get_project_service),
 ):
     """Get a project by ID, if the user has access to it."""
-    project = await service.verify_user_project_access(current_user, project_id)
+    project = await service.authorize_project_access(auth, project_id)
     return project
 
 
@@ -66,6 +69,7 @@ async def create_project(
     service: ProjectService = Depends(get_project_service),
 ):
     """Create a project in the user's current organization."""
+    # Intentional org-level access: an API key may create projects in its own organization.
     project = await service.create_project(
         data=data,
         organization_id=current_organization.id,
@@ -78,7 +82,7 @@ async def create_project(
 async def update_project(
     project_id: UUID,
     data: ProjectUpdateRequest,
-    current_user: User = Depends(get_current_user),
+    auth: AuthContext = Depends(get_auth_context),
     service: ProjectService = Depends(get_project_service),
     billing_service: BillingService = Depends(get_billing_service),
 ):
@@ -87,7 +91,7 @@ async def update_project(
 
     Updates the given fields; all fields are optional.
     """
-    project = await service.verify_user_project_access(current_user, project_id)
+    project = await service.authorize_project_access(auth, project_id)
 
     # Updating state_schema requires the project_variables feature on the current plan.
     update_data = data.model_dump(exclude_unset=True)
@@ -96,7 +100,7 @@ async def update_project(
 
     project = await service.update_project(
         project_id=project_id,
-        user=current_user,
+        user=auth.user,
         **update_data,
     )
     return project
@@ -105,7 +109,7 @@ async def update_project(
 @router.delete("/{project_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_project(
     project_id: UUID,
-    current_user: User = Depends(get_current_user),
+    auth: AuthContext = Depends(get_auth_context),
     service: ProjectService = Depends(get_project_service),
 ):
     """
@@ -113,4 +117,5 @@ async def delete_project(
 
     Permanently deletes the project and all related data (workflows, credentials, API keys).
     """
-    await service.delete_project(project_id, current_user)
+    await service.authorize_project_access(auth, project_id)
+    await service.delete_project(project_id, auth.user)

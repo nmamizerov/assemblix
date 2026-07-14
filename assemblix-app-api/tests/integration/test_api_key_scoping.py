@@ -221,3 +221,18 @@ async def test_list_executions_rejects_foreign_project(client, api_key, second_p
         f"/api/executions/?project_id={second_project}", headers=api_key.headers
     )
     assert resp.status_code == 403
+
+
+async def test_get_foreign_project_forbidden(client, api_key, second_project) -> None:
+    resp = await client.get(f"/api/projects/{second_project}", headers=api_key.headers)
+    assert resp.status_code == 403
+
+
+async def test_delete_foreign_project_forbidden(client, api_key, second_project) -> None:
+    resp = await client.delete(f"/api/projects/{second_project}", headers=api_key.headers)
+    assert resp.status_code == 403
+
+
+async def test_get_own_project_ok(client, api_key) -> None:
+    resp = await client.get(f"/api/projects/{api_key.record.project_id}", headers=api_key.headers)
+    assert resp.status_code == 200
