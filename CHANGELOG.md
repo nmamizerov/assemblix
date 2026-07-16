@@ -5,6 +5,19 @@ All notable changes to this project are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.16](https://github.com/nmamizerov/assemblix/compare/v0.2.15...v0.2.16) (2026-07-16)
+
+
+### Bug Fixes
+
+* **web:** record voice input as WAV + document gpt-4o-transcribe audio format ([fdbbc0a](https://github.com/nmamizerov/assemblix/commit/fdbbc0a7ae554aaf1b83b7f96701089ca8c5d901))
+* **web:** record voice input as WAV for gpt-4o-transcribe compatibility ([9fa330d](https://github.com/nmamizerov/assemblix/commit/9fa330dc85b9d1548de7c44915b3bae0eab6d089))
+
+
+### Documentation
+
+* note gpt-4o-transcribe audio-format requirement for voice input ([cb53c2e](https://github.com/nmamizerov/assemblix/commit/cb53c2e1b0d9a6725b4343c5fb4fa1a077c0f780))
+
 ## [0.2.15](https://github.com/nmamizerov/assemblix/compare/v0.2.14...v0.2.15) (2026-07-16)
 
 
