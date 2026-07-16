@@ -37,9 +37,7 @@ async def test_create_workflow_rejects_explicit_foreign_project(
     client, api_key, auth_headers
 ) -> None:
     # Arrange: a second project in the same org that the key is NOT scoped to.
-    proj = await client.post(
-        "/api/projects/", json={"name": "Other"}, headers=auth_headers
-    )
+    proj = await client.post("/api/projects/", json={"name": "Other"}, headers=auth_headers)
     other_project_id = proj.json()["id"]
     # Act: the key tries to create in the foreign project by passing it explicitly.
     resp = await client.post(
