@@ -5,6 +5,14 @@ All notable changes to this project are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.15](https://github.com/nmamizerov/assemblix/compare/v0.2.14...v0.2.15) (2026-07-16)
+
+
+### Bug Fixes
+
+* use json response_format for gpt-4o-transcribe models ([a766111](https://github.com/nmamizerov/assemblix/commit/a766111ad7fcd49b3e5665c739d7e22c8e2f0cc5))
+* use json response_format for gpt-4o-transcribe models ([3974b6e](https://github.com/nmamizerov/assemblix/commit/3974b6eb5e19189e32aa482c1eca1a24f6c7e01e))
+
 ## [0.2.14](https://github.com/nmamizerov/assemblix/compare/v0.2.13...v0.2.14) (2026-07-14)
 
 

@@ -1,6 +1,6 @@
 [project]
 name = "assemblix-api"
-version = "0.2.14"
+version = "0.2.15"
 description = "Assemblix API — FastAPI backend for a visual workflow automation platform"
 readme = "README.md"
 # Source-available: MIT + Commons Clause (see ../LICENSE.md). Files marked
