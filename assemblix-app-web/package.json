@@ -46,6 +46,8 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "driver.js": "^1.4.0",
+    "extendable-media-recorder": "^9",
+    "extendable-media-recorder-wav-encoder": "^7",
     "framer-motion": "^12.23.26",
     "i18next": "^25.7.4",
     "i18next-browser-languagedetector": "^8.2.0",
