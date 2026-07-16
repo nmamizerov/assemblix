@@ -44,6 +44,32 @@ async def test_whisper_route_returns_transcript_with_bare_model_id(mocker: Any) 
     assert atranscription.call_count == 1
     assert atranscription.call_args.kwargs["model"] == "whisper-1"
     assert atranscription.call_args.kwargs["api_key"] == "sk-test"
+    assert atranscription.call_args.kwargs["response_format"] == "verbose_json"
+
+
+async def test_gpt4o_transcribe_requests_json_format(mocker: Any) -> None:
+    """gpt-4o-transcribe rejects verbose_json, so the call must ask for plain json."""
+    # Arrange
+    fake_response = SimpleNamespace(text="hello world")
+    atranscription = mocker.patch(
+        "assemblix_api.external.voice.transcription.litellm.atranscription",
+        return_value=fake_response,
+    )
+
+    # Act
+    result = await transcribe(
+        audio_bytes=b"RIFFfake-wav-bytes",
+        filename="clip.webm",
+        provider="openai",
+        model="gpt-4o-transcribe",
+        api_key="sk-test",
+    )
+
+    # Assert
+    assert isinstance(result, Transcript)
+    assert result.text == "hello world"
+    assert result.language is None
+    assert atranscription.call_args.kwargs["response_format"] == "json"
 
 
 async def test_unregistered_model_raises_value_error(mocker: Any) -> None:
