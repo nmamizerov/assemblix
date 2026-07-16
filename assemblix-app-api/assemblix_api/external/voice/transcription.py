@@ -29,6 +29,18 @@ class Transcript(BaseModel):
     duration: float | None = None
 
 
+def _supports_verbose_json(model: str) -> bool:
+    """Whether the model accepts ``response_format="verbose_json"`` (language/duration).
+
+    Only whisper-family models do; gpt-4o-transcribe* reject it and support json/text
+    only. litellm has no per-value capability API (``get_supported_openai_params``
+    lists param names, not allowed values, and raises for ``whisper-1`` on the pinned
+    version), and internally distinguishes the two by model family too — so a family
+    check is the accepted approach here. Default stays the universally-safe ``json``.
+    """
+    return "whisper" in model.lower()
+
+
 def _resolve_api_base(provider: str) -> str | None:
     """Reuse the chat provider transport config so voice honors the same proxy."""
     cfg = get_provider_config(provider)
@@ -67,7 +79,9 @@ async def transcribe(
             file=(filename, audio_bytes),
             api_key=api_key,
             api_base=_resolve_api_base(provider),
-            response_format="verbose_json",
+            # Only Whisper accepts verbose_json (the source of language/duration);
+            # gpt-4o-transcribe* reject it and support json/text only.
+            response_format="verbose_json" if _supports_verbose_json(model) else "json",
         )
         return Transcript(
             text=response.text,
