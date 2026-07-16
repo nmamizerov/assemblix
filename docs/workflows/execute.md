@@ -404,6 +404,20 @@ blob is transcribed server-side and the transcript is placed into `input.message
 everything downstream runs exactly as if the user had typed it. The response is the same
 `ExecutionResponse` as the text route.
 
+!!! warning "Audio format & the transcription model"
+    OpenAI's `gpt-4o-transcribe` models run a **strict container validator**: they
+    reject `verbose_json` and any file whose header is incomplete — including the
+    streaming WebM/Opus a browser's `MediaRecorder` produces (it has no duration/seek
+    index), which fails with `400 "Audio file might be corrupted or unsupported"`.
+    `whisper-1` is lenient and accepts these.
+
+    Send a file with a **complete header** — a WAV or MP3 works everywhere. If you
+    record in the browser, encode a **WAV** client-side (e.g. via
+    [`extendable-media-recorder`](https://github.com/chrisguttandin/extendable-media-recorder)
+    with its WAV encoder) rather than uploading the raw `MediaRecorder` WebM. WAV is
+    uncompressed (~1 MB/min at 16 kHz mono), so keep clips within
+    `VOICE_MAX_UPLOAD_BYTES` (20 MB default).
+
 ## Voice output
 
 Give an `AGENT` node **`outputType = voice`** and it synthesizes its reply as speech. In the
