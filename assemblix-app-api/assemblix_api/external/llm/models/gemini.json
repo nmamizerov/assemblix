@@ -7,7 +7,7 @@
       "default": 1,
       "min": 0,
       "max": 2,
-      "description": "Controls randomness. Gemini 3.x: keep at 1.0 — Google warns that lowering can cause reasoning loops."
+      "description": "Controls randomness. Gemini 3.x: keep at 1.0 \u2014 Google warns that lowering can cause reasoning loops."
     },
     {
       "name": "max_tokens",
@@ -15,7 +15,7 @@
       "type": "number",
       "default": 8192,
       "min": 1,
-      "description": "Maximum output tokens, INCLUDING thinking tokens. Mapped to Gemini's `max_output_tokens` internally. Reserve generous budget for thinking models (Pro: ≥2000)."
+      "description": "Maximum output tokens, INCLUDING thinking tokens. Mapped to Gemini's `max_output_tokens` internally. Reserve generous budget for thinking models (Pro: \u22652000)."
     },
     {
       "name": "response_format",
@@ -63,7 +63,7 @@
           "gen3"
         ]
       },
-      "description": "Reasoning token budget. -1 = dynamic, 0 = disable (Flash only). Gemini 2.5 Pro: range 128–32 768 (cannot disable). Gemini 2.5 Flash: 0–24 576."
+      "description": "Reasoning token budget. -1 = dynamic, 0 = disable (Flash only). Gemini 2.5 Pro: range 128\u201332 768 (cannot disable). Gemini 2.5 Flash: 0\u201324 576."
     },
     {
       "name": "thinking_level",
@@ -105,7 +105,8 @@
       "inputCostPerMillion": 1.5,
       "outputCostPerMillion": 9.0,
       "capabilities": {
-        "gen3": true
+        "gen3": true,
+        "acceptsAudio": true
       }
     },
     {
@@ -116,7 +117,8 @@
       "inputCostPerMillion": 2.5,
       "outputCostPerMillion": 15.0,
       "capabilities": {
-        "gen3": true
+        "gen3": true,
+        "acceptsAudio": true
       }
     },
     {
@@ -127,7 +129,8 @@
       "inputCostPerMillion": 0.1,
       "outputCostPerMillion": 0.4,
       "capabilities": {
-        "gen3": true
+        "gen3": true,
+        "acceptsAudio": true
       }
     },
     {
@@ -138,7 +141,8 @@
       "inputCostPerMillion": 2.5,
       "outputCostPerMillion": 15.0,
       "capabilities": {
-        "gen3": true
+        "gen3": true,
+        "acceptsAudio": true
       }
     },
     {
@@ -149,7 +153,8 @@
       "inputCostPerMillion": 0.3,
       "outputCostPerMillion": 1.2,
       "capabilities": {
-        "gen3": true
+        "gen3": true,
+        "acceptsAudio": true
       }
     },
     {
@@ -159,7 +164,9 @@
       "maxOutputTokens": 65536,
       "inputCostPerMillion": 1.25,
       "outputCostPerMillion": 10.0,
-      "capabilities": {}
+      "capabilities": {
+        "acceptsAudio": true
+      }
     },
     {
       "id": "gemini-2.5-flash",
@@ -168,7 +175,9 @@
       "maxOutputTokens": 65536,
       "inputCostPerMillion": 0.3,
       "outputCostPerMillion": 1.2,
-      "capabilities": {}
+      "capabilities": {
+        "acceptsAudio": true
+      }
     }
   ]
 }

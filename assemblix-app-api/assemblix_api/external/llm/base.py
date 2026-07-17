@@ -74,6 +74,10 @@ class ModelCapabilities(DTOModel):
             "gpt-5.4 family, gpt-5.5); rejected by gpt-5.1 and earlier."
         ),
     )
+    accepts_audio: bool = Field(
+        default=False,
+        description="Model accepts audio input parts natively (skip STT).",
+    )
 
 
 class ModelMetadata(DTOModel):
