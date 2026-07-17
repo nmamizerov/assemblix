@@ -5,6 +5,13 @@ All notable changes to this project are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.19](https://github.com/nmamizerov/assemblix/compare/v0.2.18...v0.2.19) (2026-07-17)
+
+
+### Bug Fixes
+
+* **voice:** bridge transcribe text to the agent + agent audioInput mode ([c8da7ee](https://github.com/nmamizerov/assemblix/commit/c8da7ee5c2f8bc75c4c248d23f6199a57e521ebd))
+
 ## [0.2.18](https://github.com/nmamizerov/assemblix/compare/v0.2.17...v0.2.18) (2026-07-17)
 
 
