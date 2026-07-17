@@ -25,6 +25,7 @@ def make_context(
     input_data: dict[str, Any] | None = None,
     with_cel: bool = True,
     chat_history: list[dict] | None = None,
+    chat_session_id: Any = None,
     **extra: Any,
 ) -> ExecutionContext:
     """Build a minimal ExecutionContext for node unit tests.
@@ -36,6 +37,7 @@ def make_context(
         with_cel: attach a real ``CELEvaluator`` (needed by condition / set_variable /
             http_request nodes and by ``{{...}}`` template rendering).
         chat_history: in-memory OpenAI-format chat history (used by the agent node).
+        chat_session_id: session id for nodes that persist chat messages (e.g. transcribe).
         **extra: any additional ExecutionContext fields (e.g. credential_service,
             credential_resolver, organization_plan) for nodes that need them.
 
@@ -57,7 +59,7 @@ def make_context(
         workflow=workflow,
         state=state if state is not None else {},
         project_state=project_state if project_state is not None else {},
-        chat_session_id=None,
+        chat_session_id=chat_session_id,
         client_session_id=None,
         input_data=input_data if input_data is not None else {},
         step_number=0,

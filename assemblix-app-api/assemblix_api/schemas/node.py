@@ -46,6 +46,17 @@ class WorkflowAvatarConfig(DTOModel):
     credential_id: str | None = None
 
 
+class TranscribeNodeConfig(DTOModel):
+    """Config for the `transcribe` node — normalizes an audio turn to text.
+
+    ``voice_model`` is optional so the node also works untouched on text-only runs
+    (where it never reaches the transcription call anyway).
+    """
+
+    voice_model: VoiceModelConfig | None = None
+    save_as_user_message: bool = True
+
+
 class StartNodeConfig(DTOModel):
     # On a new session this greeting is stored as an assistant message and
     # becomes part of the chat history.
