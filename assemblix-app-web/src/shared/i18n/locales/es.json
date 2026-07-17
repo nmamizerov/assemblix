@@ -594,13 +594,6 @@
       "firstPhrasePlaceholder": "¡Hola! ¿En qué puedo ayudarte?",
       "acceptVoice": "Aceptar entrada de voz",
       "acceptVoiceHint": "Permitir enviar audio; se transcribe a texto antes de la ejecución.",
-      "voiceProvider": "Proveedor de voz",
-      "voiceModel": "Modelo de voz",
-      "voiceCredential": "Credencial de voz",
-      "selectVoiceProvider": "Seleccionar proveedor",
-      "selectVoiceModel": "Seleccionar modelo",
-      "selectVoiceCredential": "Seleccionar credencial",
-      "loadingVoiceModels": "Cargando...",
       "inputVariables": "Variables de entrada",
       "projectVariables": "Variables del proyecto",
       "projectVariablesNote": "Estas variables se definen a nivel de proyecto y están disponibles en todos los flujos de trabajo",
@@ -612,6 +605,18 @@
       "variableAdded": "Variable \"{{name}}\" añadida",
       "variableDeleteError": "Error al eliminar la variable",
       "variableDeleted": "Variable eliminada"
+    },
+    "transcribe": {
+      "title": "Transcribir",
+      "voiceProvider": "Proveedor de voz",
+      "voiceModel": "Modelo de voz",
+      "voiceCredential": "Credencial de voz",
+      "selectVoiceProvider": "Seleccionar proveedor",
+      "selectVoiceModel": "Seleccionar modelo",
+      "selectVoiceCredential": "Seleccionar credencial",
+      "loadingVoiceModels": "Cargando...",
+      "saveAsUserMessage": "Guardar como mensaje del usuario",
+      "saveAsUserMessageHint": "Añadir el texto transcrito al historial de la ejecución como mensaje del usuario."
     },
     "avatar": {
       "provider": "Proveedor de avatar",

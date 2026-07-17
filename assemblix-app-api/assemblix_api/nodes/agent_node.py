@@ -26,6 +26,26 @@ from assemblix_api.tools.toolsets import build_toolsets
 
 logger = structlog.get_logger(__name__)
 
+# Audio media types pydantic_ai's BinaryContent.format actually resolves (see
+# `_audio_format_lookup` in pydantic_ai.messages, pydantic_ai==1.107.0). Any other
+# media_type makes BinaryContent raise an opaque `ValueError: Unknown media type`
+# deep inside agent.run — validate against this set up front instead.
+_PYDANTIC_AI_AUDIO_MEDIA_TYPES = frozenset(
+    {"audio/wav", "audio/mpeg", "audio/ogg", "audio/flac", "audio/aiff", "audio/aac"}
+)
+
+# Browser/client-sent aliases for media types pydantic_ai does accept.
+_AUDIO_MIME_ALIASES = {
+    "audio/wave": "audio/wav",
+    "audio/x-wav": "audio/wav",
+    "audio/mp3": "audio/mpeg",
+}
+
+
+def _normalize_audio_mime(mime: str) -> str:
+    """Map common client-sent aliases onto the media type pydantic_ai expects."""
+    return _AUDIO_MIME_ALIASES.get(mime, mime)
+
 
 def _is_transient(exc: Exception) -> bool:
     """fallback_on predicate for FallbackModel: switch to the next model only on a
@@ -76,6 +96,32 @@ class AgentNode(BaseNode):
 
         num_retries = cfg.max_retries if cfg.max_retries is not None else settings.llm_num_retries
         total_timeout = cfg.timeout_seconds or settings.agent_run_timeout_seconds
+
+        # 3b. Audio turn: send the raw audio to an audio-capable model instead of
+        # relying on a separate transcription step. Non-audio models get a clear
+        # error rather than silently ignoring the audio.
+        inbound_audio = context.audio_input
+        audio_part = None
+        if node_input.data.get("input_type") == "audio" and inbound_audio is not None:
+            from assemblix_api.external.llm.model_catalog import find_model_metadata
+
+            meta = find_model_metadata(cfg.provider.value, cfg.model)
+            if meta is None or not meta.capabilities.accepts_audio:
+                raise ValueError(
+                    f"Model {cfg.provider.value}/{cfg.model} does not accept audio — "
+                    "place a Transcribe node before this agent."
+                )
+            from pydantic_ai import BinaryContent
+
+            normalized_mime = _normalize_audio_mime(inbound_audio.mime)
+            if normalized_mime not in _PYDANTIC_AI_AUDIO_MEDIA_TYPES:
+                raise ValueError(
+                    f"Audio format '{inbound_audio.mime}' is not supported for model "
+                    f"{cfg.provider.value}/{cfg.model}. Use WAV or MP3, or place a "
+                    "Transcribe node before this agent."
+                )
+
+            audio_part = BinaryContent(data=inbound_audio.bytes, media_type=normalized_mime)
 
         # When enforce_timeout_on_last is off, the last model in the chain runs up to the
         # whole-loop budget instead of the shorter per-call timeout — a last resort that
@@ -169,6 +215,7 @@ class AgentNode(BaseNode):
                 parse_json=parse_json,
                 total_timeout=total_timeout,
                 on_delta=effective_on_delta,
+                audio=audio_part,
             )
 
         output_data = {

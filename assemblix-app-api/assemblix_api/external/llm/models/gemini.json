@@ -105,7 +105,8 @@
       "inputCostPerMillion": 1.5,
       "outputCostPerMillion": 9.0,
       "capabilities": {
-        "gen3": true
+        "gen3": true,
+        "acceptsAudio": true
       }
     },
     {
@@ -116,7 +117,8 @@
       "inputCostPerMillion": 2.5,
       "outputCostPerMillion": 15.0,
       "capabilities": {
-        "gen3": true
+        "gen3": true,
+        "acceptsAudio": true
       }
     },
     {
@@ -127,7 +129,8 @@
       "inputCostPerMillion": 0.1,
       "outputCostPerMillion": 0.4,
       "capabilities": {
-        "gen3": true
+        "gen3": true,
+        "acceptsAudio": true
       }
     },
     {
@@ -138,7 +141,8 @@
       "inputCostPerMillion": 2.5,
       "outputCostPerMillion": 15.0,
       "capabilities": {
-        "gen3": true
+        "gen3": true,
+        "acceptsAudio": true
       }
     },
     {
@@ -149,7 +153,8 @@
       "inputCostPerMillion": 0.3,
       "outputCostPerMillion": 1.2,
       "capabilities": {
-        "gen3": true
+        "gen3": true,
+        "acceptsAudio": true
       }
     },
     {
@@ -159,7 +164,9 @@
       "maxOutputTokens": 65536,
       "inputCostPerMillion": 1.25,
       "outputCostPerMillion": 10.0,
-      "capabilities": {}
+      "capabilities": {
+        "acceptsAudio": true
+      }
     },
     {
       "id": "gemini-2.5-flash",
@@ -168,7 +175,9 @@
       "maxOutputTokens": 65536,
       "inputCostPerMillion": 0.3,
       "outputCostPerMillion": 1.2,
-      "capabilities": {}
+      "capabilities": {
+        "acceptsAudio": true
+      }
     }
   ]
 }

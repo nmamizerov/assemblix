@@ -46,14 +46,30 @@ class WorkflowAvatarConfig(DTOModel):
     credential_id: str | None = None
 
 
+class TranscribeNodeConfig(DTOModel):
+    """Config for the `transcribe` node — normalizes an audio turn to text.
+
+    ``voice_model`` is required (unlike ``StartNodeConfig.voice_model``, which is
+    optional because voice acceptance itself is optional): this node's whole purpose
+    is transcription, so a missing model should fail config validation at save time
+    rather than surface as a runtime error the first time audio arrives.
+    """
+
+    voice_model: VoiceModelConfig
+    save_as_user_message: bool = True
+
+
 class StartNodeConfig(DTOModel):
     # On a new session this greeting is stored as an assistant message and
     # becomes part of the chat history.
     first_phrase: str | None = None
-    # Voice input: when true, the /execute/audio endpoints transcribe an inbound
-    # audio blob into `input.message` before the run. `voice_model` selects the
-    # transcription provider/model; it defaults to openai/whisper-1 when unset.
+    # Voice input: when true, the /execute/audio endpoints accept an inbound audio
+    # blob and attach it to the run as raw audio (see AudioInput) instead of text.
     accept_voice: bool = False
+    # Deprecated/unused: transcription is no longer performed at the gate. It was
+    # replaced by the explicit `transcribe` node (see TranscribeNodeConfig.voice_model).
+    # Kept on the schema only because the START node's frontend form still references
+    # it; not read anywhere in the backend.
     voice_model: VoiceModelConfig | None = None
 
 

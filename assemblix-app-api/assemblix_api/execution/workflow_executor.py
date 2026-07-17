@@ -36,6 +36,7 @@ from assemblix_api.execution.debug_event_manager import DebugEventManager
 from assemblix_api.execution.graph_navigator import GraphNavigator
 from assemblix_api.execution.node_runner import NodeRunner
 from assemblix_api.schemas.execution import (
+    AudioInput,
     ExecutionContext,
     ExecutionResult,
     ExecutionResultMetadata,
@@ -104,6 +105,7 @@ class WorkflowExecutor:
         chat_session_id: UUID | None = None,
         on_execution_created: Callable[[UUID], Awaitable[None]] | None = None,
         execution_id: UUID | None = None,
+        audio_input: AudioInput | None = None,
     ) -> ExecutionResult:
         """
         Main execution entry point.
@@ -123,6 +125,8 @@ class WorkflowExecutor:
                           instead of creating a new one. The row is loaded and transitioned
                           to RUNNING. When None (default), a new execution row is created
                           — this path is byte-for-byte unchanged.
+            audio_input: Raw audio for this turn (voice endpoints), attached to the
+                         execution context for nodes that consume it directly.
 
         Returns:
             ExecutionResult with output and metadata
@@ -133,7 +137,12 @@ class WorkflowExecutor:
         try:
             # 1. Preparation phase
             execution, context, resume_point = await self._preparation_phase(
-                workflow, input_data, token_id, chat_session_id, execution_id=execution_id
+                workflow,
+                input_data,
+                token_id,
+                chat_session_id,
+                execution_id=execution_id,
+                audio_input=audio_input,
             )
 
             # Bind execution context for all subsequent logs inside this task.
@@ -246,6 +255,7 @@ class WorkflowExecutor:
         token_id: UUID | None,
         chat_session_id: UUID | None,
         execution_id: UUID | None = None,
+        audio_input: AudioInput | None = None,
     ) -> tuple[Execution, ExecutionContext, "ResumePoint | None"]:
         """
         Create (or load) execution record and build execution context.
@@ -469,6 +479,7 @@ class WorkflowExecutor:
             chat_history=chat_history,
             db_checkpoint=self._db_checkpoint,
             stream_enabled=stream_enabled,
+            audio_input=audio_input,
         )
 
         # 11. Open the event stream. Debug uses the legacy queue+buffer (create_stream);

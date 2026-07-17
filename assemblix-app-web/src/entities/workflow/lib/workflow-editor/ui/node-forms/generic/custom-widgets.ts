@@ -11,6 +11,7 @@
  *   end         — collapsible advanced section with CEL, multi-select, agent-node selector.
  *   set_variable — dynamic update-variable list with type-aware value pickers.
  *   http_request — raw headers/body/query-params editing, credential selection.
+ *   transcribe  — required voiceModel provider/model/credential picker.
  *
  * start / sticker / condition are kept as custom widgets because:
  *   - start: also manages workflow-level state variables (not part of node config).
@@ -26,6 +27,7 @@ import { HTTPRequestNodeForm } from "../http-request-node-form";
 import { StartNodeForm } from "../start-node-form";
 import { StickerNodeForm } from "../sticker-node-form";
 import { ConditionNodeForm } from "../condition-node-form";
+import { TranscribeNodeForm } from "../transcribe-node-form";
 
 // Shared props subset that every custom widget must accept.
 // The dispatcher passes these from nodeEditor.tsx.
@@ -47,4 +49,5 @@ export const customWidgets: Record<string, ComponentType<any>> = {
   start: StartNodeForm,
   sticker: StickerNodeForm,
   condition: ConditionNodeForm,
+  transcribe: TranscribeNodeForm,
 };

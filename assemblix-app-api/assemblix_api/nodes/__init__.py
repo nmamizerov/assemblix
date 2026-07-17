@@ -13,6 +13,7 @@ from .end_node import EndNode  # noqa: F401
 from .http_request_node import HTTPRequestNode  # noqa: F401
 from .set_variable_node import SetVariableNode  # noqa: F401
 from .start_node import StartNode  # noqa: F401
+from .transcribe_node import TranscribeNode  # noqa: F401
 
 __all__ = [
     "StartNode",
@@ -22,4 +23,5 @@ __all__ = [
     "SetVariableNode",
     "HTTPRequestNode",
     "DelayNode",
+    "TranscribeNode",
 ]

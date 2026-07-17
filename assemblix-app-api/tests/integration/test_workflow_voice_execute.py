@@ -6,6 +6,11 @@ blob (multipart). The transcription seam (`litellm.atranscription`) is mocked, s
 we test our own wiring: the blob is transcribed and the transcript is what the
 agent receives as the user message. Run twice with different transcripts to prove
 the audio path works on every call.
+
+START now hands raw audio straight to the next node (see
+``tests/integration/test_voice_native_workflow.py``), so a Transcribe node sits
+between START and AGENT to normalize audio -> text before the agent runs — the
+agent's default model (openai/gpt-4o) doesn't accept audio content parts.
 """
 
 from __future__ import annotations
@@ -20,17 +25,29 @@ from tests.fixtures.workflows import agent_config, edge, node
 
 
 def _voice_workflow() -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
-    """START (accepts voice) → AGENT → END."""
+    """START (accepts voice) → transcribe → AGENT → END.
+
+    The transcribe node hands the transcript downstream as ``input.message``
+    (not via chat_history — see transcribe_node.py); the agent instructions
+    pick it up with a CEL template, same as any other node-to-node data pass.
+    """
+    agent_cfg = agent_config(instructions="Reply to the user.")
+    agent_cfg["instructions"].append({"role": "user", "content": "{{input.message}}"})
     nodes = [
         node(
             "start",
             "start",
             {"acceptVoice": True, "voiceModel": {"provider": "openai", "model": "whisper-1"}},
         ),
-        node("agent", "agent", agent_config(instructions="Reply to the user.")),
+        node(
+            "transcribe",
+            "transcribe",
+            {"voiceModel": {"provider": "openai", "model": "whisper-1"}},
+        ),
+        node("agent", "agent", agent_cfg),
         node("end", "end", {}),
     ]
-    edges = [edge("start", "agent"), edge("agent", "end")]
+    edges = [edge("start", "transcribe"), edge("transcribe", "agent"), edge("agent", "end")]
     return nodes, edges
 
 
