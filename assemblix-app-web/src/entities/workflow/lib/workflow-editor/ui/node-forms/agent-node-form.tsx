@@ -781,6 +781,47 @@ export const AgentNodeForm = ({
             />
           </div>
 
+          {/* Voice input mode: how the agent consumes an audio turn */}
+          <div className="flex justify-between gap-4 items-center">
+            <div className="flex items-center gap-1.5">
+              <Label htmlFor="audio-input">
+                {t("nodeForms.agent.audioInput")}
+              </Label>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    type="button"
+                    className="text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    <HelpCircle className="h-3.5 w-3.5" />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="right" className="max-w-[250px]">
+                  <p>{t("nodeForms.agent.audioInputTooltip")}</p>
+                </TooltipContent>
+              </Tooltip>
+            </div>
+            <Select
+              value={formData.audioInput ?? "auto"}
+              onValueChange={(value) => handleFieldChange("audioInput", value)}
+            >
+              <SelectTrigger id="audio-input" className="w-[140px] text-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="auto" className="text-xs">
+                  {t("nodeForms.agent.audioInputAuto")}
+                </SelectItem>
+                <SelectItem value="audio" className="text-xs">
+                  {t("nodeForms.agent.audioInputAudio")}
+                </SelectItem>
+                <SelectItem value="text" className="text-xs">
+                  {t("nodeForms.agent.audioInputText")}
+                </SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
           {/* Save answer to shared history */}
           <div className="flex justify-between gap-4 items-center">
             <div className="flex items-center gap-1.5">
