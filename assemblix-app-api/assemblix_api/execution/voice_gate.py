@@ -58,10 +58,12 @@ async def load_audio_into_input_data(
             detail="Audio file is too large",
         )
 
+    filename = file.filename or "voice.wav"
+    mime = getattr(file, "content_type", None) or "audio/wav"
+
     input_data["message"] = ""
     input_data["input_type"] = "audio"
-    return AudioInput(
-        bytes=audio_bytes,
-        mime=getattr(file, "content_type", None) or "audio/wav",
-        filename=file.filename or "voice.wav",
-    )
+    # Metadata marker only (no bytes — those stay on context.audio_input) so
+    # CEL/authors can see `input.audio` on audio runs.
+    input_data["audio"] = {"filename": filename, "mime": mime}
+    return AudioInput(bytes=audio_bytes, mime=mime, filename=filename)

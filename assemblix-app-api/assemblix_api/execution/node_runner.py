@@ -209,6 +209,8 @@ class NodeRunner:
             context = context.with_project_state(node_output.project_updates)
         if node_output.history_append:
             context = context.with_chat_history([node_output.history_append])
+        if node_output.user_turn is not None:
+            context = context.with_user_turn(node_output.user_turn)
         # Step cost is accumulated centrally (the node does not mutate billing).
         context = accumulate_step_cost(context, node_output.metadata)
 

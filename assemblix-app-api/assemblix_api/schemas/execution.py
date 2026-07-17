@@ -136,6 +136,15 @@ class ExecutionContext:
             last_history_message=last,
         )
 
+    def with_user_turn(self, content: str) -> ExecutionContext:
+        """Append the current user turn to the in-memory dialog history WITHOUT
+        changing last_history_message (that field is for the assistant reply the
+        finalizer persists). Used by the transcribe node so a downstream agent sees
+        the transcript as the user's message."""
+        return replace(
+            self, chat_history=[*self.chat_history, {"role": "user", "content": content}]
+        )
+
     def with_node_visited(self, node_id: str) -> ExecutionContext:
         new_count = {**self.node_execution_count}
         new_count[node_id] = new_count.get(node_id, 0) + 1
@@ -185,6 +194,10 @@ class NodeOutput:
     # A message to append to the shared dialog history (OpenAI format), applied by the
     # executor after the step. None → nothing is appended.
     history_append: dict | None = None
+    # The current turn's user text, folded via ExecutionContext.with_user_turn (does NOT
+    # touch last_history_message). Used by the transcribe node so a downstream text agent
+    # reads the transcript as the user's message instead of an empty audio-run message.
+    user_turn: str | None = None
 
 
 class ExecutionResultMetadata(DTOModel):

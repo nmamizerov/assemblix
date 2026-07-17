@@ -27,9 +27,15 @@ from tests.fixtures.workflows import agent_config, edge, node
 def _voice_workflow() -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
     """START (accepts voice) → transcribe → AGENT → END.
 
-    The transcribe node hands the transcript downstream as ``input.message``
-    (not via chat_history — see transcribe_node.py); the agent instructions
-    pick it up with a CEL template, same as any other node-to-node data pass.
+    The transcribe node injects the transcript into the run's chat_history as the
+    current USER turn (``NodeOutput.user_turn`` → ``ExecutionContext.with_user_turn``,
+    folded in ``NodeRunner.record_completed``) — that is the real bridge a downstream
+    agent relies on. It also still writes ``input.message``/``input_type="text"`` on
+    ``node_input.data`` for template rendering; this workflow's agent additionally
+    picks it up via a CEL template to exercise that path too, but the template is not
+    the load-bearing channel — see
+    ``test_voice_native_workflow.py::test_transcribe_bridges_transcript_to_agent_via_chat_history``
+    for a regression test with no template at all.
     """
     agent_cfg = agent_config(instructions="Reply to the user.")
     agent_cfg["instructions"].append({"role": "user", "content": "{{input.message}}"})

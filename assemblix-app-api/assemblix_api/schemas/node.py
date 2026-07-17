@@ -124,6 +124,11 @@ class AgentNodeConfig(DTOModel):
     # text streaming (2a) for a workflow-level avatar; no per-node avatar config.
     output_type: Literal["text", "voice", "avatar"] = "text"
     voice: VoiceOutputConfig | None = None
+    # Audio-vs-text mode for the current turn. "auto" (default): send raw audio when this
+    # branch's turn is audio and the model accepts it, else error; "audio": require an
+    # audio turn + audio-capable model; "text": always use the text path, even if audio
+    # is present on this turn.
+    audio_input: Literal["auto", "audio", "text"] = "auto"
     tools: list[str] | None = None  # List of tool names, e.g. ["web_search"]
     # MCP servers (backend seam): accepted in the config, but a real client is not connected yet.
     mcp_servers: list[MCPServerConfig] = Field(default_factory=list)
