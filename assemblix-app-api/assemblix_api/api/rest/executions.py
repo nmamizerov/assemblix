@@ -218,6 +218,8 @@ def _build_input_data(request: ExecuteWorkflowRequest, *, is_debug: bool) -> dic
     if request.metadata:
         input_data["metadata"] = request.metadata
 
+    input_data.setdefault("input_type", "text")
+
     return input_data
 
 
