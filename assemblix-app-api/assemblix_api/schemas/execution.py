@@ -12,6 +12,15 @@ from uuid import UUID
 from assemblix_api.dto.base import DTOModel
 
 
+@dataclass(frozen=True)
+class AudioInput:
+    """Raw audio for the current turn. Runtime-only — never serialized."""
+
+    bytes: bytes
+    mime: str
+    filename: str
+
+
 async def _noop_checkpoint() -> None:
     """Default db_checkpoint: a no-op for paths that don't manage a long-lived
     execution session (API request scope, unit tests)."""
@@ -81,6 +90,9 @@ class ExecutionContext:
     # Persisted as the assistant turn at finalization so the DB matches what
     # downstream agents saw in-memory. None → fall back to the full final output.
     last_history_message: str | None = None
+    # Audio input for the current turn (e.g., voice from user). Runtime-only field,
+    # not persisted or serialized. Used by agent nodes to process audio input.
+    audio_input: AudioInput | None = None
     # Transaction boundary hook: commits the execution session and returns its
     # DB connection to the pool. Nodes call this right before a long external
     # await (LLM/HTTP) so a workflow does not hold a Postgres connection while
