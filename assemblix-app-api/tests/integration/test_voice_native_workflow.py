@@ -159,6 +159,74 @@ async def test_audio_direct_agent_receives_audio_content_part(api_client, mock_l
     )
 
 
+def _transcribe_to_plain_agent_workflow() -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    """START (accepts voice) → transcribe → AGENT (plain config) → END.
+
+    The AGENT instructions carry NO ``{{input.message}}`` CEL template — unlike
+    ``test_workflow_voice_execute.py``'s workflow. This isolates the real bug: the
+    transcript must reach the agent purely through the injected chat_history user
+    turn (``transcribe_node.py``'s ``NodeOutput.user_turn`` →
+    ``ExecutionContext.with_user_turn`` fold in ``NodeRunner.record_completed``), not
+    through any template rendering of ``node_input.data["message"]``.
+    """
+    nodes = [
+        node("start", "start", _start_config()),
+        node(
+            "transcribe",
+            "transcribe",
+            {"voiceModel": {"provider": "openai", "model": "whisper-1"}},
+        ),
+        node("agent", "agent", agent_config(instructions="Reply to the user.")),
+        node("end", "end", {}),
+    ]
+    edges = [edge("start", "transcribe"), edge("transcribe", "agent"), edge("agent", "end")]
+    return nodes, edges
+
+
+async def test_transcribe_bridges_transcript_to_agent_via_chat_history(
+    api_client, mock_llm, mocker: Any
+) -> None:
+    """Regression test for the transcribe→agent bridge bug (Fix A).
+
+    START(audio) → transcribe → AGENT(plain, no template) → END: the agent's LLM
+    call must carry the transcript, and the only channel available for it here is
+    the chat_history user turn injected by transcribe — there is no
+    ``{{input.message}}`` template in the agent's instructions to leak it through.
+    """
+
+    # Arrange — patch the STT seam so the branch is deterministic.
+    async def _fake_transcription(**_: Any) -> SimpleNamespace:
+        return SimpleNamespace(text="bridge transcript proof", language="en", duration=1.0)
+
+    mocker.patch(
+        "assemblix_api.external.voice.transcription.litellm.atranscription",
+        side_effect=_fake_transcription,
+    )
+    mock_llm.set_response("agent reply")
+    nodes, edges = _transcribe_to_plain_agent_workflow()
+    setup = await _register_and_publish(
+        api_client, email="voice-bridge@example.com", nodes=nodes, edges=edges
+    )
+
+    # Act
+    before = mock_llm.call_count
+    run = await api_client.post(
+        f"/api/workflows/{setup.workflow_id}/execute/audio",
+        files={"file": AUDIO_FILE},
+        data={"payload": json.dumps({"input": {}, "createSession": True})},
+        headers=setup.key_headers,
+    )
+
+    # Assert — run completed and the agent's LLM call carried the transcript.
+    assert run.status_code == 200
+    assert run.json()["status"] == "completed"
+    agent_calls = mock_llm.calls[before:]
+    assert agent_calls, "expected at least one LLM call from the agent"
+    assert any(
+        "bridge transcript proof" in json.dumps(c["messages"], default=str) for c in agent_calls
+    ), f"transcript did not reach the agent's LLM call: {agent_calls}"
+
+
 async def test_transcribe_node_saves_transcript_as_user_turn(
     api_client, mock_llm, mocker: Any
 ) -> None:
