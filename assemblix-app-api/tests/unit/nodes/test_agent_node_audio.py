@@ -91,3 +91,19 @@ async def test_audio_turn_on_non_audio_model_raises(mocker) -> None:
     # Act / Assert
     with pytest.raises(ValueError, match="does not accept audio"):
         await node.execute(node_input({"input_type": "audio"}, context))
+
+
+async def test_audio_turn_with_unsupported_mime_raises(mocker) -> None:
+    # Arrange: an audio-capable model, but a mime pydantic_ai's BinaryContent
+    # does not recognize (e.g. a browser MediaRecorder default).
+    audio = AudioInput(bytes=b"\x1aE\xdf\xa3", mime="audio/webm", filename="voice.webm")
+    context = make_context(
+        input_data={"input_type": "audio"},
+        audio_input=audio,
+        chat_history=[{"role": "user", "content": ""}],
+        **_fake_creds(mocker),
+    )
+    node = _agent("gemini-3-flash-preview")
+    # Act / Assert
+    with pytest.raises(ValueError, match="not supported"):
+        await node.execute(node_input({"input_type": "audio"}, context))
