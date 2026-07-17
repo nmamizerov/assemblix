@@ -20,6 +20,8 @@ import {
   RefreshCw,
   AlertCircle,
   CheckCircle2,
+  AudioLines,
+  Mic,
   type LucideIcon,
 } from "lucide-react";
 
@@ -49,4 +51,6 @@ export const iconByName: Record<string, LucideIcon> = {
   RefreshCw,
   AlertCircle,
   CheckCircle2,
+  AudioLines,
+  Mic,
 };
