@@ -37,12 +37,10 @@ from assemblix_api.dependencies import (
     get_billing_service,
     get_chat_service,
     get_client_session_service,
-    get_credentials_service,
     get_current_user,
     get_db_session,
     get_debug_event_manager,
     get_execution_service,
-    get_organization_service,
     get_project_id_from_token,
     get_project_id_from_token_with_access_check,
     get_project_service,
@@ -67,13 +65,12 @@ from assemblix_api.dto.responses.execution import (
 )
 from assemblix_api.enums import ExecutionStatus
 from assemblix_api.execution.debug_event_manager import DebugEventManager
-from assemblix_api.execution.voice_gate import transcribe_into_input_data
+from assemblix_api.execution.voice_gate import load_audio_into_input_data
 from assemblix_api.queue.enqueue import enqueue_execution
+from assemblix_api.schemas.execution import AudioInput
 from assemblix_api.services.chat_service import ChatService
 from assemblix_api.services.client_session_service import ClientSessionService
-from assemblix_api.services.credentials_service import CredentialsService
 from assemblix_api.services.execution_service import ExecutionService
-from assemblix_api.services.organization_service import OrganizationService
 from assemblix_api.services.project_service import ProjectService
 from assemblix_api.services.workflow_service import WorkflowService
 
@@ -232,6 +229,7 @@ async def _dispatch_sync(
     token_id: UUID,
     execution_service: ExecutionService,
     session: AsyncSession,
+    audio_input: AudioInput | None = None,
 ) -> ExecutionResponse | ExecutionErrorResponse | TaskExecutionResponse:
     """Run a workflow synchronously and shape the response (shared by /execute
     and /execute/audio).
@@ -288,6 +286,7 @@ async def _dispatch_sync(
             chat_session_id=request.session_id,
             execution_id_future=execution_id_future,
             result_future=result_future,
+            audio_input=audio_input,
         )
     )
     background_task_registry.track(task)
@@ -352,6 +351,7 @@ def _dispatch_debug_stream(
     session_id: UUID | None,
     token_id: UUID | None,
     debug_event_manager: DebugEventManager,
+    audio_input: AudioInput | None = None,
 ) -> StreamingResponse:
     """Start a debug run and return its SSE event stream (shared by
     /execute/debug and /execute/debug/audio)."""
@@ -366,6 +366,7 @@ def _dispatch_debug_stream(
             input_data=input_data,
             token_id=token_id,
             chat_session_id=session_id,
+            audio_input=audio_input,
         )
     )
     background_task_registry.track(_sse_task)
@@ -583,7 +584,7 @@ async def execute_workflow_debug(
 )
 async def execute_workflow_audio(
     workflow_id: UUID,
-    file: UploadFile = File(..., description="Audio blob to transcribe into the run input"),
+    file: UploadFile = File(..., description="Audio blob for the run input"),
     payload: str = Form("{}", description="JSON of ExecuteWorkflowRequest (without audio)"),
     workflow_service: WorkflowService = Depends(get_workflow_service),
     project_id_from_token: UUID = Depends(get_project_id_from_token),
@@ -592,17 +593,16 @@ async def execute_workflow_audio(
     chat_service: ChatService = Depends(get_chat_service),
     project_service: ProjectService = Depends(get_project_service),
     execution_service: ExecutionService = Depends(get_execution_service),
-    credential_service: CredentialsService = Depends(get_credentials_service),
-    organization_service: OrganizationService = Depends(get_organization_service),
     session: AsyncSession = Depends(get_db_session),
 ):
     """
     Execute a workflow from an audio message (multipart).
 
-    Same contract as ``POST /execute`` but the run input is a transcribed audio
-    blob. The target workflow's START node must have ``acceptVoice=true`` (else
-    400); the audio is transcribed server-side into ``input.message`` before the
-    run, so everything downstream behaves like a normal text execution.
+    Same contract as ``POST /execute`` but the run input is raw audio. The target
+    workflow's START node must have ``acceptVoice=true`` (else 400); the audio is
+    loaded onto the execution context (``input.input_type == "audio"``) — it is
+    no longer transcribed here, downstream nodes (e.g. an explicit ``transcribe``
+    node) consume it as needed.
     """
     request = _parse_execute_payload(payload)
 
@@ -619,13 +619,8 @@ async def execute_workflow_audio(
 
     input_data = _build_input_data(request, is_debug=False)
 
-    await transcribe_into_input_data(
-        workflow=workflow,
-        input_data=input_data,
-        file=file,
-        credential_service=credential_service,
-        organization_service=organization_service,
-        project_service=project_service,
+    audio_input = await load_audio_into_input_data(
+        workflow=workflow, input_data=input_data, file=file
     )
 
     return await _dispatch_sync(
@@ -636,6 +631,7 @@ async def execute_workflow_audio(
         token_id=token_id,
         execution_service=execution_service,
         session=session,
+        audio_input=audio_input,
     )
 
 
@@ -645,7 +641,7 @@ async def execute_workflow_audio(
 )
 async def execute_workflow_debug_audio(
     workflow_id: UUID,
-    file: UploadFile = File(..., description="Audio blob to transcribe into the run input"),
+    file: UploadFile = File(..., description="Audio blob for the run input"),
     payload: str = Form("{}", description="JSON of ExecuteWorkflowRequest (without audio)"),
     current_user: User = Depends(get_current_user),
     workflow_service: WorkflowService = Depends(get_workflow_service),
@@ -655,15 +651,14 @@ async def execute_workflow_debug_audio(
     billing_service: BillingService = Depends(get_billing_service),
     chat_service: ChatService = Depends(get_chat_service),
     project_service: ProjectService = Depends(get_project_service),
-    credential_service: CredentialsService = Depends(get_credentials_service),
-    organization_service: OrganizationService = Depends(get_organization_service),
 ):
     """
     Execute a workflow from an audio message in debug mode (multipart → SSE).
 
-    The audio-input twin of ``POST /execute/debug``: transcribes the blob into
-    ``input.message`` (START must have ``acceptVoice=true``), then streams the
-    run's SSE events exactly as the text debug endpoint does.
+    The audio-input twin of ``POST /execute/debug``: loads the blob onto the
+    execution context (START must have ``acceptVoice=true``; no transcription
+    happens here), then streams the run's SSE events exactly as the text debug
+    endpoint does.
     """
     request = _parse_execute_payload(payload)
 
@@ -681,13 +676,8 @@ async def execute_workflow_debug_audio(
 
     input_data = _build_input_data(request, is_debug=True)
 
-    await transcribe_into_input_data(
-        workflow=workflow,
-        input_data=input_data,
-        file=file,
-        credential_service=credential_service,
-        organization_service=organization_service,
-        project_service=project_service,
+    audio_input = await load_audio_into_input_data(
+        workflow=workflow, input_data=input_data, file=file
     )
 
     return _dispatch_debug_stream(
@@ -696,6 +686,7 @@ async def execute_workflow_debug_audio(
         session_id=request.session_id,
         token_id=token_id,
         debug_event_manager=debug_event_manager,
+        audio_input=audio_input,
     )
 
 

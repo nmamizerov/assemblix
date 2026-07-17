@@ -62,6 +62,7 @@ from assemblix_api.database.repositories.user_repository import UserRepository
 from assemblix_api.database.repositories.workflow_repository import WorkflowRepository
 from assemblix_api.execution.debug_event_manager import DebugEventManager
 from assemblix_api.execution.workflow_executor import WorkflowExecutor
+from assemblix_api.schemas.execution import AudioInput
 from assemblix_api.services.api_key_service import APIKeyService
 from assemblix_api.services.avatar_service import AvatarService
 from assemblix_api.services.chat_message_service import ChatMessageService
@@ -615,6 +616,7 @@ async def run_workflow_isolated(
     chat_session_id: UUID | None,
     execution_id_future: asyncio.Future | None = None,
     result_future: asyncio.Future | None = None,
+    audio_input: AudioInput | None = None,
 ) -> None:
     """
     Run workflow execution in an isolated DB session.
@@ -633,6 +635,8 @@ async def run_workflow_isolated(
         chat_session_id: Chat session ID (optional)
         execution_id_future: Future that receives the execution ID after it is created
         result_future: Future that receives the ExecutionResult on completion
+        audio_input: Raw audio for this turn (voice endpoints), forwarded to the
+                     executor and attached to the execution context.
     """
     from assemblix_api.database.engine import get_async_engine
     from assemblix_api.database.repositories.workflow_repository import (
@@ -668,6 +672,7 @@ async def run_workflow_isolated(
                 token_id=token_id,
                 chat_session_id=chat_session_id,
                 on_execution_created=on_execution_created,
+                audio_input=audio_input,
             )
 
             if result_future is not None and not result_future.done():
