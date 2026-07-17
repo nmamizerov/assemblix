@@ -5,6 +5,28 @@ All notable changes to this project are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.17](https://github.com/nmamizerov/assemblix/compare/v0.2.16...v0.2.17) (2026-07-17)
+
+
+### Features
+
+* **agent:** send audio part to audio-capable models; error otherwise ([96240a6](https://github.com/nmamizerov/assemblix/commit/96240a67ce471314da33318c4eac2f197b45f173))
+* **execution:** carry AudioInput on ExecutionContext (runtime-only) ([479edc4](https://github.com/nmamizerov/assemblix/commit/479edc462a4d41e313bf496b67d2cfd4e233eb11))
+* **execution:** mark text runs with input_type=text ([72998a3](https://github.com/nmamizerov/assemblix/commit/72998a3ede4ca96ccb93afc6b5c524e68bac0d5b))
+* **llm:** add accepts_audio model capability for Gemini ([daae07f](https://github.com/nmamizerov/assemblix/commit/daae07f9a0aa4a8f2e72c5b75a8fe4784d9d3874))
+* **nodes:** add transcribe node (audio-&gt;text, saveAsUserMessage) ([527d846](https://github.com/nmamizerov/assemblix/commit/527d8465c11fe3c350588e87d12acc81143f49be))
+* **voice:** load audio onto the context instead of transcribing at the gate ([cadf438](https://github.com/nmamizerov/assemblix/commit/cadf438a171959e79ff0a8006b69ab38eb79e5fd))
+* **voice:** native audio input for Gemini agents + explicit transcribe node ([020b7ce](https://github.com/nmamizerov/assemblix/commit/020b7ce4be2a93a6d6801b9a4976ebf3181f07c4))
+* **voice:** reject audio input on the queued execution path ([f0d8ef6](https://github.com/nmamizerov/assemblix/commit/f0d8ef637fd9e582e2aa060617a04e82b6fc4271))
+* **web:** transcribe node config form; drop dead START voice-model picker ([c3c06c4](https://github.com/nmamizerov/assemblix/commit/c3c06c4bc5a5f1224f584167bfca610670d7fb41))
+
+
+### Bug Fixes
+
+* **nodes:** make transcribe voiceModel required, fail loud on missing credential_service ([a82dc16](https://github.com/nmamizerov/assemblix/commit/a82dc16fd40f7db8df557b962921b7cf7e9eb12a))
+* **nodes:** satisfy mypy on transcribe node organization_plan ([3dad206](https://github.com/nmamizerov/assemblix/commit/3dad206b42a33ff35938f7294835e1edb71dd0eb))
+* **voice:** validate audio mime with actionable error; deprecate START voice_model ([c547e4b](https://github.com/nmamizerov/assemblix/commit/c547e4be27d404639ce81508c3271d054d18ac42))
+
 ## [0.2.16](https://github.com/nmamizerov/assemblix/compare/v0.2.15...v0.2.16) (2026-07-16)
 
 
