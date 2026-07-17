@@ -64,6 +64,7 @@ class TranscribeNode(BaseNode):
             display_name="Transcribe",
             description="Turn an audio turn into text (passthrough if already text).",
             icon="AudioLines",
+            color="node-data",
             properties=[
                 NodeProperty(
                     name="saveAsUserMessage",
