@@ -77,6 +77,24 @@ class AgentNode(BaseNode):
         num_retries = cfg.max_retries if cfg.max_retries is not None else settings.llm_num_retries
         total_timeout = cfg.timeout_seconds or settings.agent_run_timeout_seconds
 
+        # 3b. Audio turn: send the raw audio to an audio-capable model instead of
+        # relying on a separate transcription step. Non-audio models get a clear
+        # error rather than silently ignoring the audio.
+        inbound_audio = context.audio_input
+        audio_part = None
+        if node_input.data.get("input_type") == "audio" and inbound_audio is not None:
+            from assemblix_api.external.llm.model_catalog import find_model_metadata
+
+            meta = find_model_metadata(cfg.provider.value, cfg.model)
+            if meta is None or not meta.capabilities.accepts_audio:
+                raise ValueError(
+                    f"Model {cfg.provider.value}/{cfg.model} does not accept audio — "
+                    "place a Transcribe node before this agent."
+                )
+            from pydantic_ai import BinaryContent
+
+            audio_part = BinaryContent(data=inbound_audio.bytes, media_type=inbound_audio.mime)
+
         # When enforce_timeout_on_last is off, the last model in the chain runs up to the
         # whole-loop budget instead of the shorter per-call timeout — a last resort that
         # still cannot exceed the hard ceiling (asyncio.wait_for below). Otherwise every
@@ -169,6 +187,7 @@ class AgentNode(BaseNode):
                 parse_json=parse_json,
                 total_timeout=total_timeout,
                 on_delta=effective_on_delta,
+                audio=audio_part,
             )
 
         output_data = {

@@ -15,7 +15,7 @@ import json
 from collections.abc import Awaitable, Callable
 
 import structlog
-from pydantic_ai import Agent
+from pydantic_ai import Agent, BinaryContent
 from pydantic_ai.messages import (
     ModelMessage,
     ModelRequest,
@@ -127,8 +127,15 @@ class AgentRunner:
         model_settings: ModelSettings | None = None,
         total_timeout: float | None = None,
         on_delta: Callable[[str], Awaitable[None]] | None = None,
+        audio: BinaryContent | None = None,
     ) -> AgentExecutionResult:
         history, prompt = to_pydantic_messages(conversation)
+
+        # Audio turn: the current-turn `prompt` is empty text (the run carries no
+        # transcript), so the audio itself becomes the user-prompt content part(s).
+        run_prompt: str | list[str | BinaryContent] = prompt
+        if audio is not None:
+            run_prompt = [audio] if not prompt else [prompt, audio]
 
         agent: Agent = Agent(
             model,
@@ -144,7 +151,7 @@ class AgentRunner:
         # the per-completion litellm `timeout`. On breach we raise a FATAL AgentRunTimeoutError
         # (do NOT retry — it would re-run already-executed tools).
         run_coro = agent.run(
-            prompt,
+            run_prompt,
             message_history=history,
             model_settings=model_settings,
             event_stream_handler=event_stream_handler,
