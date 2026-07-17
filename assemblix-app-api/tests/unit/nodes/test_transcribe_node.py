@@ -1,3 +1,4 @@
+from assemblix_api.enums import PlanTier
 from assemblix_api.nodes.transcribe_node import TranscribeNode
 from assemblix_api.schemas.execution import AudioInput
 
@@ -18,7 +19,10 @@ async def test_audio_input_is_transcribed(mocker) -> None:
     cred.get_voice_api_key_with_fallback = mocker.AsyncMock(return_value=("k", False))
     audio = AudioInput(bytes=b"RIFF", mime="audio/wav", filename="voice.wav")
     context = make_context(
-        input_data={"input_type": "audio"}, audio_input=audio, credential_service=cred
+        input_data={"input_type": "audio"},
+        audio_input=audio,
+        credential_service=cred,
+        organization_plan=PlanTier.PRO,
     )
     node = _node({"voiceModel": {"provider": "openai", "model": "whisper-1"}})
     # Act
@@ -58,6 +62,7 @@ async def test_save_as_user_message_writes_user_turn(mocker) -> None:
         chat_session_id=uuid4(),
         credential_service=cred,
         chat_message_service=mocker.Mock(save_message=save),
+        organization_plan=PlanTier.PRO,
     )
     node = _node(
         {

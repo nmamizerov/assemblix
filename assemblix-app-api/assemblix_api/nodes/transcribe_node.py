@@ -31,6 +31,7 @@ class TranscribeNode(BaseNode):
 
         cfg = self.typed_config.voice_model
         assert context.credential_service is not None
+        assert context.organization_plan is not None
         api_key, _ = await context.credential_service.get_voice_api_key_with_fallback(
             credentials_id=UUID(cfg.credential_id) if cfg.credential_id else None,
             project_id=context.project_id,
