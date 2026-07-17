@@ -5,6 +5,14 @@ All notable changes to this project are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.18](https://github.com/nmamizerov/assemblix/compare/v0.2.17...v0.2.18) (2026-07-17)
+
+
+### Bug Fixes
+
+* **web:** give the transcribe node a color + audio icon ([4521dc4](https://github.com/nmamizerov/assemblix/commit/4521dc48da4b7c288e338a1f46a83a64317e67a8))
+* **web:** give transcribe node a color + register its audio icon ([f50b790](https://github.com/nmamizerov/assemblix/commit/f50b79012f27537cd8075ea5ac04c066283adfb4))
+
 ## [0.2.17](https://github.com/nmamizerov/assemblix/compare/v0.2.16...v0.2.17) (2026-07-17)
 
 
