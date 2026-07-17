@@ -30,15 +30,13 @@ class TranscribeNode(BaseNode):
             return NodeOutput(data=data)  # passthrough (already text)
 
         cfg = self.typed_config.voice_model
-        assert cfg is not None
-        api_key = ""
-        if context.credential_service is not None:
-            api_key, _ = await context.credential_service.get_voice_api_key_with_fallback(
-                credentials_id=UUID(cfg.credential_id) if cfg.credential_id else None,
-                project_id=context.project_id,
-                voice_provider=cfg.provider,
-                organization_plan=context.organization_plan,
-            )
+        assert context.credential_service is not None
+        api_key, _ = await context.credential_service.get_voice_api_key_with_fallback(
+            credentials_id=UUID(cfg.credential_id) if cfg.credential_id else None,
+            project_id=context.project_id,
+            voice_provider=cfg.provider,
+            organization_plan=context.organization_plan,
+        )
         result = await transcribe(
             audio_bytes=context.audio_input.bytes,
             filename=context.audio_input.filename,

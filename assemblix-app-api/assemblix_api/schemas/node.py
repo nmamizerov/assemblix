@@ -49,11 +49,13 @@ class WorkflowAvatarConfig(DTOModel):
 class TranscribeNodeConfig(DTOModel):
     """Config for the `transcribe` node — normalizes an audio turn to text.
 
-    ``voice_model`` is optional so the node also works untouched on text-only runs
-    (where it never reaches the transcription call anyway).
+    ``voice_model`` is required (unlike ``StartNodeConfig.voice_model``, which is
+    optional because voice acceptance itself is optional): this node's whole purpose
+    is transcription, so a missing model should fail config validation at save time
+    rather than surface as a runtime error the first time audio arrives.
     """
 
-    voice_model: VoiceModelConfig | None = None
+    voice_model: VoiceModelConfig
     save_as_user_message: bool = True
 
 

@@ -14,8 +14,12 @@ async def test_audio_input_is_transcribed(mocker) -> None:
         "assemblix_api.nodes.transcribe_node.transcribe",
         return_value=mocker.Mock(text="hello world"),
     )
+    cred = mocker.Mock()
+    cred.get_voice_api_key_with_fallback = mocker.AsyncMock(return_value=("k", False))
     audio = AudioInput(bytes=b"RIFF", mime="audio/wav", filename="voice.wav")
-    context = make_context(input_data={"input_type": "audio"}, audio_input=audio)
+    context = make_context(
+        input_data={"input_type": "audio"}, audio_input=audio, credential_service=cred
+    )
     node = _node({"voiceModel": {"provider": "openai", "model": "whisper-1"}})
     # Act
     out = await node.execute(node_input({"input_type": "audio"}, context))
@@ -28,7 +32,7 @@ async def test_text_input_passthrough(mocker) -> None:
     # Arrange
     spy = mocker.patch("assemblix_api.nodes.transcribe_node.transcribe")
     context = make_context(input_data={"input_type": "text"})
-    node = _node()
+    node = _node({"voiceModel": {"provider": "openai", "model": "whisper-1"}})
     # Act
     out = await node.execute(node_input({"message": "typed", "input_type": "text"}, context))
     # Assert
