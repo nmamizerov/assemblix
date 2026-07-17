@@ -594,13 +594,6 @@
       "firstPhrasePlaceholder": "Hi! How can I help you?",
       "acceptVoice": "Accept voice input",
       "acceptVoiceHint": "Allow sending audio; it is transcribed to text before the run.",
-      "voiceProvider": "Voice provider",
-      "voiceModel": "Voice model",
-      "voiceCredential": "Voice credential",
-      "selectVoiceProvider": "Select provider",
-      "selectVoiceModel": "Select model",
-      "selectVoiceCredential": "Select credential",
-      "loadingVoiceModels": "Loading...",
       "inputVariables": "Input Variables",
       "projectVariables": "Project Variables",
       "projectVariablesNote": "These variables are defined at the project level and available in all workflows",
@@ -612,6 +605,18 @@
       "variableAdded": "Variable \"{{name}}\" added",
       "variableDeleteError": "Error deleting variable",
       "variableDeleted": "Variable deleted"
+    },
+    "transcribe": {
+      "title": "Transcribe",
+      "voiceProvider": "Voice provider",
+      "voiceModel": "Voice model",
+      "voiceCredential": "Voice credential",
+      "selectVoiceProvider": "Select provider",
+      "selectVoiceModel": "Select model",
+      "selectVoiceCredential": "Select credential",
+      "loadingVoiceModels": "Loading...",
+      "saveAsUserMessage": "Save as user message",
+      "saveAsUserMessageHint": "Add the transcribed text to the run history as a user message."
     },
     "avatar": {
       "provider": "Avatar provider",

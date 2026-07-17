@@ -45,10 +45,10 @@ export enum NodeType {
 
 export type StartNodeConfig = {
   firstPhrase?: string;
-  // Voice input: when enabled, the /execute/audio endpoints transcribe an
-  // inbound audio blob into the run's message using `voiceModel`.
+  // Voice input: when enabled, the /execute/audio endpoints accept an inbound
+  // audio blob. Transcription itself is configured on a downstream "transcribe"
+  // node (see TranscribeNodeForm), not here.
   acceptVoice?: boolean;
-  voiceModel?: VoiceModelConfig;
 };
 
 export interface VoiceModelConfig {

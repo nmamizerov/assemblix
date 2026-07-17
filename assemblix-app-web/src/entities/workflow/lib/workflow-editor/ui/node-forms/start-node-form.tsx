@@ -12,24 +12,7 @@ import { AddVariablePopover } from "@/shared/ui";
 import { Button } from "@/shared/ui/button";
 import { Label } from "@/shared/ui/label";
 import { Switch } from "@/shared/ui/switch";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/shared/ui/select";
 import { Textarea } from "@/shared/ui/textarea";
-import {
-  useGetVoiceProvidersQuery,
-  useGetVoiceProviderModelsQuery,
-} from "@/entities/voice-model";
-import {
-  CredentialSelect,
-  getCredentialTypeForProvider,
-} from "@/entities/credential";
-import { useGetBillingUsageQuery } from "@/entities/billing";
-import { useGetServerConfigQuery } from "@/entities/config";
 import { useUpdateWorkflowMutation } from "@/entities/workflow/api/workflow.api";
 import { toast } from "sonner";
 import { StateVariables } from "../state/stateVariables";
@@ -62,58 +45,15 @@ export const StartNodeForm = ({
   const [formData, setFormData] = useState<StartNodeConfig>({
     firstPhrase: config?.firstPhrase ?? "",
     acceptVoice: config?.acceptVoice ?? false,
-    voiceModel: config?.voiceModel,
   });
 
   useEffect(() => {
     handleDataChange(formData);
   }, [formData, handleDataChange]);
 
-  // Voice input: transcription provider/model picker (same UX as the agent node).
-  const { data: voiceProviders = [] } = useGetVoiceProvidersQuery();
-  const voiceProvider = formData.voiceModel?.provider;
-  const { data: voiceModels = [], isLoading: isLoadingVoiceModels } =
-    useGetVoiceProviderModelsQuery(
-      { providerName: voiceProvider ?? "" },
-      { skip: !voiceProvider }
-    );
-
   const handleAcceptVoiceChange = (checked: boolean) =>
-    setFormData((prev) => ({
-      ...prev,
-      acceptVoice: checked,
-      voiceModel:
-        checked && !prev.voiceModel
-          ? { provider: "openai", model: "whisper-1" }
-          : prev.voiceModel,
-    }));
+    setFormData((prev) => ({ ...prev, acceptVoice: checked }));
 
-  const handleVoiceProviderChange = (value: string) =>
-    setFormData((prev) => ({
-      ...prev,
-      // Reset model + credential when the provider changes (same as the agent node).
-      voiceModel: { provider: value, model: "", credentialId: "" },
-    }));
-
-  const handleVoiceModelChange = (value: string) =>
-    setFormData((prev) => ({
-      ...prev,
-      voiceModel: {
-        provider: prev.voiceModel?.provider ?? "openai",
-        model: value,
-        credentialId: prev.voiceModel?.credentialId,
-      },
-    }));
-
-  const handleVoiceCredentialChange = (credentialId: string) =>
-    setFormData((prev) => ({
-      ...prev,
-      voiceModel: {
-        provider: prev.voiceModel?.provider ?? "openai",
-        model: prev.voiceModel?.model ?? "",
-        credentialId,
-      },
-    }));
   // Получаем переменные из Redux store
   const variablesList = useSelector((state: RootState) =>
     selectVariablesByWorkflowId(state, workflow.id)
@@ -125,21 +65,6 @@ export const StartNodeForm = ({
     skip: !currentProjectId,
   });
   const projectVariables = (project?.stateSchema || []) as StateVariable[];
-
-  // Credential picker for the voice model — same gating logic as the agent node.
-  const { data: billingUsage } = useGetBillingUsageQuery(undefined, {
-    skip: !currentProjectId,
-  });
-  const canUseOwnKeys = billingUsage?.features.canUseOwnKeys ?? false;
-  const { data: serverConfig } = useGetServerConfigQuery();
-  const voiceCredentialType = voiceProvider
-    ? getCredentialTypeForProvider(voiceProvider)
-    : undefined;
-  const hasVoiceSystemKey = voiceProvider
-    ? serverConfig
-      ? Boolean(serverConfig.systemApiKeys[voiceProvider])
-      : true
-    : false;
 
   const handleSaveVariable = async (
     variable: StateVariable,
@@ -242,80 +167,6 @@ export const StartNodeForm = ({
           <p className="text-xs text-muted-foreground">
             {t("nodeForms.start.acceptVoiceHint")}
           </p>
-
-          {formData.acceptVoice && (
-            <div className="space-y-2">
-              <div className="flex justify-between items-center gap-2">
-                <Label htmlFor="start-voice-provider" className="shrink-0">
-                  {t("nodeForms.start.voiceProvider")}
-                </Label>
-                <Select
-                  value={formData.voiceModel?.provider}
-                  onValueChange={handleVoiceProviderChange}
-                >
-                  <SelectTrigger
-                    id="start-voice-provider"
-                    className="border-none shadow-none ring-0! text-xs"
-                  >
-                    <SelectValue
-                      placeholder={t("nodeForms.start.selectVoiceProvider")}
-                    />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {voiceProviders.map((p) => (
-                      <SelectItem key={p.name} value={p.name} className="text-xs">
-                        {p.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              {canUseOwnKeys && voiceCredentialType && (
-                <div className="flex flex-col gap-1.5">
-                  <Label htmlFor="start-voice-credential" className="text-xs">
-                    {t("nodeForms.start.voiceCredential")}
-                  </Label>
-                  <CredentialSelect
-                    selectedCredentialId={formData.voiceModel?.credentialId}
-                    onSelect={handleVoiceCredentialChange}
-                    credentialType={voiceCredentialType}
-                    placeholder={t("nodeForms.start.selectVoiceCredential")}
-                    showSystemToken={hasVoiceSystemKey}
-                  />
-                </div>
-              )}
-              <div className="flex justify-between items-center gap-2">
-                <Label htmlFor="start-voice-model" className="shrink-0">
-                  {t("nodeForms.start.voiceModel")}
-                </Label>
-                <Select
-                  value={formData.voiceModel?.model}
-                  onValueChange={handleVoiceModelChange}
-                  disabled={isLoadingVoiceModels || !formData.voiceModel?.provider}
-                >
-                  <SelectTrigger
-                    id="start-voice-model"
-                    className="border-none shadow-none ring-0! text-xs"
-                  >
-                    <SelectValue
-                      placeholder={
-                        isLoadingVoiceModels
-                          ? t("nodeForms.start.loadingVoiceModels")
-                          : t("nodeForms.start.selectVoiceModel")
-                      }
-                    />
-                  </SelectTrigger>
-                  <SelectContent position="popper" sideOffset={5} align="end">
-                    {voiceModels.map((m) => (
-                      <SelectItem key={m.id} value={m.id}>
-                        {m.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-          )}
         </div>
 
         <Divider />

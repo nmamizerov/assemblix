@@ -596,13 +596,6 @@
       "firstPhrasePlaceholder": "Привет! Чем могу помочь?",
       "acceptVoice": "Принимать голосом",
       "acceptVoiceHint": "Разрешить отправку аудио; оно расшифровывается в текст перед запуском.",
-      "voiceProvider": "Провайдер распознавания",
-      "voiceModel": "Модель распознавания",
-      "voiceCredential": "Токен распознавания",
-      "selectVoiceProvider": "Выберите провайдера",
-      "selectVoiceModel": "Выберите модель",
-      "selectVoiceCredential": "Выберите токен",
-      "loadingVoiceModels": "Загрузка...",
       "inputVariables": "Входные переменные",
       "projectVariables": "Переменные проекта",
       "projectVariablesNote": "Эти переменные определены на уровне проекта и доступны во всех воркфлоу",
@@ -614,6 +607,18 @@
       "variableAdded": "Переменная \"{{name}}\" добавлена",
       "variableDeleteError": "Ошибка удаления переменной",
       "variableDeleted": "Переменная удалена"
+    },
+    "transcribe": {
+      "title": "Распознавание речи",
+      "voiceProvider": "Провайдер распознавания",
+      "voiceModel": "Модель распознавания",
+      "voiceCredential": "Токен распознавания",
+      "selectVoiceProvider": "Выберите провайдера",
+      "selectVoiceModel": "Выберите модель",
+      "selectVoiceCredential": "Выберите токен",
+      "loadingVoiceModels": "Загрузка...",
+      "saveAsUserMessage": "Сохранять как сообщение пользователя",
+      "saveAsUserMessageHint": "Добавить расшифрованный текст в историю запуска как сообщение пользователя."
     },
     "avatar": {
       "provider": "Провайдер аватара",
