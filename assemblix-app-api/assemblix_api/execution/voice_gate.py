@@ -18,6 +18,12 @@ from assemblix_api.schemas.execution import AudioInput
 from assemblix_api.schemas.node import StartNodeConfig
 
 
+def ensure_audio_run_is_synchronous(*, input_data: dict, queued: bool) -> None:
+    """Audio bytes live in memory for one run; a queued run would lose them."""
+    if queued and input_data.get("input_type") == "audio":
+        raise ValueError("Audio input is only supported on synchronous runs")
+
+
 async def load_audio_into_input_data(
     *,
     workflow: Workflow,

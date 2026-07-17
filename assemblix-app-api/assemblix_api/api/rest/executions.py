@@ -65,7 +65,10 @@ from assemblix_api.dto.responses.execution import (
 )
 from assemblix_api.enums import ExecutionStatus
 from assemblix_api.execution.debug_event_manager import DebugEventManager
-from assemblix_api.execution.voice_gate import load_audio_into_input_data
+from assemblix_api.execution.voice_gate import (
+    ensure_audio_run_is_synchronous,
+    load_audio_into_input_data,
+)
 from assemblix_api.queue.enqueue import enqueue_execution
 from assemblix_api.schemas.execution import AudioInput
 from assemblix_api.services.chat_service import ChatService
@@ -246,6 +249,14 @@ async def _dispatch_sync(
     # (just the execution_id) on timeout.
     settings = get_settings()
     if settings.execution_queue_enabled:
+        try:
+            ensure_audio_run_is_synchronous(input_data=input_data, queued=True)
+        except ValueError as e:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=str(e),
+            ) from e
+
         arq_redis = await get_arq_pool()
         execution_id = await enqueue_execution(
             execution_service,
