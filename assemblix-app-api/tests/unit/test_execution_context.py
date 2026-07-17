@@ -44,3 +44,27 @@ def test_last_history_message_defaults_to_none() -> None:
 
     # Assert — no append yet → finalization falls back to the full final output.
     assert context.last_history_message is None
+
+
+def test_with_user_turn_appends_without_touching_last_history_message() -> None:
+    """Used by the transcribe node so a downstream agent sees the transcript as the
+    user's current turn — must NOT set last_history_message (that field is reserved
+    for the assistant reply the finalizer persists)."""
+    # Arrange
+    context = make_context(chat_history=[{"role": "user", "content": "hi"}])
+    context = context.with_chat_history([{"role": "assistant", "content": "prior answer"}])
+
+    # Act
+    updated = context.with_user_turn("transcribed text")
+
+    # Assert
+    assert updated.chat_history == [
+        {"role": "user", "content": "hi"},
+        {"role": "assistant", "content": "prior answer"},
+        {"role": "user", "content": "transcribed text"},
+    ]
+    assert updated.last_history_message == "prior answer"  # unchanged
+    assert context.chat_history == [
+        {"role": "user", "content": "hi"},
+        {"role": "assistant", "content": "prior answer"},
+    ]  # original untouched

@@ -37,3 +37,5 @@ async def test_loader_puts_audio_ref_and_returns_bytes(mocker) -> None:
     assert audio.bytes == b"RIFFwav"
     assert input_data["message"] == ""
     assert input_data["input_type"] == "audio"
+    # Metadata marker only (no bytes) so CEL/authors can see `input.audio`.
+    assert input_data["audio"] == {"filename": "voice.wav", "mime": "audio/wav"}

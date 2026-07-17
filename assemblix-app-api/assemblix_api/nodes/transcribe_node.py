@@ -55,7 +55,7 @@ class TranscribeNode(BaseNode):
                 role=MessageRole.USER,
                 content=result.text,
             )
-        return NodeOutput(data=data)
+        return NodeOutput(data=data, user_turn=result.text)
 
     @classmethod
     def descriptor(cls) -> NodeDescriptor:

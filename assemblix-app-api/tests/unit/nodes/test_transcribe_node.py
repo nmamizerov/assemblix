@@ -30,6 +30,7 @@ async def test_audio_input_is_transcribed(mocker) -> None:
     # Assert
     assert out.data["message"] == "hello world"
     assert out.data["input_type"] == "text"
+    assert out.user_turn == "hello world"
 
 
 async def test_text_input_passthrough(mocker) -> None:
@@ -41,6 +42,7 @@ async def test_text_input_passthrough(mocker) -> None:
     out = await node.execute(node_input({"message": "typed", "input_type": "text"}, context))
     # Assert
     assert out.data["message"] == "typed"
+    assert out.user_turn is None
     spy.assert_not_called()
 
 

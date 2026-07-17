@@ -99,10 +99,21 @@ class AgentNode(BaseNode):
 
         # 3b. Audio turn: send the raw audio to an audio-capable model instead of
         # relying on a separate transcription step. Non-audio models get a clear
-        # error rather than silently ignoring the audio.
+        # error rather than silently ignoring the audio. `branch_is_audio` is branch-local:
+        # a transcribe node upstream flips node_input.data["input_type"] to "text" even
+        # though context.audio_input is still set for the run, so an agent placed after
+        # transcribe is correctly NOT treated as an audio turn.
         inbound_audio = context.audio_input
+        branch_is_audio = node_input.data.get("input_type") == "audio" and inbound_audio is not None
         audio_part = None
-        if node_input.data.get("input_type") == "audio" and inbound_audio is not None:
+        if cfg.audio_input != "text" and (branch_is_audio or cfg.audio_input == "audio"):
+            if not branch_is_audio:
+                raise ValueError(
+                    f'Agent {self.node_id} has audioInput="audio" but this turn has no '
+                    "audio — send audio input or place a Transcribe node before this agent."
+                )
+            assert inbound_audio is not None  # branch_is_audio implies this
+
             from assemblix_api.external.llm.model_catalog import find_model_metadata
 
             meta = find_model_metadata(cfg.provider.value, cfg.model)
