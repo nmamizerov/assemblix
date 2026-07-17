@@ -30,8 +30,6 @@ import json
 from types import SimpleNamespace
 from typing import Any
 
-import pytest_asyncio
-
 from tests.fixtures.workflows import agent_config, edge, node
 
 # Gemini model with capabilities.accepts_audio=True in the model catalog
@@ -85,9 +83,7 @@ async def _register_and_publish(
     api_client, *, email: str, nodes: list[dict[str, Any]], edges: list[dict[str, Any]]
 ) -> SimpleNamespace:
     """Register a user, mint an API key, create + publish a workflow."""
-    reg = await api_client.post(
-        "/api/auth/register", json={"email": email, "password": "pass1234"}
-    )
+    reg = await api_client.post("/api/auth/register", json={"email": email, "password": "pass1234"})
     assert reg.status_code == 201
     jwt_headers = {"Authorization": f"Bearer {reg.json()['accessToken']}"}
     project_id = reg.json()["projectId"]
@@ -102,7 +98,12 @@ async def _register_and_publish(
 
     create_resp = await api_client.post(
         "/api/workflows/",
-        json={"projectId": project_id, "name": "Voice native workflow", "nodes": nodes, "edges": edges},
+        json={
+            "projectId": project_id,
+            "name": "Voice native workflow",
+            "nodes": nodes,
+            "edges": edges,
+        },
         headers=jwt_headers,
     )
     assert create_resp.status_code == 201
@@ -128,9 +129,7 @@ def _content_parts(messages: list[dict[str, Any]]) -> list[dict[str, Any]]:
     return parts
 
 
-async def test_audio_direct_agent_receives_audio_content_part(
-    api_client, mock_llm
-) -> None:
+async def test_audio_direct_agent_receives_audio_content_part(api_client, mock_llm) -> None:
     """START(audio) → AGENT(audio-capable model) → END: the agent's LLM call
     carries a raw audio content part instead of a transcribed text message."""
     # Arrange
@@ -165,6 +164,7 @@ async def test_transcribe_node_saves_transcript_as_user_turn(
 ) -> None:
     """START(audio) → transcribe(saveAsUserMessage) → END: the transcript from
     the (mocked) STT call is saved as the USER turn in chat history."""
+
     # Arrange — patch the STT seam so the branch is deterministic.
     async def _fake_transcription(**_: Any) -> SimpleNamespace:
         return SimpleNamespace(text="native voice transcript", language="en", duration=1.0)
@@ -191,9 +191,7 @@ async def test_transcribe_node_saves_transcript_as_user_turn(
     body = run.json()
     assert body["status"] == "completed"
     session_id = body["sessionId"]
-    detail = await api_client.get(
-        f"/api/chat-sessions/{session_id}", headers=setup.jwt_headers
-    )
+    detail = await api_client.get(f"/api/chat-sessions/{session_id}", headers=setup.jwt_headers)
     assert detail.status_code == 200
     messages = detail.json()["messages"]
     user_messages = [m for m in messages if m["role"] == "user"]

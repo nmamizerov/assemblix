@@ -30,9 +30,7 @@ async def test_loader_puts_audio_ref_and_returns_bytes(mocker) -> None:
     workflow = _workflow_with_accept_voice()
 
     # Act
-    audio = await load_audio_into_input_data(
-        workflow=workflow, input_data=input_data, file=file
-    )
+    audio = await load_audio_into_input_data(workflow=workflow, input_data=input_data, file=file)
 
     # Assert
     assert isinstance(audio, AudioInput)
