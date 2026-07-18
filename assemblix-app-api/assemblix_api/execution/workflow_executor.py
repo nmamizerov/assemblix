@@ -90,9 +90,7 @@ class WorkflowExecutor:
         credit_service: "CreditService",
         knowledge_base_service: KnowledgeBaseService | None = None,
         db_checkpoint: Callable[[], Awaitable[None]] | None = None,
-        branch_scope: Callable[
-            [ExecutionContext], AbstractAsyncContextManager[ExecutionContext]
-        ]
+        branch_scope: Callable[[ExecutionContext], AbstractAsyncContextManager[ExecutionContext]]
         | None = None,
     ):
         self._execution_service = execution_service
@@ -116,9 +114,7 @@ class WorkflowExecutor:
         self._node_runner = NodeRunner(self._tracer, self._debug_event_manager, self._db_checkpoint)
         # Per-branch session scope for the parallel engine; passthrough when not wired
         # (sequential path and unit tests share the run session, which is fine there).
-        self._branch_scope = (
-            branch_scope if branch_scope is not None else _passthrough_branch_scope
-        )
+        self._branch_scope = branch_scope if branch_scope is not None else _passthrough_branch_scope
 
     async def execute(
         self,

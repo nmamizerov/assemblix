@@ -27,9 +27,7 @@ def _start_config() -> dict[str, Any]:
 async def _register_and_publish(
     api_client: Any, *, email: str, nodes: list[dict], edges: list[dict]
 ) -> SimpleNamespace:
-    reg = await api_client.post(
-        "/api/auth/register", json={"email": email, "password": "pass1234"}
-    )
+    reg = await api_client.post("/api/auth/register", json={"email": email, "password": "pass1234"})
     assert reg.status_code == 201
     jwt_headers = {"Authorization": f"Bearer {reg.json()['accessToken']}"}
     project_id = reg.json()["projectId"]
@@ -116,9 +114,7 @@ async def test_parallel_fork_both_branches_write_db(
     body = run.json()
     assert body["status"] == "completed"
     session_id = body["sessionId"]
-    detail = await api_client.get(
-        f"/api/chat-sessions/{session_id}", headers=setup.jwt_headers
-    )
+    detail = await api_client.get(f"/api/chat-sessions/{session_id}", headers=setup.jwt_headers)
     assert detail.status_code == 200
     user_messages = [m for m in detail.json()["messages"] if m["role"] == "user"]
     assert any(m["content"] == "fork transcript proof" for m in user_messages), (
