@@ -1,7 +1,8 @@
 # /execution/workflow_executor.py
 
 import time
-from collections.abc import Awaitable, Callable
+from collections.abc import AsyncIterator, Awaitable, Callable
+from contextlib import AbstractAsyncContextManager, asynccontextmanager
 from datetime import datetime
 from typing import TYPE_CHECKING
 from uuid import UUID
@@ -50,6 +51,18 @@ from assemblix_api.utils import coerce_to_type, get_typed_default_value
 logger = structlog.get_logger(__name__)
 
 
+def _passthrough_branch_scope(
+    base_ctx: ExecutionContext,
+) -> AbstractAsyncContextManager[ExecutionContext]:
+    """Default branch scope: yield the base context unchanged (sequential path / tests)."""
+
+    @asynccontextmanager
+    async def _cm() -> AsyncIterator[ExecutionContext]:
+        yield base_ctx
+
+    return _cm()
+
+
 class WorkflowExecutor:
     """
     Main orchestrator for workflow execution.
@@ -76,6 +89,10 @@ class WorkflowExecutor:
         credit_service: "CreditService",
         knowledge_base_service: KnowledgeBaseService | None = None,
         db_checkpoint: Callable[[], Awaitable[None]] | None = None,
+        branch_scope: Callable[
+            [ExecutionContext], AbstractAsyncContextManager[ExecutionContext]
+        ]
+        | None = None,
     ):
         self._execution_service = execution_service
         self._chat_service = chat_service
@@ -96,6 +113,11 @@ class WorkflowExecutor:
         self._navigator = GraphNavigator()
         # Owns per-node execution mechanics (run + step recording) shared by both loops.
         self._node_runner = NodeRunner(self._tracer, self._debug_event_manager, self._db_checkpoint)
+        # Per-branch session scope for the parallel engine; passthrough when not wired
+        # (sequential path and unit tests share the run session, which is fine there).
+        self._branch_scope = (
+            branch_scope if branch_scope is not None else _passthrough_branch_scope
+        )
 
     async def execute(
         self,

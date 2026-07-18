@@ -1,14 +1,15 @@
 """FastAPI dependency injection wiring."""
 
 import asyncio
-from collections.abc import AsyncGenerator
+from collections.abc import AsyncGenerator, AsyncIterator, Callable
+from contextlib import AbstractAsyncContextManager, asynccontextmanager
 from dataclasses import dataclass
 from uuid import UUID
 
 import structlog
 from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession
 
 from assemblix_api.billing.credit_service import CreditService
 from assemblix_api.billing.rate_limit_service import RateLimitService
@@ -17,6 +18,7 @@ from assemblix_api.core.auth_context import AuthContext
 from assemblix_api.core.cel_evaluator import CELEvaluator
 from assemblix_api.core.node_registry import NodeRegistry
 from assemblix_api.database import get_async_session
+from assemblix_api.database.engine import get_async_engine
 from assemblix_api.database.models.organization import Organization
 from assemblix_api.database.models.user import User
 from assemblix_api.database.repositories.api_key_repository import APIKeyRepository
@@ -64,7 +66,7 @@ from assemblix_api.database.repositories.workflow_repository import WorkflowRepo
 from assemblix_api.execution.credential_resolver import CredentialResolver
 from assemblix_api.execution.debug_event_manager import DebugEventManager
 from assemblix_api.execution.workflow_executor import WorkflowExecutor
-from assemblix_api.schemas.execution import AudioInput
+from assemblix_api.schemas.execution import AudioInput, ExecutionContext
 from assemblix_api.services.api_key_service import APIKeyService
 from assemblix_api.services.avatar_service import AvatarService
 from assemblix_api.services.chat_message_service import ChatMessageService
@@ -546,6 +548,7 @@ async def get_workflow_executor(
         organization_service=organization_service,
         credit_service=credit_service,
         knowledge_base_service=knowledge_base_service,
+        branch_scope=make_branch_scope(get_async_engine()),
     )
 
 
@@ -578,6 +581,36 @@ def build_node_service_bundle(session: AsyncSession) -> NodeServiceBundle:
         chat_message_service=ChatMessageService(chat_message_repo, chat_session_repo),
         knowledge_base_service=KnowledgeBaseService(kb_repo, kb_doc_repo),
     )
+
+
+def make_branch_scope(
+    engine: AsyncEngine,
+) -> Callable[[ExecutionContext], AbstractAsyncContextManager[ExecutionContext]]:
+    """Build the per-branch session scope used by the parallel engine.
+
+    Each call opens a fresh AsyncSession, binds a node-body service bundle to it, yields a
+    branch-scoped context, then commits (or rolls back on error) and closes. Concurrent
+    branches therefore never share a session. expire_on_commit=False so a node that
+    checkpoints mid-body keeps its loaded ORM objects usable.
+    """
+
+    def scope(
+        base_ctx: ExecutionContext,
+    ) -> AbstractAsyncContextManager[ExecutionContext]:
+        @asynccontextmanager
+        async def _cm() -> AsyncIterator[ExecutionContext]:
+            async with AsyncSession(engine, expire_on_commit=False) as session:
+                try:
+                    bundle = build_node_service_bundle(session)
+                    yield base_ctx.with_services(bundle, session.commit)
+                    await session.commit()
+                except BaseException:
+                    await session.rollback()
+                    raise
+
+        return _cm()
+
+    return scope
 
 
 async def build_executor(session: AsyncSession) -> WorkflowExecutor:
@@ -639,6 +672,7 @@ async def build_executor(session: AsyncSession) -> WorkflowExecutor:
         # not pinned for the whole run (released during LLM/HTTP awaits). Safe only
         # because the queue/isolated sessions use expire_on_commit=False.
         db_checkpoint=session.commit,
+        branch_scope=make_branch_scope(get_async_engine()),
     )
 
 
@@ -671,7 +705,6 @@ async def run_workflow_isolated(
         audio_input: Raw audio for this turn (voice endpoints), forwarded to the
                      executor and attached to the execution context.
     """
-    from assemblix_api.database.engine import get_async_engine
     from assemblix_api.database.repositories.workflow_repository import (
         WorkflowRepository,
     )
