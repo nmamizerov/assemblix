@@ -5,9 +5,8 @@ from __future__ import annotations
 from uuid import UUID
 
 import structlog
-from sqlalchemy.ext.asyncio import AsyncSession
 
-from assemblix_api.database.engine import get_async_engine
+from assemblix_api.database.engine import SerializedAsyncSession, get_async_engine
 
 # Module-level imports so tests can patch them as assemblix_api.queue.jobs.*
 from assemblix_api.database.repositories.workflow_repository import WorkflowRepository
@@ -65,7 +64,9 @@ async def run_workflow_job(
     # expire_on_commit=False: the executor commits at node boundaries (to release the
     # DB connection during LLM/HTTP awaits), and the long-lived `execution` ORM object
     # must stay usable across those commits without a lazy reload (MissingGreenlet).
-    async with AsyncSession(engine, expire_on_commit=False) as session:
+    # SerializedAsyncSession: parallel fork branches share this session and may await the
+    # DB concurrently — the per-task lock prevents SQLAlchemy's concurrent-op error.
+    async with SerializedAsyncSession(engine, expire_on_commit=False) as session:
         try:
             workflow_repo = WorkflowRepository(session)
             workflow = await workflow_repo.get_by_id(wf_uuid)
