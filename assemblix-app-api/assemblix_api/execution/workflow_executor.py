@@ -43,9 +43,10 @@ from assemblix_api.schemas.execution import (
     ExecutionResultMetadata,
     ExecutionStepData,
     NodeInput,
+    NodeOutput,
     _noop_checkpoint,
 )
-from assemblix_api.schemas.node import StartNodeConfig
+from assemblix_api.schemas.node import BaseNode, StartNodeConfig
 from assemblix_api.utils import coerce_to_type, get_typed_default_value
 
 logger = structlog.get_logger(__name__)
@@ -767,6 +768,27 @@ class WorkflowExecutor:
             current_node_id = next_node_id
             previous_output = node_output.data
 
+    async def _run_branch(
+        self,
+        node: BaseNode,
+        node_data: dict,
+        base_context: ExecutionContext,
+        *,
+        node_id: str,
+        step_number: int,
+    ) -> NodeOutput:
+        """Run one node body inside its own branch session (parallel engine only).
+
+        The branch scope gives the node a session-bound service bundle so concurrent
+        branches never share a session. Outputs return to the main loop, which folds
+        them into the shared context and logs the step on the run session (serially).
+        """
+        async with self._branch_scope(base_context) as branch_context:
+            node_input = NodeInput(data=node_data, context=branch_context)
+            return await self._node_runner.run(
+                node, node_input, node_id=node_id, step_number=step_number
+            )
+
     async def _execution_loop_parallel(
         self,
         context: ExecutionContext,
@@ -838,7 +860,6 @@ class WorkflowExecutor:
                     else:
                         node_data = ready_node.input_data or {}
 
-                    node_input = NodeInput(data=node_data, context=context)
                     state_before = context.state.copy()
                     project_state_before = context.project_state.copy()
                     assigned_step = context.step_number
@@ -858,8 +879,12 @@ class WorkflowExecutor:
                     )
 
                     task = asyncio.create_task(
-                        self._node_runner.run(
-                            node, node_input, node_id=node_id, step_number=assigned_step
+                        self._run_branch(
+                            node,
+                            node_data,
+                            context,
+                            node_id=node_id,
+                            step_number=assigned_step,
                         )
                     )
                     running[task] = {
