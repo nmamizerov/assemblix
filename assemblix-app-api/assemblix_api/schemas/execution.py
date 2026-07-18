@@ -154,6 +154,7 @@ class ExecutionContext:
             credential_resolver=bundle.credential_resolver,
             chat_message_service=bundle.chat_message_service,
             knowledge_base_service=bundle.knowledge_base_service,
+            execution_tracer_service=bundle.execution_tracer_service,
             db_checkpoint=db_checkpoint,
         )
 

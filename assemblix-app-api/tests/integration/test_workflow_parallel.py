@@ -228,3 +228,38 @@ async def test_leaf_branch_without_end_persists_state_and_completes(api_client) 
     assert body["status"] == "completed"
     assert body["state"]["x"] == 1
     assert body["state"]["y"] == 2
+
+
+async def test_parallel_fork_two_ends_read_tracer(api_client, mock_llm) -> None:
+    """Two independent END branches each read the tracer (last-agent output) concurrently.
+
+    Regression: an END node reads context.execution_tracer_service (a DB SELECT). Until the
+    tracer was rebound per branch, an END running in one branch task issued that SELECT on
+    the shared run session while the main loop touched the same session → SQLAlchemy
+    "concurrent operations are not permitted". A single joined END never overlaps anything;
+    two independent ENDs (or an END overlapping a sibling's step write) do.
+    """
+    # Arrange — start ⇉ agent1→END1 & agent2→END2; each END defaults to last-agent output.
+    mock_llm.set_response("ok")
+    nodes = [
+        node("start", "start", {}),
+        node("agent1", "agent", agent_config(instructions="A")),
+        node("agent2", "agent", agent_config(instructions="B")),
+        node("end1", "end", {}),
+        node("end2", "end", {}),
+    ]
+    edges = [
+        edge("start", "agent1"),
+        edge("start", "agent2"),
+        edge("agent1", "end1"),
+        edge("agent2", "end2"),
+    ]
+
+    # Act
+    body = await _create_publish_execute(
+        api_client, email="two-ends@example.com", nodes=nodes, edges=edges, state=[]
+    )
+
+    # Assert — both agent branches ran and both ENDs completed without a session crash.
+    assert body["status"] == "completed"
+    assert mock_llm.call_count == 2

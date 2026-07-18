@@ -560,6 +560,7 @@ class NodeServiceBundle:
     credential_resolver: CredentialResolver
     chat_message_service: ChatMessageService
     knowledge_base_service: KnowledgeBaseService
+    execution_tracer_service: ExecutionTracerService
 
 
 def build_node_service_bundle(session: AsyncSession) -> NodeServiceBundle:
@@ -574,12 +575,14 @@ def build_node_service_bundle(session: AsyncSession) -> NodeServiceBundle:
     chat_message_repo = ChatMessageRepository(session)
     kb_repo = KnowledgeBaseRepository(session)
     kb_doc_repo = KnowledgeDocumentRepository(session)
+    execution_step_repo = ExecutionStepRepository(session)
     credential_service = CredentialsService(credentials_repo, organization_user_repo)
     return NodeServiceBundle(
         credential_service=credential_service,
         credential_resolver=CredentialResolver(credential_service),
         chat_message_service=ChatMessageService(chat_message_repo, chat_session_repo),
         knowledge_base_service=KnowledgeBaseService(kb_repo, kb_doc_repo),
+        execution_tracer_service=ExecutionTracerService(execution_step_repo),
     )
 
 
