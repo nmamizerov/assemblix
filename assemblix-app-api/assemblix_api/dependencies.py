@@ -2,6 +2,7 @@
 
 import asyncio
 from collections.abc import AsyncGenerator
+from dataclasses import dataclass
 from uuid import UUID
 
 import structlog
@@ -60,6 +61,7 @@ from assemblix_api.database.repositories.payment_repository import PaymentReposi
 from assemblix_api.database.repositories.project_repository import ProjectRepository
 from assemblix_api.database.repositories.user_repository import UserRepository
 from assemblix_api.database.repositories.workflow_repository import WorkflowRepository
+from assemblix_api.execution.credential_resolver import CredentialResolver
 from assemblix_api.execution.debug_event_manager import DebugEventManager
 from assemblix_api.execution.workflow_executor import WorkflowExecutor
 from assemblix_api.schemas.execution import AudioInput
@@ -544,6 +546,37 @@ async def get_workflow_executor(
         organization_service=organization_service,
         credit_service=credit_service,
         knowledge_base_service=knowledge_base_service,
+    )
+
+
+@dataclass(frozen=True)
+class NodeServiceBundle:
+    """DB-touching services a node body uses during execution, bound to one session."""
+
+    credential_service: CredentialsService
+    credential_resolver: CredentialResolver
+    chat_message_service: ChatMessageService
+    knowledge_base_service: KnowledgeBaseService
+
+
+def build_node_service_bundle(session: AsyncSession) -> NodeServiceBundle:
+    """Build the node-body service bundle bound to ``session``.
+
+    Used per-branch on the parallel engine so each concurrent node task gets its own
+    session-bound services (no shared-session concurrency).
+    """
+    credentials_repo = CredentialsRepository(session)
+    organization_user_repo = OrganizationUserRepository(session)
+    chat_session_repo = ChatSessionRepository(session)
+    chat_message_repo = ChatMessageRepository(session)
+    kb_repo = KnowledgeBaseRepository(session)
+    kb_doc_repo = KnowledgeDocumentRepository(session)
+    credential_service = CredentialsService(credentials_repo, organization_user_repo)
+    return NodeServiceBundle(
+        credential_service=credential_service,
+        credential_resolver=CredentialResolver(credential_service),
+        chat_message_service=ChatMessageService(chat_message_repo, chat_session_repo),
+        knowledge_base_service=KnowledgeBaseService(kb_repo, kb_doc_repo),
     )
 
 
