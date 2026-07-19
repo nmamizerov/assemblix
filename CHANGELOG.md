@@ -5,6 +5,15 @@ All notable changes to this project are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.22](https://github.com/nmamizerov/assemblix/compare/v0.2.21...v0.2.22) (2026-07-19)
+
+
+### Features
+
+* **execution:** accept base64 audio input on /execute and /execute/debug ([ccc1492](https://github.com/nmamizerov/assemblix/commit/ccc14921b888b0ca15e14b2373f79ca844f2d92d))
+* gpt-audio support + base64 audio input for voice nodes ([42167a3](https://github.com/nmamizerov/assemblix/commit/42167a319dcd556dc7772c69a70f8db43dd9fab7))
+* **llm:** add gpt-audio models and bill LLM runs via litellm native cost ([be16b34](https://github.com/nmamizerov/assemblix/commit/be16b34234f294aa16344263db16c09efd29e9ed))
+
 ## [0.2.21](https://github.com/nmamizerov/assemblix/compare/v0.2.20...v0.2.21) (2026-07-19)
 
 
