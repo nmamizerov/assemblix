@@ -12,16 +12,12 @@ workflows, one per branch:
   2. START(audio) → transcribe (saveAsUserMessage) → END
      (proves the transcript is saved as the USER chat turn).
 
-Deviation from the brief's parallel-fork sketch (start ⇉ [agent, transcribe] → end):
-wiring that fork through the real ``/execute/audio`` HTTP path hits a genuine
-concurrency bug in ``WorkflowExecutor._execution_loop_parallel`` — the transcribe
-branch's ``chat_message_service.save_message`` DB write races the agent branch's
-step-recording DB write on the *same* AsyncSession, raising
-``sqlalchemy.exc.InvalidRequestError: This session is provisioning a new
-connection; concurrent operations are not permitted``. That is a pre-existing
-execution-engine limitation (concurrent branches sharing one session), out of
-scope for the voice feature itself. Per the task brief's escalation guidance, this
-test falls back to two linear graphs that independently prove both behaviors.
+Note: the brief's parallel-fork sketch (start ⇉ [agent, transcribe] → end) is now
+supported — each fork branch runs on its own session (see
+``WorkflowExecutor._run_branch`` / ``branch_scope``), so concurrent DB writes from
+sibling branches no longer race on a shared AsyncSession. That scenario is covered
+by ``tests/integration/test_parallel_session_isolation.py``. These two linear
+graphs remain here as focused, single-branch checks of each behavior in isolation.
 """
 
 from __future__ import annotations

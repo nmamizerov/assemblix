@@ -30,6 +30,7 @@ async def _noop_checkpoint() -> None:
 if TYPE_CHECKING:
     from assemblix_api.core.cel_evaluator import CELEvaluator
     from assemblix_api.core.template_evaluator import TemplateEvaluator
+    from assemblix_api.dependencies import NodeServiceBundle
     from assemblix_api.enums import PlanTier
     from assemblix_api.execution.credential_resolver import CredentialResolver
     from assemblix_api.schemas.debug_events import AlignmentData
@@ -134,6 +135,27 @@ class ExecutionContext:
             self,
             chat_history=[*self.chat_history, *messages],
             last_history_message=last,
+        )
+
+    def with_services(
+        self,
+        bundle: NodeServiceBundle,
+        db_checkpoint: Callable[[], Awaitable[None]],
+    ) -> ExecutionContext:
+        """Return a branch-scoped copy with DB-bound services rebound to a branch session.
+
+        Used by the parallel engine so a concurrent node body runs against its own
+        session. Only the DB-touching services and db_checkpoint change; state, history,
+        billing counters and every other field are preserved.
+        """
+        return replace(
+            self,
+            credential_service=bundle.credential_service,
+            credential_resolver=bundle.credential_resolver,
+            chat_message_service=bundle.chat_message_service,
+            knowledge_base_service=bundle.knowledge_base_service,
+            execution_tracer_service=bundle.execution_tracer_service,
+            db_checkpoint=db_checkpoint,
         )
 
     def with_user_turn(self, content: str) -> ExecutionContext:

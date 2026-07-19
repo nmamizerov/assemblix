@@ -1,7 +1,8 @@
 # /execution/workflow_executor.py
 
 import time
-from collections.abc import Awaitable, Callable
+from collections.abc import AsyncIterator, Awaitable, Callable
+from contextlib import AbstractAsyncContextManager, asynccontextmanager
 from datetime import datetime
 from typing import TYPE_CHECKING
 from uuid import UUID
@@ -42,12 +43,25 @@ from assemblix_api.schemas.execution import (
     ExecutionResultMetadata,
     ExecutionStepData,
     NodeInput,
+    NodeOutput,
     _noop_checkpoint,
 )
-from assemblix_api.schemas.node import StartNodeConfig
+from assemblix_api.schemas.node import BaseNode, StartNodeConfig
 from assemblix_api.utils import coerce_to_type, get_typed_default_value
 
 logger = structlog.get_logger(__name__)
+
+
+def _passthrough_branch_scope(
+    base_ctx: ExecutionContext,
+) -> AbstractAsyncContextManager[ExecutionContext]:
+    """Default branch scope: yield the base context unchanged (sequential path / tests)."""
+
+    @asynccontextmanager
+    async def _cm() -> AsyncIterator[ExecutionContext]:
+        yield base_ctx
+
+    return _cm()
 
 
 class WorkflowExecutor:
@@ -76,6 +90,8 @@ class WorkflowExecutor:
         credit_service: "CreditService",
         knowledge_base_service: KnowledgeBaseService | None = None,
         db_checkpoint: Callable[[], Awaitable[None]] | None = None,
+        branch_scope: Callable[[ExecutionContext], AbstractAsyncContextManager[ExecutionContext]]
+        | None = None,
     ):
         self._execution_service = execution_service
         self._chat_service = chat_service
@@ -96,6 +112,9 @@ class WorkflowExecutor:
         self._navigator = GraphNavigator()
         # Owns per-node execution mechanics (run + step recording) shared by both loops.
         self._node_runner = NodeRunner(self._tracer, self._debug_event_manager, self._db_checkpoint)
+        # Per-branch session scope for the parallel engine; passthrough when not wired
+        # (sequential path and unit tests share the run session, which is fine there).
+        self._branch_scope = branch_scope if branch_scope is not None else _passthrough_branch_scope
 
     async def execute(
         self,
@@ -745,6 +764,27 @@ class WorkflowExecutor:
             current_node_id = next_node_id
             previous_output = node_output.data
 
+    async def _run_branch(
+        self,
+        node: BaseNode,
+        node_data: dict,
+        base_context: ExecutionContext,
+        *,
+        node_id: str,
+        step_number: int,
+    ) -> NodeOutput:
+        """Run one node body inside its own branch session (parallel engine only).
+
+        The branch scope gives the node a session-bound service bundle so concurrent
+        branches never share a session. Outputs return to the main loop, which folds
+        them into the shared context and logs the step on the run session (serially).
+        """
+        async with self._branch_scope(base_context) as branch_context:
+            node_input = NodeInput(data=node_data, context=branch_context)
+            return await self._node_runner.run(
+                node, node_input, node_id=node_id, step_number=step_number
+            )
+
     async def _execution_loop_parallel(
         self,
         context: ExecutionContext,
@@ -816,7 +856,6 @@ class WorkflowExecutor:
                     else:
                         node_data = ready_node.input_data or {}
 
-                    node_input = NodeInput(data=node_data, context=context)
                     state_before = context.state.copy()
                     project_state_before = context.project_state.copy()
                     assigned_step = context.step_number
@@ -836,8 +875,12 @@ class WorkflowExecutor:
                     )
 
                     task = asyncio.create_task(
-                        self._node_runner.run(
-                            node, node_input, node_id=node_id, step_number=assigned_step
+                        self._run_branch(
+                            node,
+                            node_data,
+                            context,
+                            node_id=node_id,
+                            step_number=assigned_step,
                         )
                     )
                     running[task] = {
