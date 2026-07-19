@@ -13,7 +13,10 @@ but pydantic-ai requires exactly that → we revalidate via `.model_validate(res
 
 from __future__ import annotations
 
+import contextlib
+import contextvars
 import os
+from collections.abc import Iterator
 from typing import Any, cast
 
 import litellm
@@ -28,6 +31,37 @@ from assemblix_api.external.llm.provider_config import get_provider_config
 # litellm must not flood our logs with debug output.
 litellm.set_verbose = False
 litellm.suppress_debug_info = True
+
+# Per-run accumulator for litellm's own cost figure (`response_cost` in
+# `_hidden_params`). The shim revalidates the litellm response into an OpenAI
+# ChatCompletion, which drops `_hidden_params`, so we capture the cost here and
+# hand the sum to AgentRunner. A ContextVar isolates concurrent runs; the same
+# bucket is shared across every completion of one run (tool loop + FallbackModel).
+_response_cost_var: contextvars.ContextVar[list[float] | None] = contextvars.ContextVar(
+    "litellm_response_cost", default=None
+)
+
+
+@contextlib.contextmanager
+def collect_response_cost() -> Iterator[list[float]]:
+    """Collect per-completion litellm costs for the duration of one agent run."""
+    bucket: list[float] = []
+    token = _response_cost_var.set(bucket)
+    try:
+        yield bucket
+    finally:
+        _response_cost_var.reset(token)
+
+
+def _record_response_cost(resp: object) -> None:
+    """Append litellm's `response_cost` to the active bucket, if any and positive."""
+    bucket = _response_cost_var.get()
+    if bucket is None:
+        return
+    hidden = getattr(resp, "_hidden_params", None) or {}
+    cost = hidden.get("response_cost") if isinstance(hidden, dict) else None
+    if isinstance(cost, (int, float)) and cost > 0:
+        bucket.append(float(cost))
 
 
 def _strip_sentinels(kwargs: dict[str, Any]) -> dict[str, Any]:
@@ -64,6 +98,8 @@ class _Completions:
             # the object. litellm's CustomStreamWrapper has none of those, so wrap it.
             return _StreamShim(await litellm.acompletion(**merged))
         resp = await litellm.acompletion(**merged)
+        # Capture litellm's own cost before revalidation drops `_hidden_params`.
+        _record_response_cost(resp)
         # litellm.ModelResponse → real openai ChatCompletion (pydantic-ai isinstance check).
         # warnings=False: the litellm schema is slightly wider than the openai types; without
         # this it emits UserWarning.
@@ -96,6 +132,10 @@ class _StreamShim:
         return ChatCompletionChunk.model_validate(chunk.model_dump(warnings=False))
 
     async def close(self) -> None:
+        # Best-effort: litellm may attach `response_cost` to the wrapper after the
+        # stream is drained. If absent, nothing is recorded and cost falls back to
+        # the registry prices in compute_cost.
+        _record_response_cost(self._stream)
         aclose = getattr(self._stream, "aclose", None)
         if aclose is not None:
             await aclose()
