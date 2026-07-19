@@ -5,6 +5,31 @@ All notable changes to this project are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.21](https://github.com/nmamizerov/assemblix/compare/v0.2.20...v0.2.21) (2026-07-19)
+
+
+### Features
+
+* **execution:** add ExecutionContext.with_services ([6083383](https://github.com/nmamizerov/assemblix/commit/60833838b15b5f9935a933756a27c288de6366f5))
+* **execution:** add NodeServiceBundle + build_node_service_bundle ([92e4a7c](https://github.com/nmamizerov/assemblix/commit/92e4a7cd35a06b7076b0eb94282c78df4e6bd0ef))
+* **execution:** add per-branch session scope, wire into executor ([ae5e38d](https://github.com/nmamizerov/assemblix/commit/ae5e38d38f11fdbf80cc20b891cffefdc9b2dbce))
+
+
+### Bug Fixes
+
+* **execution:** rebind execution_tracer_service per branch so END reads its own session ([6e3b653](https://github.com/nmamizerov/assemblix/commit/6e3b65395e11a8728fda2539c0f34406b73acf89))
+* **execution:** run parallel node bodies in per-branch sessions ([ff29d49](https://github.com/nmamizerov/assemblix/commit/ff29d49d808d3a16959160af21afc007c8fa06c4))
+
+
+### Reverts
+
+* **execution:** remove SerializedAsyncSession stopgap ([d301a48](https://github.com/nmamizerov/assemblix/commit/d301a48aab142c536f4481f62f3fb79a4355d68c))
+
+
+### Refactoring
+
+* **execution:** per-branch DB sessions for parallel fork/join ([30bd52e](https://github.com/nmamizerov/assemblix/commit/30bd52e26dc8cdd98876c8db52b71ef98ea06dad))
+
 ## [0.2.20](https://github.com/nmamizerov/assemblix/compare/v0.2.19...v0.2.20) (2026-07-18)
 
 
