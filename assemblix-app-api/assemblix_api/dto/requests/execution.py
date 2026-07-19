@@ -51,6 +51,18 @@ class ExecuteWorkflowRequest(DTOModel):
         default=False,
         description="If true, stream text deltas from streamable agent nodes over SSE (subscribe via GET /executions/{id}/stream)",
     )
+    audio_base64: str | None = Field(
+        default=None,
+        description="Inbound audio as base64 (alternative to multipart /execute/audio). START node must accept voice",
+    )
+    audio_mime: str | None = Field(
+        default=None,
+        description="MIME type of audioBase64 (e.g. 'audio/wav', 'audio/mpeg'). Defaults to audio/wav",
+    )
+    audio_filename: str | None = Field(
+        default=None,
+        description="Optional original filename for the base64 audio",
+    )
 
 
 class ExecutionFilters(DTOModel):

@@ -33,6 +33,7 @@ from pydantic_ai.settings import ModelSettings
 
 from assemblix_api.execution.exceptions import AgentRunTimeoutError
 from assemblix_api.external.llm.base import TokenUsage
+from assemblix_api.external.llm.litellm_model import collect_response_cost
 from assemblix_api.external.llm.pricing import compute_cost
 from assemblix_api.schemas.execution import AgentExecutionResult
 
@@ -156,13 +157,16 @@ class AgentRunner:
             model_settings=model_settings,
             event_stream_handler=event_stream_handler,
         )
-        try:
-            if total_timeout is not None:
-                result = await asyncio.wait_for(run_coro, timeout=total_timeout)
-            else:
-                result = await run_coro
-        except TimeoutError as exc:
-            raise AgentRunTimeoutError(f"Agent run exceeded its {total_timeout}s budget") from exc
+        with collect_response_cost() as response_costs:
+            try:
+                if total_timeout is not None:
+                    result = await asyncio.wait_for(run_coro, timeout=total_timeout)
+                else:
+                    result = await run_coro
+            except TimeoutError as exc:
+                raise AgentRunTimeoutError(
+                    f"Agent run exceeded its {total_timeout}s budget"
+                ) from exc
 
         content = result.output if isinstance(result.output, str) else str(result.output)
 
@@ -180,7 +184,10 @@ class AgentRunner:
             output_tokens=usage.output_tokens or 0,
             total_tokens=usage.total_tokens or 0,
         )
-        cost = compute_cost(provider, model_name, token_usage)
+        # litellm's own cost (summed across the run's completions) is authoritative
+        # when present; otherwise compute_cost falls back to registry prices.
+        native_cost = sum(response_costs) if response_costs else None
+        cost = compute_cost(provider, model_name, token_usage, native_cost=native_cost)
 
         all_messages = result.all_messages()
         tool_executions = _extract_tool_executions(all_messages)

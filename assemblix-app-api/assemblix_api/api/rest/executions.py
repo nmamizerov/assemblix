@@ -67,6 +67,7 @@ from assemblix_api.enums import ExecutionStatus
 from assemblix_api.execution.debug_event_manager import DebugEventManager
 from assemblix_api.execution.voice_gate import (
     ensure_audio_run_is_synchronous,
+    load_audio_from_base64,
     load_audio_into_input_data,
 )
 from assemblix_api.queue.enqueue import enqueue_execution
@@ -529,6 +530,16 @@ async def execute_workflow(
 
     input_data = _build_input_data(request, is_debug=False)
 
+    audio_input = None
+    if request.audio_base64:
+        audio_input = load_audio_from_base64(
+            workflow=workflow,
+            input_data=input_data,
+            audio_base64=request.audio_base64,
+            mime=request.audio_mime,
+            filename=request.audio_filename,
+        )
+
     return await _dispatch_sync(
         workflow,
         input_data,
@@ -537,6 +548,7 @@ async def execute_workflow(
         token_id=token_id,
         execution_service=execution_service,
         session=session,
+        audio_input=audio_input,
     )
 
 
@@ -579,12 +591,23 @@ async def execute_workflow_debug(
 
     input_data = _build_input_data(request, is_debug=True)
 
+    audio_input = None
+    if request.audio_base64:
+        audio_input = load_audio_from_base64(
+            workflow=workflow,
+            input_data=input_data,
+            audio_base64=request.audio_base64,
+            mime=request.audio_mime,
+            filename=request.audio_filename,
+        )
+
     return _dispatch_debug_stream(
         workflow,
         input_data,
         session_id=request.session_id,
         token_id=token_id,
         debug_event_manager=debug_event_manager,
+        audio_input=audio_input,
     )
 
 

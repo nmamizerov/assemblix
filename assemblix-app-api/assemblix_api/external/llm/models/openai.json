@@ -290,6 +290,30 @@
       "inputCostPerMillion": 10.0,
       "outputCostPerMillion": 30.0,
       "capabilities": {}
+    },
+    {
+      "id": "gpt-audio",
+      "label": "GPT Audio",
+      "description": "Audio-in, text-out. Accepts speech natively; pair with a voice-enabled START node.",
+      "contextWindow": 128000,
+      "maxOutputTokens": 16384,
+      "inputCostPerMillion": 2.5,
+      "outputCostPerMillion": 10.0,
+      "capabilities": {
+        "accepts_audio": true
+      }
+    },
+    {
+      "id": "gpt-audio-mini",
+      "label": "GPT Audio Mini",
+      "description": "Cheaper audio-in, text-out model for simpler voice turns.",
+      "contextWindow": 128000,
+      "maxOutputTokens": 16384,
+      "inputCostPerMillion": 0.6,
+      "outputCostPerMillion": 2.4,
+      "capabilities": {
+        "accepts_audio": true
+      }
     }
   ]
 }
