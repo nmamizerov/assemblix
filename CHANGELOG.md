@@ -5,6 +5,14 @@ All notable changes to this project are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.23](https://github.com/nmamizerov/assemblix/compare/v0.2.22...v0.2.23) (2026-07-22)
+
+
+### Bug Fixes
+
+* **voice:** list all ElevenLabs voices via v2 endpoint with search ([c086875](https://github.com/nmamizerov/assemblix/commit/c086875c42e6d4d397124ad629669ac439686a0e))
+* **voice:** list all ElevenLabs voices via v2 endpoint with search ([4f5ad58](https://github.com/nmamizerov/assemblix/commit/4f5ad5858e265c25b11f9941923caf13375b16dc))
+
 ## [0.2.22](https://github.com/nmamizerov/assemblix/compare/v0.2.21...v0.2.22) (2026-07-19)
 
 
