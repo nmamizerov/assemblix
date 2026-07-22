@@ -63,15 +63,11 @@ async def list_voices(api_key: str, *, search: str | None = None) -> list[Eleven
                 params["search"] = search
             if page_token:
                 params["next_page_token"] = page_token
-            resp = await client.get(
-                _voices_url(), headers={"xi-api-key": api_key}, params=params
-            )
+            resp = await client.get(_voices_url(), headers={"xi-api-key": api_key}, params=params)
             resp.raise_for_status()
             data = resp.json()
             voices.extend(
-                ElevenLabsVoice(
-                    id=v["voice_id"], name=v["name"], preview_url=v.get("preview_url")
-                )
+                ElevenLabsVoice(id=v["voice_id"], name=v["name"], preview_url=v.get("preview_url"))
                 for v in data.get("voices", [])
             )
             page_token = data.get("next_page_token")

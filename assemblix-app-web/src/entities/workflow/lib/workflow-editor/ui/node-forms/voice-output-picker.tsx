@@ -155,12 +155,10 @@ export const VoiceOutputPicker = ({
   // Server-side search returns the full library; keep the selected voice
   // renderable even when it falls outside the current search results so the
   // trigger doesn't blank out and the selection isn't lost.
-  const displayedVoices = useMemo(() => {
-    if (value?.voiceId && !availableVoices.some((v) => v.id === value.voiceId)) {
-      return [{ id: value.voiceId, name: value.voiceId }, ...availableVoices];
-    }
-    return availableVoices;
-  }, [availableVoices, value?.voiceId]);
+  const displayedVoices =
+    value?.voiceId && !availableVoices.some((v) => v.id === value.voiceId)
+      ? [{ id: value.voiceId, name: value.voiceId }, ...availableVoices]
+      : availableVoices;
 
   return (
     <div className="space-y-3">
