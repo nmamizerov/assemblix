@@ -44,7 +44,7 @@ async def test_list_credential_voices(client, auth_user, auth_headers, mocker) -
     # Arrange
     cred_id = await _create_eleven_credential(client, auth_user, auth_headers)
 
-    async def _fake_list(api_key):
+    async def _fake_list(api_key, *, search=None):
         from assemblix_api.external.voice.elevenlabs import ElevenLabsVoice
 
         return [ElevenLabsVoice(id="v1", name="Rachel")]
@@ -80,7 +80,7 @@ async def test_system_voices_lists_platform_voices(
     # Arrange
     monkeypatch.setattr(get_settings(), "system_elevenlabs_api_key", "xi-system")
 
-    async def _fake_list(api_key):
+    async def _fake_list(api_key, *, search=None):
         from assemblix_api.external.voice.elevenlabs import ElevenLabsVoice
 
         return [ElevenLabsVoice(id="sv1", name="Platform Voice")]
