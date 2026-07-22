@@ -76,14 +76,15 @@ async def list_provider_models(
 @router.get("/credentials/{credentials_id}/voices", response_model=list[VoiceListItem])
 async def list_credential_voices(
     credentials_id: UUID,
+    search: str | None = Query(default=None, description="Filter ElevenLabs voices"),
     auth: AuthContext = Depends(get_auth_context),
     credentials_service: CredentialsService = Depends(get_credentials_service),
     project_service: ProjectService = Depends(get_project_service),
 ) -> list[VoiceListItem]:
     """List the voices available to a stored voice credential.
 
-    ElevenLabs voices are fetched live per key; Yandex SpeechKit has a fixed
-    catalog and needs no API call.
+    ElevenLabs voices are fetched live per key (paginated, optional server-side
+    ``search``); Yandex SpeechKit has a fixed catalog and needs no API call.
     """
     credentials = await credentials_service.get_by_id(credentials_id)
     await project_service.authorize_project_access(auth, credentials.project_id)
@@ -101,13 +102,14 @@ async def list_credential_voices(
     api_key = await credentials_service.get_decrypted_api_key(
         credentials_id, credentials.project_id
     )
-    voices = await list_voices(api_key)
+    voices = await list_voices(api_key, search=search)
     return [VoiceListItem(id=v.id, name=v.name, preview_url=v.preview_url) for v in voices]
 
 
 @router.get("/providers/{provider_name}/system-voices", response_model=list[VoiceListItem])
 async def list_system_voices(
     provider_name: str,
+    search: str | None = Query(default=None, description="Filter ElevenLabs voices"),
     current_user: User = Depends(get_current_user),
 ) -> list[VoiceListItem]:
     """List the voices available to the platform's system key for a voice provider.
@@ -132,5 +134,5 @@ async def list_system_voices(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="System voice key is not configured",
         )
-    voices = await list_voices(api_key)
+    voices = await list_voices(api_key, search=search)
     return [VoiceListItem(id=v.id, name=v.name, preview_url=v.preview_url) for v in voices]
