@@ -35,14 +35,18 @@ class VoiceOutputConfig(DTOModel):
 
 
 class WorkflowAvatarConfig(DTOModel):
-    """Workflow-global avatar persona. Set in the editor header, stored in
-    ``workflow.config["avatar"]``. Avatars are BYO-key only (credential_id)."""
+    """Workflow-global avatar persona (the face only). Set in the editor header, stored in
+    ``workflow.config["avatar"]``. Avatars are BYO-key only (credential_id).
+
+    The avatar runs in audio-passthrough mode and lip-syncs to the agent node's own
+    realtime ElevenLabs voice, so ``voice_id``/``voice_name`` are vestigial (kept for
+    backward compatibility with stored configs; not used to synthesize anything)."""
 
     provider: str
     avatar_model: str
     avatar_id: str | None = None
-    voice_id: str | None = None
-    voice_name: str | None = None  # display-only, kept so the UI can render it
+    voice_id: str | None = None  # vestigial: anam TTS is no longer used
+    voice_name: str | None = None  # vestigial display-only
     credential_id: str | None = None
 
 

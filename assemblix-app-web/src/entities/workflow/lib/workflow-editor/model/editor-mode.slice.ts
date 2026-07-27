@@ -111,7 +111,6 @@ export const selectAvatarConfig = (state: { editorMode: EditorModeState }) =>
 export const selectHasAvatarConfig = (state: {
   editorMode: EditorModeState;
 }) =>
-  Boolean(
-    state.editorMode.avatarConfig?.avatarId &&
-      state.editorMode.avatarConfig?.voiceId
-  );
+  // Audio passthrough: only the face (avatarId) is configured here; the voice lives
+  // on the agent node, so the avatar persona is "set" once an avatar is picked.
+  Boolean(state.editorMode.avatarConfig?.avatarId);

@@ -53,7 +53,7 @@ export const DebugPanel = ({ workflow }: DebugPanelProps) => {
   } = useWorkflowDebug({
     workflow,
     projectId: currentProjectId || undefined,
-    onStreamDelta: hasAvatar ? avatarSession.onDelta : undefined,
+    onAudioDelta: hasAvatar ? avatarSession.onAudioChunk : undefined,
     onAvatarNodeComplete: hasAvatar
       ? avatarSession.onAvatarNodeComplete
       : undefined,
@@ -177,25 +177,14 @@ export const DebugPanel = ({ workflow }: DebugPanelProps) => {
               className="w-full aspect-video rounded-lg bg-black object-cover"
             />
             {avatarSession.isConnected ? (
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="flex-1"
-                  onClick={() =>
-                    avatarSession.testSpeak(t("debug.avatarTestPhrase"))
-                  }
-                >
-                  {t("debug.avatarTestSpeak")}
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => avatarSession.disconnect()}
-                >
-                  {t("debug.avatarDisconnect")}
-                </Button>
-              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="w-full"
+                onClick={() => avatarSession.disconnect()}
+              >
+                {t("debug.avatarDisconnect")}
+              </Button>
             ) : (
               <Button
                 variant="outline"

@@ -24,8 +24,12 @@ OnAudio = Callable[..., Awaitable[None]]
 
 
 def _voice_ready(cfg: AgentNodeConfig) -> bool:
+    # "avatar" reuses the realtime-voice path: the synthesized PCM is streamed to the
+    # avatar (anam audio passthrough) instead of / in addition to the local player.
     v = cfg.voice
-    return bool(cfg.output_type == "voice" and v and v.voice_id and v.model and v.provider)
+    return bool(
+        cfg.output_type in ("voice", "avatar") and v and v.voice_id and v.model and v.provider
+    )
 
 
 def should_stream_voice(

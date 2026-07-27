@@ -1,5 +1,8 @@
-"""Avatar session orchestration: build the persona from the workflow-global
-avatar config, resolve the BYO key, and mint a provider session token."""
+"""Avatar session orchestration: build the (audio-passthrough) persona from the
+workflow-global avatar config, resolve the BYO key, and mint a provider session token.
+
+The avatar only renders a face and lip-syncs to audio the client pushes (our own
+ElevenLabs PCM from the agent node), so the persona carries no voice/LLM of its own."""
 
 from __future__ import annotations
 
@@ -14,8 +17,6 @@ from assemblix_api.schemas.workflow import parse_avatar_config
 from assemblix_api.services.credentials_service import CredentialsService
 from assemblix_api.services.project_service import ProjectService
 from assemblix_api.services.workflow_service import WorkflowService
-
-_CUSTOMER_LLM_ID = "CUSTOMER_CLIENT_V1"  # disables anam's brain; we push text
 
 
 class AvatarService:
@@ -50,12 +51,13 @@ class AvatarService:
                 detail="This workflow has no avatar configured",
             )
 
-        # anam rejects an under-defined persona (it mints a now-unsupported legacy
-        # token), so a real avatar and voice must both be selected.
-        if not avatar.avatar_id or not avatar.voice_id:
+        # Audio-passthrough persona only renders the face; the voice is our own
+        # ElevenLabs PCM streamed in from the agent node. So only the avatar must be
+        # selected — no anam voiceId/llmId (those drove anam's own TTS/brain, now unused).
+        if not avatar.avatar_id:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Select both an avatar and a voice for this workflow's avatar",
+                detail="Select an avatar for this workflow's avatar",
             )
 
         api_key = await self._credentials.get_avatar_api_key_with_fallback(
@@ -64,12 +66,12 @@ class AvatarService:
             avatar_provider=avatar.provider,
         )
 
+        # enableAudioPassthrough tells anam to lip-sync to the audio we push
+        # (client-side createAgentAudioInputStream) instead of synthesizing its own.
         persona_config = {
-            "name": "Assemblix",
             "avatarId": avatar.avatar_id,
             "avatarModel": avatar.avatar_model,
-            "voiceId": avatar.voice_id,
-            "llmId": _CUSTOMER_LLM_ID,
+            "enableAudioPassthrough": True,
         }
         persona_config = {k: v for k, v in persona_config.items() if v is not None}
 

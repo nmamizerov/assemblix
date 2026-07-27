@@ -1,36 +1,39 @@
 import { createClient, type AnamClient } from "@anam-ai/js-sdk";
 
-import type { AvatarRenderer, AvatarTalkStream } from "./types";
+import type { AvatarAudioStream, AvatarRenderer } from "./types";
 
-// Anam's client methods (streamMessageChunk/endMessage/stopStreaming) return
-// Promise<void>; the AvatarRenderer interface is fire-and-forget, so we don't
-// await them here, but rejections are still logged instead of swallowed.
-const fireAndForget = (promise: Promise<void>): void => {
-  promise.catch((error: unknown) => {
-    console.error("anam avatar stream error", error);
-  });
-};
+// Matches the backend realtime PCM wire format (`pcm_16000`): 16-bit signed
+// little-endian, 16 kHz, mono. sendAudioChunk accepts the base64 string as-is.
+const AUDIO_CONFIG = {
+  encoding: "pcm_s16le",
+  sampleRate: 16000,
+  channels: 1,
+} as const;
 
 export const createAnamRenderer = (): AvatarRenderer => {
   let client: AnamClient | null = null;
 
   return {
     async connect(sessionToken, videoEl) {
-      client = createClient(sessionToken);
+      // disableInputAudio: we drive the avatar with our own audio (passthrough),
+      // so anam must not capture the microphone or synthesize its own voice.
+      client = createClient(sessionToken, { disableInputAudio: true });
       videoEl.id = videoEl.id || "anam-avatar-video";
       await client.streamToVideoElement(videoEl.id);
     },
-    speak(): AvatarTalkStream {
+    speak(): AvatarAudioStream {
       if (!client) throw new Error("Anam renderer not connected");
-      const stream = client.createTalkMessageStream();
+      const stream = client.createAgentAudioInputStream(AUDIO_CONFIG);
       return {
-        chunk: (text) => fireAndForget(stream.streamMessageChunk(text, false)),
-        end: () => fireAndForget(stream.endMessage()),
+        chunk: (base64Pcm) => stream.sendAudioChunk(base64Pcm),
+        end: () => stream.endSequence(),
       };
     },
     disconnect() {
       if (!client) return;
-      fireAndForget(client.stopStreaming());
+      client.stopStreaming().catch((error: unknown) => {
+        console.error("anam avatar stop error", error);
+      });
       client = null;
     },
   };

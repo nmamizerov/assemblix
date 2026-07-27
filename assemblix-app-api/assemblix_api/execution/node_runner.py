@@ -87,6 +87,7 @@ class NodeRunner:
                     node_id=node_id,
                     audio=base64.b64encode(pcm).decode("ascii"),
                     alignment=alignment,
+                    avatar=is_avatar,
                 )
 
             node_input.on_audio = _audio_sink

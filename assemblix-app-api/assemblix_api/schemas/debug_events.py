@@ -54,6 +54,9 @@ class AudioDeltaEventData(DTOModel):
     audio: str  # base64-encoded PCM chunk
     format: str = "pcm_16000"
     alignment: AlignmentData | None = None
+    # True when the chunk comes from an agent node with output_type=="avatar": the client
+    # feeds these into the avatar SDK's audio-passthrough stream instead of the local player.
+    avatar: bool = False
 
 
 class StepStartEventData(DTOModel):

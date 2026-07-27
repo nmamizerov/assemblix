@@ -933,8 +933,9 @@ export const AgentNodeForm = ({
                 </>
               )}
 
-              {/* Avatar config is workflow-global (set once in the editor header,
-                  not per node) — only surface a warning here if it's missing. */}
+              {/* Avatar: the face is workflow-global (set once in the editor header),
+                  but the voice is per-node — the avatar lip-syncs to this realtime
+                  ElevenLabs voice via audio passthrough. */}
               {formData.outputType === "avatar" && (
                 <>
                   {!hasAvatarConfig && (
@@ -942,9 +943,15 @@ export const AgentNodeForm = ({
                       {t("nodeForms.agent.avatarNotConfigured")}
                     </p>
                   )}
-                  {!(formData.stream ?? false) && (
+                  <VoiceOutputPicker
+                    value={formData.voice}
+                    onChange={(voice) =>
+                      setFormData((prev) => ({ ...prev, voice }))
+                    }
+                  />
+                  {!formData.voice?.realtime && (
                     <p className="text-xs text-amber-600">
-                      {t("nodeForms.agent.avatarStreamHint")}
+                      {t("nodeForms.agent.avatarRealtimeHint")}
                     </p>
                   )}
                 </>
