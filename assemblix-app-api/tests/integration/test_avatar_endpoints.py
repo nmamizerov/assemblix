@@ -83,7 +83,7 @@ async def test_list_credential_voices(client, auth_user, auth_headers, mocker, d
 
 
 async def test_mint_workflow_session(client, auth_user, auth_headers, mocker, db_session) -> None:
-    """A fully-configured avatar (avatarId + voiceId) mints a token with a full persona."""
+    """A selected avatar mints an audio-passthrough persona (face only, no anam voice/LLM)."""
     # Arrange
     cred = await _make_credential(db_session, auth_user.project_id)
     wf = await _make_workflow(
@@ -94,7 +94,6 @@ async def test_mint_workflow_session(client, auth_user, auth_headers, mocker, db
                 "provider": "anam",
                 "avatarModel": "cara-4",
                 "avatarId": "avatar-uuid",
-                "voiceId": "voice-uuid",
                 "credentialId": str(cred.id),
             }
         },
@@ -115,11 +114,12 @@ async def test_mint_workflow_session(client, auth_user, auth_headers, mocker, db
     body = resp.json()
     assert body["provider"] == "anam"
     assert body["sessionToken"] == "sess-xyz"
-    # The persona is fully defined (avatar + voice + client-brain), so anam does
-    # not fall back to a legacy token.
+    # Audio passthrough: the persona renders only the face and lip-syncs to our own audio,
+    # so it carries no anam voiceId / llmId.
     assert captured["persona"]["avatarId"] == "avatar-uuid"
-    assert captured["persona"]["voiceId"] == "voice-uuid"
-    assert captured["persona"]["llmId"] == "CUSTOMER_CLIENT_V1"
+    assert captured["persona"]["enableAudioPassthrough"] is True
+    assert "voiceId" not in captured["persona"]
+    assert "llmId" not in captured["persona"]
 
 
 async def test_mint_session_400_when_no_avatar_config(
@@ -134,10 +134,10 @@ async def test_mint_session_400_when_no_avatar_config(
     assert resp.status_code == 400
 
 
-async def test_mint_session_400_when_avatar_or_voice_missing(
+async def test_mint_session_400_when_avatar_missing(
     client, auth_user, auth_headers, db_session
 ) -> None:
-    """An avatar config without a selected avatarId/voiceId → 400 (would be legacy)."""
+    """An avatar config without a selected avatarId → 400 (a voice is no longer required)."""
     # Arrange
     cred = await _make_credential(db_session, auth_user.project_id)
     wf = await _make_workflow(

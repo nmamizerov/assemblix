@@ -191,9 +191,9 @@ class AgentNode(BaseNode):
             context.organization_id, cfg.provider.value, hold_timeout=total_timeout
         ):
             # Format gate: stream only free-form text (parse_json False) when the node opts in.
-            # avatar output implies streaming — the avatar has no buffered path and only
-            # speaks streamed deltas, so it must stream regardless of the node's stream flag.
-            # The request-level gate already decided whether node_input.on_delta exists.
+            # avatar output implies streaming — it lip-syncs to realtime PCM that only the
+            # streaming voice path produces, so it must stream regardless of the node's stream
+            # flag. The request-level gate already decided whether node_input.on_delta exists.
             wants_stream = cfg.stream or cfg.output_type == "avatar"
             on_delta = node_input.on_delta if (wants_stream and not parse_json) else None
             on_audio = node_input.on_audio
@@ -370,6 +370,15 @@ class AgentNode(BaseNode):
                 errors.append(
                     "Streaming voice needs text output; set response_format=text or it runs buffered"
                 )
+
+        if self.typed_config.output_type == "avatar":
+            # The avatar lip-syncs to our streamed PCM, which only the realtime voice path
+            # produces — so a realtime voice must be fully selected on the node.
+            voice = self.typed_config.voice
+            if voice is None or not voice.voice_id or not voice.model:
+                errors.append("Avatar output needs a realtime voice selected")
+            elif not voice.realtime:
+                errors.append("Avatar output requires a realtime voice")
 
         return errors
 

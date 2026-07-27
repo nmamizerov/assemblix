@@ -38,17 +38,13 @@ export interface HistoryItem {
   audioUrl?: string;
 }
 
-export interface StreamDeltaPayload {
-  avatar: boolean;
-  delta: string;
-}
-
 interface UseWorkflowDebugProps {
   workflow?: Workflow;
   projectId?: string;
-  // Forwarded per STREAM_DELTA event (avatar mode: fed into the talk stream).
-  onStreamDelta?: (payload: StreamDeltaPayload) => void;
-  // Fired once the avatar-emitting node's step completes (closes the talk stream).
+  // Fed per avatar-flagged AUDIO_DELTA event (base64 PCM) into the avatar's
+  // audio-passthrough stream for lip-sync. Non-avatar audio goes to the local player.
+  onAudioDelta?: (base64Pcm: string) => void;
+  // Fired once the avatar-emitting node's step completes (closes the audio sequence).
   onAvatarNodeComplete?: () => void;
 }
 
@@ -57,8 +53,8 @@ export const useWorkflowDebug = (props?: UseWorkflowDebugProps) => {
   const [isRunning, setIsRunning] = useState(false);
   const sessionIdRef = useRef<string | null>(null);
   const clientIdRef = useRef<string | null>(null);
-  // Node ids that have emitted at least one avatar-flagged stream_delta in the
-  // current run, so step_complete can tell whether to close the talk stream.
+  // Node ids that have emitted at least one avatar-flagged audio_delta in the
+  // current run, so step_complete can tell whether to close the audio sequence.
   const avatarNodeIdsRef = useRef<Set<string>>(new Set());
   const [error, setError] = useState<string | null>(null);
   const [isSessionClosed, setIsSessionClosed] = useState(false);
@@ -231,20 +227,18 @@ export const useWorkflowDebug = (props?: UseWorkflowDebugProps) => {
                 avatarNodeIdsRef.current.clear();
                 break;
 
-              case "audio_delta":
-                // Realtime voice: play the streamed PCM chunk (best-effort).
-                pcmPlayer.pushChunk(eventData.data?.audio as string | undefined);
-                break;
-
-              case "stream_delta": {
-                // Text-delta from a streaming agent node. Existing consumers
-                // (e.g. ExecutionViewer) read it off `history[].events`; here we
-                // additionally forward avatar-flagged deltas for lip-sync.
+              case "audio_delta": {
+                // Realtime PCM chunk. Avatar-flagged chunks lip-sync (and play) via the
+                // avatar SDK; plain voice chunks play on the local Web Audio player.
+                const audio = eventData.data?.audio as string | undefined;
                 const avatar = Boolean(eventData.data?.avatar);
-                const delta = (eventData.data?.delta as string) || "";
                 const nodeId = eventData.data?.node_id as string | undefined;
-                if (avatar && nodeId) avatarNodeIdsRef.current.add(nodeId);
-                if (delta) props?.onStreamDelta?.({ avatar, delta });
+                if (avatar && audio) {
+                  if (nodeId) avatarNodeIdsRef.current.add(nodeId);
+                  props?.onAudioDelta?.(audio);
+                } else {
+                  pcmPlayer.pushChunk(audio);
+                }
                 break;
               }
 
@@ -268,8 +262,8 @@ export const useWorkflowDebug = (props?: UseWorkflowDebugProps) => {
                       status: "completed",
                     }),
                   );
-                  // The avatar-emitting node finished its step: close the talk
-                  // stream so the renderer knows the utterance ended.
+                  // The avatar-emitting node finished its step: close the audio
+                  // sequence so the renderer knows the utterance ended.
                   if (avatarNodeIdsRef.current.delete(nodeId)) {
                     props?.onAvatarNodeComplete?.();
                   }
@@ -345,7 +339,7 @@ export const useWorkflowDebug = (props?: UseWorkflowDebugProps) => {
         }
       }
     },
-    [dispatch, props?.onStreamDelta, props?.onAvatarNodeComplete],
+    [dispatch, props?.onAudioDelta, props?.onAvatarNodeComplete],
   );
 
   const handleRunError = useCallback((err: unknown) => {

@@ -142,6 +142,7 @@ class DebugEventManager:
         node_id: str,
         audio: str,
         alignment: AlignmentData | None = None,
+        avatar: bool = False,
     ) -> None:
         """Emit a live-only PCM audio chunk from a streaming voice agent node.
 
@@ -149,7 +150,11 @@ class DebugEventManager:
         starves cursor replay of text/control events.
         """
         event_data = AudioDeltaEventData(
-            node_id=node_id, step_number=step_number, audio=audio, alignment=alignment
+            node_id=node_id,
+            step_number=step_number,
+            audio=audio,
+            alignment=alignment,
+            avatar=avatar,
         )
         event = DebugEvent(
             event_type=DebugEventType.AUDIO_DELTA,
