@@ -24,9 +24,7 @@ async def test_emit_audio_delta_sets_avatar_flag() -> None:
     queue = mgr.create_stream(execution_id)
 
     # Act
-    await mgr.emit_audio_delta(
-        execution_id, step_number=1, node_id="n1", audio="AAAA", avatar=True
-    )
+    await mgr.emit_audio_delta(execution_id, step_number=1, node_id="n1", audio="AAAA", avatar=True)
     event = await queue.get()
 
     # Assert
