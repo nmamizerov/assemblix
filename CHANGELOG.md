@@ -5,6 +5,14 @@ All notable changes to this project are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.24](https://github.com/nmamizerov/assemblix/compare/v0.2.23...v0.2.24) (2026-07-27)
+
+
+### Features
+
+* **avatar:** lip-sync via ElevenLabs audio passthrough (anam) ([4816d93](https://github.com/nmamizerov/assemblix/commit/4816d93e1068529fb293f77d2dc76438f4c05f21))
+* **avatar:** lip-sync via ElevenLabs audio passthrough (anam) ([b8a8a30](https://github.com/nmamizerov/assemblix/commit/b8a8a3071a166bbd524e2ea666668b12ae9c4bec))
+
 ## [0.2.23](https://github.com/nmamizerov/assemblix/compare/v0.2.22...v0.2.23) (2026-07-22)
 
 
