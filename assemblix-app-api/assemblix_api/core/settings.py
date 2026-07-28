@@ -241,6 +241,11 @@ class Settings(BaseSettings):
     yandex_stt_api_base_url: str = os.getenv(
         "YANDEX_STT_API_BASE_URL", "https://stt.api.cloud.yandex.net/speech/v1"
     )
+    # SpeechKit v3 realtime synthesis is gRPC ("host:port"), not REST. Override for a
+    # proxy/gateway.
+    yandex_tts_v3_grpc_endpoint: str = os.getenv(
+        "YANDEX_TTS_V3_GRPC_ENDPOINT", "tts.api.cloud.yandex.net:443"
+    )
 
     @field_validator("voice_realtime_chunk_schedule", mode="before")
     @classmethod

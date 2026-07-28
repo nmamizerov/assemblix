@@ -14,6 +14,22 @@
       "description": "Yandex SpeechKit short-audio speech recognition (≤ 1 MB / 30 s).",
       "capability": "transcription",
       "route": "transcription"
+    },
+    {
+      "id": "yandex-tts-v3",
+      "label": "SpeechKit v3 (Realtime, natural intonation)",
+      "description": "Yandex SpeechKit v3 realtime streaming, synthesized sentence-by-sentence for the most natural Russian prosody.",
+      "capability": "realtime",
+      "route": "realtime",
+      "cost_per_char": 0.0000075
+    },
+    {
+      "id": "yandex-tts-v3-stream",
+      "label": "SpeechKit v3 (Realtime, low latency)",
+      "description": "Yandex SpeechKit v3 bidirectional streaming for the lowest time-to-first-audio.",
+      "capability": "realtime",
+      "route": "realtime",
+      "cost_per_char": 0.0000075
     }
   ]
 }
