@@ -137,15 +137,21 @@ export const VoiceOutputPicker = ({
       : true
     : false;
 
-  const usingSystemKey =
-    Boolean(provider) && !value?.credentialId && hasVoiceSystemKey;
+  // Fetch the provider's voices whenever no personal credential is chosen. For
+  // key-listed providers (ElevenLabs) this needs a system key and 503s without
+  // one; for static-catalog providers (Yandex) it always returns the catalog.
+  // Availability is therefore driven by what actually comes back — not by the
+  // system-key config flag, which flips to false once serverConfig loads and
+  // would otherwise unmount a picker whose voices already arrived.
+  const systemVoicesEnabled = Boolean(provider) && !value?.credentialId;
+  const usingSystemKey = systemVoicesEnabled && hasVoiceSystemKey;
   const { data: systemVoices = [], isLoading: isLoadingSystemVoices } =
     useGetSystemVoicesQuery(
       {
         providerName: provider ?? "",
         search: debouncedVoiceSearch.trim() || undefined,
       },
-      { skip: !usingSystemKey },
+      { skip: !systemVoicesEnabled },
     );
   const availableVoices = value?.credentialId ? credentialVoices : systemVoices;
   const isLoadingVoices = value?.credentialId
@@ -233,7 +239,10 @@ export const VoiceOutputPicker = ({
         </Select>
       </div>
 
-      {provider && (value?.credentialId || usingSystemKey) && (
+      {provider &&
+        (value?.credentialId ||
+          usingSystemKey ||
+          availableVoices.length > 0) && (
         <div className="space-y-2">
           <Label className="text-xs">{t("nodeForms.end.voice")}</Label>
           <Select
