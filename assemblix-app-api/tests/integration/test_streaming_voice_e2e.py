@@ -136,9 +136,7 @@ async def test_non_stream_voice_has_no_audio_delta(
 
     monkeypatch.setattr(get_settings(), "system_elevenlabs_api_key", "xi-system")
     mock_llm.set_response("Hi there.")
-    ws = mocker.patch(
-        "assemblix_api.external.voice.realtime_dispatch.RealtimeTTSSession"
-    )
+    ws = mocker.patch("assemblix_api.external.voice.realtime_dispatch.RealtimeTTSSession")
     setup = await _setup(api_client)
 
     # Act
