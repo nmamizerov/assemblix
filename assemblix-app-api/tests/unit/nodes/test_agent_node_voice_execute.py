@@ -55,7 +55,7 @@ async def test_live_voice_tees_and_meters(mock_llm, mock_tts_ws, mocker):
     mock_llm.set_stream(["Hello ", "world."])
     mock_tts_ws.script_audio([(b"\x01", None)])
     mocker.patch(
-        "assemblix_api.nodes.agent_voice.RealtimeTTSSession",
+        "assemblix_api.external.voice.realtime_dispatch.RealtimeTTSSession",
         lambda **kw: RealtimeTTSSession(**{**kw, "connect": mock_tts_ws.connect}),
     )
     context = make_context(

@@ -13,7 +13,10 @@ from uuid import UUID
 
 from assemblix_api.core.settings import get_settings
 from assemblix_api.external.voice.pricing import compute_tts_cost
-from assemblix_api.external.voice.realtime import RealtimeTTSSession
+from assemblix_api.external.voice.realtime_dispatch import (
+    RealtimeSession,
+    create_realtime_session,
+)
 from assemblix_api.external.voice.synthesis import synthesize
 from assemblix_api.external.voice.voice_catalog import has_realtime_route
 from assemblix_api.schemas.execution import ExecutionContext
@@ -63,11 +66,12 @@ async def open_voice_session(
     *,
     on_delta: OnDelta,
     on_audio: OnAudio,
-) -> tuple[RealtimeTTSSession, OnDelta, bool]:
-    """Open a live WS session; return (session, tee_on_delta, is_system_key)."""
+) -> tuple[RealtimeSession, OnDelta, bool]:
+    """Open a live streaming session; return (session, tee_on_delta, is_system_key)."""
     assert cfg.voice is not None
     api_key, is_system_key = await _resolve_key(cfg, context)
-    session = RealtimeTTSSession(
+    session = create_realtime_session(
+        provider=cfg.voice.provider,
         api_key=api_key,
         voice_id=cfg.voice.voice_id,  # type: ignore[arg-type]
         model=cfg.voice.model,
