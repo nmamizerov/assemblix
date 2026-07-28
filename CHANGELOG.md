@@ -5,6 +5,19 @@ All notable changes to this project are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.25](https://github.com/nmamizerov/assemblix/compare/v0.2.24...v0.2.25) (2026-07-28)
+
+
+### Features
+
+* **voice:** Yandex SpeechKit v3 realtime TTS for avatar lip-sync ([4c1b00d](https://github.com/nmamizerov/assemblix/commit/4c1b00d2a8f8d71cbae80d89dac269c0fbf40bb0))
+* **voice:** Yandex SpeechKit v3 realtime TTS for avatar lip-sync ([a435ecd](https://github.com/nmamizerov/assemblix/commit/a435ecde869e5d36fe0f0b5ac4f2a8d755cb61d5))
+
+
+### Bug Fixes
+
+* **voice:** render voice picker for static-catalog providers (Yandex) ([cba86c3](https://github.com/nmamizerov/assemblix/commit/cba86c386a675fcf566bcbba54d25c4c89c77826))
+
 ## [0.2.24](https://github.com/nmamizerov/assemblix/compare/v0.2.23...v0.2.24) (2026-07-27)
 
 
