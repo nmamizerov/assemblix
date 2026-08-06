@@ -1475,7 +1475,13 @@
       "you": "You",
       "agent": "Agent",
       "firstAudio": "First audio in {{ms}} ms",
-      "failed": "Call failed: {{reason}}"
+      "errors": {
+        "micDenied": "Microphone access was denied — allow it in the browser and try again",
+        "micMissing": "No microphone found",
+        "micFailed": "Could not open the microphone",
+        "timeout": "The call did not connect in time",
+        "connectFailed": "Could not connect the call"
+      }
     },
     "errors": {
       "nameRequired": "Name is required",

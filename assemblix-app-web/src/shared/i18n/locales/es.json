@@ -1475,7 +1475,13 @@
       "you": "Tú",
       "agent": "Agente",
       "firstAudio": "Primer audio en {{ms}} ms",
-      "failed": "La llamada falló: {{reason}}"
+      "errors": {
+        "micDenied": "Se denegó el acceso al micrófono: permítelo en el navegador e inténtalo de nuevo",
+        "micMissing": "No se encontró ningún micrófono",
+        "micFailed": "No se pudo abrir el micrófono",
+        "timeout": "La llamada no se conectó a tiempo",
+        "connectFailed": "No se pudo conectar la llamada"
+      }
     },
     "errors": {
       "nameRequired": "El nombre es obligatorio",

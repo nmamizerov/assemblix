@@ -13,6 +13,18 @@ const SAMPLE_RATE = 24000;
 // data: URL, which addModule rejects under a strict CSP and on some browsers.
 const WORKLET_URL = "/pcm-recorder.worklet.js";
 
+// A call that has not gone live by now is stuck — usually a microphone prompt
+// nobody answered, or a WebSocket the proxy never upgraded. Failing loudly beats
+// a spinner that turns forever.
+const CONNECT_TIMEOUT_MS = 15000;
+
+const micErrorKey = (cause: unknown): string => {
+  const name = cause instanceof Error ? cause.name : "";
+  if (name === "NotAllowedError") return "micDenied";
+  if (name === "NotFoundError") return "micMissing";
+  return "micFailed";
+};
+
 export type CallStatus = "idle" | "connecting" | "live" | "ending";
 
 export interface TranscriptLine {
@@ -42,8 +54,11 @@ export const useVoiceCall = (voiceAgentId: string): UseVoiceCallResult => {
   const socketRef = useRef<WebSocket | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const ctxRef = useRef<AudioContext | null>(null);
+  const watchdogRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const teardown = useCallback(() => {
+    if (watchdogRef.current) clearTimeout(watchdogRef.current);
+    watchdogRef.current = null;
     socketRef.current?.close();
     socketRef.current = null;
     streamRef.current?.getTracks().forEach((track) => track.stop());
@@ -58,6 +73,8 @@ export const useVoiceCall = (voiceAgentId: string): UseVoiceCallResult => {
     (frame: Record<string, unknown>) => {
       switch (frame.type) {
         case "session.ready":
+          if (watchdogRef.current) clearTimeout(watchdogRef.current);
+          watchdogRef.current = null;
           setStatus("live");
           break;
         case "transcript": {
@@ -94,13 +111,28 @@ export const useVoiceCall = (voiceAgentId: string): UseVoiceCallResult => {
     setTranscript([]);
     setFirstAudioMs(null);
 
+    // Ask for the microphone first, while the click gesture is still fresh, and
+    // before a token is minted that a denied prompt would waste.
+    let stream: MediaStream;
     try {
-      const { token } = await createSession(voiceAgentId).unwrap();
-
-      const stream = await navigator.mediaDevices.getUserMedia({
+      stream = await navigator.mediaDevices.getUserMedia({
         audio: { echoCancellation: true, noiseSuppression: true },
       });
       streamRef.current = stream;
+    } catch (cause) {
+      console.error(cause);
+      setError(micErrorKey(cause));
+      teardown();
+      return;
+    }
+
+    watchdogRef.current = setTimeout(() => {
+      setError("timeout");
+      teardown();
+    }, CONNECT_TIMEOUT_MS);
+
+    try {
+      const { token } = await createSession(voiceAgentId).unwrap();
 
       const ctx = new AudioContext({ sampleRate: SAMPLE_RATE });
       ctxRef.current = ctx;
@@ -120,7 +152,7 @@ export const useVoiceCall = (voiceAgentId: string): UseVoiceCallResult => {
         }
         handleControlFrame(JSON.parse(event.data));
       };
-      socket.onerror = () => setError("connection");
+      socket.onerror = () => setError("connectFailed");
       socket.onclose = () => teardown();
 
       const recorder = new AudioWorkletNode(ctx, "pcm-recorder");
@@ -135,7 +167,7 @@ export const useVoiceCall = (voiceAgentId: string): UseVoiceCallResult => {
       recorder.connect(muted).connect(ctx.destination);
     } catch (cause) {
       console.error(cause);
-      setError(cause instanceof Error ? cause.message : "call_failed");
+      setError("connectFailed");
       teardown();
     }
   }, [createSession, handleControlFrame, player, status, teardown, voiceAgentId]);

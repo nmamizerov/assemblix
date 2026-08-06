@@ -205,7 +205,7 @@ const VoiceAgentEditor = ({ voiceAgent }: VoiceAgentEditorProps) => {
 
           {call.error && (
             <p className="text-sm text-destructive">
-              {t("voiceAgents.testCall.failed", { reason: call.error })}
+              {t(`voiceAgents.testCall.errors.${call.error}`)}
             </p>
           )}
 
