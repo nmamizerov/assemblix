@@ -16,11 +16,16 @@ import { cn } from "@/shared/lib/utils";
 import {
   useGetVoiceProvidersQuery,
   useGetVoiceProviderModelsQuery,
+  useGetSystemVoicesQuery,
 } from "@/entities/voice-model";
+import {
+  CredentialSelect,
+  getCredentialTypeForProvider,
+} from "@/entities/credential";
 import { useGetKnowledgeBasesQuery } from "@/entities/knowledge-base";
 import { useGetWorkflowsQuery } from "@/entities/workflow";
 import { selectCurrentProjectId } from "@/entities/organization";
-import { applyProviderChange } from "../lib/voice-agent-form";
+import { applyProviderChange, LANGUAGE_OPTIONS } from "../lib/voice-agent-form";
 import type { DraftValidation } from "../lib/voice-agent-form";
 import type { VoiceAgentDraft } from "../model/types";
 
@@ -59,6 +64,11 @@ export const VoiceAgentForm = ({ draft, errors, onChange }: VoiceAgentFormProps)
     { projectId: currentProjectId! },
     { skip: !currentProjectId }
   );
+  const { data: voices = [], isLoading: isLoadingVoices } = useGetSystemVoicesQuery(
+    { providerName: draft.provider },
+    { skip: !draft.provider }
+  );
+  const credentialType = getCredentialTypeForProvider(draft.provider);
 
   const handleField = <K extends keyof VoiceAgentDraft>(
     field: K,
@@ -69,6 +79,10 @@ export const VoiceAgentForm = ({ draft, errors, onChange }: VoiceAgentFormProps)
 
   const handleProviderChange = (provider: string) => {
     onChange(applyProviderChange(draft, provider));
+  };
+
+  const handleCredentialChange = (credentialId: string) => {
+    handleField("credentialId", credentialId || null);
   };
 
   const handleWorkflowChange = (
@@ -201,24 +215,59 @@ export const VoiceAgentForm = ({ draft, errors, onChange }: VoiceAgentFormProps)
             )}
           </div>
           <div className="space-y-2">
-            <Label htmlFor="voice-agent-voice-id">
-              {t("voiceAgents.fields.voiceId")}
-            </Label>
-            <Input
-              id="voice-agent-voice-id"
+            <Label>{t("voiceAgents.fields.voiceId")}</Label>
+            <Select
               value={draft.voiceId}
-              onChange={(e) => handleField("voiceId", e.target.value)}
-            />
+              onValueChange={(value) => handleField("voiceId", value)}
+              disabled={!draft.provider || isLoadingVoices}
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue
+                  placeholder={
+                    isLoadingVoices
+                      ? t("voiceAgents.fields.loadingVoices")
+                      : t("voiceAgents.fields.selectVoice")
+                  }
+                />
+              </SelectTrigger>
+              <SelectContent>
+                {voices.map((voice) => (
+                  <SelectItem key={voice.id} value={voice.id}>
+                    {voice.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
           <div className="space-y-2">
-            <Label htmlFor="voice-agent-language">
-              {t("voiceAgents.fields.language")}
-            </Label>
-            <Input
-              id="voice-agent-language"
+            <Label>{t("voiceAgents.fields.language")}</Label>
+            <Select
               value={draft.language}
-              onChange={(e) => handleField("language", e.target.value)}
+              onValueChange={(value) => handleField("language", value)}
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder={t("voiceAgents.fields.selectLanguage")} />
+              </SelectTrigger>
+              <SelectContent>
+                {LANGUAGE_OPTIONS.map((language) => (
+                  <SelectItem key={language.code} value={language.code}>
+                    {language.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2 sm:col-span-2">
+            <Label>{t("voiceAgents.fields.credential")}</Label>
+            <CredentialSelect
+              selectedCredentialId={draft.credentialId ?? undefined}
+              onSelect={handleCredentialChange}
+              credentialType={credentialType}
+              placeholder={t("voiceAgents.fields.selectCredential")}
             />
+            <p className="text-xs text-muted-foreground">
+              {t("voiceAgents.fields.credentialCaption")}
+            </p>
           </div>
         </div>
       </section>

@@ -10,6 +10,26 @@ export interface DraftValidation {
 export const DEFAULT_PROVIDER = "openai";
 export const DEFAULT_MODEL = "gpt-realtime-2.1";
 
+// Working set of conversation languages. Labels are endonyms (the language's
+// own name for itself) so they need no translation — only the field label does.
+export const LANGUAGE_OPTIONS: { code: string; label: string }[] = [
+  { code: "ru", label: "Русский" },
+  { code: "en", label: "English" },
+  { code: "es", label: "Español" },
+  { code: "de", label: "Deutsch" },
+  { code: "fr", label: "Français" },
+  { code: "it", label: "Italiano" },
+  { code: "pt", label: "Português" },
+  { code: "pl", label: "Polski" },
+  { code: "tr", label: "Türkçe" },
+  { code: "nl", label: "Nederlands" },
+  { code: "ja", label: "日本語" },
+  { code: "ko", label: "한국어" },
+  { code: "zh", label: "中文" },
+  { code: "ar", label: "العربية" },
+  { code: "hi", label: "हिन्दी" },
+];
+
 export const emptyDraft = (): VoiceAgentDraft => ({
   name: "",
   description: "",
@@ -43,7 +63,9 @@ export const applyProviderChange = (
   provider: string
 ): VoiceAgentDraft => {
   if (provider === draft.provider) return draft;
-  return { ...draft, provider, model: "", voiceId: "" };
+  // A credential is provider-specific: leaving one behind on a switched
+  // provider is either a hard 400 or a silent fall-back to the system key.
+  return { ...draft, provider, model: "", voiceId: "", credentialId: null };
 };
 
 export const toCreateRequest = (

@@ -87,6 +87,7 @@ describe("voice agent form", () => {
     const draft = {
       ...emptyDraft(),
       voiceId: "alloy",
+      credentialId: "cred-1",
     };
 
     // Act
@@ -96,6 +97,7 @@ describe("voice agent form", () => {
     expect(switched.provider).toBe("gemini");
     expect(switched.model).toBe("");
     expect(switched.voiceId).toBe("");
+    expect(switched.credentialId).toBeNull();
     expect(validateDraft(switched).errors.model).toBeDefined();
 
     // Act — re-selecting the same provider is a no-op
