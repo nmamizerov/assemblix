@@ -1442,6 +1442,7 @@
     "fields": {
       "name": "Name",
       "systemPrompt": "System prompt",
+      "description": "Description",
       "firstMessage": "First message",
       "provider": "Provider",
       "selectProvider": "Select a provider",
@@ -1456,6 +1457,7 @@
       "turnWorkflow": "Per-turn workflow",
       "finalWorkflow": "Final workflow",
       "selectWorkflow": "Select a workflow",
+      "noWorkflow": "No workflow",
       "turnWorkflowCaption": "Runs in the background after every turn — it does not affect the conversation.",
       "finalWorkflowCaption": "Runs in the background after the call ends — it does not affect the conversation."
     },

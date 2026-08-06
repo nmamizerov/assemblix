@@ -29,6 +29,10 @@ import type { VoiceAgentDraft } from "../model/types";
 // author before the prompt grows large enough to hurt realtime latency.
 const KNOWLEDGE_CHAR_WARNING_LIMIT = 8000;
 
+// Radix Select reserves the empty string for "nothing selected", so an explicit
+// "no workflow" choice needs its own sentinel value.
+const NO_WORKFLOW = "__none__";
+
 interface VoiceAgentFormProps {
   draft: VoiceAgentDraft;
   errors: DraftValidation["errors"];
@@ -67,6 +71,13 @@ export const VoiceAgentForm = ({ draft, errors, onChange }: VoiceAgentFormProps)
     onChange(applyProviderChange(draft, provider));
   };
 
+  const handleWorkflowChange = (
+    field: "turnWorkflowId" | "finalWorkflowId",
+    value: string
+  ) => {
+    handleField(field, value === NO_WORKFLOW ? "" : value);
+  };
+
   const handleKnowledgeBaseToggle = (knowledgeBaseId: string, checked: boolean) => {
     const knowledgeBaseIds = checked
       ? [...draft.knowledgeBaseIds, knowledgeBaseId]
@@ -100,6 +111,16 @@ export const VoiceAgentForm = ({ draft, errors, onChange }: VoiceAgentFormProps)
           {errors.name && (
             <p className="text-xs text-destructive">{t(errors.name)}</p>
           )}
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="voice-agent-description">
+            {t("voiceAgents.fields.description")}
+          </Label>
+          <Input
+            id="voice-agent-description"
+            value={draft.description}
+            onChange={(e) => handleField("description", e.target.value)}
+          />
         </div>
         <div className="space-y-2">
           <Label htmlFor="voice-agent-prompt">
@@ -258,13 +279,16 @@ export const VoiceAgentForm = ({ draft, errors, onChange }: VoiceAgentFormProps)
           <div className="space-y-2">
             <Label>{t("voiceAgents.fields.turnWorkflow")}</Label>
             <Select
-              value={draft.turnWorkflowId}
-              onValueChange={(value) => handleField("turnWorkflowId", value)}
+              value={draft.turnWorkflowId || NO_WORKFLOW}
+              onValueChange={(value) => handleWorkflowChange("turnWorkflowId", value)}
             >
               <SelectTrigger className="w-full">
                 <SelectValue placeholder={t("voiceAgents.fields.selectWorkflow")} />
               </SelectTrigger>
               <SelectContent>
+                <SelectItem value={NO_WORKFLOW}>
+                  {t("voiceAgents.fields.noWorkflow")}
+                </SelectItem>
                 {workflows.map((workflow) => (
                   <SelectItem key={workflow.id} value={workflow.id}>
                     {workflow.name}
@@ -279,13 +303,16 @@ export const VoiceAgentForm = ({ draft, errors, onChange }: VoiceAgentFormProps)
           <div className="space-y-2">
             <Label>{t("voiceAgents.fields.finalWorkflow")}</Label>
             <Select
-              value={draft.finalWorkflowId}
-              onValueChange={(value) => handleField("finalWorkflowId", value)}
+              value={draft.finalWorkflowId || NO_WORKFLOW}
+              onValueChange={(value) => handleWorkflowChange("finalWorkflowId", value)}
             >
               <SelectTrigger className="w-full">
                 <SelectValue placeholder={t("voiceAgents.fields.selectWorkflow")} />
               </SelectTrigger>
               <SelectContent>
+                <SelectItem value={NO_WORKFLOW}>
+                  {t("voiceAgents.fields.noWorkflow")}
+                </SelectItem>
                 {workflows.map((workflow) => (
                   <SelectItem key={workflow.id} value={workflow.id}>
                     {workflow.name}

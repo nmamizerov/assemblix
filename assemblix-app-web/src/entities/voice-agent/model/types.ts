@@ -62,10 +62,8 @@ export interface VoiceAgentDraft {
   knowledgeBaseIds: string[];
   turnWorkflowId: string;
   finalWorkflowId: string;
-}
-
-export interface ConversationModel {
-  id: string;
-  label: string;
-  provider: string;
+  // Carried through untouched by the form so a load → save round trip does not
+  // drop config the UI does not expose.
+  credentialId: string | null;
+  params: Record<string, unknown>;
 }

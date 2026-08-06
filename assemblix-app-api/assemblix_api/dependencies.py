@@ -473,8 +473,9 @@ async def get_knowledge_base_service(
 
 async def get_voice_agent_service(
     voice_agent_repository: VoiceAgentRepository = Depends(get_voice_agent_repository),
+    workflow_repository: WorkflowRepository = Depends(get_workflow_repository),
 ) -> VoiceAgentService:
-    return VoiceAgentService(voice_agent_repository)
+    return VoiceAgentService(voice_agent_repository, workflow_repository)
 
 
 async def get_notification_channel_service(

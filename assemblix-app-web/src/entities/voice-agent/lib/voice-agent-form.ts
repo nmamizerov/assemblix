@@ -5,18 +5,25 @@ export interface DraftValidation {
   errors: Partial<Record<keyof VoiceAgentDraft, string>>;
 }
 
+// The backend rejects a config whose provider/model pair has no conversation
+// route, so a fresh draft must already carry a usable one.
+export const DEFAULT_PROVIDER = "openai";
+export const DEFAULT_MODEL = "gpt-realtime-2.1";
+
 export const emptyDraft = (): VoiceAgentDraft => ({
   name: "",
   description: "",
   systemPrompt: "",
   firstMessage: "",
   language: "ru",
-  provider: "",
-  model: "",
+  provider: DEFAULT_PROVIDER,
+  model: DEFAULT_MODEL,
   voiceId: "",
   knowledgeBaseIds: [],
   turnWorkflowId: "",
   finalWorkflowId: "",
+  credentialId: null,
+  params: {},
 });
 
 // Values are i18n keys, not copy — the component resolves them via t().
@@ -55,10 +62,10 @@ export const toCreateRequest = (
       provider: draft.provider,
       model: draft.model,
       voiceId: draft.voiceId || null,
-      credentialId: null,
+      credentialId: draft.credentialId,
       realtime: false,
     },
-    params: {},
+    params: draft.params,
     turnWorkflowId: draft.turnWorkflowId || null,
     finalWorkflowId: draft.finalWorkflowId || null,
   },

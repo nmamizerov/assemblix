@@ -1442,6 +1442,7 @@
     "fields": {
       "name": "Nombre",
       "systemPrompt": "Prompt del sistema",
+      "description": "Descripción",
       "firstMessage": "Primer mensaje",
       "provider": "Proveedor",
       "selectProvider": "Selecciona un proveedor",
@@ -1456,6 +1457,7 @@
       "turnWorkflow": "Workflow por turno",
       "finalWorkflow": "Workflow final",
       "selectWorkflow": "Selecciona un workflow",
+      "noWorkflow": "Sin workflow",
       "turnWorkflowCaption": "Se ejecuta en segundo plano tras cada turno — no afecta a la conversación.",
       "finalWorkflowCaption": "Se ejecuta en segundo plano al finalizar la llamada — no afecta a la conversación."
     },

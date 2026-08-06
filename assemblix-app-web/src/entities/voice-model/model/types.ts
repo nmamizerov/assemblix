@@ -11,7 +11,7 @@ export interface VoiceModelMetadata {
   label: string;
   description?: string | null;
   capability: VoiceCapability;
-  route: "transcription" | "completion" | "speech";
+  route: "transcription" | "completion" | "speech" | "conversation" | "realtime";
   costPerMinute?: number | null;
 }
 

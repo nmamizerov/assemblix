@@ -23,6 +23,17 @@ def _config(**overrides: Any) -> dict:
     return config
 
 
+async def _create_workflow(client, project_id: str, headers: dict, name: str = "Hook") -> str:
+    """Create an empty workflow and return its id."""
+    response = await client.post(
+        "/api/workflows/",
+        json={"projectId": project_id, "name": name, "nodes": [], "edges": []},
+        headers=headers,
+    )
+    assert response.status_code == 201, response.text
+    return response.json()["id"]
+
+
 async def test_voice_agent_lifecycle(client, auth_user, auth_headers) -> None:
     """Create → list → get → patch → delete, with the JSONB config round-tripping intact."""
     # Arrange
@@ -73,16 +84,30 @@ async def test_voice_agent_lifecycle(client, auth_user, auth_headers) -> None:
     assert patched.json()["config"]["voice"]["model"] == "gpt-realtime-2.1"
 
     # Act — patch config, attaching the analysis hooks
+    workflow_id = await _create_workflow(client, str(auth_user.project_id), auth_headers)
     reconfigured = await client.patch(
         f"/api/voice-agents/{agent_id}",
-        json={"config": _config(turnWorkflowId="a0000000-0000-0000-0000-000000000001")},
+        json={"config": _config(turnWorkflowId=workflow_id)},
         headers=auth_headers,
     )
 
     # Assert — hooks persist, name is untouched
     assert reconfigured.status_code == 200
-    assert reconfigured.json()["config"]["turnWorkflowId"] == "a0000000-0000-0000-0000-000000000001"
+    assert reconfigured.json()["config"]["turnWorkflowId"] == workflow_id
     assert reconfigured.json()["name"] == "Renamed"
+
+    # Act — clear the description with an explicit null
+    cleared = await client.patch(
+        f"/api/voice-agents/{agent_id}", json={"description": None}, headers=auth_headers
+    )
+
+    # Assert — an explicit null clears, an omitted field does not
+    assert cleared.status_code == 200
+    assert cleared.json()["description"] is None
+    kept = await client.patch(
+        f"/api/voice-agents/{agent_id}", json={"name": "Renamed again"}, headers=auth_headers
+    )
+    assert kept.json()["description"] is None
 
     # Act — delete
     deleted = await client.delete(f"/api/voice-agents/{agent_id}", headers=auth_headers)
@@ -135,6 +160,57 @@ async def test_voice_agent_rejects_invalid_config(client, auth_user, auth_header
         "/api/voice-agents/", params={"project_id": str(auth_user.project_id)}, headers=auth_headers
     )
     assert listed.json() == []
+
+
+async def test_voice_agent_rejects_hook_workflow_from_another_project(
+    client, auth_user, auth_headers, user_factory
+) -> None:
+    """Analysis hooks may not point at a workflow owned by a different project."""
+    # Arrange
+    outsider = await user_factory()
+    outsider_headers = {"Authorization": f"Bearer {outsider.token}"}
+    foreign_workflow_id = await _create_workflow(
+        client, str(outsider.project_id), outsider_headers, name="Foreign"
+    )
+    own_workflow_id = await _create_workflow(client, str(auth_user.project_id), auth_headers)
+
+    # Act — create with a foreign hook, then create a legitimate agent and try to patch it
+    rejected_create = await client.post(
+        "/api/voice-agents/",
+        json={
+            "projectId": str(auth_user.project_id),
+            "name": "Leaky",
+            "config": _config(finalWorkflowId=foreign_workflow_id),
+        },
+        headers=auth_headers,
+    )
+    created = await client.post(
+        "/api/voice-agents/",
+        json={
+            "projectId": str(auth_user.project_id),
+            "name": "Legit",
+            "config": _config(turnWorkflowId=own_workflow_id),
+        },
+        headers=auth_headers,
+    )
+    rejected_patch = await client.patch(
+        f"/api/voice-agents/{created.json()['id']}",
+        json={"config": _config(turnWorkflowId=foreign_workflow_id)},
+        headers=auth_headers,
+    )
+
+    # Assert — cross-project hooks are refused on both paths, same-project ones are fine
+    assert rejected_create.status_code == 400
+    assert "does not belong to this project" in rejected_create.json()["detail"]
+    assert created.status_code == 201
+    assert rejected_patch.status_code == 400
+
+    # Assert — the rejected create persisted nothing and the patch left the hook intact
+    listed = await client.get(
+        "/api/voice-agents/", params={"project_id": str(auth_user.project_id)}, headers=auth_headers
+    )
+    assert [a["name"] for a in listed.json()] == ["Legit"]
+    assert listed.json()[0]["config"]["turnWorkflowId"] == own_workflow_id
 
 
 async def test_voice_agent_is_scoped_to_its_project(

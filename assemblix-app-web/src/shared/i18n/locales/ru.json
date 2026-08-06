@@ -1448,6 +1448,7 @@
     "fields": {
       "name": "Название",
       "systemPrompt": "Системный промпт",
+      "description": "Описание",
       "firstMessage": "Первое сообщение",
       "provider": "Провайдер",
       "selectProvider": "Выберите провайдера",
@@ -1462,6 +1463,7 @@
       "turnWorkflow": "Воркфлоу на каждый ход",
       "finalWorkflow": "Итоговый воркфлоу",
       "selectWorkflow": "Выберите воркфлоу",
+      "noWorkflow": "Без воркфлоу",
       "turnWorkflowCaption": "Запускается в фоне после каждого хода — не влияет на разговор.",
       "finalWorkflowCaption": "Запускается в фоне после завершения звонка — не влияет на разговор."
     },

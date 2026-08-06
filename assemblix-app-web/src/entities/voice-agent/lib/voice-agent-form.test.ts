@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 
 import {
   applyProviderChange,
+  DEFAULT_MODEL,
+  DEFAULT_PROVIDER,
   emptyDraft,
   toCreateRequest,
   validateDraft,
@@ -12,10 +14,19 @@ describe("voice agent form", () => {
     // Arrange
     const draft = emptyDraft();
 
-    // Assert — an empty draft is not submittable
+    // Assert — only the fields a user must supply are missing; the seeded
+    // provider/model pair is one the backend accepts as a conversation route
     expect(validateDraft(draft).isValid).toBe(false);
     expect(validateDraft(draft).errors.systemPrompt).toBeDefined();
     expect(validateDraft(draft).errors.name).toBeDefined();
+    expect(validateDraft(draft).errors.provider).toBeUndefined();
+    expect(validateDraft(draft).errors.model).toBeUndefined();
+    expect(draft.provider).toBe(DEFAULT_PROVIDER);
+    expect(draft.model).toBe(DEFAULT_MODEL);
+    expect({ provider: draft.provider, model: draft.model }).toEqual({
+      provider: "openai",
+      model: "gpt-realtime-2.1",
+    });
 
     // Act — fill it in
     const filled = {
@@ -24,8 +35,6 @@ describe("voice agent form", () => {
       systemPrompt: "You are a clinic receptionist.",
       firstMessage: "Hello",
       language: "ru",
-      provider: "openai",
-      model: "gpt-realtime-2.1",
       voiceId: "alloy",
       turnWorkflowId: "wf-1",
     };
@@ -55,12 +64,28 @@ describe("voice agent form", () => {
     });
   });
 
+  it("carries config the form does not edit through to the request", () => {
+    // Arrange — fields only the API can set today
+    const draft = {
+      ...emptyDraft(),
+      name: "Receptionist",
+      systemPrompt: "You are a clinic receptionist.",
+      credentialId: "cred-1",
+      params: { vadSilenceMs: 500 },
+    };
+
+    // Act
+    const request = toCreateRequest(draft, "proj-1");
+
+    // Assert — a load → save round trip is lossless
+    expect(request.config.voice.credentialId).toBe("cred-1");
+    expect(request.config.params).toEqual({ vadSilenceMs: 500 });
+  });
+
   it("clears a stale model and voice when the provider changes", () => {
     // Arrange
     const draft = {
       ...emptyDraft(),
-      provider: "openai",
-      model: "gpt-realtime-2.1",
       voiceId: "alloy",
     };
 
