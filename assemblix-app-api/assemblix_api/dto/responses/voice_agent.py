@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from datetime import datetime
-from decimal import Decimal
 from uuid import UUID
 
 from pydantic import Field
@@ -20,6 +19,6 @@ class VoiceAgentResponse(DTOModel):
     config: VoiceAgentConfig = Field(description="Prompt, voice, knowledge and analysis hooks")
     is_active: bool = Field(description="Whether the agent can accept sessions")
     session_count: int = Field(description="Number of voice sessions started with this agent")
-    total_credits: Decimal = Field(description="Total credits consumed by this agent")
+    total_credits: float = Field(description="Total credits consumed by this agent")
     created_at: datetime = Field(description="Creation timestamp")
     updated_at: datetime = Field(description="Last update timestamp")
