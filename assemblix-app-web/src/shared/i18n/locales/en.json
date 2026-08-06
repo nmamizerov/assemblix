@@ -1471,7 +1471,11 @@
       "title": "Test call",
       "description": "Try a live call with this agent",
       "callButton": "Call",
-      "disabledTooltip": "Test calls are arriving in a later step"
+      "hangUp": "Hang up",
+      "you": "You",
+      "agent": "Agent",
+      "firstAudio": "First audio in {{ms}} ms",
+      "failed": "Call failed: {{reason}}"
     },
     "errors": {
       "nameRequired": "Name is required",

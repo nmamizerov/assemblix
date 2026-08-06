@@ -67,6 +67,21 @@ src/
 These are different entities with confusingly similar names. Check which one you are in
 before editing.
 
+### Browser audio (voice-agent test call)
+
+- `shared/lib/use-pcm-player.ts` — streaming PCM playback, shared by the workflow debug
+  panel and voice calls. Its `flush()` stops every already-scheduled source, which is what
+  makes barge-in work: an `AudioBufferSourceNode` plays to the end once started, so
+  dropping the schedule pointer alone leaves the agent talking over the user.
+- `entities/voice-agent/lib/use-voice-call.ts` — owns a call: mints a session token, opens
+  the WebSocket, streams microphone frames up and plays audio frames down.
+- `public/pcm-recorder.worklet.js` — microphone capture worklet, emitting ~200 ms PCM16
+  frames off the main thread. It lives in `public/` on purpose: importing it with `?url`
+  makes Vite inline it as a `data:` URL, which `audioWorklet.addModule()` rejects under a
+  strict CSP and on some browsers.
+- Nothing resamples audio. `new AudioContext({ sampleRate: 24000 })` makes the browser
+  deliver the provider's required rate natively, in both directions.
+
 ### RTK Query API pattern
 
 All endpoints use `baseApi.injectEndpoints()` from `shared/api/baseApi.ts`. New cache tag types must be registered in `baseApi`'s `tagTypes` array. Auth token, project ID, and language are injected via `prepareHeaders`.

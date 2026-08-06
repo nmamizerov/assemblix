@@ -65,6 +65,9 @@ export default defineConfig(({ mode }) => {
         "/api/": {
           target: proxyTarget,
           changeOrigin: true,
+          // ws:true is required for the voice-agent test call, which upgrades
+          // /api/voice-agents/sessions/{token}/stream to a WebSocket.
+          ws: true,
         },
         // Docs (MkDocs). Match only /docs/… (with slash) so the bare /docs is
         // left for the docsTrailingSlash redirect above; strip the /docs prefix

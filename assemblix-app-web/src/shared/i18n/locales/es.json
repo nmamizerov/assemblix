@@ -1471,7 +1471,11 @@
       "title": "Llamada de prueba",
       "description": "Prueba una llamada en vivo con este agente",
       "callButton": "Llamar",
-      "disabledTooltip": "Las llamadas de prueba llegarán en un paso posterior"
+      "hangUp": "Colgar",
+      "you": "Tú",
+      "agent": "Agente",
+      "firstAudio": "Primer audio en {{ms}} ms",
+      "failed": "La llamada falló: {{reason}}"
     },
     "errors": {
       "nameRequired": "El nombre es obligatorio",

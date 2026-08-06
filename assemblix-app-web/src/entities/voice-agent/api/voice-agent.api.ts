@@ -48,6 +48,16 @@ export const voiceAgentApi = baseApi.injectEndpoints({
       ],
     }),
 
+    createVoiceSession: build.mutation<
+      { token: string; expiresIn: number },
+      string
+    >({
+      query: (agentId) => ({
+        url: `/voice-agents/${agentId}/sessions`,
+        method: "POST",
+      }),
+    }),
+
     deleteVoiceAgent: build.mutation<void, string>({
       query: (id) => ({ url: `/voice-agents/${id}`, method: "DELETE" }),
       invalidatesTags: (_result, _error, id) => [
@@ -64,4 +74,5 @@ export const {
   useCreateVoiceAgentMutation,
   useUpdateVoiceAgentMutation,
   useDeleteVoiceAgentMutation,
+  useCreateVoiceSessionMutation,
 } = voiceAgentApi;

@@ -10,16 +10,12 @@ import {
   useDeleteVoiceAgentMutation,
   useGetVoiceAgentQuery,
   useUpdateVoiceAgentMutation,
+  useVoiceCall,
   validateDraft,
   VoiceAgentForm,
 } from "@/entities/voice-agent";
 import type { VoiceAgent, VoiceAgentDraft } from "@/entities/voice-agent";
 import { Button } from "@/shared/ui/button";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/shared/ui/tooltip";
 
 const draftFromVoiceAgent = (voiceAgent: VoiceAgent): VoiceAgentDraft => {
   const { config } = voiceAgent;
@@ -115,6 +111,7 @@ const VoiceAgentEditor = ({ voiceAgent }: VoiceAgentEditorProps) => {
   );
 
   const errors = validateDraft(draft).errors;
+  const call = useVoiceCall(voiceAgent.id);
 
   const handleSave = async () => {
     const { isValid } = validateDraft(draft);
@@ -190,19 +187,49 @@ const VoiceAgentEditor = ({ voiceAgent }: VoiceAgentEditorProps) => {
           <p className="text-sm text-muted-foreground">
             {t("voiceAgents.testCall.description")}
           </p>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <span className="inline-block w-full">
-                <Button disabled className="w-full">
-                  <Phone className="mr-2 h-4 w-4" />
-                  {t("voiceAgents.testCall.callButton")}
-                </Button>
-              </span>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>{t("voiceAgents.testCall.disabledTooltip")}</p>
-            </TooltipContent>
-          </Tooltip>
+          <Button
+            className="w-full"
+            variant={call.status === "live" ? "destructive" : "default"}
+            onClick={call.status === "idle" ? call.start : call.stop}
+            disabled={call.status === "connecting" || call.status === "ending"}
+          >
+            {call.status === "connecting" ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <Phone className="mr-2 h-4 w-4" />
+            )}
+            {call.status === "live"
+              ? t("voiceAgents.testCall.hangUp")
+              : t("voiceAgents.testCall.callButton")}
+          </Button>
+
+          {call.error && (
+            <p className="text-sm text-destructive">
+              {t("voiceAgents.testCall.failed", { reason: call.error })}
+            </p>
+          )}
+
+          {call.firstAudioMs !== null && (
+            <p className="text-xs text-muted-foreground">
+              {t("voiceAgents.testCall.firstAudio", { ms: call.firstAudioMs })}
+            </p>
+          )}
+
+          {call.transcript.length > 0 && (
+            <div className="max-h-72 space-y-2 overflow-y-auto rounded-md border border-border bg-muted/40 p-3">
+              {call.transcript.map((line, index) => (
+                <p key={index} className="text-sm">
+                  <span className="font-medium text-muted-foreground">
+                    {line.role === "user"
+                      ? t("voiceAgents.testCall.you")
+                      : t("voiceAgents.testCall.agent")}
+                    {": "}
+                  </span>
+                  <span className="text-foreground">{line.text}</span>
+                </p>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </div>
