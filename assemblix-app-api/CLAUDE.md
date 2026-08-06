@@ -69,6 +69,11 @@ Config (incl. `DATABASE_URL`, `JWT_SECRET_KEY`, `ENCRYPTION_KEY`) is read from t
 - `assemblix_api/oauth/` — OAuth provider registry (Google).
 - `assemblix_api/core/encryption.py` — Encryption service for credentials storage.
 - `assemblix_api/core/settings.py` — `Settings` class via pydantic-settings, cached with `@lru_cache`.
+- `assemblix_api/services/voice_agent_service.py` — Voice Agents: realtime conversational
+  agents. A voice agent has **no graph** — the conversation runs against a speech-to-speech
+  provider, and workflows attach only as observational analysis hooks referenced from its
+  JSONB `config`. Separate from voice-in-workflows (`nodes/transcribe_node.py`,
+  `nodes/agent_voice.py`), which is unchanged and independent.
 
 ## Key Rules
 

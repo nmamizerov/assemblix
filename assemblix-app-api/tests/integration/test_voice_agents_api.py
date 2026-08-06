@@ -93,3 +93,83 @@ async def test_voice_agent_lifecycle(client, auth_user, auth_headers) -> None:
         "/api/voice-agents/", params={"project_id": str(auth_user.project_id)}, headers=auth_headers
     )
     assert remaining.json() == []
+
+
+async def test_voice_agent_rejects_invalid_config(client, auth_user, auth_headers) -> None:
+    """A non-conversation model is a 400; an empty prompt is a 422 from the schema."""
+    # Arrange
+    not_a_conversation_model = _config(
+        voice={
+            "provider": "yandex",
+            "model": "yandex-tts-v3",
+            "voiceId": "alena",
+            "credentialId": None,
+            "realtime": True,
+        }
+    )
+    empty_prompt = _config(instructions=[])
+
+    # Act
+    bad_model = await client.post(
+        "/api/voice-agents/",
+        json={
+            "projectId": str(auth_user.project_id),
+            "name": "A",
+            "config": not_a_conversation_model,
+        },
+        headers=auth_headers,
+    )
+    no_prompt = await client.post(
+        "/api/voice-agents/",
+        json={"projectId": str(auth_user.project_id), "name": "B", "config": empty_prompt},
+        headers=auth_headers,
+    )
+
+    # Assert
+    assert bad_model.status_code == 400
+    assert "conversation" in bad_model.json()["detail"].lower()
+    assert no_prompt.status_code == 422
+
+    # Assert — a rejected create persists nothing
+    listed = await client.get(
+        "/api/voice-agents/", params={"project_id": str(auth_user.project_id)}, headers=auth_headers
+    )
+    assert listed.json() == []
+
+
+async def test_voice_agent_is_scoped_to_its_project(
+    client, auth_user, auth_headers, user_factory
+) -> None:
+    """An agent is invisible and unreachable outside its own project, and to anonymous callers."""
+    # Arrange
+    created = await client.post(
+        "/api/voice-agents/",
+        json={"projectId": str(auth_user.project_id), "name": "Private", "config": _config()},
+        headers=auth_headers,
+    )
+    agent_id = created.json()["id"]
+    outsider = await user_factory()
+    outsider_headers = {"Authorization": f"Bearer {outsider.token}"}
+
+    # Act
+    foreign_get = await client.get(f"/api/voice-agents/{agent_id}", headers=outsider_headers)
+    foreign_list = await client.get(
+        "/api/voice-agents/",
+        params={"project_id": str(auth_user.project_id)},
+        headers=outsider_headers,
+    )
+    anonymous = await client.get(f"/api/voice-agents/{agent_id}")
+
+    # Assert
+    assert foreign_get.status_code in (403, 404)
+    assert foreign_list.status_code in (403, 404)
+    assert anonymous.status_code == 401
+
+    # Assert — the outsider's own project is simply empty, not broken
+    own = await client.get(
+        "/api/voice-agents/",
+        params={"project_id": str(outsider.project_id)},
+        headers=outsider_headers,
+    )
+    assert own.status_code == 200
+    assert own.json() == []

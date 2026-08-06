@@ -13,17 +13,32 @@ from assemblix_api.dto.requests.voice_agent import (
     VoiceAgentCreateRequest,
     VoiceAgentUpdateRequest,
 )
+from assemblix_api.external.voice.voice_catalog import has_conversation_route
+from assemblix_api.schemas.voice_agent import VoiceAgentConfig
 
 
 class VoiceAgentService:
     def __init__(self, repository: VoiceAgentRepository):
         self._repository = repository
 
+    @staticmethod
+    def _assert_conversation_model(config: VoiceAgentConfig) -> None:
+        """The catalog is runtime data, so this cannot live in the Pydantic schema."""
+        if not has_conversation_route(config.voice.provider, config.voice.model):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=(
+                    f"{config.voice.provider}/{config.voice.model} is not a conversation "
+                    "(speech-to-speech) model"
+                ),
+            )
+
     async def create_voice_agent(
         self,
         project_id: UUID,
         data: VoiceAgentCreateRequest,
     ) -> VoiceAgent:
+        self._assert_conversation_model(data.config)
         return await self._repository.create(
             project_id=project_id,
             name=data.name,
@@ -56,6 +71,7 @@ class VoiceAgentService:
         if data.description is not None:
             update_fields["description"] = data.description
         if data.config is not None:
+            self._assert_conversation_model(data.config)
             update_fields["config"] = data.config.model_dump()
         if data.is_active is not None:
             update_fields["is_active"] = data.is_active
