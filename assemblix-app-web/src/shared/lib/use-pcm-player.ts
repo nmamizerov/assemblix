@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 
 /**
  * Streaming PCM player. Decodes signed-16-bit LE mono chunks and schedules them
@@ -82,5 +82,10 @@ export const usePcmPlayer = (sampleRate = 16000) => {
     [flush],
   );
 
-  return { pushChunk, pushPcm, flush, reset };
+  // Stable identity: callers put this object in effect dependency arrays, and a
+  // fresh literal every render would re-run their cleanups mid-session.
+  return useMemo(
+    () => ({ pushChunk, pushPcm, flush, reset }),
+    [pushChunk, pushPcm, flush, reset],
+  );
 };

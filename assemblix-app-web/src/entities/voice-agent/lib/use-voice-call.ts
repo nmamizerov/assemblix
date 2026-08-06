@@ -148,7 +148,14 @@ export const useVoiceCall = (voiceAgentId: string): UseVoiceCallResult => {
     teardown();
   }, [teardown]);
 
-  useEffect(() => teardown, [teardown]);
+  // Unmount only. Depending on `teardown` directly would re-run this cleanup
+  // every time its identity changed — which killed the call on the first
+  // re-render after start().
+  const teardownRef = useRef(teardown);
+  useEffect(() => {
+    teardownRef.current = teardown;
+  }, [teardown]);
+  useEffect(() => () => teardownRef.current(), []);
 
   return { status, transcript, firstAudioMs, error, start, stop };
 };
