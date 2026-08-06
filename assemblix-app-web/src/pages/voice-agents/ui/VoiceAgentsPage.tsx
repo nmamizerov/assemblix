@@ -1,4 +1,4 @@
-import { Loader2, Mic, Plus } from "lucide-react";
+import { AlertCircle, Loader2, Mic, Plus } from "lucide-react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
@@ -21,6 +21,8 @@ export const VoiceAgentsPage = () => {
   const {
     data: voiceAgents = [],
     isLoading,
+    isError,
+    error,
   } = useGetVoiceAgentsQuery(
     { projectId: currentProjectId! },
     { skip: !currentProjectId }
@@ -70,7 +72,18 @@ export const VoiceAgentsPage = () => {
         </Button>
       </div>
 
-      {voiceAgents.length === 0 ? (
+      {isError ? (
+        <div className="flex min-h-[400px] flex-col items-center justify-center rounded-lg border border-dashed border-border bg-muted/50 text-center">
+          <div className="flex h-16 w-16 items-center justify-center rounded-full bg-destructive/10">
+            <AlertCircle className="h-8 w-8 text-destructive" />
+          </div>
+          <h3 className="mt-4 text-lg font-semibold">{t("voiceAgents.listError")}</h3>
+          <p className="mt-2 max-w-sm text-sm text-muted-foreground">
+            {/* @ts-expect-error error type is unknown */}
+            {error?.data?.message || t("voiceAgents.listErrorDescription")}
+          </p>
+        </div>
+      ) : voiceAgents.length === 0 ? (
         <div className="flex min-h-[400px] flex-col items-center justify-center rounded-lg border border-dashed border-border bg-muted/50 text-center">
           <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
             <Mic className="h-8 w-8 text-primary" />

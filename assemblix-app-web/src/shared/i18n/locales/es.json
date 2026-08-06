@@ -1428,6 +1428,11 @@
     "createError": "No se pudo crear el agente de voz",
     "deleteSuccess": "Agente de voz eliminado",
     "deleteError": "No se pudo eliminar el agente de voz",
+    "loadingError": "Error de carga",
+    "loadingErrorDescription": "No se pudieron cargar los datos del agente de voz. Puede que haya sido eliminado o que no tengas acceso.",
+    "backToList": "Volver a la lista",
+    "listError": "No se pudieron cargar los agentes de voz",
+    "listErrorDescription": "Algo salió mal al cargar tus agentes de voz. Inténtalo de nuevo.",
     "sections": {
       "agent": "Agente",
       "voice": "Voz",

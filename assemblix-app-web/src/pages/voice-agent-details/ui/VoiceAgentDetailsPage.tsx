@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Loader2, Phone, Trash2 } from "lucide-react";
+import { AlertCircle, Loader2, Phone, Trash2 } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
@@ -44,11 +44,41 @@ const draftFromVoiceAgent = (voiceAgent: VoiceAgent): VoiceAgentDraft => {
 };
 
 export const VoiceAgentDetailsPage = () => {
-  const { agentId } = useParams();
+  const { t } = useTranslation();
+  const { agentId, projectId } = useParams();
+  const navigate = useNavigate();
 
-  const { data: voiceAgent, isLoading } = useGetVoiceAgentQuery(agentId!, {
-    skip: !agentId,
-  });
+  const {
+    data: voiceAgent,
+    isLoading,
+    isError,
+    error,
+  } = useGetVoiceAgentQuery(agentId!, { skip: !agentId });
+
+  if (isError) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[50vh] gap-4 text-center px-4">
+        <div className="bg-destructive/10 p-4 rounded-full">
+          <AlertCircle className="w-10 h-10 text-destructive" />
+        </div>
+        <div className="space-y-2">
+          <h2 className="text-xl font-semibold tracking-tight">
+            {t("voiceAgents.loadingError")}
+          </h2>
+          <p className="text-muted-foreground max-w-[400px]">
+            {/* @ts-expect-error error type is unknown */}
+            {error?.data?.message || t("voiceAgents.loadingErrorDescription")}
+          </p>
+        </div>
+        <Button
+          variant="outline"
+          onClick={() => navigate(`/projects/${projectId}/voice-agents`)}
+        >
+          {t("voiceAgents.backToList")}
+        </Button>
+      </div>
+    );
+  }
 
   if (isLoading || !voiceAgent) {
     return (

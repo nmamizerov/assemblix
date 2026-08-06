@@ -1428,6 +1428,11 @@
     "createError": "Failed to create voice agent",
     "deleteSuccess": "Voice agent deleted",
     "deleteError": "Failed to delete voice agent",
+    "loadingError": "Loading Error",
+    "loadingErrorDescription": "Failed to load voice agent data. It may have been deleted or you may not have access.",
+    "backToList": "Back to List",
+    "listError": "Failed to load voice agents",
+    "listErrorDescription": "Something went wrong while loading your voice agents. Please try again.",
     "sections": {
       "agent": "Agent",
       "voice": "Voice",
