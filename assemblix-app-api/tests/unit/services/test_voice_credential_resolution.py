@@ -102,6 +102,33 @@ async def test_wrong_type_credential_falls_back_to_system(
     assert is_system is True
 
 
+async def test_own_valid_gemini_key_on_paid_plan_is_not_swapped_for_system(
+    db_session, auth_user, monkeypatch
+) -> None:
+    """Paid plan + own gemini credential → own key used, not silently swapped for system.
+
+    Regression guard: before adding "gemini" to _VOICE_PROVIDER_TO_CREDENTIALS_TYPE,
+    the credential was treated as incompatible and this call fell back to the
+    system key instead of raising or using the owned key.
+    """
+    # Arrange
+    monkeypatch.setattr(get_settings(), "system_gemini_api_key", "gm-system")
+    service = _service(db_session)
+    cred = await _make_credential(
+        db_session, auth_user.project_id, CredentialsType.GEMINI_TOKEN, "gm-user"
+    )
+    # Act
+    key, is_system = await service.get_voice_api_key_with_fallback(
+        credentials_id=cred.id,
+        project_id=auth_user.project_id,
+        voice_provider="gemini",
+        organization_plan=PlanTier.PRO,
+    )
+    # Assert
+    assert key == "gm-user"
+    assert is_system is False
+
+
 async def test_no_key_anywhere_raises_503(db_session, auth_user, monkeypatch) -> None:
     """Paid plan, no credential and no system key → 503 (surfaces as a normal run error)."""
     # Arrange

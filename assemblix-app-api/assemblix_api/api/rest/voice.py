@@ -28,6 +28,7 @@ from assemblix_api.dependencies import (
 from assemblix_api.dto.responses.voice import VoiceListItem, VoiceProviderListItem
 from assemblix_api.external.voice import yandex
 from assemblix_api.external.voice.base import VoiceModelMetadata
+from assemblix_api.external.voice.conversation_voices import list_conversation_voices
 from assemblix_api.external.voice.elevenlabs import list_voices
 from assemblix_api.external.voice.voice_catalog import (
     VOICE_PROVIDER_LABELS,
@@ -94,6 +95,16 @@ async def list_credential_voices(
             VoiceListItem(id=v.id, name=v.name, preview_url=v.preview_url)
             for v in yandex.list_voices()
         ]
+    if credentials.type == CredentialsType.OPENAI_TOKEN:
+        return [
+            VoiceListItem(id=v.id, name=v.name, preview_url=v.preview_url)
+            for v in list_conversation_voices("openai")
+        ]
+    if credentials.type == CredentialsType.GEMINI_TOKEN:
+        return [
+            VoiceListItem(id=v.id, name=v.name, preview_url=v.preview_url)
+            for v in list_conversation_voices("gemini")
+        ]
     if credentials.type != CredentialsType.ELEVENLABS_TOKEN:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -122,6 +133,12 @@ async def list_system_voices(
         return [
             VoiceListItem(id=v.id, name=v.name, preview_url=v.preview_url)
             for v in yandex.list_voices()
+        ]
+    if provider_name in ("openai", "gemini"):
+        # Fixed catalog; independent of whether a system key is configured.
+        return [
+            VoiceListItem(id=v.id, name=v.name, preview_url=v.preview_url)
+            for v in list_conversation_voices(provider_name)
         ]
     if provider_name != "elevenlabs":
         raise HTTPException(

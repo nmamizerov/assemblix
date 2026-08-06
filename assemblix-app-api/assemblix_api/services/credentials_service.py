@@ -142,6 +142,7 @@ class CredentialsService(BaseService[Credentials, CredentialsRepository]):
         "openai": CredentialsType.OPENAI_TOKEN,
         "elevenlabs": CredentialsType.ELEVENLABS_TOKEN,
         "yandex": CredentialsType.YANDEX_SPEECHKIT_TOKEN,
+        "gemini": CredentialsType.GEMINI_TOKEN,
     }
 
     async def get_voice_api_key_with_fallback(
@@ -226,6 +227,7 @@ class CredentialsService(BaseService[Credentials, CredentialsRepository]):
             key_map = {
                 "openai": settings.system_openai_api_key,
                 "elevenlabs": settings.system_elevenlabs_api_key,
+                "gemini": settings.system_gemini_api_key,
             }
             api_key = key_map.get(voice_provider, "")
         if not api_key:
