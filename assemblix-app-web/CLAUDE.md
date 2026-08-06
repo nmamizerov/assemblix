@@ -56,6 +56,17 @@ src/
 
 **Import rule:** Always import through `index.ts` barrel exports (`@/entities/workflow`), never into subfolders directly.
 
+### Voice Agents vs Agents — naming trap
+
+- `pages/agents` lists **workflows** (a workflow is called an "agent" in product copy).
+- `pages/voice-agents` lists **voice agents** — a separate entity with no graph, backed
+  by `entities/voice-agent` and the `/api/voice-agents` REST resource. A voice agent
+  holds a prompt, a speech-to-speech voice, knowledge bases inlined into the prompt, and
+  optional workflow references used only as background analysis hooks.
+
+These are different entities with confusingly similar names. Check which one you are in
+before editing.
+
 ### RTK Query API pattern
 
 All endpoints use `baseApi.injectEndpoints()` from `shared/api/baseApi.ts`. New cache tag types must be registered in `baseApi`'s `tagTypes` array. Auth token, project ID, and language are injected via `prepareHeaders`.

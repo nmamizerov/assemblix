@@ -4,7 +4,7 @@ export interface VoiceProviderListItem {
   modelsCount: number;
 }
 
-export type VoiceCapability = "transcription" | "speech" | "realtime";
+export type VoiceCapability = "transcription" | "speech" | "realtime" | "conversation";
 
 export interface VoiceModelMetadata {
   id: string;

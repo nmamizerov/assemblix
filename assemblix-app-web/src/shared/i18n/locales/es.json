@@ -97,6 +97,7 @@
   },
   "sidebar": {
     "agents": "Agentes",
+    "voiceAgents": "Agentes de voz",
     "agentSessions": "Llamadas de agentes",
     "apiKeys": "Claves API",
     "knowledgeBases": "Bases de conocimiento",
@@ -1411,6 +1412,61 @@
     "deleteError": "No se pudo eliminar el documento",
     "errorDuplicate": "Ya existe un documento con este contenido",
     "errorNoText": "El PDF no contiene texto (documento escaneado sin OCR)"
+  },
+  "voiceAgents": {
+    "title": "Agentes de voz",
+    "subtitle": "Agentes conversacionales en tiempo real que atienden llamadas con voz speech-to-speech",
+    "create": "Crear agente de voz",
+    "defaultName": "Nuevo agente de voz",
+    "empty": "No hay agentes de voz",
+    "emptyDescription": "Crea un agente de voz para tener una conversación en tiempo real con un proveedor speech-to-speech",
+    "noDescription": "Sin descripción",
+    "save": "Guardar",
+    "delete": "Eliminar",
+    "saveSuccess": "Agente de voz guardado",
+    "saveError": "No se pudo guardar el agente de voz",
+    "createError": "No se pudo crear el agente de voz",
+    "deleteSuccess": "Agente de voz eliminado",
+    "deleteError": "No se pudo eliminar el agente de voz",
+    "sections": {
+      "agent": "Agente",
+      "voice": "Voz",
+      "knowledge": "Conocimiento",
+      "analysis": "Análisis"
+    },
+    "fields": {
+      "name": "Nombre",
+      "systemPrompt": "Prompt del sistema",
+      "firstMessage": "Primer mensaje",
+      "provider": "Proveedor",
+      "selectProvider": "Selecciona un proveedor",
+      "model": "Modelo",
+      "selectModel": "Selecciona un modelo",
+      "loadingModels": "Cargando modelos...",
+      "voiceId": "ID de voz",
+      "language": "Idioma",
+      "noKnowledgeBases": "Este proyecto todavía no tiene bases de conocimiento",
+      "knowledgeCharCount": "{{count}} de {{limit}} caracteres usados",
+      "knowledgeCharWarning": "Las bases de conocimiento seleccionadas superan el presupuesto recomendado del prompt — el agente podría responder más lento.",
+      "turnWorkflow": "Workflow por turno",
+      "finalWorkflow": "Workflow final",
+      "selectWorkflow": "Selecciona un workflow",
+      "turnWorkflowCaption": "Se ejecuta en segundo plano tras cada turno — no afecta a la conversación.",
+      "finalWorkflowCaption": "Se ejecuta en segundo plano al finalizar la llamada — no afecta a la conversación."
+    },
+    "testCall": {
+      "title": "Llamada de prueba",
+      "description": "Prueba una llamada en vivo con este agente",
+      "callButton": "Llamar",
+      "disabledTooltip": "Las llamadas de prueba llegarán en un paso posterior"
+    },
+    "errors": {
+      "nameRequired": "El nombre es obligatorio",
+      "promptRequired": "El prompt del sistema es obligatorio",
+      "providerRequired": "El proveedor es obligatorio",
+      "modelRequired": "El modelo es obligatorio",
+      "formInvalid": "Corrige los campos marcados antes de guardar"
+    }
   },
   "schemaBuilder": {
     "title": "Salida estructurada (JSON)",

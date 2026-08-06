@@ -97,6 +97,7 @@
   },
   "sidebar": {
     "agents": "Agents",
+    "voiceAgents": "Voice Agents",
     "agentSessions": "Agent Calls",
     "apiKeys": "API Keys",
     "knowledgeBases": "Knowledge Bases",
@@ -1411,6 +1412,61 @@
     "deleteError": "Failed to delete document",
     "errorDuplicate": "A document with this content already exists",
     "errorNoText": "PDF contains no text (scanned document without OCR)"
+  },
+  "voiceAgents": {
+    "title": "Voice Agents",
+    "subtitle": "Realtime conversational agents that answer calls with a speech-to-speech voice",
+    "create": "Create Voice Agent",
+    "defaultName": "New Voice Agent",
+    "empty": "No voice agents",
+    "emptyDescription": "Create a voice agent to have a realtime conversation with a speech-to-speech provider",
+    "noDescription": "No description",
+    "save": "Save",
+    "delete": "Delete",
+    "saveSuccess": "Voice agent saved",
+    "saveError": "Failed to save voice agent",
+    "createError": "Failed to create voice agent",
+    "deleteSuccess": "Voice agent deleted",
+    "deleteError": "Failed to delete voice agent",
+    "sections": {
+      "agent": "Agent",
+      "voice": "Voice",
+      "knowledge": "Knowledge",
+      "analysis": "Analysis"
+    },
+    "fields": {
+      "name": "Name",
+      "systemPrompt": "System prompt",
+      "firstMessage": "First message",
+      "provider": "Provider",
+      "selectProvider": "Select a provider",
+      "model": "Model",
+      "selectModel": "Select a model",
+      "loadingModels": "Loading models...",
+      "voiceId": "Voice ID",
+      "language": "Language",
+      "noKnowledgeBases": "No knowledge bases in this project yet",
+      "knowledgeCharCount": "{{count}} of {{limit}} characters used",
+      "knowledgeCharWarning": "Selected knowledge bases exceed the recommended prompt budget — the agent may respond more slowly.",
+      "turnWorkflow": "Per-turn workflow",
+      "finalWorkflow": "Final workflow",
+      "selectWorkflow": "Select a workflow",
+      "turnWorkflowCaption": "Runs in the background after every turn — it does not affect the conversation.",
+      "finalWorkflowCaption": "Runs in the background after the call ends — it does not affect the conversation."
+    },
+    "testCall": {
+      "title": "Test call",
+      "description": "Try a live call with this agent",
+      "callButton": "Call",
+      "disabledTooltip": "Test calls are arriving in a later step"
+    },
+    "errors": {
+      "nameRequired": "Name is required",
+      "promptRequired": "System prompt is required",
+      "providerRequired": "Provider is required",
+      "modelRequired": "Model is required",
+      "formInvalid": "Fix the highlighted fields before saving"
+    }
   },
   "schemaBuilder": {
     "title": "Structured output (JSON)",
