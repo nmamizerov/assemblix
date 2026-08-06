@@ -81,7 +81,14 @@ class OpenAIRealtimeBridge:
             "audio": {
                 "input": {
                     "format": _AUDIO_FORMAT,
-                    "transcription": {"language": language},
+                    # `model` is required — the API rejects the session without it.
+                    # gpt-realtime-whisper is the transcriber built for realtime
+                    # sessions; the transcript is what the UI and the analysis
+                    # hooks read, it is not on the path to speech.
+                    "transcription": {
+                        "model": "gpt-realtime-whisper",
+                        "language": language,
+                    },
                     "turn_detection": turn_detection,
                 },
                 "output": {

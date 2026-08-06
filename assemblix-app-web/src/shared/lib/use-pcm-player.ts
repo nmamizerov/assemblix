@@ -4,6 +4,10 @@ import { useCallback, useEffect, useMemo, useRef } from "react";
  * Streaming PCM player. Decodes signed-16-bit LE mono chunks and schedules them
  * back-to-back on a Web Audio graph for gapless playback.
  *
+ * `sampleRate` describes the incoming audio, not the output device: each buffer
+ * carries its own rate and the browser resamples it. Forcing the context to that
+ * rate instead makes some devices fail outright with a WebAudio renderer error.
+ *
  * `flush` is what makes barge-in work: an AudioBufferSourceNode plays to the end
  * once started, so dropping the schedule pointer is not enough — every source
  * already queued has to be stopped explicitly.
@@ -16,7 +20,7 @@ export const usePcmPlayer = (sampleRate = 16000) => {
   const schedule = useCallback(
     (pcm16: Int16Array) => {
       try {
-        const ctx = (ctxRef.current ??= new AudioContext({ sampleRate }));
+        const ctx = (ctxRef.current ??= new AudioContext());
         const f32 = new Float32Array(pcm16.length);
         for (let i = 0; i < pcm16.length; i++) f32[i] = pcm16[i] / 32768;
         const buffer = ctx.createBuffer(1, f32.length, sampleRate);
