@@ -9,6 +9,7 @@ from assemblix_api.external.voice.bridge import (
     AgentTranscript,
     AudioDelta,
     BridgeError,
+    SessionClosed,
     SpeechStarted,
     TurnEnded,
     UserTranscript,
@@ -67,7 +68,10 @@ async def test_normalizes_a_provider_turn_into_bridge_events() -> None:
         SimpleNamespace(type="response.output_audio_transcript.delta", delta="Здрав"),
         SimpleNamespace(type="response.output_audio_transcript.done", transcript="Здравствуйте"),
         SimpleNamespace(type="some.future.event.we.do.not.know"),
-        SimpleNamespace(type="response.done"),
+        SimpleNamespace(
+            type="response.done",
+            response=SimpleNamespace(usage=SimpleNamespace(input_tokens=120, output_tokens=45)),
+        ),
     ]
     bridge = OpenAIRealtimeBridge(
         api_key="sk-test",
@@ -79,7 +83,7 @@ async def test_normalizes_a_provider_turn_into_bridge_events() -> None:
     # Act
     received = [event async for event in bridge.events()]
 
-    # Assert — the vocabulary, in order
+    # Assert — the vocabulary, in order, terminated by the connection ending
     assert received == [
         SpeechStarted(),
         UserTranscript(text="при", is_final=False),
@@ -87,7 +91,8 @@ async def test_normalizes_a_provider_turn_into_bridge_events() -> None:
         AudioDelta(pcm=b"\x00\x01\x02\x03"),
         AgentTranscript(text="Здрав", is_final=False),
         AgentTranscript(text="Здравствуйте", is_final=True),
-        TurnEnded(),
+        TurnEnded(input_tokens=120, output_tokens=45),
+        SessionClosed(reason="closed"),
     ]
 
 
@@ -98,9 +103,11 @@ async def test_provider_error_surfaces_instead_of_being_swallowed() -> None:
     server_events = [
         SimpleNamespace(
             type="error",
-            error=SimpleNamespace(code="invalid_request_error", message="bad voice"),
+            error=SimpleNamespace(
+                code="invalid_request_error", message="bad voice", type="invalid_request_error"
+            ),
         ),
-        SimpleNamespace(type="response.done"),
+        SimpleNamespace(type="response.done", response=SimpleNamespace(usage=None)),
     ]
     bridge = OpenAIRealtimeBridge(
         api_key="sk-test",
@@ -112,20 +119,30 @@ async def test_provider_error_surfaces_instead_of_being_swallowed() -> None:
     # Act
     received = [event async for event in bridge.events()]
 
-    # Assert
-    assert received[0] == BridgeError(code="invalid_request_error", message="bad voice")
+    # Assert — a request-level error is not fatal; the terminal event still arrives
+    assert received[0] == BridgeError(
+        code="invalid_request_error", message="bad voice", is_fatal=False
+    )
     assert received[1] == TurnEnded()
+    assert received[2] == SessionClosed(reason="closed")
 
 
 async def test_outbound_calls_configure_the_session_and_drive_audio() -> None:
     """connect() configures instructions/voice/format/VAD; send_audio appends base64
-    PCM16; interrupt() both cancels the response and clears the output buffer."""
+    PCM16; interrupt() cancels the response and truncates the in-flight assistant
+    item's audio at the point the user actually heard it."""
     # Arrange
     recorder = _Recorder()
+    server_events = [
+        SimpleNamespace(
+            type="response.output_item.added",
+            item=SimpleNamespace(id="item_abc", role="assistant"),
+        ),
+    ]
     bridge = OpenAIRealtimeBridge(
         api_key="sk-test",
         model="gpt-realtime-2.1",
-        connect_factory=lambda **_: _fake_connection([], recorder),
+        connect_factory=lambda **_: _fake_connection(server_events, recorder),
     )
 
     # Act
@@ -136,7 +153,10 @@ async def test_outbound_calls_configure_the_session_and_drive_audio() -> None:
         params={"silence_duration_ms": 300},
     )
     await bridge.send_audio(b"\x00\x01\x02\x03")
-    await bridge.interrupt()
+    # Drain the response.output_item.added event so the bridge learns the item id
+    # it needs in order to truncate.
+    [_ async for _ in bridge.events()]
+    await bridge.interrupt(audio_end_ms=750)
 
     # Assert — session configuration
     name, kwargs = recorder.calls[0]
@@ -150,8 +170,10 @@ async def test_outbound_calls_configure_the_session_and_drive_audio() -> None:
     # Assert — audio is appended base64-encoded
     assert recorder.calls[1] == ("input_audio_buffer.append", {"audio": "AAECAw=="})
 
-    # Assert — interruption is two-sided on the provider
-    assert [name for name, _ in recorder.calls[2:]] == [
-        "response.cancel",
-        "output_audio_buffer.clear",
-    ]
+    # Assert — interruption cancels the response, then truncates on the WebSocket
+    # transport (output_audio_buffer.clear is WebRTC/SIP-only and does nothing here)
+    assert recorder.calls[2] == ("response.cancel", {})
+    assert recorder.calls[3] == (
+        "conversation.item.truncate",
+        {"item_id": "item_abc", "content_index": 0, "audio_end_ms": 750},
+    )

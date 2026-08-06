@@ -39,17 +39,34 @@ class SpeechStarted:
 
 @dataclass(frozen=True)
 class TurnEnded:
-    pass
+    """A response finished. Token counts are ``None`` when the provider omits usage."""
+
+    input_tokens: int | None = None
+    output_tokens: int | None = None
 
 
 @dataclass(frozen=True)
 class BridgeError:
     code: str | None
     message: str
+    is_fatal: bool
+
+
+@dataclass(frozen=True)
+class SessionClosed:
+    """Terminal event: the provider connection ended. Always the last event seen."""
+
+    reason: str
 
 
 BridgeEvent = (
-    AudioDelta | UserTranscript | AgentTranscript | SpeechStarted | TurnEnded | BridgeError
+    AudioDelta
+    | UserTranscript
+    | AgentTranscript
+    | SpeechStarted
+    | TurnEnded
+    | BridgeError
+    | SessionClosed
 )
 
 
@@ -65,7 +82,14 @@ class RealtimeBridge(Protocol):
 
     async def send_audio(self, pcm: bytes) -> None: ...
 
-    async def interrupt(self) -> None: ...
+    async def interrupt(self, *, audio_end_ms: int) -> None:
+        """Cut off in-flight agent speech.
+
+        ``audio_end_ms`` is how much of the current agent turn's audio the user
+        actually heard — the bridge has no playback queue, so the runtime owns
+        that number and must supply it.
+        """
+        ...
 
     def events(self) -> AsyncIterator[BridgeEvent]: ...
 

@@ -22,6 +22,7 @@ from assemblix_api.external.voice.bridge import (
     AudioDelta,
     BridgeError,
     BridgeEvent,
+    SessionClosed,
     SpeechStarted,
     TurnEnded,
     UserTranscript,
@@ -47,6 +48,8 @@ class OpenAIRealtimeBridge:
         self._connect_factory = connect_factory
         self._connection: Any = None
         self._failed = False
+        # id of the assistant item currently producing audio, for interrupt()'s truncate.
+        self._active_item_id: str | None = None
 
     async def _default_connect(self, *, api_key: str, model: str) -> Any:
         from openai import AsyncOpenAI
@@ -98,22 +101,40 @@ class OpenAIRealtimeBridge:
             self._failed = True
             logger.info("voice.openai_bridge.send_stopped", error=str(exc))
 
-    async def interrupt(self) -> None:
+    async def interrupt(self, *, audio_end_ms: int) -> None:
         if self._connection is None or self._failed:
             return
         try:
             await self._connection.response.cancel()
-            await self._connection.output_audio_buffer.clear()
+            # output_audio_buffer.clear() is WebRTC/SIP only; over our plain WebSocket
+            # transport, conversation.item.truncate is what actually stops in-flight
+            # audio. Only meaningful while a turn is in flight — nothing to truncate
+            # otherwise.
+            if self._active_item_id is not None:
+                await self._connection.conversation.item.truncate(
+                    item_id=self._active_item_id,
+                    content_index=0,
+                    audio_end_ms=audio_end_ms,
+                )
+                self._active_item_id = None
         except Exception as exc:  # noqa: BLE001 — best-effort.
             self._failed = True
             logger.info("voice.openai_bridge.interrupt_stopped", error=str(exc))
 
     async def events(self) -> AsyncIterator[BridgeEvent]:
         assert self._connection is not None
-        async for event in self._connection:
-            mapped = self._map_event(event)
-            if mapped is not None:
-                yield mapped
+        from openai import WebSocketConnectionClosedError
+        from websockets.exceptions import ConnectionClosedError
+
+        reason = "closed"
+        try:
+            async for event in self._connection:
+                mapped = self._map_event(event)
+                if mapped is not None:
+                    yield mapped
+        except (ConnectionClosedError, WebSocketConnectionClosedError) as exc:
+            reason = str(exc)
+        yield SessionClosed(reason=reason)
 
     def _map_event(self, event: Any) -> BridgeEvent | None:
         match event.type:
@@ -123,6 +144,12 @@ class OpenAIRealtimeBridge:
                 return UserTranscript(text=event.delta, is_final=False)
             case "conversation.item.input_audio_transcription.completed":
                 return UserTranscript(text=event.transcript, is_final=True)
+            case "response.output_item.added":
+                # Track the assistant item currently producing audio so interrupt()
+                # can target it with conversation.item.truncate.
+                if getattr(event.item, "role", None) == "assistant":
+                    self._active_item_id = event.item.id
+                return None
             case "response.output_audio.delta":
                 return AudioDelta(pcm=base64.b64decode(event.delta))
             case "response.output_audio_transcript.delta":
@@ -130,9 +157,20 @@ class OpenAIRealtimeBridge:
             case "response.output_audio_transcript.done":
                 return AgentTranscript(text=event.transcript, is_final=True)
             case "response.done":
-                return TurnEnded()
+                self._active_item_id = None
+                usage = event.response.usage
+                return TurnEnded(
+                    input_tokens=usage.input_tokens if usage else None,
+                    output_tokens=usage.output_tokens if usage else None,
+                )
             case "error":
-                return BridgeError(code=event.error.code, message=event.error.message)
+                # server_error means the session/transport is broken; invalid_request_error
+                # means a single bad client event was rejected and the session continues.
+                return BridgeError(
+                    code=event.error.code,
+                    message=event.error.message,
+                    is_fatal=event.error.type == "server_error",
+                )
             case _:
                 # Unknown/future event types are ignored, not fatal.
                 return None
