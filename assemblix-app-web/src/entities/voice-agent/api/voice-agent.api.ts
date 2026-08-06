@@ -50,7 +50,10 @@ export const voiceAgentApi = baseApi.injectEndpoints({
 
     deleteVoiceAgent: build.mutation<void, string>({
       query: (id) => ({ url: `/voice-agents/${id}`, method: "DELETE" }),
-      invalidatesTags: [{ type: "VoiceAgents", id: "LIST" }],
+      invalidatesTags: (_result, _error, id) => [
+        { type: "VoiceAgents", id },
+        { type: "VoiceAgents", id: "LIST" },
+      ],
     }),
   }),
 });

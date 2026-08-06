@@ -19,7 +19,7 @@ from assemblix_api.schemas.node import AgentInstruction, VoiceOutputConfig
 
 class VoiceAgentConfig(DTOModel):
     instructions: list[AgentInstruction] = Field(min_length=1)
-    knowledge_base_ids: list[str] | None = None
+    knowledge_base_ids: list[str] = Field(default_factory=list)
     first_message: str | None = None
     language: str = "ru"
     voice: VoiceOutputConfig
