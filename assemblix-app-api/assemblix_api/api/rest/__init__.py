@@ -25,6 +25,7 @@ from .organizations import router as organizations_router
 from .payments import router as payments_router
 from .projects import router as projects_router
 from .voice import router as voice_router
+from .voice_agents import router as voice_agents_router
 from .workflows import router as workflows_router
 
 settings = get_settings()
@@ -50,6 +51,7 @@ api_router.include_router(client_sessions_router, prefix="/api")
 api_router.include_router(knowledge_bases_router, prefix="/api")
 api_router.include_router(llm_router, prefix="/api")
 api_router.include_router(voice_router, prefix="/api")
+api_router.include_router(voice_agents_router, prefix="/api")
 api_router.include_router(avatar_router, prefix="/api")
 api_router.include_router(notification_channels_router, prefix="/api")
 api_router.include_router(config_router, prefix="/api")
