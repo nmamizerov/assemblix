@@ -48,7 +48,9 @@ class BridgeError:
     message: str
 
 
-BridgeEvent = AudioDelta | UserTranscript | AgentTranscript | SpeechStarted | TurnEnded | BridgeError
+BridgeEvent = (
+    AudioDelta | UserTranscript | AgentTranscript | SpeechStarted | TurnEnded | BridgeError
+)
 
 
 class RealtimeBridge(Protocol):

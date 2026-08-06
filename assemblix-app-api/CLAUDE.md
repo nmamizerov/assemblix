@@ -74,6 +74,11 @@ Config (incl. `DATABASE_URL`, `JWT_SECRET_KEY`, `ENCRYPTION_KEY`) is read from t
   provider, and workflows attach only as observational analysis hooks referenced from its
   JSONB `config`. Separate from voice-in-workflows (`nodes/transcribe_node.py`,
   `nodes/agent_voice.py`), which is unchanged and independent.
+- `assemblix_api/external/voice/bridge.py` + `openai_bridge.py` + `bridge_dispatch.py` —
+  the speech-to-speech provider seam for Voice Agents. Audio in, audio and normalized
+  events out; provider vocabulary stops at `BridgeEvent`. Sibling of
+  `realtime_dispatch.py`, which is the *text-in/audio-out* streaming-TTS seam used by
+  voice-in-workflows — the two are unrelated despite the similar names.
 
 ## Key Rules
 
