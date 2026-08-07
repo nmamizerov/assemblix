@@ -47,7 +47,12 @@ each analysis run links straight into the normal execution viewer.
 Cost is charged by wall-clock time at the model's per-minute price, shown next to the
 model when you pick it.
 
-## Limits in this version
+## Calling the agent from your own product
 
-Voice agents are **test-in-editor only** for now: you call the agent from its page in
-Assemblix. There is no public link, no embeddable widget and no telephony yet.
+The test panel in the editor is not the only way in. The same call is available over a
+public API: your backend mints a short-lived session token with a project API key, your
+frontend opens a WebSocket with it and streams audio. See
+[Integrating a call](integrate.md).
+
+There is no drop-in widget and no telephony yet — you build the client, and the protocol
+is documented so that you can.

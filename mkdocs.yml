@@ -51,6 +51,7 @@ nav:
   - Get started: get-started.md
   - Voice agents:
     - What they are: voice-agents/index.md
+    - Integrating a call: voice-agents/integrate.md
     - Analysis hooks: voice-agents/analysis.md
     - Providers: voice-agents/providers.md
   - Creating workflows:

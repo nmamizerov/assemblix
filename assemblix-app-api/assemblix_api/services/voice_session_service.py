@@ -141,7 +141,9 @@ class VoiceSessionService:
             cost_per_minute=(catalog_entry.cost_per_minute or 0.0) if catalog_entry else 0.0,
         )
 
-    async def open_session(self, *, voice_agent_id: UUID, project_id: UUID) -> UUID:
+    async def open_session(
+        self, *, voice_agent_id: UUID, project_id: UUID, is_debug: bool = True
+    ) -> UUID:
         """Create the call's row before any audio flows.
 
         It exists first because the analysis hooks stamp their executions with its
@@ -151,6 +153,7 @@ class VoiceSessionService:
             voice_agent_id=voice_agent_id,
             project_id=project_id,
             status="active",
+            is_debug=is_debug,
         )
         return session.id
 
@@ -254,9 +257,13 @@ async def load_voice_session_setup(*, voice_agent_id: UUID, project_id: UUID) ->
         return await service.build_setup(voice_agent_id=voice_agent_id, project_id=project_id)
 
 
-async def open_voice_session(*, voice_agent_id: UUID, project_id: UUID) -> UUID:
+async def open_voice_session(
+    *, voice_agent_id: UUID, project_id: UUID, is_debug: bool = True
+) -> UUID:
     async with _voice_session_service() as service:
-        return await service.open_session(voice_agent_id=voice_agent_id, project_id=project_id)
+        return await service.open_session(
+            voice_agent_id=voice_agent_id, project_id=project_id, is_debug=is_debug
+        )
 
 
 async def close_voice_session(**kwargs) -> None:

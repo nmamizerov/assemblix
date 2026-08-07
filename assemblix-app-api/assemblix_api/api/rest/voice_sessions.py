@@ -114,6 +114,9 @@ async def create_voice_session(
         token=mint_session_token(
             voice_agent_id=agent.id,
             project_id=agent.project_id,
+            # A project API key means a program is placing this call from someone's
+            # product; a JWT means a person is rehearsing in the editor.
+            is_debug=auth.scoped_project_id is None,
             ttl_seconds=_TOKEN_TTL_SECONDS,
         ),
         expires_in=_TOKEN_TTL_SECONDS,
@@ -146,26 +149,30 @@ class _WebSocketChannel:
 @router.websocket("/sessions/{token}/stream")
 async def stream_voice_session(websocket: WebSocket, token: str) -> None:
     try:
-        voice_agent_id, project_id = verify_session_token(token)
+        scope = verify_session_token(token)
     except InvalidSessionToken:
         await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
         return
 
     await websocket.accept()
     try:
-        setup = await load_voice_session_setup(voice_agent_id=voice_agent_id, project_id=project_id)
+        setup = await load_voice_session_setup(
+            voice_agent_id=scope.voice_agent_id, project_id=scope.project_id
+        )
     except HTTPException as exc:
         await websocket.send_json({"type": "session.closed", "reason": exc.detail})
         await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
         return
     except Exception:
-        logger.exception("voice_session_setup_failed", voice_agent_id=str(voice_agent_id))
+        logger.exception("voice_session_setup_failed", voice_agent_id=str(scope.voice_agent_id))
         await websocket.send_json({"type": "session.closed", "reason": "setup_failed"})
         await websocket.close(code=status.WS_1011_INTERNAL_ERROR)
         return
 
     voice_session_id = await open_voice_session(
-        voice_agent_id=voice_agent_id, project_id=project_id
+        voice_agent_id=scope.voice_agent_id,
+        project_id=scope.project_id,
+        is_debug=scope.is_debug,
     )
     runtime = VoiceSessionRuntime(
         bridge=create_bridge(provider=setup.provider, api_key=setup.api_key, model=setup.model),
@@ -187,9 +194,9 @@ async def stream_voice_session(websocket: WebSocket, token: str) -> None:
         end_reason = await runtime.run()
     except WebSocketDisconnect:
         end_reason = "user_hangup"
-        logger.info("voice_session_client_gone", voice_agent_id=str(voice_agent_id))
+        logger.info("voice_session_client_gone", voice_agent_id=str(scope.voice_agent_id))
     except Exception:
-        logger.exception("voice_session_failed", voice_agent_id=str(voice_agent_id))
+        logger.exception("voice_session_failed", voice_agent_id=str(scope.voice_agent_id))
     finally:
         input_tokens, output_tokens = runtime.usage
         await close_voice_session(

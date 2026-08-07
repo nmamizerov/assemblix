@@ -57,7 +57,8 @@ class VoiceSession(UUIDMixin, TimestampMixin, Base):
     input_tokens: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     output_tokens: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
 
-    # v1 is editor-test only, so every session is a debug session.
+    # True for a rehearsal in the editor (JWT caller), False for a real call placed
+    # by a program through a project API key.
     is_debug: Mapped[bool] = mapped_column(default=True, nullable=False)
     end_reason: Mapped[str | None] = mapped_column(String(50), default=None)
 
