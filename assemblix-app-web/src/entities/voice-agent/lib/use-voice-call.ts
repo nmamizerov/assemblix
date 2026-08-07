@@ -32,15 +32,36 @@ export interface TranscriptLine {
   text: string;
 }
 
+/**
+ * Live loudness of each side, 0..1. Read through a ref rather than state: this
+ * updates ~50 times a second and only the visualizer's animation frame cares,
+ * so pushing it through React would re-render the page for nothing.
+ */
+export interface CallLevels {
+  user: number;
+  agent: number;
+}
+
 interface UseVoiceCallResult {
   status: CallStatus;
   transcript: TranscriptLine[];
+  /** The sentence being spoken right now, before the provider finalizes it. */
+  interim: TranscriptLine | null;
   /** Last measured time from the caller's last audio frame to the agent's first. */
   firstAudioMs: number | null;
   error: string | null;
+  levels: React.RefObject<CallLevels>;
   start: () => Promise<void>;
   stop: () => void;
 }
+
+/** Root-mean-square of a PCM16 frame, normalized to 0..1. */
+const frameLevel = (pcm: Int16Array): number => {
+  if (pcm.length === 0) return 0;
+  let sum = 0;
+  for (let i = 0; i < pcm.length; i++) sum += pcm[i] * pcm[i];
+  return Math.min(1, Math.sqrt(sum / pcm.length) / 8000);
+};
 
 export const useVoiceCall = (voiceAgentId: string): UseVoiceCallResult => {
   const [createSession] = useCreateVoiceSessionMutation();
@@ -48,8 +69,10 @@ export const useVoiceCall = (voiceAgentId: string): UseVoiceCallResult => {
 
   const [status, setStatus] = useState<CallStatus>("idle");
   const [transcript, setTranscript] = useState<TranscriptLine[]>([]);
+  const [interim, setInterim] = useState<TranscriptLine | null>(null);
   const [firstAudioMs, setFirstAudioMs] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const levels = useRef<CallLevels>({ user: 0, agent: 0 });
 
   const socketRef = useRef<WebSocket | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -66,6 +89,9 @@ export const useVoiceCall = (voiceAgentId: string): UseVoiceCallResult => {
     void ctxRef.current?.close();
     ctxRef.current = null;
     player.flush();
+    levels.current.user = 0;
+    levels.current.agent = 0;
+    setInterim(null);
     setStatus("idle");
   }, [player]);
 
@@ -78,17 +104,23 @@ export const useVoiceCall = (voiceAgentId: string): UseVoiceCallResult => {
           setStatus("live");
           break;
         case "transcript": {
-          if (!frame.isFinal) return;
-          setTranscript((lines) => [
-            ...lines,
-            { role: frame.role as TranscriptLine["role"], text: String(frame.text) },
-          ]);
+          const line = {
+            role: frame.role as TranscriptLine["role"],
+            text: String(frame.text),
+          };
+          if (!frame.isFinal) {
+            setInterim(line);
+            return;
+          }
+          setInterim(null);
+          setTranscript((lines) => [...lines, line]);
           break;
         }
         case "speech.started":
           // The user cut in: drop everything already queued so the agent stops
           // mid-word instead of finishing a sentence nobody is listening to.
           player.flush();
+          levels.current.agent = 0;
           break;
         case "turn.timings":
           setFirstAudioMs(Number(frame.firstAudioMs));
@@ -109,6 +141,7 @@ export const useVoiceCall = (voiceAgentId: string): UseVoiceCallResult => {
     setStatus("connecting");
     setError(null);
     setTranscript([]);
+    setInterim(null);
     setFirstAudioMs(null);
 
     // Ask for the microphone first, while the click gesture is still fresh, and
@@ -147,6 +180,9 @@ export const useVoiceCall = (voiceAgentId: string): UseVoiceCallResult => {
 
       socket.onmessage = (event) => {
         if (event.data instanceof ArrayBuffer) {
+          // The visualizer is driven by the audio itself, so the loudness is
+          // measured here rather than through a second analyser node.
+          levels.current.agent = frameLevel(new Int16Array(event.data));
           player.pushPcm(event.data);
           return;
         }
@@ -157,6 +193,7 @@ export const useVoiceCall = (voiceAgentId: string): UseVoiceCallResult => {
 
       const recorder = new AudioWorkletNode(ctx, "pcm-recorder");
       recorder.port.onmessage = (event: MessageEvent<ArrayBuffer>) => {
+        levels.current.user = frameLevel(new Int16Array(event.data));
         if (socket.readyState === WebSocket.OPEN) socket.send(event.data);
       };
       ctx.createMediaStreamSource(stream).connect(recorder);
@@ -189,5 +226,5 @@ export const useVoiceCall = (voiceAgentId: string): UseVoiceCallResult => {
   }, [teardown]);
   useEffect(() => () => teardownRef.current(), []);
 
-  return { status, transcript, firstAudioMs, error, start, stop };
+  return { status, transcript, interim, firstAudioMs, error, levels, start, stop };
 };

@@ -1437,7 +1437,11 @@
       "agent": "Agent",
       "voice": "Voice",
       "knowledge": "Knowledge",
-      "analysis": "Analysis"
+      "analysis": "Analysis",
+      "agentHint": "Who the agent is and how it opens the conversation.",
+      "voiceHint": "How it sounds and which key pays for the call.",
+      "knowledgeHint": "Inlined into the prompt when a call starts.",
+      "analysisHint": "Workflows that observe the call without shaping it."
     },
     "fields": {
       "name": "Name",
@@ -1469,7 +1473,6 @@
     },
     "testCall": {
       "title": "Test call",
-      "description": "Try a live call with this agent",
       "callButton": "Call",
       "hangUp": "Hang up",
       "you": "You",
@@ -1481,7 +1484,16 @@
         "micFailed": "Could not open the microphone",
         "timeout": "The call did not connect in time",
         "connectFailed": "Could not connect the call"
-      }
+      },
+      "state": {
+        "idle": "Ready",
+        "connecting": "Connecting",
+        "live": "Live",
+        "ending": "Ending"
+      },
+      "speakNow": "Listening",
+      "hintIdle": "Start a call and the conversation appears here as it is spoken.",
+      "hintLive": "Say something — the agent is listening."
     },
     "errors": {
       "nameRequired": "Name is required",

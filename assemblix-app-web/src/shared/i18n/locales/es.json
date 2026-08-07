@@ -1437,7 +1437,11 @@
       "agent": "Agente",
       "voice": "Voz",
       "knowledge": "Conocimiento",
-      "analysis": "Análisis"
+      "analysis": "Análisis",
+      "agentHint": "Quién es el agente y cómo abre la conversación.",
+      "voiceHint": "Cómo suena y qué clave paga la llamada.",
+      "knowledgeHint": "Se inserta en el prompt al iniciar la llamada.",
+      "analysisHint": "Flujos que observan la llamada sin modificarla."
     },
     "fields": {
       "name": "Nombre",
@@ -1469,7 +1473,6 @@
     },
     "testCall": {
       "title": "Llamada de prueba",
-      "description": "Prueba una llamada en vivo con este agente",
       "callButton": "Llamar",
       "hangUp": "Colgar",
       "you": "Tú",
@@ -1481,7 +1484,16 @@
         "micFailed": "No se pudo abrir el micrófono",
         "timeout": "La llamada no se conectó a tiempo",
         "connectFailed": "No se pudo conectar la llamada"
-      }
+      },
+      "state": {
+        "idle": "Listo",
+        "connecting": "Conectando",
+        "live": "En directo",
+        "ending": "Finalizando"
+      },
+      "speakNow": "Escuchando",
+      "hintIdle": "Inicia una llamada y la conversación aparecerá aquí mientras se habla.",
+      "hintLive": "Di algo: el agente está escuchando."
     },
     "errors": {
       "nameRequired": "El nombre es obligatorio",

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { AlertCircle, Loader2, Phone, Trash2 } from "lucide-react";
+import { AlertCircle, Loader2, Trash2 } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
@@ -13,6 +13,7 @@ import {
   useVoiceCall,
   validateDraft,
   VoiceAgentForm,
+  VoiceCallStage,
 } from "@/entities/voice-agent";
 import type { VoiceAgent, VoiceAgentDraft } from "@/entities/voice-agent";
 import { Button } from "@/shared/ui/button";
@@ -145,21 +146,23 @@ const VoiceAgentEditor = ({ voiceAgent }: VoiceAgentEditorProps) => {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-foreground">
+    <div className="space-y-8">
+      <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div className="min-w-0">
+          <p className="text-xs tracking-wide text-muted-foreground uppercase">
+            {t("voiceAgents.title")}
+          </p>
+          <h1 className="mt-1 truncate text-3xl font-semibold tracking-tight text-foreground">
             {voiceAgent.name}
           </h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            {t("voiceAgents.subtitle")}
-          </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex shrink-0 items-center gap-2">
           <Button
-            variant="destructive"
+            variant="ghost"
+            size="sm"
             onClick={handleDelete}
             disabled={isDeleting}
+            className="text-muted-foreground hover:text-destructive"
           >
             {isDeleting ? (
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -168,68 +171,18 @@ const VoiceAgentEditor = ({ voiceAgent }: VoiceAgentEditorProps) => {
             )}
             {t("voiceAgents.delete")}
           </Button>
-          <Button onClick={handleSave} disabled={isSaving}>
+          <Button size="sm" onClick={handleSave} disabled={isSaving}>
             {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             {t("voiceAgents.save")}
           </Button>
         </div>
-      </div>
+      </header>
 
-      <div className="grid gap-6 lg:grid-cols-3">
-        <div className="lg:col-span-2">
-          <VoiceAgentForm draft={draft} errors={errors} onChange={setDraft} />
-        </div>
+      <div className="grid items-start gap-8 xl:grid-cols-[minmax(0,1fr)_360px]">
+        <VoiceAgentForm draft={draft} errors={errors} onChange={setDraft} />
 
-        <div className="space-y-3 rounded-lg border border-border bg-card p-6">
-          <h2 className="text-lg font-semibold text-foreground">
-            {t("voiceAgents.testCall.title")}
-          </h2>
-          <p className="text-sm text-muted-foreground">
-            {t("voiceAgents.testCall.description")}
-          </p>
-          <Button
-            className="w-full"
-            variant={call.status === "live" ? "destructive" : "default"}
-            onClick={call.status === "idle" ? call.start : call.stop}
-            disabled={call.status === "connecting" || call.status === "ending"}
-          >
-            {call.status === "connecting" ? (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            ) : (
-              <Phone className="mr-2 h-4 w-4" />
-            )}
-            {call.status === "live"
-              ? t("voiceAgents.testCall.hangUp")
-              : t("voiceAgents.testCall.callButton")}
-          </Button>
-
-          {call.error && (
-            <p className="text-sm text-destructive">
-              {t(`voiceAgents.testCall.errors.${call.error}`)}
-            </p>
-          )}
-
-          {call.firstAudioMs !== null && (
-            <p className="text-xs text-muted-foreground">
-              {t("voiceAgents.testCall.firstAudio", { ms: call.firstAudioMs })}
-            </p>
-          )}
-
-          {call.transcript.length > 0 && (
-            <div className="max-h-72 space-y-2 overflow-y-auto rounded-md border border-border bg-muted/40 p-3">
-              {call.transcript.map((line, index) => (
-                <p key={index} className="text-sm">
-                  <span className="font-medium text-muted-foreground">
-                    {line.role === "user"
-                      ? t("voiceAgents.testCall.you")
-                      : t("voiceAgents.testCall.agent")}
-                    {": "}
-                  </span>
-                  <span className="text-foreground">{line.text}</span>
-                </p>
-              ))}
-            </div>
-          )}
+        <div className="xl:sticky xl:top-6 xl:h-[calc(100vh-8rem)]">
+          <VoiceCallStage call={call} />
         </div>
       </div>
     </div>

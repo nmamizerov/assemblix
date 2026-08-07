@@ -117,11 +117,9 @@ export const VoiceAgentForm = ({ draft, errors, onChange }: VoiceAgentFormProps)
   const isOverKnowledgeLimit = knowledgeCharCount > KNOWLEDGE_CHAR_WARNING_LIMIT;
 
   return (
-    <div className="space-y-8">
-      <section className="space-y-4">
-        <h2 className="text-lg font-semibold text-foreground">
-          {t("voiceAgents.sections.agent")}
-        </h2>
+    <div className="divide-y divide-border">
+      <Section title={t("voiceAgents.sections.agent")} hint={t("voiceAgents.sections.agentHint")}>
+        <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-2">
           <Label htmlFor="voice-agent-name">{t("voiceAgents.fields.name")}</Label>
           <Input
@@ -143,6 +141,7 @@ export const VoiceAgentForm = ({ draft, errors, onChange }: VoiceAgentFormProps)
             value={draft.description}
             onChange={(e) => handleField("description", e.target.value)}
           />
+        </div>
         </div>
         <div className="space-y-2">
           <Label htmlFor="voice-agent-prompt">
@@ -169,12 +168,9 @@ export const VoiceAgentForm = ({ draft, errors, onChange }: VoiceAgentFormProps)
             onChange={(e) => handleField("firstMessage", e.target.value)}
           />
         </div>
-      </section>
+      </Section>
 
-      <section className="space-y-4">
-        <h2 className="text-lg font-semibold text-foreground">
-          {t("voiceAgents.sections.voice")}
-        </h2>
+      <Section title={t("voiceAgents.sections.voice")} hint={t("voiceAgents.sections.voiceHint")}>
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-2">
             <Label>{t("voiceAgents.fields.provider")}</Label>
@@ -280,12 +276,9 @@ export const VoiceAgentForm = ({ draft, errors, onChange }: VoiceAgentFormProps)
             </div>
           )}
         </div>
-      </section>
+      </Section>
 
-      <section className="space-y-4">
-        <h2 className="text-lg font-semibold text-foreground">
-          {t("voiceAgents.sections.knowledge")}
-        </h2>
+      <Section title={t("voiceAgents.sections.knowledge")} hint={t("voiceAgents.sections.knowledgeHint")}>
         <div className="space-y-2 rounded-lg border border-border p-3">
           {knowledgeBases.length === 0 ? (
             <p className="text-sm text-muted-foreground">
@@ -328,12 +321,9 @@ export const VoiceAgentForm = ({ draft, errors, onChange }: VoiceAgentFormProps)
             <span>{t("voiceAgents.fields.knowledgeCharWarning")}</span>
           </div>
         )}
-      </section>
+      </Section>
 
-      <section className="space-y-4">
-        <h2 className="text-lg font-semibold text-foreground">
-          {t("voiceAgents.sections.analysis")}
-        </h2>
+      <Section title={t("voiceAgents.sections.analysis")} hint={t("voiceAgents.sections.analysisHint")}>
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-2">
             <Label>{t("voiceAgents.fields.turnWorkflow")}</Label>
@@ -384,7 +374,31 @@ export const VoiceAgentForm = ({ draft, errors, onChange }: VoiceAgentFormProps)
             </p>
           </div>
         </div>
-      </section>
+      </Section>
     </div>
   );
 };
+
+interface SectionProps {
+  title: string;
+  hint: string;
+  children: React.ReactNode;
+}
+
+/**
+ * Section label and its one-line purpose sit in a narrow rail beside the fields.
+ * Two effects: the eye gets a stable left edge to scan, and inputs stop
+ * stretching to the full width of the page, which is what made this read as a
+ * settings dump rather than a considered form.
+ */
+const Section = ({ title, hint, children }: SectionProps) => (
+  <section className="grid gap-x-10 gap-y-4 py-8 first:pt-0 last:pb-0 lg:grid-cols-[13rem_minmax(0,1fr)]">
+    <div className="lg:pt-1">
+      <h2 className="text-sm font-medium tracking-tight text-foreground">{title}</h2>
+      <p className="mt-1 max-w-[24ch] text-xs leading-relaxed text-muted-foreground">
+        {hint}
+      </p>
+    </div>
+    <div className="max-w-2xl space-y-4">{children}</div>
+  </section>
+);
