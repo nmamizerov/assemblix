@@ -14,7 +14,7 @@ names and are routinely mixed up.
 | `transcription` | audio → text | `transcription.py::transcribe()` | LiteLLM, `yandex.py` | `transcribe` node |
 | `speech` | text → audio (one blob) | `synthesis.py::synthesize()` | `providers/elevenlabs.py`, `providers/yandex.py` | agent node, buffered voice output |
 | `realtime` (pkg `streaming_tts/`) | text → audio (streamed) | `streaming_tts/__init__.py::create_realtime_session()` | `streaming_tts/elevenlabs.py`, `streaming_tts/yandex.py` | agent node with live voice, avatars |
-| `conversation` | audio ↔ audio (duplex) | `conversation/__init__.py::create_bridge()` | `conversation/openai.py` | **Voice Agents** |
+| `conversation` | audio ↔ audio (duplex) | `conversation/__init__.py::create_bridge()` | `conversation/openai.py`, `conversation/gemini.py` | **Voice Agents** |
 
 ### The name trap
 
@@ -105,14 +105,26 @@ Two things worth stating plainly, because both were violated once already:
   `api/rest/voice_sessions.py`.
 - **The runtime holds no DB connection.** `load_voice_session_setup` opens a session,
   resolves everything, and releases it *before* audio starts. A call lasts minutes;
-  a pooled connection must not.
+  a pooled connection must not. The only other two moments that touch the database are
+  `open_voice_session` (before the first frame, so hooks have an FK target) and
+  `close_voice_session` (after the last), each with its own short-lived session.
+- **Hooks are never awaited during the call.** `realtime/hooks.py::TurnDispatcher` fires
+  the per-turn workflow through the ordinary `run_workflow_isolated` path and drops the
+  task; a hook that raises is logged and forgotten. Only the final hook is awaited, and
+  only once the call is already over.
 
-## Adding a second conversation provider (e.g. Gemini Live)
+## Adding a conversation provider
 
-1. `catalog/models/gemini.json` — the model entry with `"capability": "conversation"`.
+Walked twice now — OpenAI, then Gemini Live. The long-form version, written against
+the Gemini integration, is [CONTRIBUTING_VOICE_AGENTS.md](CONTRIBUTING_VOICE_AGENTS.md).
+
+1. `catalog/models/<provider>.json` — the model entry with `"capability": "conversation"`
+   and a `costPerMinute` (a call is billed by wall-clock, so this number is the charge).
 2. `conversation/voices.py` — its voice list, if the provider has no listing endpoint.
-3. `conversation/gemini.py` — implement `RealtimeBridge`, translating that provider's events
-   into `BridgeEvent`. Nothing provider-shaped may cross that boundary.
+3. `conversation/<provider>.py` — implement `RealtimeBridge`, translating that provider's
+   events into `BridgeEvent`. Nothing provider-shaped may cross that boundary. Declare
+   `input_sample_rate` / `output_sample_rate` honestly: they are part of the contract and
+   travel to the browser, which builds its capture and playback graphs from them.
 4. `conversation/__init__.py` — one branch.
 5. `credentials_service.py` — add the provider to `_VOICE_PROVIDER_TO_CREDENTIALS_TYPE`,
    or a project's own key will be silently ignored in favour of the system key.

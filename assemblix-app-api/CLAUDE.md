@@ -74,6 +74,20 @@ Config (incl. `DATABASE_URL`, `JWT_SECRET_KEY`, `ENCRYPTION_KEY`) is read from t
   provider, and workflows attach only as observational analysis hooks referenced from its
   JSONB `config`. Separate from voice-in-workflows (`nodes/transcribe_node.py`,
   `nodes/agent_voice.py`), which is unchanged and independent.
+- `assemblix_api/realtime/` — the **realtime runtime**, exempt from the 4-layer rule
+  above: `VoiceSessionRuntime` is a long-lived stateful asyncio task owning two sockets,
+  driven by provider events rather than an HTTP request. Three constraints are not
+  negotiable — it **never holds a DB connection** (setup, session-open and session-close
+  each take their own short-lived one), it is **never queued** through Arq (audio lives
+  in process memory), and its analysis **hooks are never awaited** during the call
+  (`realtime/hooks.py`). WebSocket handlers are exempt from the no-logic-in-routers rule
+  only for frame plumbing; session logic stays in the runtime.
+  The bridge, not the runtime, owns the audio sample rates — providers disagree, and the
+  numbers travel through `session.ready` to the browser rather than being resampled.
+- **Credits are exposed as a JSON `float` over `Numeric(20, 8)`** in all four DTOs
+  (`voice_agent`, `voice_session`, `chat_session`, `client_session`, `execution`). This is
+  deliberate: at realistic magnitudes float64 round-trips the column exactly, and values
+  are quantized to 8 decimal places on write. Do not "fix" one field in isolation.
 - `assemblix_api/external/voice/` — four independent voice capabilities, each behind its
   own seam: `transcription.py` (audio→text), `synthesis.py` (text→audio buffered),
   `streaming_tts/` (text→audio streamed, used by voice-in-workflows) and `conversation/`

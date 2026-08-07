@@ -79,8 +79,14 @@ before editing.
   frames off the main thread. It lives in `public/` on purpose: importing it with `?url`
   makes Vite inline it as a `data:` URL, which `audioWorklet.addModule()` rejects under a
   strict CSP and on some browsers.
-- Nothing resamples audio. `new AudioContext({ sampleRate: 24000 })` makes the browser
-  deliver the provider's required rate natively, in both directions.
+- Nothing resamples audio, and **the rate is not a constant** — providers disagree
+  (OpenAI is 24 kHz both ways, Gemini Live listens at 16 kHz and answers at 24 kHz). The
+  server names both rates in the `session.ready` frame; capture starts only after it
+  arrives, in an `AudioContext` built at `inputSampleRate`, while playback runs through
+  `usePcmPlayer` at `outputSampleRate`. Two contexts, one per direction, both native.
+- `entities/voice-session` — call history: the list on the agent's Calls tab and the
+  session page with the transcript and links into the execution viewer for every
+  analysis-hook run.
 
 ### RTK Query API pattern
 
