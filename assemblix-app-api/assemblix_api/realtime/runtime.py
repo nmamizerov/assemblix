@@ -71,6 +71,9 @@ class VoiceSessionRuntime:
         # Audio actually forwarded to the browser, in ms. On a barge-in the
         # provider needs to know how much of its answer was really heard.
         self._played_ms = 0
+        # Interrupting when the agent is silent makes the provider answer with
+        # "no active response found" — a real error event for a non-event.
+        self._agent_speaking = False
         self._last_inbound_audio_at: float | None = None
         self._transcript: list[dict] = []
         self._closed_reason: str | None = None
@@ -132,6 +135,7 @@ class VoiceSessionRuntime:
         async for event in self._bridge.events():
             match event:
                 case AudioDelta():
+                    self._agent_speaking = True
                     self._played_ms += len(event.pcm) // (_BYTES_PER_SAMPLE * SAMPLE_RATE // 1000)
                     await self._client.send_bytes(event.pcm)
                     await self._emit_timings()
@@ -141,15 +145,24 @@ class VoiceSessionRuntime:
                     await self._on_transcript("assistant", event.text, event.is_final)
                 case SpeechStarted():
                     # Two-sided barge-in: the browser drops what it has queued and
-                    # the provider truncates to what was actually heard.
+                    # the provider truncates to what was actually heard. Only a
+                    # speaking agent can be interrupted.
                     await self._client.send_json({"type": "speech.started"})
-                    await self._bridge.interrupt(audio_end_ms=self._played_ms)
+                    if self._agent_speaking:
+                        await self._bridge.interrupt(audio_end_ms=self._played_ms)
+                        self._agent_speaking = False
                     self._played_ms = 0
                 case TurnEnded():
+                    self._agent_speaking = False
                     self._played_ms = 0
                 case BridgeError():
                     await self._client.send_json(
-                        {"type": "error", "code": event.code, "message": event.message}
+                        {
+                            "type": "error",
+                            "code": event.code,
+                            "message": event.message,
+                            "isFatal": event.is_fatal,
+                        }
                     )
                     if event.is_fatal:
                         self._closed_reason = "error"

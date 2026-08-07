@@ -126,7 +126,11 @@ export const useVoiceCall = (voiceAgentId: string): UseVoiceCallResult => {
           setFirstAudioMs(Number(frame.firstAudioMs));
           break;
         case "error":
-          setError(String(frame.message));
+          // Providers emit recoverable errors during normal operation. Only a
+          // fatal one is worth alarming the caller about; the rest go to the
+          // console for whoever is debugging.
+          console.warn("voice session error", frame);
+          if (frame.isFatal) setError("providerFailed");
           break;
         case "session.closed":
           teardown();

@@ -1484,7 +1484,8 @@
         "micMissing": "No microphone found",
         "micFailed": "Could not open the microphone",
         "timeout": "The call did not connect in time",
-        "connectFailed": "Could not connect the call"
+        "connectFailed": "Could not connect the call",
+        "providerFailed": "The voice provider ended the call"
       },
       "state": {
         "idle": "Ready",

@@ -1484,7 +1484,8 @@
         "micMissing": "No se encontró ningún micrófono",
         "micFailed": "No se pudo abrir el micrófono",
         "timeout": "La llamada no se conectó a tiempo",
-        "connectFailed": "No se pudo conectar la llamada"
+        "connectFailed": "No se pudo conectar la llamada",
+        "providerFailed": "El proveedor de voz terminó la llamada"
       },
       "state": {
         "idle": "Listo",
