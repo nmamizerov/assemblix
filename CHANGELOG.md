@@ -5,6 +5,19 @@ All notable changes to this project are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.27](https://github.com/nmamizerov/assemblix/compare/v0.2.26...v0.2.27) (2026-08-07)
+
+
+### Features
+
+* **voice-agents:** make the call a public API ([da70023](https://github.com/nmamizerov/assemblix/commit/da7002362a9dd18f17963e5dd737d2f262e0fab3))
+* **voice-agents:** make the call a public API ([9a7ec0c](https://github.com/nmamizerov/assemblix/commit/9a7ec0c5821a5bf3b22409529bfcf4d500d3706d))
+
+
+### Bug Fixes
+
+* **web:** let nginx upgrade the voice call to a WebSocket ([9a56c2b](https://github.com/nmamizerov/assemblix/commit/9a56c2b79d02a39cda76940e733d2ff2a6b680e0))
+
 ## [0.2.26](https://github.com/nmamizerov/assemblix/compare/v0.2.25...v0.2.26) (2026-08-07)
 
 
