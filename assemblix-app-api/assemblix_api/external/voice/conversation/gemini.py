@@ -74,10 +74,12 @@ class GeminiLiveBridge:
         *,
         api_key: str,
         model: str,
+        api_base: str | None = None,
         connect_factory: Callable[..., Any] | None = None,
     ) -> None:
         self._api_key = api_key
         self._model = model
+        self._api_base = api_base
         self._connect_factory = connect_factory
         self._session: Any = None
         # ``live.connect`` is an @asynccontextmanager. Dropping the manager lets the
@@ -94,8 +96,14 @@ class GeminiLiveBridge:
 
     async def _default_connect(self, *, api_key: str, model: str, config: Any) -> Any:
         from google import genai
+        from google.genai import types
 
-        client = genai.Client(api_key=api_key)
+        # The SDK builds the Live socket URL from http_options.base_url by swapping
+        # the scheme to wss, so a configured gateway is honoured here exactly as it
+        # is for chat and transcription. The gateway has to proxy WebSockets too —
+        # an HTTP-only proxy will fail the handshake rather than fall back.
+        http_options = types.HttpOptions(base_url=self._api_base) if self._api_base else None
+        client = genai.Client(api_key=api_key, http_options=http_options)
         self._manager = client.aio.live.connect(model=model, config=config)
         return await self._manager.__aenter__()
 

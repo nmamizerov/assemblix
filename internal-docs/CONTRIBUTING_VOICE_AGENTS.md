@@ -54,6 +54,13 @@ in `session.ready`; the browser builds its capture graph at `inputSampleRate` an
 back at `outputSampleRate`. Nothing anywhere resamples. Getting this wrong produces
 audio that is subtly fast or slow rather than an error.
 
+Honour `api_base`. It is the configured gateway
+(`external/llm/provider_config.py::resolve_api_base`), the same one chat and
+transcription use, and both SDKs derive their WebSocket URL from the client's base
+URL — so wiring it is one argument, and forgetting it sends conversations straight
+to the provider from a network that may not reach it. A gateway also has to proxy
+WebSockets; an HTTP-only one fails the handshake rather than degrading.
+
 Then translate events. The vocabulary is fixed — `AudioDelta`, `UserTranscript`,
 `AgentTranscript`, `SpeechStarted`, `TurnEnded`, `BridgeError`, `SessionClosed` — and
 the runtime above never learns which provider produced them.

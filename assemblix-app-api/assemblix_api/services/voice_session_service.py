@@ -33,6 +33,7 @@ from assemblix_api.database.repositories.organization_user_repository import (
 from assemblix_api.database.repositories.project_repository import ProjectRepository
 from assemblix_api.database.repositories.voice_agent_repository import VoiceAgentRepository
 from assemblix_api.database.repositories.voice_session_repository import VoiceSessionRepository
+from assemblix_api.external.llm.provider_config import resolve_api_base
 from assemblix_api.external.voice.catalog.registry import find_voice_model
 from assemblix_api.schemas.voice_agent import VoiceAgentConfig
 from assemblix_api.services.credentials_service import CredentialsService
@@ -64,6 +65,9 @@ class VoiceSessionSetup:
     provider: str
     model: str
     api_key: str
+    # Configured transport base URL — the same gateway chat and transcription use.
+    # None means the provider SDK's own endpoint.
+    api_base: str | None
     turn_workflow_id: str | None
     final_workflow_id: str | None
     # From the voice catalog. A conversation is billed by wall-clock rather than by
@@ -136,6 +140,7 @@ class VoiceSessionService:
             provider=config.voice.provider,
             model=config.voice.model,
             api_key=api_key,
+            api_base=resolve_api_base(config.voice.provider),
             turn_workflow_id=config.turn_workflow_id,
             final_workflow_id=config.final_workflow_id,
             cost_per_minute=(catalog_entry.cost_per_minute or 0.0) if catalog_entry else 0.0,

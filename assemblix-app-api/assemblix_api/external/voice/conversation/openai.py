@@ -73,10 +73,12 @@ class OpenAIRealtimeBridge:
         *,
         api_key: str,
         model: str,
+        api_base: str | None = None,
         connect_factory: Callable[..., Any] | None = None,
     ) -> None:
         self._api_key = api_key
         self._model = model
+        self._api_base = api_base
         self._connect_factory = connect_factory
         self._connection: Any = None
         self._failed = False
@@ -86,7 +88,10 @@ class OpenAIRealtimeBridge:
     async def _default_connect(self, *, api_key: str, model: str) -> Any:
         from openai import AsyncOpenAI
 
-        client = AsyncOpenAI(api_key=api_key)
+        # The SDK derives the realtime WebSocket URL from the client's base_url, so
+        # routing a conversation through a gateway is the same setting as routing a
+        # chat completion through it. Omitted → the SDK's own default.
+        client = AsyncOpenAI(api_key=api_key, base_url=self._api_base or None)
         manager = client.realtime.connect(model=model)
         return await manager.__aenter__()
 

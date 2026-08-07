@@ -48,3 +48,18 @@ PROVIDER_CONFIGS: dict[str, ProviderConfig] = {
 def get_provider_config(provider: str) -> ProviderConfig:
     """Provider config; an unknown provider → the default one (no prefix)."""
     return PROVIDER_CONFIGS.get(provider, ProviderConfig())
+
+
+def resolve_api_base(provider: str) -> str | None:
+    """The configured transport base URL for ``provider``, or None for the default.
+
+    One place, so every route to a provider — chat, transcription, a realtime
+    conversation — goes through the same proxy. An empty setting means "unset";
+    without that check a blank env var would be passed on as a base URL of "".
+    """
+    cfg = get_provider_config(provider)
+    if not cfg.api_base_setting:
+        return None
+    from assemblix_api.core.settings import get_settings
+
+    return getattr(get_settings(), cfg.api_base_setting, None) or None

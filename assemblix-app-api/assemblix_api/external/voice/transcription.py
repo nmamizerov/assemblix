@@ -15,8 +15,7 @@ from __future__ import annotations
 import litellm
 from pydantic import BaseModel
 
-from assemblix_api.core.settings import get_settings
-from assemblix_api.external.llm.provider_config import get_provider_config
+from assemblix_api.external.llm.provider_config import resolve_api_base
 from assemblix_api.external.voice.catalog import find_voice_model
 from assemblix_api.external.voice.providers import yandex
 
@@ -39,14 +38,6 @@ def _supports_verbose_json(model: str) -> bool:
     check is the accepted approach here. Default stays the universally-safe ``json``.
     """
     return "whisper" in model.lower()
-
-
-def _resolve_api_base(provider: str) -> str | None:
-    """Reuse the chat provider transport config so voice honors the same proxy."""
-    cfg = get_provider_config(provider)
-    if not cfg.api_base_setting:
-        return None
-    return getattr(get_settings(), cfg.api_base_setting, None)
 
 
 async def transcribe(
@@ -78,7 +69,7 @@ async def transcribe(
             model=model,  # bare id, e.g. "whisper-1" (no provider prefix here)
             file=(filename, audio_bytes),
             api_key=api_key,
-            api_base=_resolve_api_base(provider),
+            api_base=resolve_api_base(provider),
             # Only Whisper accepts verbose_json (the source of language/duration);
             # gpt-4o-transcribe* reject it and support json/text only.
             response_format="verbose_json" if _supports_verbose_json(model) else "json",
