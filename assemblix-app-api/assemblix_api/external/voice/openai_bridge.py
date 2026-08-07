@@ -31,6 +31,12 @@ from assemblix_api.external.voice.bridge import (
 logger = structlog.get_logger(__name__)
 
 _AUDIO_FORMAT = {"type": "audio/pcm", "rate": 24000}
+
+# The API rejects a session whose input transcription has no model. This one is
+# built for realtime sessions; the transcript feeds the UI and (later) the
+# analysis hooks, and never sits on the path to speech. Override per agent with
+# ``params["transcription_model"]``.
+DEFAULT_TRANSCRIPTION_MODEL = "gpt-realtime-whisper"
 # params keys accepted for turn_detection; anything else is ignored, not forwarded.
 _TURN_DETECTION_PARAMS = ("threshold", "prefix_padding_ms", "silence_duration_ms")
 
@@ -81,12 +87,8 @@ class OpenAIRealtimeBridge:
             "audio": {
                 "input": {
                     "format": _AUDIO_FORMAT,
-                    # `model` is required — the API rejects the session without it.
-                    # gpt-realtime-whisper is the transcriber built for realtime
-                    # sessions; the transcript is what the UI and the analysis
-                    # hooks read, it is not on the path to speech.
                     "transcription": {
-                        "model": "gpt-realtime-whisper",
+                        "model": params.get("transcription_model", DEFAULT_TRANSCRIPTION_MODEL),
                         "language": language,
                     },
                     "turn_detection": turn_detection,

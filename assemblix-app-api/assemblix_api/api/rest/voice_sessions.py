@@ -1,9 +1,9 @@
 """Voice session endpoints: mint a short-lived token, then stream audio over it.
 
-The WebSocket handler is the one place in the app that is not request/response.
-It holds a DB connection only while assembling the session (agent config,
-knowledge, provider key) and releases it before any audio flows — a call lasts
-minutes and must not occupy a pooled connection for that long.
+The WebSocket handler is the one place in the app that is not request/response,
+but it stays a transport: it authorizes the token, hands assembly to
+``VoiceSessionService`` and plumbing to ``VoiceSessionRuntime``, and owns nothing
+of its own beyond adapting the socket.
 """
 
 from __future__ import annotations
@@ -11,7 +11,6 @@ from __future__ import annotations
 import contextlib
 import json
 from collections.abc import AsyncIterator
-from dataclasses import dataclass
 from uuid import UUID
 
 import structlog
@@ -19,18 +18,6 @@ from fastapi import APIRouter, Depends, HTTPException, WebSocket, WebSocketDisco
 
 from assemblix_api.core.auth_context import AuthContext
 from assemblix_api.core.settings import get_settings
-from assemblix_api.database import get_async_session
-from assemblix_api.database.repositories.credentials_repository import CredentialsRepository
-from assemblix_api.database.repositories.knowledge_base_repository import KnowledgeBaseRepository
-from assemblix_api.database.repositories.knowledge_document_repository import (
-    KnowledgeDocumentRepository,
-)
-from assemblix_api.database.repositories.organization_repository import OrganizationRepository
-from assemblix_api.database.repositories.organization_user_repository import (
-    OrganizationUserRepository,
-)
-from assemblix_api.database.repositories.project_repository import ProjectRepository
-from assemblix_api.database.repositories.voice_agent_repository import VoiceAgentRepository
 from assemblix_api.dependencies import (
     get_auth_context,
     get_project_service,
@@ -44,11 +31,9 @@ from assemblix_api.realtime.session_token import (
     mint_session_token,
     verify_session_token,
 )
-from assemblix_api.schemas.voice_agent import VoiceAgentConfig
-from assemblix_api.services.credentials_service import CredentialsService
-from assemblix_api.services.knowledge_base_service import KnowledgeBaseService
 from assemblix_api.services.project_service import ProjectService
 from assemblix_api.services.voice_agent_service import VoiceAgentService
+from assemblix_api.services.voice_session_service import load_voice_session_setup
 
 logger = structlog.get_logger(__name__)
 
@@ -84,77 +69,6 @@ async def create_voice_session(
     )
 
 
-@dataclass
-class _SessionSetup:
-    """Everything a call needs, read once so the session itself touches no DB."""
-
-    instructions: str
-    voice: str
-    language: str
-    params: dict
-    provider: str
-    model: str
-    api_key: str
-
-
-async def _load_setup(voice_agent_id: UUID, project_id: UUID) -> _SessionSetup:
-    """Assemble the session while briefly holding a DB connection."""
-    async for session in get_async_session():
-        agent = await VoiceAgentRepository(session).get_by_id(voice_agent_id)
-        if agent is None or agent.project_id != project_id:
-            raise InvalidSessionToken("Voice agent not found for this token")
-
-        config = VoiceAgentConfig(**agent.config)
-
-        project = await ProjectRepository(session).get_by_id(project_id)
-        if project is None:
-            raise InvalidSessionToken("Project not found")
-        organization = await OrganizationRepository(session).get_by_id(project.organization_id)
-        if organization is None:
-            raise InvalidSessionToken("Organization not found")
-
-        knowledge = ""
-        if config.knowledge_base_ids:
-            kb_service = KnowledgeBaseService(
-                KnowledgeBaseRepository(session), KnowledgeDocumentRepository(session)
-            )
-            knowledge = await kb_service.get_combined_content(
-                [UUID(kb_id) for kb_id in config.knowledge_base_ids]
-            )
-
-        credentials_service = CredentialsService(
-            CredentialsRepository(session), OrganizationUserRepository(session)
-        )
-        api_key, _ = await credentials_service.get_voice_api_key_with_fallback(
-            credentials_id=UUID(config.voice.credential_id) if config.voice.credential_id else None,
-            project_id=project_id,
-            voice_provider=config.voice.provider,
-            organization_plan=organization.plan,
-        )
-
-        return _SessionSetup(
-            instructions=_build_instructions(config, knowledge),
-            voice=config.voice.voice_id or "",
-            language=config.language,
-            params=config.params,
-            provider=config.voice.provider,
-            model=config.voice.model,
-            api_key=api_key,
-        )
-
-    raise InvalidSessionToken("No database session available")
-
-
-def _build_instructions(config: VoiceAgentConfig, knowledge: str) -> str:
-    """Knowledge bases are inlined once, at session start — no retrieval at call time."""
-    parts = [instruction.content for instruction in config.instructions]
-    if knowledge:
-        parts.append(f"---\nБаза знаний:\n{knowledge}\n---")
-    if config.first_message:
-        parts.append(f"Начни разговор с фразы: {config.first_message}")
-    return "\n\n".join(parts)
-
-
 class _WebSocketChannel:
     """Adapts a Starlette WebSocket to the runtime's narrow client contract."""
 
@@ -188,9 +102,9 @@ async def stream_voice_session(websocket: WebSocket, token: str) -> None:
 
     await websocket.accept()
     try:
-        setup = await _load_setup(voice_agent_id, project_id)
-    except InvalidSessionToken as exc:
-        await websocket.send_json({"type": "session.closed", "reason": str(exc)})
+        setup = await load_voice_session_setup(voice_agent_id=voice_agent_id, project_id=project_id)
+    except HTTPException as exc:
+        await websocket.send_json({"type": "session.closed", "reason": exc.detail})
         await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
         return
     except Exception:
