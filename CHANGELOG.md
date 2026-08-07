@@ -5,6 +5,55 @@ All notable changes to this project are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.26](https://github.com/nmamizerov/assemblix/compare/v0.2.25...v0.2.26) (2026-08-07)
+
+
+### Features
+
+* Voice Agents — realtime conversational agents with a test call ([230ef7d](https://github.com/nmamizerov/assemblix/commit/230ef7dbba20368a16c8a0e43fd91920fffaf15d))
+* **voice-agents:** add call history and a voice field you can type into ([ba2de86](https://github.com/nmamizerov/assemblix/commit/ba2de861fd8702e8a2d569022fb160f301e8cdfc))
+* **voice-agents:** add frontend entity slice and form logic ([2fb2258](https://github.com/nmamizerov/assemblix/commit/2fb2258f6c234fd7c08fe0c7615850b2f9dcd720))
+* **voice-agents:** add Gemini Live, session hooks and metering ([c671fc7](https://github.com/nmamizerov/assemblix/commit/c671fc77691dae3d2c646db21d9858a22d31ff0c))
+* **voice-agents:** add Voice Agents pages, navigation and i18n ([2caa253](https://github.com/nmamizerov/assemblix/commit/2caa253d9c407ad1f725477312de63b80ae585d5))
+* **voice-agents:** add voice/language selects and credential picker to agent form ([e8064e8](https://github.com/nmamizerov/assemblix/commit/e8064e88bf283b2c6124730b9456ac8c877e44b1))
+* **voice-agents:** add VoiceAgent entity with project-scoped CRUD ([c091552](https://github.com/nmamizerov/assemblix/commit/c091552ee29888bedd28f2a76b75e3752640307c))
+* **voice-agents:** give the configuration real signal — marks, prices, identity ([c66c94d](https://github.com/nmamizerov/assemblix/commit/c66c94da163636d7458ffca31572d8f210b7b8cf))
+* **voice-agents:** make the test call work end to end in the browser ([9331374](https://github.com/nmamizerov/assemblix/commit/9331374df8866a63aac38ff85c332b6c3e0e0994))
+* **voice-agents:** rebuild the agent page around the live call ([6c4010d](https://github.com/nmamizerov/assemblix/commit/6c4010df1e498b2c4b083fd7ac43d1735b95e0b4))
+* **voice-agents:** reject non-conversation models and cover project scoping ([88cdb71](https://github.com/nmamizerov/assemblix/commit/88cdb71fc252bf90255cefc144f0385ac2490a83))
+* **voice:** add conversation capability and Gemini to the voice catalog ([b3a5008](https://github.com/nmamizerov/assemblix/commit/b3a50080fe4d1239e0a89517e4a446a17eb9ae2a))
+* **voice:** add the conversation bridge dispatch factory ([958178b](https://github.com/nmamizerov/assemblix/commit/958178b93d04feee2ae7a2e7669860ce138cec6f))
+* **voice:** add the OpenAI realtime conversation bridge ([37d87e1](https://github.com/nmamizerov/assemblix/commit/37d87e178771d78d4247fed8fe867a2ad7b08668))
+* **voice:** add the realtime bridge protocol and event vocabulary ([c0081b9](https://github.com/nmamizerov/assemblix/commit/c0081b9a8f78fd93df6c2bc3ecb91172b03bb86a))
+* **voice:** add the voice session runtime, token minting and WS transport ([1b5e48a](https://github.com/nmamizerov/assemblix/commit/1b5e48ad54347f15b61664bf8f4289f317846b53))
+* **voice:** serve static conversation voice catalogs for openai/gemini ([ade7855](https://github.com/nmamizerov/assemblix/commit/ade78550cff42303d5d72ca857d30f6e0f65b978))
+
+
+### Bug Fixes
+
+* **voice-agents:** eliminate nullable knowledgeBaseIds and invalidate per-id cache on delete ([6fb5236](https://github.com/nmamizerov/assemblix/commit/6fb5236007f387fd1171affef47be3b0b8be6b15))
+* **voice-agents:** gate credential field behind canUseOwnKeys ([117da0c](https://github.com/nmamizerov/assemblix/commit/117da0c55e5a14ce8469a7a35b0cb919c29a9f1d))
+* **voice-agents:** never leave the test call spinning without a reason ([be5171d](https://github.com/nmamizerov/assemblix/commit/be5171db821a7de3a2ecf39c952862e8cc6f3f07))
+* **voice-agents:** serialize total_credits as a number, not a string ([48ab44d](https://github.com/nmamizerov/assemblix/commit/48ab44df5c530a5ff4f3d1794583e1e29aa584e8))
+* **voice-agents:** stop the call tearing itself down on the first re-render ([7649b26](https://github.com/nmamizerov/assemblix/commit/7649b26a42f276798d6bab26676dbd300bd6bcd6))
+* **voice-agents:** surface fetch errors instead of spinning or showing empty ([0adffe3](https://github.com/nmamizerov/assemblix/commit/0adffe37fa0dd3511e7578fa34c5fbac202868e6))
+* **voice:** make interruption, error, and session-close handling transport-correct ([5dabbcd](https://github.com/nmamizerov/assemblix/commit/5dabbcd4903b0013ffbe1c2e37ec5b0801e192f8))
+* **voice:** make voice agent creation reachable and close config-loss/scope gaps ([fb10630](https://github.com/nmamizerov/assemblix/commit/fb1063060c8cb42e88f99a989ac2c387eac0bd8c))
+* **voice:** send the required transcription model and stop forcing the playback rate ([b7501c9](https://github.com/nmamizerov/assemblix/commit/b7501c9e5621cf3c15cfa85f8b08fc5e986c9709))
+* **voice:** stop interrupting an agent that is not speaking ([60393f3](https://github.com/nmamizerov/assemblix/commit/60393f30ad11d805bd70c616e04769b8b0b0a8f7))
+
+
+### Documentation
+
+* describe Voice Agents as a second product surface ([d45b05d](https://github.com/nmamizerov/assemblix/commit/d45b05df71c07d5aa8717885c8195798ae06bc71))
+* document voice agents, their hooks and their providers ([0671882](https://github.com/nmamizerov/assemblix/commit/0671882f61f79beb47bce7f2ceab01333b9c6674))
+
+
+### Refactoring
+
+* **voice:** group external/voice by capability ([e898442](https://github.com/nmamizerov/assemblix/commit/e8984425a62b56bd68b490b082cf505ded92d65f))
+* **voice:** move session assembly out of the router into a service ([39cd012](https://github.com/nmamizerov/assemblix/commit/39cd012918abeada03173f6b1bc45493bb4c5e79))
+
 ## [0.2.25](https://github.com/nmamizerov/assemblix/compare/v0.2.24...v0.2.25) (2026-07-28)
 
 
