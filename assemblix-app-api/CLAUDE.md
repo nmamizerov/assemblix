@@ -69,6 +69,33 @@ Config (incl. `DATABASE_URL`, `JWT_SECRET_KEY`, `ENCRYPTION_KEY`) is read from t
 - `assemblix_api/oauth/` — OAuth provider registry (Google).
 - `assemblix_api/core/encryption.py` — Encryption service for credentials storage.
 - `assemblix_api/core/settings.py` — `Settings` class via pydantic-settings, cached with `@lru_cache`.
+- `assemblix_api/services/voice_agent_service.py` — Voice Agents: realtime conversational
+  agents. A voice agent has **no graph** — the conversation runs against a speech-to-speech
+  provider, and workflows attach only as observational analysis hooks referenced from its
+  JSONB `config`. Separate from voice-in-workflows (`nodes/transcribe_node.py`,
+  `nodes/agent_voice.py`), which is unchanged and independent.
+- `assemblix_api/realtime/` — the **realtime runtime**, exempt from the 4-layer rule
+  above: `VoiceSessionRuntime` is a long-lived stateful asyncio task owning two sockets,
+  driven by provider events rather than an HTTP request. Three constraints are not
+  negotiable — it **never holds a DB connection** (setup, session-open and session-close
+  each take their own short-lived one), it is **never queued** through Arq (audio lives
+  in process memory), and its analysis **hooks are never awaited** during the call
+  (`realtime/hooks.py`). WebSocket handlers are exempt from the no-logic-in-routers rule
+  only for frame plumbing; session logic stays in the runtime.
+  The bridge, not the runtime, owns the audio sample rates — providers disagree, and the
+  numbers travel through `session.ready` to the browser rather than being resampled.
+- **Credits are exposed as a JSON `float` over `Numeric(20, 8)`** in all four DTOs
+  (`voice_agent`, `voice_session`, `chat_session`, `client_session`, `execution`). This is
+  deliberate: at realistic magnitudes float64 round-trips the column exactly, and values
+  are quantized to 8 decimal places on write. Do not "fix" one field in isolation.
+- `assemblix_api/external/voice/` — four independent voice capabilities, each behind its
+  own seam: `transcription.py` (audio→text), `synthesis.py` (text→audio buffered),
+  `streaming_tts/` (text→audio streamed, used by voice-in-workflows) and `conversation/`
+  (audio↔audio duplex, used by Voice Agents). `catalog/` is the shared model registry,
+  `providers/` holds the direct clients for the two non-OpenAI-compatible APIs.
+  **Map with diagrams: [internal-docs/voice-layer-map.md](../internal-docs/voice-layer-map.md)** —
+  read it before adding anything there; `streaming_tts` and `conversation` are opposite
+  directions despite sounding alike.
 
 ## Key Rules
 

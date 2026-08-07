@@ -1,7 +1,7 @@
 import { useState, useCallback, useRef, useEffect } from "react";
 import { useSelector, useStore } from "react-redux";
 import { useAppDispatch, type RootState } from "@/app/store";
-import { usePcmPlayer } from "./use-pcm-player";
+import { usePcmPlayer } from "@/shared/lib/use-pcm-player";
 import {
   updateNodeStatus,
   setExecutionId,

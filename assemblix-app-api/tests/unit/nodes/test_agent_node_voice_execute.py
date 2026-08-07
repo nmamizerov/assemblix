@@ -7,7 +7,7 @@ import pytest
 from assemblix_api.enums import PlanTier
 from assemblix_api.execution.debug_event_manager import DebugEventManager
 from assemblix_api.execution.node_runner import NodeRunner
-from assemblix_api.external.voice.realtime import RealtimeTTSSession
+from assemblix_api.external.voice.streaming_tts.elevenlabs import RealtimeTTSSession
 from assemblix_api.external.voice.synthesis import SynthesisResult
 from assemblix_api.nodes.agent_node import AgentNode
 
@@ -55,7 +55,7 @@ async def test_live_voice_tees_and_meters(mock_llm, mock_tts_ws, mocker):
     mock_llm.set_stream(["Hello ", "world."])
     mock_tts_ws.script_audio([(b"\x01", None)])
     mocker.patch(
-        "assemblix_api.external.voice.realtime_dispatch.RealtimeTTSSession",
+        "assemblix_api.external.voice.streaming_tts.RealtimeTTSSession",
         lambda **kw: RealtimeTTSSession(**{**kw, "connect": mock_tts_ws.connect}),
     )
     context = make_context(

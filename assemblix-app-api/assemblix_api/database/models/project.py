@@ -19,6 +19,7 @@ if TYPE_CHECKING:
     from .node_template import NodeTemplate
     from .notification_channel import NotificationChannel
     from .organization import Organization
+    from .voice_agent import VoiceAgent
     from .workflow import Workflow
 
 
@@ -112,6 +113,10 @@ class Project(UUIDMixin, TimestampMixin, Base):
         cascade="all, delete-orphan",
     )
     notification_channels: Mapped[list["NotificationChannel"]] = relationship(
+        back_populates="project",
+        cascade="all, delete-orphan",
+    )
+    voice_agents: Mapped[list["VoiceAgent"]] = relationship(
         back_populates="project",
         cascade="all, delete-orphan",
     )

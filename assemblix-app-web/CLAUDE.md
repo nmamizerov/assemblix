@@ -56,6 +56,38 @@ src/
 
 **Import rule:** Always import through `index.ts` barrel exports (`@/entities/workflow`), never into subfolders directly.
 
+### Voice Agents vs Agents — naming trap
+
+- `pages/agents` lists **workflows** (a workflow is called an "agent" in product copy).
+- `pages/voice-agents` lists **voice agents** — a separate entity with no graph, backed
+  by `entities/voice-agent` and the `/api/voice-agents` REST resource. A voice agent
+  holds a prompt, a speech-to-speech voice, knowledge bases inlined into the prompt, and
+  optional workflow references used only as background analysis hooks.
+
+These are different entities with confusingly similar names. Check which one you are in
+before editing.
+
+### Browser audio (voice-agent test call)
+
+- `shared/lib/use-pcm-player.ts` — streaming PCM playback, shared by the workflow debug
+  panel and voice calls. Its `flush()` stops every already-scheduled source, which is what
+  makes barge-in work: an `AudioBufferSourceNode` plays to the end once started, so
+  dropping the schedule pointer alone leaves the agent talking over the user.
+- `entities/voice-agent/lib/use-voice-call.ts` — owns a call: mints a session token, opens
+  the WebSocket, streams microphone frames up and plays audio frames down.
+- `public/pcm-recorder.worklet.js` — microphone capture worklet, emitting ~200 ms PCM16
+  frames off the main thread. It lives in `public/` on purpose: importing it with `?url`
+  makes Vite inline it as a `data:` URL, which `audioWorklet.addModule()` rejects under a
+  strict CSP and on some browsers.
+- Nothing resamples audio, and **the rate is not a constant** — providers disagree
+  (OpenAI is 24 kHz both ways, Gemini Live listens at 16 kHz and answers at 24 kHz). The
+  server names both rates in the `session.ready` frame; capture starts only after it
+  arrives, in an `AudioContext` built at `inputSampleRate`, while playback runs through
+  `usePcmPlayer` at `outputSampleRate`. Two contexts, one per direction, both native.
+- `entities/voice-session` — call history: the list on the agent's Calls tab and the
+  session page with the transcript and links into the execution viewer for every
+  analysis-hook run.
+
 ### RTK Query API pattern
 
 All endpoints use `baseApi.injectEndpoints()` from `shared/api/baseApi.ts`. New cache tag types must be registered in `baseApi`'s `tagTypes` array. Auth token, project ID, and language are injected via `prepareHeaders`.

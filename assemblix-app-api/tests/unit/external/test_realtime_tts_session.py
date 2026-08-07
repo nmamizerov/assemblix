@@ -1,6 +1,6 @@
 import pytest
 
-from assemblix_api.external.voice.realtime import RealtimeTTSSession
+from assemblix_api.external.voice.streaming_tts.elevenlabs import RealtimeTTSSession
 from assemblix_api.schemas.debug_events import AlignmentData
 
 

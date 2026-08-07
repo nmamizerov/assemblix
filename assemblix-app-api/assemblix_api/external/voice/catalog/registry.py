@@ -12,7 +12,7 @@ import json
 from functools import cache
 from pathlib import Path
 
-from assemblix_api.external.voice.base import VoiceModelMetadata
+from assemblix_api.external.voice.catalog.metadata import VoiceModelMetadata
 
 _VOICE_MODELS_DIR = Path(__file__).parent / "models"
 
@@ -22,6 +22,7 @@ VOICE_PROVIDER_LABELS: dict[str, str] = {
     "openai": "OpenAI",
     "elevenlabs": "ElevenLabs",
     "yandex": "Yandex SpeechKit",
+    "gemini": "Gemini",
 }
 
 
@@ -59,3 +60,10 @@ def has_realtime_route(provider: str, model: str) -> bool:
     if provider not in VOICE_PROVIDER_LABELS:
         return False
     return any(m.id == model and m.capability == "realtime" for m in _provider_models(provider))
+
+
+def has_conversation_route(provider: str, model: str) -> bool:
+    """True when ``(provider, model)`` is registered as a speech-to-speech model."""
+    if provider not in VOICE_PROVIDER_LABELS:
+        return False
+    return any(m.id == model and m.capability == "conversation" for m in _provider_models(provider))

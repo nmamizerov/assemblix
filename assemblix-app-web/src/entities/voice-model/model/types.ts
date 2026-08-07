@@ -4,14 +4,14 @@ export interface VoiceProviderListItem {
   modelsCount: number;
 }
 
-export type VoiceCapability = "transcription" | "speech" | "realtime";
+export type VoiceCapability = "transcription" | "speech" | "realtime" | "conversation";
 
 export interface VoiceModelMetadata {
   id: string;
   label: string;
   description?: string | null;
   capability: VoiceCapability;
-  route: "transcription" | "completion" | "speech";
+  route: "transcription" | "completion" | "speech" | "conversation" | "realtime";
   costPerMinute?: number | null;
 }
 

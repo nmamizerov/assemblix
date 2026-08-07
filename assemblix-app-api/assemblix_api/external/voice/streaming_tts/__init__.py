@@ -13,8 +13,8 @@ from __future__ import annotations
 
 from typing import Protocol
 
-from assemblix_api.external.voice.realtime import OnAudio, RealtimeTTSSession
-from assemblix_api.external.voice.yandex_realtime import Mode, YandexRealtimeSession
+from assemblix_api.external.voice.streaming_tts.elevenlabs import OnAudio, RealtimeTTSSession
+from assemblix_api.external.voice.streaming_tts.yandex import Mode, YandexRealtimeSession
 
 
 class RealtimeSession(Protocol):

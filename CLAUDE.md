@@ -11,6 +11,12 @@ multiple LLM providers (OpenAI, Gemini, DeepSeek). The platform supports
 multi-tenancy (organizations, projects), knowledge bases (RAG), credentials, chat
 sessions, and — in the commercial build — billing/credits and payments.
 
+Alongside graph workflows the platform ships **Voice Agents** — realtime conversational
+agents that run against a speech-to-speech provider rather than the graph engine.
+Workflows attach to them only as background analysis hooks. Voice *inside* workflows
+(the `transcribe` node, the agent node's voice output) is a separate, independent
+feature and is unaffected.
+
 This repository is the **open-source / source-available build** of a product that also
 ships as a hosted commercial service. Enterprise-only concerns (billing, payments) are
 gated behind feature flags and are off by default for self-hosting — see Licensing below.

@@ -4,6 +4,9 @@ import { RegisterPage } from "@/pages/register";
 import { GithubCallbackPage } from "@/pages/auth-callback";
 import { HomePage } from "@/pages/home";
 import { AgentsPage } from "@/pages/agents";
+import { VoiceAgentsPage } from "@/pages/voice-agents";
+import { VoiceAgentDetailsPage } from "@/pages/voice-agent-details";
+import { VoiceSessionDetailsPage } from "@/pages/voice-session-details";
 import { ChatDetailsPage } from "@/pages/chat-details";
 import { WorkflowDetailsPage } from "@/pages/workflow-details";
 import { ExecutionViewerPage } from "@/pages/execution-viewer";
@@ -82,6 +85,18 @@ export const appRouter = createBrowserRouter([
           {
             path: "workflows/:workflowId/executions/:executionId",
             element: <ExecutionViewerPage />,
+          },
+          {
+            path: "voice-agents",
+            element: <VoiceAgentsPage />,
+          },
+          {
+            path: "voice-agents/:agentId",
+            element: <VoiceAgentDetailsPage />,
+          },
+          {
+            path: "voice-sessions/:sessionId",
+            element: <VoiceSessionDetailsPage />,
           },
           {
             path: "sessions",

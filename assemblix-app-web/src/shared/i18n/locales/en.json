@@ -97,6 +97,7 @@
   },
   "sidebar": {
     "agents": "Agents",
+    "voiceAgents": "Voice Agents",
     "agentSessions": "Agent Calls",
     "apiKeys": "API Keys",
     "knowledgeBases": "Knowledge Bases",
@@ -1412,6 +1413,99 @@
     "errorDuplicate": "A document with this content already exists",
     "errorNoText": "PDF contains no text (scanned document without OCR)"
   },
+  "voiceAgents": {
+    "title": "Voice Agents",
+    "subtitle": "Realtime conversational agents that answer calls with a speech-to-speech voice",
+    "create": "Create Voice Agent",
+    "defaultName": "New Voice Agent",
+    "empty": "No voice agents",
+    "emptyDescription": "Create a voice agent to have a realtime conversation with a speech-to-speech provider",
+    "noDescription": "No description",
+    "save": "Save",
+    "delete": "Delete",
+    "saveSuccess": "Voice agent saved",
+    "saveError": "Failed to save voice agent",
+    "createError": "Failed to create voice agent",
+    "deleteSuccess": "Voice agent deleted",
+    "deleteError": "Failed to delete voice agent",
+    "loadingError": "Loading Error",
+    "loadingErrorDescription": "Failed to load voice agent data. It may have been deleted or you may not have access.",
+    "backToList": "Back to List",
+    "listError": "Failed to load voice agents",
+    "listErrorDescription": "Something went wrong while loading your voice agents. Please try again.",
+    "sections": {
+      "agent": "Agent",
+      "voice": "Voice",
+      "knowledge": "Knowledge",
+      "analysis": "Analysis",
+      "agentHint": "Who the agent is and how it opens the conversation.",
+      "voiceHint": "How it sounds and which key pays for the call.",
+      "knowledgeHint": "Inlined into the prompt when a call starts.",
+      "analysisHint": "Workflows that observe the call without shaping it."
+    },
+    "fields": {
+      "name": "Name",
+      "systemPrompt": "System prompt",
+      "description": "Description",
+      "firstMessage": "First message",
+      "provider": "Provider",
+      "selectProvider": "Select a provider",
+      "model": "Model",
+      "selectModel": "Select a model",
+      "loadingModels": "Loading models...",
+      "voiceId": "Voice",
+      "selectVoice": "Select a voice",
+      "loadingVoices": "Loading voices...",
+      "language": "Language",
+      "selectLanguage": "Select a language",
+      "credential": "API key",
+      "selectCredential": "Select an API key",
+      "credentialCaption": "Uses the selected key for calls with this provider. Leave unset to use the Assemblix system key.",
+      "noKnowledgeBases": "No knowledge bases in this project yet",
+      "knowledgeCharCount": "{{count}} of {{limit}} characters used",
+      "knowledgeCharWarning": "Selected knowledge bases exceed the recommended prompt budget — the agent may respond more slowly.",
+      "turnWorkflow": "Per-turn workflow",
+      "finalWorkflow": "Final workflow",
+      "selectWorkflow": "Select a workflow",
+      "noWorkflow": "No workflow",
+      "turnWorkflowCaption": "Runs in the background after every turn — it does not affect the conversation.",
+      "finalWorkflowCaption": "Runs in the background after the call ends — it does not affect the conversation.",
+      "perMinute": "${{cost}}/min",
+      "customVoiceCaption": "Pick a built-in voice, or paste a custom voice id (voice_…) created in your OpenAI account."
+    },
+    "testCall": {
+      "title": "Test call",
+      "callButton": "Call",
+      "hangUp": "Hang up",
+      "you": "You",
+      "agent": "Agent",
+      "firstAudio": "First audio in {{ms}} ms",
+      "errors": {
+        "micDenied": "Microphone access was denied — allow it in the browser and try again",
+        "micMissing": "No microphone found",
+        "micFailed": "Could not open the microphone",
+        "timeout": "The call did not connect in time",
+        "connectFailed": "Could not connect the call",
+        "providerFailed": "The voice provider ended the call"
+      },
+      "state": {
+        "idle": "Ready",
+        "connecting": "Connecting",
+        "live": "Live",
+        "ending": "Ending"
+      },
+      "speakNow": "Listening",
+      "hintIdle": "Start a call and the conversation appears here as it is spoken.",
+      "hintLive": "Say something — the agent is listening."
+    },
+    "errors": {
+      "nameRequired": "Name is required",
+      "promptRequired": "System prompt is required",
+      "providerRequired": "Provider is required",
+      "modelRequired": "Model is required",
+      "formInvalid": "Fix the highlighted fields before saving"
+    }
+  },
   "schemaBuilder": {
     "title": "Structured output (JSON)",
     "description": "The model will generate a JSON object matching this schema",
@@ -1428,5 +1522,46 @@
     "title": "Assemblix - Visual AI Agent Builder",
     "description": "Build smart AI agents without code using the Assemblix visual builder. Automate business processes, create chatbots and workflows.",
     "keywords": "AI agents, agent builder, visual editor, workflow builder, automation, chatbots, artificial intelligence, no-code, low-code, Assemblix"
+  },
+  "voiceSessions": {
+    "title": "Calls",
+    "tabConfiguration": "Configuration",
+    "tabSessions": "Calls",
+    "empty": "No calls yet",
+    "emptyDescription": "Make a test call and it will appear here with its transcript and any analysis runs.",
+    "loadError": "Failed to load calls",
+    "columns": {
+      "startedAt": "When",
+      "duration": "Duration",
+      "turns": "Turns",
+      "cost": "Cost",
+      "outcome": "Outcome"
+    },
+    "status": {
+      "active": "In progress",
+      "completed": "Completed",
+      "failed": "Failed"
+    },
+    "endReason": {
+      "user_hangup": "Hung up",
+      "timeout": "Timed out",
+      "error": "Error",
+      "completed": "Completed",
+      "closed": "Ended",
+      "provider_closed": "Ended by the provider"
+    },
+    "detail": {
+      "title": "Call",
+      "back": "Back to the agent",
+      "transcript": "Transcript",
+      "emptyTranscript": "Nothing was said during this call.",
+      "executions": "Analysis runs",
+      "noExecutions": "No analysis workflow ran for this call.",
+      "openExecution": "Open run",
+      "tokens": "{{input}} in / {{output}} out tokens",
+      "you": "Caller",
+      "agent": "Agent",
+      "loadError": "Failed to load the call"
+    }
   }
 }

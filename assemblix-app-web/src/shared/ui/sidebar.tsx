@@ -5,6 +5,7 @@ import {
   UsersRound,
   Settings,
   ExternalLink,
+  Mic,
 } from "lucide-react";
 import { Link, useLocation, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
@@ -38,6 +39,11 @@ export const Sidebar = () => {
           icon: Users,
           path: `/projects/${projectId}/workflows`,
           dataTour: "sidebar-agents",
+        },
+        {
+          label: t("sidebar.voiceAgents"),
+          icon: Mic,
+          path: `/projects/${projectId}/voice-agents`,
         },
         {
           label: t("sidebar.knowledgeBases"),

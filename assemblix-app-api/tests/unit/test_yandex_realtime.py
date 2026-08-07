@@ -7,7 +7,7 @@ synthesized whole and their PCM is forwarded to ``on_audio`` in order.
 import pytest
 from yandex.cloud.ai.tts.v3 import tts_pb2
 
-from assemblix_api.external.voice.yandex_realtime import YandexRealtimeSession
+from assemblix_api.external.voice.streaming_tts.yandex import YandexRealtimeSession
 
 
 class _FakeCall:

@@ -62,6 +62,8 @@ from assemblix_api.database.repositories.organization_user_repository import (
 from assemblix_api.database.repositories.payment_repository import PaymentRepository
 from assemblix_api.database.repositories.project_repository import ProjectRepository
 from assemblix_api.database.repositories.user_repository import UserRepository
+from assemblix_api.database.repositories.voice_agent_repository import VoiceAgentRepository
+from assemblix_api.database.repositories.voice_session_repository import VoiceSessionRepository
 from assemblix_api.database.repositories.workflow_repository import WorkflowRepository
 from assemblix_api.execution.credential_resolver import CredentialResolver
 from assemblix_api.execution.debug_event_manager import DebugEventManager
@@ -85,6 +87,8 @@ from assemblix_api.services.organization_service import OrganizationService
 from assemblix_api.services.payment_service import PaymentService
 from assemblix_api.services.project_service import ProjectService
 from assemblix_api.services.user_service import UserService
+from assemblix_api.services.voice_agent_service import VoiceAgentService
+from assemblix_api.services.voice_session_history_service import VoiceSessionHistoryService
 from assemblix_api.services.workflow_service import WorkflowService
 
 logger = structlog.get_logger(__name__)
@@ -256,6 +260,12 @@ async def get_notification_channel_repository(
     session: AsyncSession = Depends(get_db_session),
 ) -> NotificationChannelRepository:
     return NotificationChannelRepository(session)
+
+
+async def get_voice_agent_repository(
+    session: AsyncSession = Depends(get_db_session),
+) -> VoiceAgentRepository:
+    return VoiceAgentRepository(session)
 
 
 # ============================================
@@ -461,6 +471,26 @@ async def get_knowledge_base_service(
     doc_repository: KnowledgeDocumentRepository = Depends(get_knowledge_document_repository),
 ) -> KnowledgeBaseService:
     return KnowledgeBaseService(kb_repository, doc_repository)
+
+
+async def get_voice_agent_service(
+    voice_agent_repository: VoiceAgentRepository = Depends(get_voice_agent_repository),
+    workflow_repository: WorkflowRepository = Depends(get_workflow_repository),
+) -> VoiceAgentService:
+    return VoiceAgentService(voice_agent_repository, workflow_repository)
+
+
+async def get_voice_session_repository(
+    session: AsyncSession = Depends(get_db_session),
+) -> VoiceSessionRepository:
+    return VoiceSessionRepository(session)
+
+
+async def get_voice_session_history_service(
+    voice_session_repository: VoiceSessionRepository = Depends(get_voice_session_repository),
+    execution_repository: ExecutionRepository = Depends(get_execution_repository),
+) -> VoiceSessionHistoryService:
+    return VoiceSessionHistoryService(voice_session_repository, execution_repository)
 
 
 async def get_notification_channel_service(
@@ -687,6 +717,7 @@ async def run_workflow_isolated(
     execution_id_future: asyncio.Future | None = None,
     result_future: asyncio.Future | None = None,
     audio_input: AudioInput | None = None,
+    voice_session_id: UUID | None = None,
 ) -> None:
     """
     Run workflow execution in an isolated DB session.
@@ -707,6 +738,7 @@ async def run_workflow_isolated(
         result_future: Future that receives the ExecutionResult on completion
         audio_input: Raw audio for this turn (voice endpoints), forwarded to the
                      executor and attached to the execution context.
+        voice_session_id: Voice-agent call this run is an analysis hook of.
     """
     from assemblix_api.database.repositories.workflow_repository import (
         WorkflowRepository,
@@ -742,6 +774,7 @@ async def run_workflow_isolated(
                 chat_session_id=chat_session_id,
                 on_execution_created=on_execution_created,
                 audio_input=audio_input,
+                voice_session_id=voice_session_id,
             )
 
             if result_future is not None and not result_future.done():

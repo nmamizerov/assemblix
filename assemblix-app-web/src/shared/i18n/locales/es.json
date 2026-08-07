@@ -97,6 +97,7 @@
   },
   "sidebar": {
     "agents": "Agentes",
+    "voiceAgents": "Agentes de voz",
     "agentSessions": "Llamadas de agentes",
     "apiKeys": "Claves API",
     "knowledgeBases": "Bases de conocimiento",
@@ -1412,6 +1413,99 @@
     "errorDuplicate": "Ya existe un documento con este contenido",
     "errorNoText": "El PDF no contiene texto (documento escaneado sin OCR)"
   },
+  "voiceAgents": {
+    "title": "Agentes de voz",
+    "subtitle": "Agentes conversacionales en tiempo real que atienden llamadas con voz speech-to-speech",
+    "create": "Crear agente de voz",
+    "defaultName": "Nuevo agente de voz",
+    "empty": "No hay agentes de voz",
+    "emptyDescription": "Crea un agente de voz para tener una conversación en tiempo real con un proveedor speech-to-speech",
+    "noDescription": "Sin descripción",
+    "save": "Guardar",
+    "delete": "Eliminar",
+    "saveSuccess": "Agente de voz guardado",
+    "saveError": "No se pudo guardar el agente de voz",
+    "createError": "No se pudo crear el agente de voz",
+    "deleteSuccess": "Agente de voz eliminado",
+    "deleteError": "No se pudo eliminar el agente de voz",
+    "loadingError": "Error de carga",
+    "loadingErrorDescription": "No se pudieron cargar los datos del agente de voz. Puede que haya sido eliminado o que no tengas acceso.",
+    "backToList": "Volver a la lista",
+    "listError": "No se pudieron cargar los agentes de voz",
+    "listErrorDescription": "Algo salió mal al cargar tus agentes de voz. Inténtalo de nuevo.",
+    "sections": {
+      "agent": "Agente",
+      "voice": "Voz",
+      "knowledge": "Conocimiento",
+      "analysis": "Análisis",
+      "agentHint": "Quién es el agente y cómo abre la conversación.",
+      "voiceHint": "Cómo suena y qué clave paga la llamada.",
+      "knowledgeHint": "Se inserta en el prompt al iniciar la llamada.",
+      "analysisHint": "Flujos que observan la llamada sin modificarla."
+    },
+    "fields": {
+      "name": "Nombre",
+      "systemPrompt": "Prompt del sistema",
+      "description": "Descripción",
+      "firstMessage": "Primer mensaje",
+      "provider": "Proveedor",
+      "selectProvider": "Selecciona un proveedor",
+      "model": "Modelo",
+      "selectModel": "Selecciona un modelo",
+      "loadingModels": "Cargando modelos...",
+      "voiceId": "Voz",
+      "selectVoice": "Selecciona una voz",
+      "loadingVoices": "Cargando voces...",
+      "language": "Idioma",
+      "selectLanguage": "Selecciona un idioma",
+      "credential": "Clave de API",
+      "selectCredential": "Selecciona una clave de API",
+      "credentialCaption": "Usa la clave seleccionada para las llamadas con este proveedor. Déjalo vacío para usar la clave del sistema de Assemblix.",
+      "noKnowledgeBases": "Este proyecto todavía no tiene bases de conocimiento",
+      "knowledgeCharCount": "{{count}} de {{limit}} caracteres usados",
+      "knowledgeCharWarning": "Las bases de conocimiento seleccionadas superan el presupuesto recomendado del prompt — el agente podría responder más lento.",
+      "turnWorkflow": "Workflow por turno",
+      "finalWorkflow": "Workflow final",
+      "selectWorkflow": "Selecciona un workflow",
+      "noWorkflow": "Sin workflow",
+      "turnWorkflowCaption": "Se ejecuta en segundo plano tras cada turno — no afecta a la conversación.",
+      "finalWorkflowCaption": "Se ejecuta en segundo plano al finalizar la llamada — no afecta a la conversación.",
+      "perMinute": "${{cost}}/min",
+      "customVoiceCaption": "Elige una voz integrada o pega el id de una voz personalizada (voice_…) creada en tu cuenta de OpenAI."
+    },
+    "testCall": {
+      "title": "Llamada de prueba",
+      "callButton": "Llamar",
+      "hangUp": "Colgar",
+      "you": "Tú",
+      "agent": "Agente",
+      "firstAudio": "Primer audio en {{ms}} ms",
+      "errors": {
+        "micDenied": "Se denegó el acceso al micrófono: permítelo en el navegador e inténtalo de nuevo",
+        "micMissing": "No se encontró ningún micrófono",
+        "micFailed": "No se pudo abrir el micrófono",
+        "timeout": "La llamada no se conectó a tiempo",
+        "connectFailed": "No se pudo conectar la llamada",
+        "providerFailed": "El proveedor de voz terminó la llamada"
+      },
+      "state": {
+        "idle": "Listo",
+        "connecting": "Conectando",
+        "live": "En directo",
+        "ending": "Finalizando"
+      },
+      "speakNow": "Escuchando",
+      "hintIdle": "Inicia una llamada y la conversación aparecerá aquí mientras se habla.",
+      "hintLive": "Di algo: el agente está escuchando."
+    },
+    "errors": {
+      "nameRequired": "El nombre es obligatorio",
+      "promptRequired": "El prompt del sistema es obligatorio",
+      "providerRequired": "El proveedor es obligatorio",
+      "modelRequired": "El modelo es obligatorio",
+      "formInvalid": "Corrige los campos marcados antes de guardar"
+    }
+  },
   "schemaBuilder": {
     "title": "Salida estructurada (JSON)",
     "description": "El modelo generará un objeto JSON que coincida con este esquema",
@@ -1428,5 +1522,46 @@
     "title": "Assemblix - Constructor visual de agentes de IA",
     "description": "Crea agentes de IA inteligentes sin código con el constructor visual de Assemblix. Automatiza procesos de negocio, crea chatbots y flujos de trabajo.",
     "keywords": "agentes de IA, constructor de agentes, editor visual, constructor de flujos de trabajo, automatización, chatbots, inteligencia artificial, no-code, low-code, Assemblix"
+  },
+  "voiceSessions": {
+    "title": "Llamadas",
+    "tabConfiguration": "Configuración",
+    "tabSessions": "Llamadas",
+    "empty": "Aún no hay llamadas",
+    "emptyDescription": "Haz una llamada de prueba y aparecerá aquí con su transcripción y sus ejecuciones de análisis.",
+    "loadError": "No se pudieron cargar las llamadas",
+    "columns": {
+      "startedAt": "Cuándo",
+      "duration": "Duración",
+      "turns": "Turnos",
+      "cost": "Coste",
+      "outcome": "Resultado"
+    },
+    "status": {
+      "active": "En curso",
+      "completed": "Completada",
+      "failed": "Fallida"
+    },
+    "endReason": {
+      "user_hangup": "Colgó",
+      "timeout": "Tiempo agotado",
+      "error": "Error",
+      "completed": "Completada",
+      "closed": "Finalizada",
+      "provider_closed": "Finalizada por el proveedor"
+    },
+    "detail": {
+      "title": "Llamada",
+      "back": "Volver al agente",
+      "transcript": "Transcripción",
+      "emptyTranscript": "No se dijo nada en esta llamada.",
+      "executions": "Ejecuciones de análisis",
+      "noExecutions": "Ningún workflow de análisis se ejecutó para esta llamada.",
+      "openExecution": "Abrir ejecución",
+      "tokens": "{{input}} entrada / {{output}} salida tokens",
+      "you": "Llamante",
+      "agent": "Agente",
+      "loadError": "No se pudo cargar la llamada"
+    }
   }
 }

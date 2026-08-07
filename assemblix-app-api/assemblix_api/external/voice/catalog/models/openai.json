@@ -1,0 +1,35 @@
+{
+  "models": [
+    {
+      "id": "whisper-1",
+      "label": "Whisper",
+      "description": "OpenAI Whisper — multilingual speech-to-text with automatic language detection.",
+      "capability": "transcription",
+      "route": "transcription",
+      "costPerMinute": 0.006
+    },
+    {
+      "id": "gpt-4o-transcribe",
+      "label": "GPT-4o Transcribe",
+      "description": "OpenAI GPT-4o transcription model.",
+      "capability": "transcription",
+      "route": "transcription"
+    },
+    {
+      "id": "gpt-realtime-2.1",
+      "label": "GPT Realtime 2.1",
+      "description": "OpenAI speech-to-speech with built-in VAD and interruption handling. Strongest conversational feel; non-English audio is noticeably accented.",
+      "capability": "conversation",
+      "route": "conversation",
+      "costPerMinute": 0.06
+    },
+    {
+      "id": "gpt-realtime-2.1-mini",
+      "label": "GPT Realtime 2.1 mini",
+      "description": "Cheaper, faster OpenAI speech-to-speech model.",
+      "capability": "conversation",
+      "route": "conversation",
+      "costPerMinute": 0.02
+    }
+  ]
+}

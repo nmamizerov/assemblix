@@ -59,6 +59,14 @@ class Execution(UUIDMixin, TimestampMixin, Base):
         comment="Client session for project-level state across workflows",
     )
 
+    # Voice Agents (optional - set on analysis hook runs started by a call)
+    voice_session_id: Mapped[UUID | None] = mapped_column(
+        ForeignKey("voice_sessions.id", ondelete="SET NULL"),
+        default=None,
+        index=True,
+        comment="Voice session whose analysis hook started this execution",
+    )
+
     # State snapshots
     initial_state: Mapped[dict] = mapped_column(JSONB, default=dict, nullable=False)
     final_state: Mapped[dict | None] = mapped_column(JSONB, default=None)

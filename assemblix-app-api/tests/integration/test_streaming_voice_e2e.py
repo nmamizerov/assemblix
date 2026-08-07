@@ -10,7 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from assemblix_api.database.engine import get_async_engine
 from assemblix_api.database.repositories.organization_repository import OrganizationRepository
-from assemblix_api.external.voice.realtime import RealtimeTTSSession
+from assemblix_api.external.voice.streaming_tts.elevenlabs import RealtimeTTSSession
 from tests.fixtures.workflows import agent_config, edge, node
 
 
@@ -91,7 +91,7 @@ async def test_streaming_voice_emits_audio_before_agent_step_complete(
     mock_llm.set_stream(["Hi ", "there."])
     mock_tts_ws.script_audio([(b"\x01\x02", None), (b"\x03\x04", None)])
     mocker.patch(
-        "assemblix_api.external.voice.realtime_dispatch.RealtimeTTSSession",
+        "assemblix_api.external.voice.streaming_tts.RealtimeTTSSession",
         lambda **kw: RealtimeTTSSession(**{**kw, "connect": mock_tts_ws.connect}),
     )
     setup = await _setup(api_client)
@@ -136,7 +136,7 @@ async def test_non_stream_voice_has_no_audio_delta(
 
     monkeypatch.setattr(get_settings(), "system_elevenlabs_api_key", "xi-system")
     mock_llm.set_response("Hi there.")
-    ws = mocker.patch("assemblix_api.external.voice.realtime_dispatch.RealtimeTTSSession")
+    ws = mocker.patch("assemblix_api.external.voice.streaming_tts.RealtimeTTSSession")
     setup = await _setup(api_client)
 
     # Act

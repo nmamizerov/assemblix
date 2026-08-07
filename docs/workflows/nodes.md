@@ -38,6 +38,12 @@ this is also where **voice input** is enabled.
   server-side (speech-to-text), so a spoken message drives the workflow just like typed text.
 - **`voiceModel`** — the transcription provider/model to use (defaults to Whisper).
 
+!!! note "Voice in a workflow is not a voice agent"
+    This is audio as an input to a graph: one blob in, one run, one answer. A
+    [voice agent](../voice-agents/index.md) is the other feature — a continuous,
+    interruptible conversation with no graph on the path to the reply. The two are
+    independent; using one does not change the other.
+
 ## AGENT
 
 The LLM node, and the richest one — this is where the actual "thinking" happens. It assembles

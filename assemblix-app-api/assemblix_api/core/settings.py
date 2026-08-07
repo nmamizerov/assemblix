@@ -221,6 +221,7 @@ class Settings(BaseSettings):
     # ElevenLabs realtime WebSocket base URL (stream-input). Override for a proxy/gateway.
     elevenlabs_ws_base_url: str = os.getenv("ELEVENLABS_WS_BASE_URL", "wss://api.elevenlabs.io/v1")
     # PCM wire format for realtime audio (avatar-native; the debug player decodes via Web Audio).
+    voice_session_max_seconds: float = float(os.getenv("VOICE_SESSION_MAX_SECONDS", "600"))
     voice_realtime_output_format: str = os.getenv("VOICE_REALTIME_OUTPUT_FORMAT", "pcm_16000")
     # ElevenLabs chunk_length_schedule — server-side batching to natural boundaries.
     voice_realtime_chunk_schedule: list[int] = [50, 120, 200, 300]

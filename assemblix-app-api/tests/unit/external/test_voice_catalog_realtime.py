@@ -1,4 +1,4 @@
-from assemblix_api.external.voice.voice_catalog import has_realtime_route, list_voice_models
+from assemblix_api.external.voice.catalog import has_realtime_route, list_voice_models
 
 
 def test_realtime_models_are_listed():

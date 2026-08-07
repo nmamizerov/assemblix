@@ -125,6 +125,7 @@ class WorkflowExecutor:
         on_execution_created: Callable[[UUID], Awaitable[None]] | None = None,
         execution_id: UUID | None = None,
         audio_input: AudioInput | None = None,
+        voice_session_id: UUID | None = None,
     ) -> ExecutionResult:
         """
         Main execution entry point.
@@ -146,6 +147,8 @@ class WorkflowExecutor:
                           — this path is byte-for-byte unchanged.
             audio_input: Raw audio for this turn (voice endpoints), attached to the
                          execution context for nodes that consume it directly.
+            voice_session_id: Voice-agent call this run is an analysis hook of. Stamped
+                         on the execution row only — no node reads it.
 
         Returns:
             ExecutionResult with output and metadata
@@ -162,6 +165,7 @@ class WorkflowExecutor:
                 chat_session_id,
                 execution_id=execution_id,
                 audio_input=audio_input,
+                voice_session_id=voice_session_id,
             )
 
             # Bind execution context for all subsequent logs inside this task.
@@ -275,6 +279,7 @@ class WorkflowExecutor:
         chat_session_id: UUID | None,
         execution_id: UUID | None = None,
         audio_input: AudioInput | None = None,
+        voice_session_id: UUID | None = None,
     ) -> tuple[Execution, ExecutionContext, "ResumePoint | None"]:
         """
         Create (or load) execution record and build execution context.
@@ -437,6 +442,7 @@ class WorkflowExecutor:
                 token_id=token_id,  # API key used for this execution
                 chat_session_id=chat_session_id,
                 client_session_id=client_session_id,  # NEW: Client session ID
+                voice_session_id=voice_session_id,
                 initial_state=initial_state,
                 input_data=input_data,
                 is_debug=is_debug,

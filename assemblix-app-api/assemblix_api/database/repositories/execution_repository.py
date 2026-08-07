@@ -85,6 +85,16 @@ class ExecutionRepository(BaseRepository[Execution]):
         result = await self._session.execute(stmt)
         return result.scalars().all()
 
+    async def get_by_voice_session_id(self, voice_session_id: UUID) -> Sequence[Execution]:
+        """Get the analysis-hook runs of one voice call, oldest first (turn order)."""
+        stmt = (
+            select(self._model)
+            .where(self._model.voice_session_id == voice_session_id)
+            .order_by(self._model.created_at.asc())
+        )
+        result = await self._session.execute(stmt)
+        return result.scalars().all()
+
     async def get_with_details(self, execution_id: UUID) -> Execution | None:
         """Get an execution with relationships eagerly loaded (steps, workflow, chat_session)."""
         from assemblix_api.database.models.chat_session import ChatSession

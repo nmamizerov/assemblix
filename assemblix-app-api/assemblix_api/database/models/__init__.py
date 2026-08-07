@@ -30,6 +30,8 @@ from .organization_user import OrganizationUser
 from .payment import Payment, PaymentStatus
 from .project import Project
 from .user import User
+from .voice_agent import VoiceAgent
+from .voice_session import VoiceSession
 from .workflow import Workflow
 
 __all__ = [
@@ -79,4 +81,7 @@ __all__ = [
     "KnowledgeBase",
     "KnowledgeDocument",
     "KnowledgeDocumentSourceType",
+    # Voice Agent
+    "VoiceAgent",
+    "VoiceSession",
 ]

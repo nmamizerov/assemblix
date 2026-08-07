@@ -9,8 +9,8 @@ from __future__ import annotations
 
 from pydantic import BaseModel
 
-from assemblix_api.external.voice import elevenlabs, yandex
-from assemblix_api.external.voice.voice_catalog import find_voice_model
+from assemblix_api.external.voice.catalog import find_voice_model
+from assemblix_api.external.voice.providers import elevenlabs, yandex
 
 
 class SynthesisResult(BaseModel):

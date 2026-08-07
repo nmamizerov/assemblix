@@ -1,0 +1,12 @@
+{
+  "models": [
+    {
+      "id": "gemini-3.1-flash-live-preview",
+      "label": "Gemini 3.1 Flash Live",
+      "description": "Google speech-to-speech over a stateful WebSocket. Markedly more natural non-English audio than the alternatives; weaker interruption handling.",
+      "capability": "conversation",
+      "route": "conversation",
+      "costPerMinute": 0.03
+    }
+  ]
+}
