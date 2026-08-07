@@ -222,6 +222,15 @@ class Settings(BaseSettings):
     elevenlabs_ws_base_url: str = os.getenv("ELEVENLABS_WS_BASE_URL", "wss://api.elevenlabs.io/v1")
     # PCM wire format for realtime audio (avatar-native; the debug player decodes via Web Audio).
     voice_session_max_seconds: float = float(os.getenv("VOICE_SESSION_MAX_SECONDS", "600"))
+    # Realtime (speech-to-speech) endpoints for Voice Agents, kept separate from the
+    # chat/transcription base URLs above. A REST gateway is not automatically a
+    # WebSocket gateway: an LLM proxy that serves /v1/chat/completions answers the
+    # realtime path with 404. Leave empty to reach the provider directly, and only
+    # set these once a gateway is known to proxy the WebSocket route.
+    #   OpenAI   → wss://<base>/realtime
+    #   Gemini   → wss://<base>/ws/google.ai.generativelanguage.v1beta.GenerativeService.BidiGenerateContent
+    openai_realtime_base_url: str = os.getenv("OPENAI_REALTIME_BASE_URL", "")
+    gemini_live_base_url: str = os.getenv("GEMINI_LIVE_BASE_URL", "")
     voice_realtime_output_format: str = os.getenv("VOICE_REALTIME_OUTPUT_FORMAT", "pcm_16000")
     # ElevenLabs chunk_length_schedule — server-side batching to natural boundaries.
     voice_realtime_chunk_schedule: list[int] = [50, 120, 200, 300]

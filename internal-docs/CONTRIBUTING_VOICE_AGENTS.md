@@ -54,12 +54,13 @@ in `session.ready`; the browser builds its capture graph at `inputSampleRate` an
 back at `outputSampleRate`. Nothing anywhere resamples. Getting this wrong produces
 audio that is subtly fast or slow rather than an error.
 
-Honour `api_base`. It is the configured gateway
-(`external/llm/provider_config.py::resolve_api_base`), the same one chat and
-transcription use, and both SDKs derive their WebSocket URL from the client's base
-URL — so wiring it is one argument, and forgetting it sends conversations straight
-to the provider from a network that may not reach it. A gateway also has to proxy
-WebSockets; an HTTP-only one fails the handshake rather than degrading.
+Honour `api_base`. Both SDKs derive their WebSocket URL from the client's base
+URL, so it is one argument — but take it from
+`voice_session_service.resolve_conversation_base`, which reads a setting of its own
+(`OPENAI_REALTIME_BASE_URL`, `GEMINI_LIVE_BASE_URL`). Do **not** reuse the
+provider's chat base URL: a REST gateway answers the realtime path with 404, and
+the failure looks like the provider rejecting you rather than like a misrouted
+request. Unset means connect directly, which is the right default.
 
 Then translate events. The vocabulary is fixed — `AudioDelta`, `UserTranscript`,
 `AgentTranscript`, `SpeechStarted`, `TurnEnded`, `BridgeError`, `SessionClosed` — and
