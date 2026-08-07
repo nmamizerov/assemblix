@@ -26,15 +26,15 @@ from assemblix_api.dependencies import (
     get_project_service,
 )
 from assemblix_api.dto.responses.voice import VoiceListItem, VoiceProviderListItem
-from assemblix_api.external.voice import yandex
-from assemblix_api.external.voice.base import VoiceModelMetadata
-from assemblix_api.external.voice.conversation_voices import list_conversation_voices
-from assemblix_api.external.voice.elevenlabs import list_voices
-from assemblix_api.external.voice.voice_catalog import (
+from assemblix_api.external.voice.catalog import (
     VOICE_PROVIDER_LABELS,
     list_voice_models,
     list_voice_providers,
 )
+from assemblix_api.external.voice.catalog.metadata import VoiceModelMetadata
+from assemblix_api.external.voice.conversation.voices import list_conversation_voices
+from assemblix_api.external.voice.providers import yandex
+from assemblix_api.external.voice.providers.elevenlabs import list_voices
 from assemblix_api.services.credentials_service import CredentialsService
 from assemblix_api.services.project_service import ProjectService
 

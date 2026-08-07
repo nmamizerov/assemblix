@@ -28,7 +28,7 @@ from typing import Any, Literal
 import structlog
 
 from assemblix_api.core.settings import get_settings
-from assemblix_api.external.voice.yandex import split_credential
+from assemblix_api.external.voice.providers.yandex import split_credential
 from assemblix_api.schemas.debug_events import AlignmentData
 
 logger = structlog.get_logger(__name__)

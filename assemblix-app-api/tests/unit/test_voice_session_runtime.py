@@ -5,7 +5,7 @@ from __future__ import annotations
 from collections.abc import AsyncIterator
 from typing import Any
 
-from assemblix_api.external.voice.bridge import (
+from assemblix_api.external.voice.conversation.contract import (
     AgentTranscript,
     AudioDelta,
     SessionClosed,

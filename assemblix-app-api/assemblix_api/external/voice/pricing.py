@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from decimal import Decimal
 
-from assemblix_api.external.voice.voice_catalog import find_voice_model
+from assemblix_api.external.voice.catalog import find_voice_model
 
 
 def compute_tts_cost(provider: str, model: str, chars: int) -> Decimal:

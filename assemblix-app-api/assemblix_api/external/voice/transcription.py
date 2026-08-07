@@ -17,8 +17,8 @@ from pydantic import BaseModel
 
 from assemblix_api.core.settings import get_settings
 from assemblix_api.external.llm.provider_config import get_provider_config
-from assemblix_api.external.voice import yandex
-from assemblix_api.external.voice.voice_catalog import find_voice_model
+from assemblix_api.external.voice.catalog import find_voice_model
+from assemblix_api.external.voice.providers import yandex
 
 
 class Transcript(BaseModel):

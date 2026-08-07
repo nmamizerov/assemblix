@@ -7,8 +7,8 @@ branch here plus one new module.
 
 from __future__ import annotations
 
-from assemblix_api.external.voice.bridge import RealtimeBridge
-from assemblix_api.external.voice.openai_bridge import OpenAIRealtimeBridge
+from assemblix_api.external.voice.conversation.contract import RealtimeBridge
+from assemblix_api.external.voice.conversation.openai import OpenAIRealtimeBridge
 
 
 def create_bridge(*, provider: str, api_key: str, model: str) -> RealtimeBridge:

@@ -24,7 +24,7 @@ from assemblix_api.dependencies import (
     get_voice_agent_service,
 )
 from assemblix_api.dto.responses.voice_session import VoiceSessionTokenResponse
-from assemblix_api.external.voice.bridge_dispatch import create_bridge
+from assemblix_api.external.voice.conversation import create_bridge
 from assemblix_api.realtime.runtime import VoiceSessionRuntime
 from assemblix_api.realtime.session_token import (
     InvalidSessionToken,

@@ -18,7 +18,7 @@ from typing import Protocol
 
 import structlog
 
-from assemblix_api.external.voice.bridge import (
+from assemblix_api.external.voice.conversation.contract import (
     AgentTranscript,
     AudioDelta,
     BridgeError,

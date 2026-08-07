@@ -3,7 +3,7 @@ import io
 import httpx
 import pytest
 
-from assemblix_api.external.voice import yandex
+from assemblix_api.external.voice.providers import yandex
 
 
 def test_split_credential_parses_folder_and_key() -> None:

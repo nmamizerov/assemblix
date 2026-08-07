@@ -12,20 +12,20 @@ names and are routinely mixed up.
 | Capability | Direction | Seam (call this) | Implementations | Used by |
 |---|---|---|---|---|
 | `transcription` | audio → text | `transcription.py::transcribe()` | LiteLLM, `yandex.py` | `transcribe` node |
-| `speech` | text → audio (one blob) | `synthesis.py::synthesize()` | `elevenlabs.py`, `yandex.py` | agent node, buffered voice output |
-| `realtime` | text → audio (streamed) | `realtime_dispatch.py::create_realtime_session()` | `realtime.py` (ElevenLabs WS), `yandex_realtime.py` (gRPC) | agent node with live voice, avatars |
-| `conversation` | audio ↔ audio (duplex) | `bridge_dispatch.py::create_bridge()` | `openai_bridge.py` | **Voice Agents** |
+| `speech` | text → audio (one blob) | `synthesis.py::synthesize()` | `providers/elevenlabs.py`, `providers/yandex.py` | agent node, buffered voice output |
+| `realtime` (pkg `streaming_tts/`) | text → audio (streamed) | `streaming_tts/__init__.py::create_realtime_session()` | `streaming_tts/elevenlabs.py`, `streaming_tts/yandex.py` | agent node with live voice, avatars |
+| `conversation` | audio ↔ audio (duplex) | `conversation/__init__.py::create_bridge()` | `conversation/openai.py` | **Voice Agents** |
 
 ### The name trap
 
-`realtime` and `conversation` sound like the same thing. They are opposites:
+`streaming_tts` and `conversation` sound like the same thing. They are opposites:
 
 ```
-realtime      text  ──────────►  audio          the agent writes, we speak it
-conversation  audio ◄─────────►  audio          the caller speaks, the model answers
+streaming_tts  text  ─────────►  audio          the agent writes, we speak it
+conversation   audio ◄────────►  audio          the caller speaks, the model answers
 ```
 
-`realtime` belongs to **voice inside workflows**. `conversation` belongs to **Voice
+`streaming_tts` belongs to **voice inside workflows**. `conversation` belongs to **Voice
 Agents**. They share nothing but the folder.
 
 ## How a capability is wired
@@ -37,33 +37,33 @@ Every capability follows the same three layers. Using `conversation` as the exam
                 │
                 │  knows only the seam
                 ▼
-   bridge_dispatch.py            create_bridge(provider=...) → RealtimeBridge
+   conversation/__init__.py      create_bridge(provider=...) → RealtimeBridge
                 │                 raises NotImplementedError for unknown providers
                 │
                 ▼
-   bridge.py                     the contract: RealtimeBridge protocol
+   conversation/contract.py      the contract: RealtimeBridge protocol
                 │                 + BridgeEvent, the normalized event vocabulary
                 │
                 ▼
-   openai_bridge.py              the only file that imports the `openai` SDK
+   conversation/openai.py        the only file that imports the `openai` SDK
 ```
 
 The rule this encodes: **provider vocabulary stops at the seam.** Above
-`bridge_dispatch`, nothing knows whether it is talking to OpenAI or anyone else. The
-same shape holds for `realtime_dispatch.py` → the two session classes, and for
+`conversation/__init__`, nothing knows whether it is talking to OpenAI or anyone else. The
+same shape holds for `streaming_tts/` → its two session classes, and for
 `synthesis.py` / `transcription.py` → their providers.
 
 ## The registry
 
 ```
-   voice_catalog.py  ──reads──►  models/openai.json
-                                 models/gemini.json
-                                 models/elevenlabs.json
-                                 models/yandex.json
+   catalog/registry.py ──reads──► catalog/models/openai.json
+                                  catalog/models/gemini.json
+                                  catalog/models/elevenlabs.json
+                                  catalog/models/yandex.json
 ```
 
-`voice_catalog.py` answers "which providers and models exist, for which capability,
-at what price". The JSON files are the data; `base.py` is the type they are validated
+`catalog/registry.py` answers "which providers and models exist, for which capability,
+at what price". The JSON files are the data; `catalog/metadata.py` is the type they are validated
 against (`VoiceModelMetadata`: id, label, capability, route, cost).
 
 **Adding a model is a JSON edit.** Adding a provider is a JSON file plus an entry in
@@ -76,10 +76,10 @@ The catalog is what the frontend's provider/model pickers read, through
 
 | File | What it is |
 |---|---|
-| `conversation_voices.py` | Static voice (timbre) lists for OpenAI and Gemini. Static because neither exposes a voice-listing endpoint — same reason `yandex.py` hardcodes its own. |
-| `elevenlabs.py`, `yandex.py` | Direct clients for providers that are **not** OpenAI-compatible, so LiteLLM cannot front them. They also carry each provider's voice catalog. |
+| `conversation/voices.py` | Static voice (timbre) lists for OpenAI and Gemini. Static because neither exposes a voice-listing endpoint — same reason `yandex.py` hardcodes its own. |
+| `providers/elevenlabs.py`, `providers/yandex.py` | Direct clients for providers that are **not** OpenAI-compatible, so LiteLLM cannot front them. They also carry each provider's voice catalog. |
 | `pricing.py` | Per-character TTS cost. |
-| `base.py` | The metadata contract for the registry. |
+| `catalog/metadata.py` | The metadata contract for the registry. |
 
 ## Where the layer is called from
 
@@ -94,8 +94,8 @@ services/voice_session_service.py         transcription.py::transcribe()
         ▼                                 nodes/agent_voice.py
 realtime/runtime.py                               │
         │                                         ▼
-        ▼                                 realtime_dispatch.py / synthesis.py
-bridge_dispatch.py::create_bridge()
+        ▼                                 streaming_tts/ / synthesis.py
+conversation/__init__.py::create_bridge()
 ```
 
 Two things worth stating plainly, because both were violated once already:
@@ -109,11 +109,11 @@ Two things worth stating plainly, because both were violated once already:
 
 ## Adding a second conversation provider (e.g. Gemini Live)
 
-1. `models/gemini.json` — the model entry with `"capability": "conversation"`.
-2. `conversation_voices.py` — its voice list, if the provider has no listing endpoint.
-3. `gemini_bridge.py` — implement `RealtimeBridge`, translating that provider's events
+1. `catalog/models/gemini.json` — the model entry with `"capability": "conversation"`.
+2. `conversation/voices.py` — its voice list, if the provider has no listing endpoint.
+3. `conversation/gemini.py` — implement `RealtimeBridge`, translating that provider's events
    into `BridgeEvent`. Nothing provider-shaped may cross that boundary.
-4. `bridge_dispatch.py` — one branch.
+4. `conversation/__init__.py` — one branch.
 5. `credentials_service.py` — add the provider to `_VOICE_PROVIDER_TO_CREDENTIALS_TYPE`,
    or a project's own key will be silently ignored in favour of the system key.
 

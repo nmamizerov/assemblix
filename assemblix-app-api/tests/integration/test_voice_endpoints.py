@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from assemblix_api.core.settings import get_settings
-from assemblix_api.external.voice import yandex as yandex_voice
+from assemblix_api.external.voice.providers import yandex as yandex_voice
 
 
 async def test_speech_providers_include_elevenlabs(client, auth_headers) -> None:
@@ -46,7 +46,7 @@ async def test_list_credential_voices(client, auth_user, auth_headers, mocker) -
     cred_id = await _create_eleven_credential(client, auth_user, auth_headers)
 
     async def _fake_list(api_key, *, search=None):
-        from assemblix_api.external.voice.elevenlabs import ElevenLabsVoice
+        from assemblix_api.external.voice.providers.elevenlabs import ElevenLabsVoice
 
         return [ElevenLabsVoice(id="v1", name="Rachel")]
 
@@ -138,7 +138,7 @@ async def test_system_voices_lists_platform_voices(
     monkeypatch.setattr(get_settings(), "system_elevenlabs_api_key", "xi-system")
 
     async def _fake_list(api_key, *, search=None):
-        from assemblix_api.external.voice.elevenlabs import ElevenLabsVoice
+        from assemblix_api.external.voice.providers.elevenlabs import ElevenLabsVoice
 
         return [ElevenLabsVoice(id="sv1", name="Platform Voice")]
 

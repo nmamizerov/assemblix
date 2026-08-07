@@ -12,7 +12,7 @@ import json
 from functools import cache
 from pathlib import Path
 
-from assemblix_api.external.voice.base import VoiceModelMetadata
+from assemblix_api.external.voice.catalog.metadata import VoiceModelMetadata
 
 _VOICE_MODELS_DIR = Path(__file__).parent / "models"
 

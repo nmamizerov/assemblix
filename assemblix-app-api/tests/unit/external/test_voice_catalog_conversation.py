@@ -1,6 +1,6 @@
 """Voice catalog: the conversation (speech-to-speech) capability."""
 
-from assemblix_api.external.voice.voice_catalog import (
+from assemblix_api.external.voice.catalog import (
     VOICE_PROVIDER_LABELS,
     has_conversation_route,
     has_realtime_route,

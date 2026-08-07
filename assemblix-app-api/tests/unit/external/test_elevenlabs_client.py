@@ -1,6 +1,6 @@
 import httpx
 
-from assemblix_api.external.voice import elevenlabs
+from assemblix_api.external.voice.providers import elevenlabs
 
 
 async def test_list_voices_parses_response(mocker) -> None:

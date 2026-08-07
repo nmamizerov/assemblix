@@ -5,7 +5,7 @@ from __future__ import annotations
 from types import SimpleNamespace
 from typing import Any
 
-from assemblix_api.external.voice.bridge import (
+from assemblix_api.external.voice.conversation.contract import (
     AgentTranscript,
     AudioDelta,
     BridgeError,
@@ -14,7 +14,7 @@ from assemblix_api.external.voice.bridge import (
     TurnEnded,
     UserTranscript,
 )
-from assemblix_api.external.voice.openai_bridge import OpenAIRealtimeBridge
+from assemblix_api.external.voice.conversation.openai import OpenAIRealtimeBridge
 
 
 class _Recorder:

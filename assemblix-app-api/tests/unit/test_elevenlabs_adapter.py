@@ -1,7 +1,7 @@
 import httpx
 import pytest
 
-from assemblix_api.external.voice import elevenlabs
+from assemblix_api.external.voice.providers import elevenlabs
 
 
 @pytest.mark.asyncio

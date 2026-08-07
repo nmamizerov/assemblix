@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from assemblix_api.external.voice.voice_catalog import (
+from assemblix_api.external.voice.catalog import (
     find_voice_model,
     list_voice_models,
     list_voice_providers,

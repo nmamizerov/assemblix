@@ -14,7 +14,7 @@ from assemblix_api.dto.requests.voice_agent import (
     VoiceAgentCreateRequest,
     VoiceAgentUpdateRequest,
 )
-from assemblix_api.external.voice.voice_catalog import has_conversation_route
+from assemblix_api.external.voice.catalog import has_conversation_route
 from assemblix_api.schemas.voice_agent import VoiceAgentConfig
 
 

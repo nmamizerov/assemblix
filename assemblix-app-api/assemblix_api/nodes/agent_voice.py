@@ -12,13 +12,13 @@ from collections.abc import Awaitable, Callable
 from uuid import UUID
 
 from assemblix_api.core.settings import get_settings
+from assemblix_api.external.voice.catalog import has_realtime_route
 from assemblix_api.external.voice.pricing import compute_tts_cost
-from assemblix_api.external.voice.realtime_dispatch import (
+from assemblix_api.external.voice.streaming_tts import (
     RealtimeSession,
     create_realtime_session,
 )
 from assemblix_api.external.voice.synthesis import synthesize
-from assemblix_api.external.voice.voice_catalog import has_realtime_route
 from assemblix_api.schemas.execution import ExecutionContext
 from assemblix_api.schemas.node import AgentNodeConfig
 
