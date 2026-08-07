@@ -6,6 +6,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query, status
 
+from assemblix_api.api.rest._scope import resolve_project_id
 from assemblix_api.core.auth_context import AuthContext
 from assemblix_api.dependencies import (
     get_auth_context,
@@ -25,13 +26,16 @@ router = APIRouter(prefix="/voice-agents", tags=["Voice Agents"])
 
 @router.get("/", response_model=list[VoiceAgentResponse])
 async def list_voice_agents(
-    project_id: UUID = Query(..., description="Project ID"),
+    project_id: UUID | None = Query(
+        None, description="Project ID; omit when using a project-scoped API key"
+    ),
     auth: AuthContext = Depends(get_auth_context),
     service: VoiceAgentService = Depends(get_voice_agent_service),
     project_service: ProjectService = Depends(get_project_service),
 ):
-    await project_service.authorize_project_access(auth, project_id)
-    return await service.get_project_voice_agents(project_id)
+    effective_project_id = resolve_project_id(project_id, auth)
+    await project_service.authorize_project_access(auth, effective_project_id)
+    return await service.get_project_voice_agents(effective_project_id)
 
 
 @router.get("/{agent_id}", response_model=VoiceAgentResponse)
@@ -53,6 +57,7 @@ async def create_voice_agent(
     service: VoiceAgentService = Depends(get_voice_agent_service),
     project_service: ProjectService = Depends(get_project_service),
 ):
+    data.project_id = resolve_project_id(data.project_id, auth)
     project = await project_service.authorize_project_access(auth, data.project_id)
     return await service.create_voice_agent(project_id=project.id, data=data)
 
