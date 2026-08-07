@@ -12,6 +12,7 @@ import {
   useUpdateVoiceAgentMutation,
   useVoiceCall,
   validateDraft,
+  ProviderMark,
   VoiceAgentForm,
   VoiceCallStage,
 } from "@/entities/voice-agent";
@@ -155,6 +156,20 @@ const VoiceAgentEditor = ({ voiceAgent }: VoiceAgentEditorProps) => {
           <h1 className="mt-1 truncate text-3xl font-semibold tracking-tight text-foreground">
             {voiceAgent.name}
           </h1>
+          {draft.model && (
+            <div className="mt-2 flex items-center gap-2 text-xs text-muted-foreground">
+              <ProviderMark provider={draft.provider} className="h-3.5 w-3.5" />
+              <span className="tabular-nums">{draft.model}</span>
+              {draft.voiceId && (
+                <>
+                  <span aria-hidden>·</span>
+                  <span>{draft.voiceId}</span>
+                </>
+              )}
+              <span aria-hidden>·</span>
+              <span className="uppercase">{draft.language}</span>
+            </div>
+          )}
         </div>
         <div className="flex shrink-0 items-center gap-2">
           <Button

@@ -1469,7 +1469,8 @@
       "selectWorkflow": "Select a workflow",
       "noWorkflow": "No workflow",
       "turnWorkflowCaption": "Runs in the background after every turn — it does not affect the conversation.",
-      "finalWorkflowCaption": "Runs in the background after the call ends — it does not affect the conversation."
+      "finalWorkflowCaption": "Runs in the background after the call ends — it does not affect the conversation.",
+      "perMinute": "${{cost}}/min"
     },
     "testCall": {
       "title": "Test call",

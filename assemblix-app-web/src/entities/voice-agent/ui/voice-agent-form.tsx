@@ -29,6 +29,7 @@ import { selectCurrentProjectId } from "@/entities/organization";
 import { applyProviderChange, LANGUAGE_OPTIONS } from "../lib/voice-agent-form";
 import type { DraftValidation } from "../lib/voice-agent-form";
 import type { VoiceAgentDraft } from "../model/types";
+import { ProviderMark } from "./provider-mark";
 
 // Soft budget for the knowledge base text that gets inlined into the voice
 // agent's prompt. There is no backend-enforced cap — this only warns the
@@ -181,7 +182,10 @@ export const VoiceAgentForm = ({ draft, errors, onChange }: VoiceAgentFormProps)
               <SelectContent>
                 {providers.map((provider) => (
                   <SelectItem key={provider.name} value={provider.name}>
-                    {provider.label}
+                    <span className="flex items-center gap-2">
+                      <ProviderMark provider={provider.name} />
+                      {provider.label}
+                    </span>
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -209,7 +213,16 @@ export const VoiceAgentForm = ({ draft, errors, onChange }: VoiceAgentFormProps)
               <SelectContent>
                 {models.map((model) => (
                   <SelectItem key={model.id} value={model.id}>
-                    {model.label}
+                    <span className="flex w-full items-center justify-between gap-4">
+                      {model.label}
+                      {model.costPerMinute != null && (
+                        <span className="text-xs tabular-nums text-muted-foreground">
+                          {t("voiceAgents.fields.perMinute", {
+                            cost: model.costPerMinute.toFixed(2),
+                          })}
+                        </span>
+                      )}
+                    </span>
                   </SelectItem>
                 ))}
               </SelectContent>

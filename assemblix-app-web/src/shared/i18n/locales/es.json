@@ -1469,7 +1469,8 @@
       "selectWorkflow": "Selecciona un workflow",
       "noWorkflow": "Sin workflow",
       "turnWorkflowCaption": "Se ejecuta en segundo plano tras cada turno — no afecta a la conversación.",
-      "finalWorkflowCaption": "Se ejecuta en segundo plano al finalizar la llamada — no afecta a la conversación."
+      "finalWorkflowCaption": "Se ejecuta en segundo plano al finalizar la llamada — no afecta a la conversación.",
+      "perMinute": "${{cost}}/min"
     },
     "testCall": {
       "title": "Llamada de prueba",
