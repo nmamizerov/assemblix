@@ -17,7 +17,12 @@ import {
   VoiceCallStage,
 } from "@/entities/voice-agent";
 import type { VoiceAgent, VoiceAgentDraft } from "@/entities/voice-agent";
+import {
+  useGetVoiceSessionsQuery,
+  VoiceSessionList,
+} from "@/entities/voice-session";
 import { Button } from "@/shared/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/ui/tabs";
 
 const draftFromVoiceAgent = (voiceAgent: VoiceAgent): VoiceAgentDraft => {
   const { config } = voiceAgent;
@@ -92,6 +97,27 @@ export const VoiceAgentDetailsPage = () => {
   // the loaded record) re-mounts with a fresh draft instead of syncing state
   // from an effect.
   return <VoiceAgentEditor key={voiceAgent.id} voiceAgent={voiceAgent} />;
+};
+
+/** Call history for one agent. Its own component so the list is fetched only
+ * once the tab is opened, rather than on every visit to the editor. */
+const VoiceAgentSessions = ({ voiceAgentId }: { voiceAgentId: string }) => {
+  const navigate = useNavigate();
+  const { projectId } = useParams();
+  const { data, isLoading, isError } = useGetVoiceSessionsQuery({
+    agentId: voiceAgentId,
+  });
+
+  return (
+    <VoiceSessionList
+      sessions={data?.data ?? []}
+      isLoading={isLoading}
+      isError={isError}
+      onOpen={(sessionId) =>
+        navigate(`/projects/${projectId}/voice-sessions/${sessionId}`)
+      }
+    />
+  );
 };
 
 interface VoiceAgentEditorProps {
@@ -194,7 +220,24 @@ const VoiceAgentEditor = ({ voiceAgent }: VoiceAgentEditorProps) => {
       </header>
 
       <div className="grid items-start gap-8 xl:grid-cols-[minmax(0,1fr)_360px]">
-        <VoiceAgentForm draft={draft} errors={errors} onChange={setDraft} />
+        <Tabs defaultValue="configuration">
+          <TabsList>
+            <TabsTrigger value="configuration">
+              {t("voiceSessions.tabConfiguration")}
+            </TabsTrigger>
+            <TabsTrigger value="sessions">
+              {t("voiceSessions.tabSessions")}
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="configuration" className="mt-6">
+            <VoiceAgentForm draft={draft} errors={errors} onChange={setDraft} />
+          </TabsContent>
+
+          <TabsContent value="sessions" className="mt-6">
+            <VoiceAgentSessions voiceAgentId={voiceAgent.id} />
+          </TabsContent>
+        </Tabs>
 
         <div className="xl:sticky xl:top-6 xl:h-[calc(100vh-8rem)]">
           <VoiceCallStage call={call} />

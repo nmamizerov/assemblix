@@ -10,6 +10,14 @@ export interface DraftValidation {
 export const DEFAULT_PROVIDER = "openai";
 export const DEFAULT_MODEL = "gpt-realtime-2.1";
 
+// Only OpenAI exposes custom voices: an id created through its /v1/audio/voices
+// endpoint is accepted wherever a built-in voice name is. Those ids live in the
+// customer's own account, so no catalog can list them and the field has to accept
+// free text. Gemini Live has prebuilt voices only — there, free text would just
+// produce a call that fails at connect time.
+export const supportsCustomVoices = (provider: string): boolean =>
+  provider === "openai";
+
 // Working set of conversation languages. Labels are endonyms (the language's
 // own name for itself) so they need no translation — only the field label does.
 export const LANGUAGE_OPTIONS: { code: string; label: string }[] = [

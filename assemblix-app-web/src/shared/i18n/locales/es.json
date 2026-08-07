@@ -1470,7 +1470,8 @@
       "noWorkflow": "Sin workflow",
       "turnWorkflowCaption": "Se ejecuta en segundo plano tras cada turno — no afecta a la conversación.",
       "finalWorkflowCaption": "Se ejecuta en segundo plano al finalizar la llamada — no afecta a la conversación.",
-      "perMinute": "${{cost}}/min"
+      "perMinute": "${{cost}}/min",
+      "customVoiceCaption": "Elige una voz integrada o pega el id de una voz personalizada (voice_…) creada en tu cuenta de OpenAI."
     },
     "testCall": {
       "title": "Llamada de prueba",
@@ -1521,5 +1522,46 @@
     "title": "Assemblix - Constructor visual de agentes de IA",
     "description": "Crea agentes de IA inteligentes sin código con el constructor visual de Assemblix. Automatiza procesos de negocio, crea chatbots y flujos de trabajo.",
     "keywords": "agentes de IA, constructor de agentes, editor visual, constructor de flujos de trabajo, automatización, chatbots, inteligencia artificial, no-code, low-code, Assemblix"
+  },
+  "voiceSessions": {
+    "title": "Llamadas",
+    "tabConfiguration": "Configuración",
+    "tabSessions": "Llamadas",
+    "empty": "Aún no hay llamadas",
+    "emptyDescription": "Haz una llamada de prueba y aparecerá aquí con su transcripción y sus ejecuciones de análisis.",
+    "loadError": "No se pudieron cargar las llamadas",
+    "columns": {
+      "startedAt": "Cuándo",
+      "duration": "Duración",
+      "turns": "Turnos",
+      "cost": "Coste",
+      "outcome": "Resultado"
+    },
+    "status": {
+      "active": "En curso",
+      "completed": "Completada",
+      "failed": "Fallida"
+    },
+    "endReason": {
+      "user_hangup": "Colgó",
+      "timeout": "Tiempo agotado",
+      "error": "Error",
+      "completed": "Completada",
+      "closed": "Finalizada",
+      "provider_closed": "Finalizada por el proveedor"
+    },
+    "detail": {
+      "title": "Llamada",
+      "back": "Volver al agente",
+      "transcript": "Transcripción",
+      "emptyTranscript": "No se dijo nada en esta llamada.",
+      "executions": "Ejecuciones de análisis",
+      "noExecutions": "Ningún workflow de análisis se ejecutó para esta llamada.",
+      "openExecution": "Abrir ejecución",
+      "tokens": "{{input}} entrada / {{output}} salida tokens",
+      "you": "Llamante",
+      "agent": "Agente",
+      "loadError": "No se pudo cargar la llamada"
+    }
   }
 }

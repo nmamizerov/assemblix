@@ -42,6 +42,7 @@ export const baseApi = createApi({
     "NodeTemplates",
     "KnowledgeBases",
     "VoiceAgents",
+    "VoiceSessions",
     "KBDocuments",
     "LLMProviders",
     "VoiceModels",

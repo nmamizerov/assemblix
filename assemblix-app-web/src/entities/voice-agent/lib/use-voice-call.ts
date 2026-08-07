@@ -4,10 +4,10 @@ import { usePcmPlayer } from "@/shared/lib/use-pcm-player";
 
 import { useCreateVoiceSessionMutation } from "../api/voice-agent.api";
 
-// The provider takes PCM16 mono at this rate. The browser reaches it natively —
-// an AudioContext created with this sampleRate resamples the microphone stream
-// itself — so nothing here converts sample rates by hand.
-const SAMPLE_RATE = 24000;
+// Providers disagree on rates — OpenAI is 24kHz both ways, Gemini Live wants 16kHz
+// in — so the server names both in `session.ready` and capture only starts once it
+// has. An AudioContext created with that sampleRate resamples the microphone stream
+// itself, so nothing here converts rates by hand.
 
 // Served from public/ rather than bundled: `?url` turns the worklet into a
 // data: URL, which addModule rejects under a strict CSP and on some browsers.
@@ -65,7 +65,7 @@ const frameLevel = (pcm: Int16Array): number => {
 
 export const useVoiceCall = (voiceAgentId: string): UseVoiceCallResult => {
   const [createSession] = useCreateVoiceSessionMutation();
-  const player = usePcmPlayer(SAMPLE_RATE);
+  const player = usePcmPlayer();
 
   const [status, setStatus] = useState<CallStatus>("idle");
   const [transcript, setTranscript] = useState<TranscriptLine[]>([]);
@@ -95,13 +95,43 @@ export const useVoiceCall = (voiceAgentId: string): UseVoiceCallResult => {
     setStatus("idle");
   }, [player]);
 
+  /** Microphone → worklet → socket, at the rate the server just asked for. */
+  const startCapture = useCallback(async (sampleRate: number) => {
+    const stream = streamRef.current;
+    const socket = socketRef.current;
+    if (!stream || !socket) return;
+
+    const ctx = new AudioContext({ sampleRate });
+    ctxRef.current = ctx;
+    await ctx.audioWorklet.addModule(WORKLET_URL);
+
+    const recorder = new AudioWorkletNode(ctx, "pcm-recorder");
+    recorder.port.onmessage = (event: MessageEvent<ArrayBuffer>) => {
+      levels.current.user = frameLevel(new Int16Array(event.data));
+      if (socket.readyState === WebSocket.OPEN) socket.send(event.data);
+    };
+    ctx.createMediaStreamSource(stream).connect(recorder);
+    // A worklet only runs while it is connected to the graph, but the captured
+    // microphone must never reach the speakers — route it through a muted gain.
+    const muted = ctx.createGain();
+    muted.gain.value = 0;
+    recorder.connect(muted).connect(ctx.destination);
+  }, []);
+
   const handleControlFrame = useCallback(
     (frame: Record<string, unknown>) => {
       switch (frame.type) {
         case "session.ready":
           if (watchdogRef.current) clearTimeout(watchdogRef.current);
           watchdogRef.current = null;
-          setStatus("live");
+          player.setSampleRate(Number(frame.outputSampleRate));
+          startCapture(Number(frame.inputSampleRate))
+            .then(() => setStatus("live"))
+            .catch((cause: unknown) => {
+              console.error(cause);
+              setError("micFailed");
+              teardown();
+            });
           break;
         case "transcript": {
           const line = {
@@ -137,7 +167,7 @@ export const useVoiceCall = (voiceAgentId: string): UseVoiceCallResult => {
           break;
       }
     },
-    [player, teardown],
+    [player, startCapture, teardown],
   );
 
   const start = useCallback(async () => {
@@ -171,10 +201,6 @@ export const useVoiceCall = (voiceAgentId: string): UseVoiceCallResult => {
     try {
       const { token } = await createSession(voiceAgentId).unwrap();
 
-      const ctx = new AudioContext({ sampleRate: SAMPLE_RATE });
-      ctxRef.current = ctx;
-      await ctx.audioWorklet.addModule(WORKLET_URL);
-
       const scheme = window.location.protocol === "https:" ? "wss" : "ws";
       const socket = new WebSocket(
         `${scheme}://${window.location.host}/api/voice-agents/sessions/${token}/stream`,
@@ -194,18 +220,6 @@ export const useVoiceCall = (voiceAgentId: string): UseVoiceCallResult => {
       };
       socket.onerror = () => setError("connectFailed");
       socket.onclose = () => teardown();
-
-      const recorder = new AudioWorkletNode(ctx, "pcm-recorder");
-      recorder.port.onmessage = (event: MessageEvent<ArrayBuffer>) => {
-        levels.current.user = frameLevel(new Int16Array(event.data));
-        if (socket.readyState === WebSocket.OPEN) socket.send(event.data);
-      };
-      ctx.createMediaStreamSource(stream).connect(recorder);
-      // A worklet only runs while it is connected to the graph, but the captured
-      // microphone must never reach the speakers — route it through a muted gain.
-      const muted = ctx.createGain();
-      muted.gain.value = 0;
-      recorder.connect(muted).connect(ctx.destination);
     } catch (cause) {
       console.error(cause);
       setError("connectFailed");

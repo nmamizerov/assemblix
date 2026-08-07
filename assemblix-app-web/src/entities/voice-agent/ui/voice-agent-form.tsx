@@ -26,10 +26,15 @@ import { useGetBillingUsageQuery } from "@/entities/billing";
 import { useGetKnowledgeBasesQuery } from "@/entities/knowledge-base";
 import { useGetWorkflowsQuery } from "@/entities/workflow";
 import { selectCurrentProjectId } from "@/entities/organization";
-import { applyProviderChange, LANGUAGE_OPTIONS } from "../lib/voice-agent-form";
+import {
+  applyProviderChange,
+  LANGUAGE_OPTIONS,
+  supportsCustomVoices,
+} from "../lib/voice-agent-form";
 import type { DraftValidation } from "../lib/voice-agent-form";
 import type { VoiceAgentDraft } from "../model/types";
 import { ProviderMark } from "./provider-mark";
+import { VoiceCombobox } from "./voice-combobox";
 
 // Soft budget for the knowledge base text that gets inlined into the voice
 // agent's prompt. There is no backend-enforced cap — this only warns the
@@ -233,28 +238,47 @@ export const VoiceAgentForm = ({ draft, errors, onChange }: VoiceAgentFormProps)
           </div>
           <div className="space-y-2">
             <Label>{t("voiceAgents.fields.voiceId")}</Label>
-            <Select
-              value={draft.voiceId}
-              onValueChange={(value) => handleField("voiceId", value)}
-              disabled={!draft.provider || isLoadingVoices}
-            >
-              <SelectTrigger className="w-full">
-                <SelectValue
+            {supportsCustomVoices(draft.provider) ? (
+              <>
+                <VoiceCombobox
+                  value={draft.voiceId}
+                  options={voices}
+                  disabled={!draft.provider || isLoadingVoices}
                   placeholder={
                     isLoadingVoices
                       ? t("voiceAgents.fields.loadingVoices")
                       : t("voiceAgents.fields.selectVoice")
                   }
+                  onChange={(value) => handleField("voiceId", value)}
                 />
-              </SelectTrigger>
-              <SelectContent>
-                {voices.map((voice) => (
-                  <SelectItem key={voice.id} value={voice.id}>
-                    {voice.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+                <p className="text-xs text-muted-foreground">
+                  {t("voiceAgents.fields.customVoiceCaption")}
+                </p>
+              </>
+            ) : (
+              <Select
+                value={draft.voiceId}
+                onValueChange={(value) => handleField("voiceId", value)}
+                disabled={!draft.provider || isLoadingVoices}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue
+                    placeholder={
+                      isLoadingVoices
+                        ? t("voiceAgents.fields.loadingVoices")
+                        : t("voiceAgents.fields.selectVoice")
+                    }
+                  />
+                </SelectTrigger>
+                <SelectContent>
+                  {voices.map((voice) => (
+                    <SelectItem key={voice.id} value={voice.id}>
+                      {voice.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
           </div>
           <div className="space-y-2">
             <Label>{t("voiceAgents.fields.language")}</Label>
