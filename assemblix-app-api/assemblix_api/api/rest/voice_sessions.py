@@ -175,7 +175,12 @@ async def stream_voice_session(websocket: WebSocket, token: str) -> None:
         is_debug=scope.is_debug,
     )
     runtime = VoiceSessionRuntime(
-        bridge=create_bridge(provider=setup.provider, api_key=setup.api_key, model=setup.model),
+        bridge=create_bridge(
+            provider=setup.provider,
+            api_key=setup.api_key,
+            model=setup.model,
+            api_base=setup.api_base,
+        ),
         client=_WebSocketChannel(websocket),
         instructions=setup.instructions,
         voice=setup.voice,
