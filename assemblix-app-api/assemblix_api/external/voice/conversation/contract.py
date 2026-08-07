@@ -71,6 +71,13 @@ BridgeEvent = (
 
 
 class RealtimeBridge(Protocol):
+    # Providers do not agree on rates: OpenAI is 24kHz both ways, Gemini Live wants
+    # 16kHz in and answers at 24kHz. The browser reaches either natively via
+    # `new AudioContext({ sampleRate })`, so the rate travels to it instead of being
+    # resampled anywhere.
+    input_sample_rate: int
+    output_sample_rate: int
+
     async def connect(
         self,
         *,

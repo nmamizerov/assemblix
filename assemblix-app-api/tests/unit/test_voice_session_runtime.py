@@ -19,6 +19,9 @@ from assemblix_api.realtime.runtime import VoiceSessionRuntime
 class _FakeBridge:
     """Replays a scripted provider conversation and records outbound calls."""
 
+    input_sample_rate = 24000
+    output_sample_rate = 24000
+
     def __init__(self, events: list[Any]) -> None:
         self._events = events
         self.connected_with: dict | None = None

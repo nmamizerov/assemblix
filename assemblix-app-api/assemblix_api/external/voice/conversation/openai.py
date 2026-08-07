@@ -40,8 +40,34 @@ DEFAULT_TRANSCRIPTION_MODEL = "gpt-realtime-whisper"
 # params keys accepted for turn_detection; anything else is ignored, not forwarded.
 _TURN_DETECTION_PARAMS = ("threshold", "prefix_padding_ms", "silence_duration_ms")
 
+# The voices the API knows by name. Anything else is taken to be a custom voice
+# created through /v1/audio/voices, which is addressed by id rather than by name:
+# `{"id": "voice_1234"}`. This is the full documented realtime set, wider than the
+# catalog we offer in the picker — a name we do not list is still a name, not an id.
+_BUILTIN_VOICES = frozenset(
+    {
+        "alloy",
+        "ash",
+        "ballad",
+        "coral",
+        "echo",
+        "sage",
+        "shimmer",
+        "verse",
+        "marin",
+        "cedar",
+    }
+)
+
+
+def _voice_payload(voice: str) -> str | dict[str, str]:
+    return voice if voice in _BUILTIN_VOICES else {"id": voice}
+
 
 class OpenAIRealtimeBridge:
+    input_sample_rate = 24000
+    output_sample_rate = 24000
+
     def __init__(
         self,
         *,
@@ -95,7 +121,7 @@ class OpenAIRealtimeBridge:
                 },
                 "output": {
                     "format": _AUDIO_FORMAT,
-                    "voice": voice,
+                    "voice": _voice_payload(voice),
                 },
             },
         }

@@ -12,6 +12,7 @@ from .base import Base, TimestampMixin, UUIDMixin
 
 if TYPE_CHECKING:
     from .project import Project
+    from .voice_session import VoiceSession
 
 
 class VoiceAgent(UUIDMixin, TimestampMixin, Base):
@@ -43,5 +44,9 @@ class VoiceAgent(UUIDMixin, TimestampMixin, Base):
     )
 
     project: Mapped["Project"] = relationship(back_populates="voice_agents")
+    sessions: Mapped[list["VoiceSession"]] = relationship(
+        back_populates="voice_agent",
+        cascade="all, delete-orphan",
+    )
 
     __table_args__ = (Index("ix_voice_agents_project_id_created_at", "project_id", "created_at"),)

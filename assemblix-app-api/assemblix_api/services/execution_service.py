@@ -45,6 +45,7 @@ class ExecutionService(BaseService[Execution, ExecutionRepository]):
         *,
         chat_session_id: UUID | None = None,
         client_session_id: UUID | None = None,
+        voice_session_id: UUID | None = None,
         input_data: dict | None = None,
         is_debug: bool = False,
     ) -> Execution:
@@ -53,6 +54,7 @@ class ExecutionService(BaseService[Execution, ExecutionRepository]):
             token_id=token_id,
             chat_session_id=chat_session_id,
             client_session_id=client_session_id,
+            voice_session_id=voice_session_id,
             initial_state=initial_state,
             status=ExecutionStatus.RUNNING,
             started_at=datetime.now(),

@@ -28,12 +28,9 @@ from assemblix_api.external.voice.conversation.contract import (
     TurnEnded,
     UserTranscript,
 )
+from assemblix_api.realtime.hooks import TurnDispatcher
 
 logger = structlog.get_logger(__name__)
-
-# Both directions run at the provider's required rate; the browser reaches it
-# natively via `new AudioContext({ sampleRate })`, so nobody resamples anything.
-SAMPLE_RATE = 24000
 
 _BYTES_PER_SAMPLE = 2
 
@@ -59,6 +56,7 @@ class VoiceSessionRuntime:
         language: str,
         params: dict,
         max_session_sec: float,
+        dispatcher: TurnDispatcher | None = None,
     ) -> None:
         self._bridge = bridge
         self._client = client
@@ -67,6 +65,7 @@ class VoiceSessionRuntime:
         self._language = language
         self._params = params
         self._max_session_sec = max_session_sec
+        self._dispatcher = dispatcher
 
         # Audio actually forwarded to the browser, in ms. On a barge-in the
         # provider needs to know how much of its answer was really heard.
@@ -77,11 +76,27 @@ class VoiceSessionRuntime:
         self._last_inbound_audio_at: float | None = None
         self._transcript: list[dict] = []
         self._closed_reason: str | None = None
+        self._turn_index = 0
+        # The agent's last finished reply — context the per-turn hook needs, since
+        # it sees one utterance rather than the conversation.
+        self._last_agent_text: str | None = None
+        self._input_tokens = 0
+        self._output_tokens = 0
+        self._started_at = time.monotonic()
 
     @property
     def transcript(self) -> list[dict]:
-        """Lives only as long as the session — nothing is persisted in this step."""
+        """Accumulated in memory; persisted once, by the caller, after the call."""
         return self._transcript
+
+    @property
+    def usage(self) -> tuple[int, int]:
+        """Provider token counts for the whole call — observability, not the charge."""
+        return self._input_tokens, self._output_tokens
+
+    @property
+    def duration_sec(self) -> float:
+        return time.monotonic() - self._started_at
 
     async def run(self) -> str:
         """Drive the session to completion and return the reason it ended."""
@@ -94,8 +109,8 @@ class VoiceSessionRuntime:
         await self._client.send_json(
             {
                 "type": "session.ready",
-                "inputSampleRate": SAMPLE_RATE,
-                "outputSampleRate": SAMPLE_RATE,
+                "inputSampleRate": self._bridge.input_sample_rate,
+                "outputSampleRate": self._bridge.output_sample_rate,
             }
         )
 
@@ -120,6 +135,15 @@ class VoiceSessionRuntime:
 
         reason = self._closed_reason or "completed"
         await self._client.send_json({"type": "session.closed", "reason": reason})
+
+        if self._dispatcher is not None:
+            # The one hook that is awaited: the call is already over, and the whole
+            # point of the final workflow is that it sees the finished transcript.
+            await self._dispatcher.dispatch_final(
+                transcript=self._transcript,
+                duration_sec=self.duration_sec,
+                end_reason=reason,
+            )
         return reason
 
     async def _pump_client(self) -> None:
@@ -136,7 +160,9 @@ class VoiceSessionRuntime:
             match event:
                 case AudioDelta():
                     self._agent_speaking = True
-                    self._played_ms += len(event.pcm) // (_BYTES_PER_SAMPLE * SAMPLE_RATE // 1000)
+                    self._played_ms += len(event.pcm) // (
+                        _BYTES_PER_SAMPLE * self._bridge.output_sample_rate // 1000
+                    )
                     await self._client.send_bytes(event.pcm)
                     await self._emit_timings()
                 case UserTranscript():
@@ -155,6 +181,8 @@ class VoiceSessionRuntime:
                 case TurnEnded():
                     self._agent_speaking = False
                     self._played_ms = 0
+                    self._input_tokens += event.input_tokens or 0
+                    self._output_tokens += event.output_tokens or 0
                 case BridgeError():
                     await self._client.send_json(
                         {
@@ -182,6 +210,16 @@ class VoiceSessionRuntime:
     async def _on_transcript(self, role: str, text: str, is_final: bool) -> None:
         if is_final:
             self._transcript.append({"role": role, "text": text})
+            if role == "assistant":
+                self._last_agent_text = text
+            elif self._dispatcher is not None:
+                # Fire-and-forget: the conversation must not wait for the graph.
+                self._dispatcher.dispatch_turn(
+                    user_text=text,
+                    agent_reply=self._last_agent_text,
+                    turn_index=self._turn_index,
+                )
+                self._turn_index += 1
         await self._client.send_json(
             {"type": "transcript", "role": role, "text": text, "isFinal": is_final}
         )
