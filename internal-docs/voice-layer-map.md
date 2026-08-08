@@ -125,10 +125,12 @@ the Gemini integration, is [CONTRIBUTING_VOICE_AGENTS.md](CONTRIBUTING_VOICE_AGE
    events into `BridgeEvent`. Nothing provider-shaped may cross that boundary. Declare
    `input_sample_rate` / `output_sample_rate` honestly: they are part of the contract and
    travel to the browser, which builds its capture and playback graphs from them.
-4. `conversation/__init__.py` — one branch. Pass `api_base` to the adapter and use
-   it: every other route to a provider honours the configured gateway
-   (`provider_config.resolve_api_base`), and a conversation that quietly ignores it
-   goes straight to the provider from a network that may not reach it.
+4. `conversation/__init__.py` — one branch. Take `api_base` and use it, but note it
+   comes from `voice_session_service.resolve_conversation_base` — a **separate**
+   setting from the provider's chat/transcription base URL. A REST gateway is not a
+   WebSocket gateway: an LLM proxy that fronts `/v1/chat/completions` answers the
+   realtime route with 404, so reusing that setting turns a working call into a dead
+   one. Unset means talk to the provider directly.
 5. `credentials_service.py` — add the provider to `_VOICE_PROVIDER_TO_CREDENTIALS_TYPE`,
    or a project's own key will be silently ignored in favour of the system key.
 

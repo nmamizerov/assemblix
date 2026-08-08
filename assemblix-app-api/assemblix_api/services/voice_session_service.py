@@ -21,6 +21,7 @@ import structlog
 from fastapi import HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from assemblix_api.core.settings import get_settings
 from assemblix_api.database.repositories.credentials_repository import CredentialsRepository
 from assemblix_api.database.repositories.knowledge_base_repository import KnowledgeBaseRepository
 from assemblix_api.database.repositories.knowledge_document_repository import (
@@ -33,7 +34,6 @@ from assemblix_api.database.repositories.organization_user_repository import (
 from assemblix_api.database.repositories.project_repository import ProjectRepository
 from assemblix_api.database.repositories.voice_agent_repository import VoiceAgentRepository
 from assemblix_api.database.repositories.voice_session_repository import VoiceSessionRepository
-from assemblix_api.external.llm.provider_config import resolve_api_base
 from assemblix_api.external.voice.catalog.registry import find_voice_model
 from assemblix_api.schemas.voice_agent import VoiceAgentConfig
 from assemblix_api.services.credentials_service import CredentialsService
@@ -43,6 +43,23 @@ logger = structlog.get_logger(__name__)
 
 # Credit columns are Numeric(20, 8); anything finer is noise the column cannot hold.
 _CREDITS_QUANTUM = Decimal("0.00000001")
+
+# Where a realtime conversation connects. Deliberately NOT the chat/transcription
+# base URL: a REST gateway that fronts /v1/chat/completions answers the WebSocket
+# route with 404, so pointing conversations at it turns a working call into a dead
+# one. Unset (the default) means talk to the provider directly.
+_CONVERSATION_BASE_URL_SETTINGS = {
+    "openai": "openai_realtime_base_url",
+    "gemini": "gemini_live_base_url",
+}
+
+
+def resolve_conversation_base(provider: str) -> str | None:
+    setting = _CONVERSATION_BASE_URL_SETTINGS.get(provider)
+    if setting is None:
+        return None
+    return getattr(get_settings(), setting, None) or None
+
 
 # A call ends for one of a handful of reasons. Everything else — notably a provider's
 # WebSocket close frame, which is prose and can be any length — is diagnostics, and is
@@ -140,7 +157,7 @@ class VoiceSessionService:
             provider=config.voice.provider,
             model=config.voice.model,
             api_key=api_key,
-            api_base=resolve_api_base(config.voice.provider),
+            api_base=resolve_conversation_base(config.voice.provider),
             turn_workflow_id=config.turn_workflow_id,
             final_workflow_id=config.final_workflow_id,
             cost_per_minute=(catalog_entry.cost_per_minute or 0.0) if catalog_entry else 0.0,
