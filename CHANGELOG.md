@@ -5,6 +5,14 @@ All notable changes to this project are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.29](https://github.com/nmamizerov/assemblix/compare/v0.2.28...v0.2.29) (2026-08-08)
+
+
+### Bug Fixes
+
+* **voice:** give realtime conversations their own endpoint setting ([08865af](https://github.com/nmamizerov/assemblix/commit/08865af7fb704a81e44b08d42081b19fb64e776e))
+* **voice:** give realtime conversations their own endpoint setting ([20c2d34](https://github.com/nmamizerov/assemblix/commit/20c2d34c52f8b49e00dfe8f879bd3631a10fa36a))
+
 ## [0.2.28](https://github.com/nmamizerov/assemblix/compare/v0.2.27...v0.2.28) (2026-08-07)
 
 
