@@ -44,11 +44,10 @@ async def test_register_provisions_business_plan_on_self_host(api_client) -> Non
     assert resp.status_code == 201
     org_id = resp.json()["organizationId"]
 
-    # Assert — the org lands on the unlimited BUSINESS tier for both plan and chat_plan.
+    # Assert — the org lands on the unlimited BUSINESS tier.
     async with AsyncSession(get_async_engine()) as session:
         org = await OrganizationRepository(session).get_by_id(uuid.UUID(org_id))
         assert org.plan == PlanTier.BUSINESS
-        assert org.chat_plan == PlanTier.BUSINESS
 
 
 async def test_register_reports_business_plan_via_billing_api(api_client) -> None:
@@ -65,9 +64,8 @@ async def test_register_reports_business_plan_via_billing_api(api_client) -> Non
     # Act — read the current plan the way the UI does.
     resp = await api_client.get("/api/billing/plan", headers=jwt_headers)
 
-    # Assert — BUSINESS tier with unlimited agents (no FREE caps).
+    # Assert — BUSINESS tier plan info.
     assert resp.status_code == 200
     body = resp.json()
     assert body["plan"] == PlanTier.BUSINESS.value
     assert body["name"] == "Business"
-    assert body["maxAgents"] is None

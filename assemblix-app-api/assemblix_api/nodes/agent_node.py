@@ -330,14 +330,12 @@ class AgentNode(BaseNode):
         fallback), so a fallback's credential is resolved only when its target is built.
         """
         assert context.credential_service is not None
-        assert context.organization_plan is not None
 
         resolver = context.credential_resolver or CredentialResolver(context.credential_service)
         return await resolver.resolve(
             credential_id=credential_id,
             provider=provider,
             project_id=context.project_id,
-            organization_plan=context.organization_plan,
         )
 
     def validate_config(self) -> list[str]:

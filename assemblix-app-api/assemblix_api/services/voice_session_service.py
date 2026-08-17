@@ -144,7 +144,6 @@ class VoiceSessionService:
             credentials_id=UUID(config.voice.credential_id) if config.voice.credential_id else None,
             project_id=project_id,
             voice_provider=config.voice.provider,
-            organization_plan=organization.plan,
         )
 
         catalog_entry = find_voice_model(config.voice.provider, config.voice.model)

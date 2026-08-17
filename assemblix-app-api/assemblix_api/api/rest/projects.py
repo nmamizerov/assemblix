@@ -8,13 +8,11 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query, status
 
-from assemblix_api.billing.service import BillingService
 from assemblix_api.core.auth_context import AuthContext
 from assemblix_api.database.models.organization import Organization
 from assemblix_api.database.models.user import User
 from assemblix_api.dependencies import (
     get_auth_context,
-    get_billing_service,
     get_current_organization,
     get_current_user,
     get_project_service,
@@ -84,19 +82,15 @@ async def update_project(
     data: ProjectUpdateRequest,
     auth: AuthContext = Depends(get_auth_context),
     service: ProjectService = Depends(get_project_service),
-    billing_service: BillingService = Depends(get_billing_service),
 ):
     """
     Update a project.
 
     Updates the given fields; all fields are optional.
     """
-    project = await service.authorize_project_access(auth, project_id)
+    await service.authorize_project_access(auth, project_id)
 
-    # Updating state_schema requires the project_variables feature on the current plan.
     update_data = data.model_dump(exclude_unset=True)
-    if "state_schema" in update_data and update_data["state_schema"]:
-        await billing_service.check_feature_available(project.organization_id, "project_variables")
 
     project = await service.update_project(
         project_id=project_id,

@@ -9,8 +9,7 @@ from assemblix_api.enums import PlanTier
 
 from .credit_service import CreditService, InsufficientCreditsError
 from .exceptions import BillingLimitExceeded, FeatureNotAvailable
-from .limits import check_agents_limit, check_feature_available, get_plan_limits_info
-from .plans import CreditConfig, PlanConfig, credit_config, get_plan_config
+from .plans import CreditConfig, CreditPack, PlanConfig, credit_config, get_plan_config
 from .service import BillingService
 
 __all__ = [
@@ -20,11 +19,9 @@ __all__ = [
     "BillingLimitExceeded",
     "FeatureNotAvailable",
     "PlanConfig",
+    "CreditPack",
     "CreditConfig",
     "credit_config",
     "PlanTier",
     "get_plan_config",
-    "check_agents_limit",
-    "check_feature_available",
-    "get_plan_limits_info",
 ]

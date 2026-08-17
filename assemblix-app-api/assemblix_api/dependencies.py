@@ -348,13 +348,11 @@ async def get_rate_limit_service() -> RateLimitService:
 
 async def get_billing_service(
     organization_repository: OrganizationRepository = Depends(get_organization_repository),
-    workflow_repository: WorkflowRepository = Depends(get_workflow_repository),
     credit_service: CreditService = Depends(get_credit_service),
     rate_limit_service: RateLimitService = Depends(get_rate_limit_service),
 ) -> BillingService:
     return BillingService(
         organization_repository=organization_repository,
-        workflow_repository=workflow_repository,
         credit_service=credit_service,
         rate_limit_service=rate_limit_service,
     )
@@ -362,9 +360,8 @@ async def get_billing_service(
 
 async def get_workflow_service(
     workflow_repository: WorkflowRepository = Depends(get_workflow_repository),
-    billing_service: BillingService = Depends(get_billing_service),
 ) -> WorkflowService:
-    return WorkflowService(workflow_repository, billing_service)
+    return WorkflowService(workflow_repository)
 
 
 async def get_credentials_service(

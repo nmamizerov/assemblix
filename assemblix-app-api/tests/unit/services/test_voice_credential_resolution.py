@@ -7,7 +7,6 @@ from assemblix_api.database.repositories.credentials_repository import Credentia
 from assemblix_api.database.repositories.organization_user_repository import (
     OrganizationUserRepository,
 )
-from assemblix_api.enums import PlanTier
 from assemblix_api.services.credentials_service import CredentialsService
 
 
@@ -23,7 +22,7 @@ async def _make_credential(db_session, project_id, cred_type, value="secret"):
 
 
 async def test_own_valid_elevenlabs_key_on_paid_plan(db_session, auth_user) -> None:
-    """Paid plan + own elevenlabs credential → (user key, is_system=False)."""
+    """Own elevenlabs credential supplied → (user key, is_system=False)."""
     # Arrange
     service = _service(db_session)
     cred = await _make_credential(
@@ -34,37 +33,14 @@ async def test_own_valid_elevenlabs_key_on_paid_plan(db_session, auth_user) -> N
         credentials_id=cred.id,
         project_id=auth_user.project_id,
         voice_provider="elevenlabs",
-        organization_plan=PlanTier.PRO,
     )
     # Assert
     assert key == "xi-user"
     assert is_system is False
 
 
-async def test_free_plan_forces_system_key(db_session, auth_user, monkeypatch) -> None:
-    """FREE plan → system key even if an own credential is passed."""
-    # Arrange
-    monkeypatch.setattr(get_settings(), "system_elevenlabs_api_key", "xi-system")
-    service = _service(db_session)
-    cred = await _make_credential(
-        db_session, auth_user.project_id, CredentialsType.ELEVENLABS_TOKEN, "xi-user"
-    )
-    # Act
-    key, is_system = await service.get_voice_api_key_with_fallback(
-        credentials_id=cred.id,
-        project_id=auth_user.project_id,
-        voice_provider="elevenlabs",
-        organization_plan=PlanTier.FREE,
-    )
-    # Assert
-    assert key == "xi-system"
-    assert is_system is True
-
-
-async def test_paid_plan_no_credential_falls_back_to_system(
-    db_session, auth_user, monkeypatch
-) -> None:
-    """Paid plan, no credential → system key fallback."""
+async def test_no_credential_falls_back_to_system(db_session, auth_user, monkeypatch) -> None:
+    """No credential supplied → system key fallback."""
     # Arrange
     monkeypatch.setattr(get_settings(), "system_elevenlabs_api_key", "xi-system")
     service = _service(db_session)
@@ -73,7 +49,6 @@ async def test_paid_plan_no_credential_falls_back_to_system(
         credentials_id=None,
         project_id=auth_user.project_id,
         voice_provider="elevenlabs",
-        organization_plan=PlanTier.PRO,
     )
     # Assert
     assert key == "xi-system"
@@ -83,7 +58,7 @@ async def test_paid_plan_no_credential_falls_back_to_system(
 async def test_wrong_type_credential_falls_back_to_system(
     db_session, auth_user, monkeypatch
 ) -> None:
-    """Paid plan + wrong-type credential (openai) → system key fallback."""
+    """Wrong-type credential (openai) → system key fallback."""
     # Arrange
     monkeypatch.setattr(get_settings(), "system_elevenlabs_api_key", "xi-system")
     service = _service(db_session)
@@ -95,17 +70,16 @@ async def test_wrong_type_credential_falls_back_to_system(
         credentials_id=cred.id,
         project_id=auth_user.project_id,
         voice_provider="elevenlabs",
-        organization_plan=PlanTier.PRO,
     )
     # Assert
     assert key == "xi-system"
     assert is_system is True
 
 
-async def test_own_valid_gemini_key_on_paid_plan_is_not_swapped_for_system(
+async def test_own_valid_gemini_key_is_not_swapped_for_system(
     db_session, auth_user, monkeypatch
 ) -> None:
-    """Paid plan + own gemini credential → own key used, not silently swapped for system.
+    """Own gemini credential → own key used, not silently swapped for system.
 
     Regression guard: before adding "gemini" to _VOICE_PROVIDER_TO_CREDENTIALS_TYPE,
     the credential was treated as incompatible and this call fell back to the
@@ -122,7 +96,6 @@ async def test_own_valid_gemini_key_on_paid_plan_is_not_swapped_for_system(
         credentials_id=cred.id,
         project_id=auth_user.project_id,
         voice_provider="gemini",
-        organization_plan=PlanTier.PRO,
     )
     # Assert
     assert key == "gm-user"
@@ -130,7 +103,7 @@ async def test_own_valid_gemini_key_on_paid_plan_is_not_swapped_for_system(
 
 
 async def test_no_key_anywhere_raises_503(db_session, auth_user, monkeypatch) -> None:
-    """Paid plan, no credential and no system key → 503 (surfaces as a normal run error)."""
+    """No credential and no system key → 503 (surfaces as a normal run error)."""
     # Arrange
     monkeypatch.setattr(get_settings(), "system_elevenlabs_api_key", "")
     service = _service(db_session)
@@ -140,6 +113,5 @@ async def test_no_key_anywhere_raises_503(db_session, auth_user, monkeypatch) ->
             credentials_id=None,
             project_id=auth_user.project_id,
             voice_provider="elevenlabs",
-            organization_plan=PlanTier.PRO,
         )
     assert exc.value.status_code == 503

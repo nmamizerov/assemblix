@@ -96,27 +96,6 @@ class Organization(UUIDMixin, TimestampMixin, Base):
         else:
             self._plan = value.lower()
 
-    _chat_plan: Mapped[str] = mapped_column(
-        "chat_plan",
-        String(50),
-        default="free",
-        nullable=False,
-        index=True,
-        server_default="free",
-        comment="Plan tier for chat widgets",
-    )
-
-    @property
-    def chat_plan(self) -> PlanTier:
-        return PlanTier(self._chat_plan.lower())
-
-    @chat_plan.setter
-    def chat_plan(self, value: PlanTier | str) -> None:
-        if isinstance(value, PlanTier):
-            self._chat_plan = value.value
-        else:
-            self._chat_plan = value.lower()
-
     billing_period_start: Mapped[datetime] = mapped_column(
         default=datetime.utcnow,
         nullable=False,

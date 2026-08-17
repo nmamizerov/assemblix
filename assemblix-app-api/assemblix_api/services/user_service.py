@@ -127,7 +127,6 @@ class UserService:
             owner_id=user.id,
             is_personal=True,
             plan=default_plan,
-            chat_plan=default_plan,
             credits_balance=plan_config.credits_per_month,
             credits_period_start=datetime.utcnow().date(),
         )

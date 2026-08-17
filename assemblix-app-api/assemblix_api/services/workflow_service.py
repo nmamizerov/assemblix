@@ -29,7 +29,6 @@ from assemblix_api.schemas import (
 from assemblix_api.services.base_service import BaseService
 
 if TYPE_CHECKING:
-    from assemblix_api.billing.service import BillingService
     from assemblix_api.dto.requests.workflow import (
         WorkflowCreateRequest,
         WorkflowUpdateRequest,
@@ -110,11 +109,8 @@ def _create_default_workflow_structure(language: str = "en") -> dict:
 
 
 class WorkflowService(BaseService[Workflow, WorkflowRepository]):
-    def __init__(
-        self, repository: WorkflowRepository, billing_service: BillingService | None = None
-    ):
+    def __init__(self, repository: WorkflowRepository):
         super().__init__(repository, entity_name="Workflow")
-        self._billing_service = billing_service
 
     async def create_workflow(
         self,
@@ -124,9 +120,6 @@ class WorkflowService(BaseService[Workflow, WorkflowRepository]):
         language: str = "en",
         source: str = "assemblix",
     ) -> Workflow:
-        if self._billing_service:
-            await self._billing_service.check_can_create_workflow(organization_id, source=source)
-
         workflow_data = data.model_dump()
 
         # Empty nodes -> seed the localized default structure
@@ -262,9 +255,6 @@ class WorkflowService(BaseService[Workflow, WorkflowRepository]):
         """Create a copy of a workflow; the copy is always a fresh draft."""
         source_workflow = await self._check_ownership(workflow_id, project_id)
 
-        if self._billing_service:
-            await self._billing_service.check_can_create_workflow(organization_id)
-
         # Copy all model columns except identity, timestamps and stats, which are reset
         mapper = inspect(Workflow)
         excluded_columns = {
@@ -321,9 +311,6 @@ class WorkflowService(BaseService[Workflow, WorkflowRepository]):
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Нельзя переносить опубликованную версию. Переносите только драфты.",
             )
-
-        if self._billing_service:
-            await self._billing_service.check_can_create_workflow(target_organization_id)
 
         await self._repository.move_to_project(workflow_id, target_project_id)
 
