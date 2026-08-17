@@ -59,6 +59,7 @@ your own infrastructure with a single `docker compose up`.
 - [📸 Screenshots](#-screenshots)
 - [🧱 How it works](#-how-it-works)
 - [📦 Use it: Demo · Self-host · Enterprise](#-use-it)
+- [🤖 Build it with an AI assistant (MCP)](#-build-it-with-an-ai-assistant-mcp)
 - [🔌 Write your own nodes](#-write-your-own-nodes)
 - [🤝 Contributing](#-contributing)
 - [🔭 Releases & versioning](#-releases--versioning)
@@ -178,6 +179,7 @@ and links straight into the execution viewer.
 | 🔑 **Workflow & voice APIs** | Every workflow is a typed HTTP endpoint; every voice agent has a token-based WebSocket session API. |
 | 🏢 **Multi-tenancy** | Organizations, projects, credentials, and chat sessions out of the box. |
 | 📊 **Observability** | Prometheus `/metrics`, `/health` + `/ready` probes, in-flight executions, per-step LLM token/cost metrics. |
+| 🤖 **MCP server** | Let Claude, Cursor, or any MCP client author, run, and debug workflows and voice agents — one project API key, nothing else to configure. |
 | 🔌 **Node SDK** | Register custom nodes via an entry-point group — auto-discovered at startup. |
 
 <div align="center">
@@ -345,6 +347,35 @@ Billing/payments layer (separate EE license), off by default.
 </tr>
 </table>
 
+## 🤖 Build it with an AI assistant (MCP)
+
+You don't have to build everything by hand. **[assemblix-mcp][mcp-repo]** is an MCP server
+that lets Claude, Cursor, or any MCP client author workflows, run them, read execution
+traces, and manage voice agents on your behalf. **All it needs is one project API key** —
+grab an `sk_…` from the project's **API keys** page and you're done; there is nothing else
+to configure and no `projectId` to pass, because the key already identifies the project.
+
+```bash
+# hosted — nothing to install
+claude mcp add --transport http assemblix https://mcp.assmblx.com \
+  --header "Authorization: Bearer sk_your_key"
+
+# or run it locally against your own instance
+claude mcp add assemblix \
+  --env ASSEMBLIX_API_KEY=sk_your_key \
+  --env ASSEMBLIX_API_URL=http://localhost:8000 \
+  -- uvx assemblix-mcp
+```
+
+It exposes workflow authoring (`create_workflow`, `publish_workflow`, `list_node_types`),
+execution and debugging (`run_workflow_and_wait`, `get_execution_detail`, `list_in_flight`),
+and the full voice agent surface (`create_voice_agent`, `list_voice_calls`, `get_voice_call`)
+— plus guides your assistant can read on how to integrate a workflow or a call into your
+own product.
+
+> `assemblix-mcp` lives in its own repository, **[nmamizerov/assemblix-aitools][mcp-repo]**,
+> under MIT — separate from this one.
+
 ## 🔌 Write your own nodes
 
 Nodes register by string type and are auto-discovered at startup via the `assemblix.nodes`
@@ -404,3 +435,4 @@ small set of files (payments / acquiring) is under a separate **Enterprise licen
 -->
 [demo]: https://app.assmblx.com
 [docs]: https://app.assmblx.com/docs
+[mcp-repo]: https://github.com/nmamizerov/assemblix-aitools
