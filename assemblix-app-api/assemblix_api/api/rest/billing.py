@@ -11,7 +11,7 @@ from datetime import datetime
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 
-from assemblix_api.billing.plans import PLAN_CONFIGS, get_plan_config
+from assemblix_api.billing.plans import CREDIT_PACKS, PLAN_CONFIGS, get_plan_config
 from assemblix_api.billing.service import BillingService
 from assemblix_api.database.models.credit_transaction import CreditTransactionType
 from assemblix_api.database.models.organization import Organization
@@ -23,6 +23,8 @@ from assemblix_api.dependencies import (
 )
 from assemblix_api.dto.responses.billing import (
     AllPlansResponse,
+    CreditPackResponse,
+    CreditPacksResponse,
     CreditsInfo,
     CreditTransactionListResponse,
     CreditTransactionResponse,
@@ -44,9 +46,8 @@ async def get_organization_usage(
 
     Returns:
     - Current plan
-    - Agent usage (current/limit)
-    - Request usage (current/limit)
-    - Available features
+    - Credit balance
+    - Plan limits (RPM, concurrent calls)
     - Billing period information
     """
     return await billing_service.get_organization_usage(current_organization.id)
@@ -62,8 +63,7 @@ async def get_current_plan(
 
     Returns detailed plan information including:
     - Name and price
-    - Limits (agents, requests)
-    - Available features
+    - Limits (RPM, concurrent calls)
     - Support level
     """
     config = get_plan_config(current_organization.plan)
@@ -71,13 +71,11 @@ async def get_current_plan(
     return PlanInfoResponse(
         plan=current_organization.plan.value,
         name=config.name,
-        price_rub=config.price_rub,
-        max_agents=config.max_agents,
+        price_usd_cents=config.price_usd_cents,
         credits_per_month=config.credits_per_month,
-        can_use_own_keys=config.can_use_own_keys,
-        has_project_variables=config.has_project_variables,
         support_level=config.support_level,
         rpm_limit=config.rpm_limit,
+        concurrent_calls=config.concurrent_calls,
     )
 
 
@@ -99,17 +97,29 @@ async def get_all_plans(
             PlanInfoResponse(
                 plan=plan_tier.value,
                 name=config.name,
-                price_rub=config.price_rub,
-                max_agents=config.max_agents,
+                price_usd_cents=config.price_usd_cents,
                 credits_per_month=config.credits_per_month,
-                can_use_own_keys=config.can_use_own_keys,
-                has_project_variables=config.has_project_variables,
                 support_level=config.support_level,
                 rpm_limit=config.rpm_limit,
+                concurrent_calls=config.concurrent_calls,
             )
         )
 
     return AllPlansResponse(plans=plans)
+
+
+@router.get("/packs", response_model=CreditPacksResponse)
+async def get_credit_packs(
+    current_user: User = Depends(get_current_user),
+):
+    """List all available one-off credit packs."""
+    packs = [
+        CreditPackResponse(
+            code=pack.code, price_usd_cents=pack.price_usd_cents, credits=pack.credits
+        )
+        for pack in CREDIT_PACKS.values()
+    ]
+    return CreditPacksResponse(packs=packs)
 
 
 @router.get("/credits", response_model=CreditsInfo)
@@ -127,7 +137,7 @@ async def get_credits_balance(
     - Plan and limit information
     - Period dates and next reset date
     """
-    balance_info = await billing_service._credit_service.get_balance(current_organization.id)
+    balance_info = await billing_service.get_credits(current_organization.id)
     return balance_info
 
 
@@ -171,7 +181,7 @@ async def get_credit_transactions(
                 detail=f"Invalid transaction type. Valid types: {[t.value for t in CreditTransactionType]}",
             ) from e
 
-    transactions, total_count = await billing_service._credit_service.get_transactions(
+    transactions, total_count = await billing_service.get_credit_transactions(
         organization_id=current_organization.id,
         skip=skip,
         limit=limit,
