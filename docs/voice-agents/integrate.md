@@ -13,7 +13,7 @@ The key never reaches the browser, and the token is useless a minute after it is
 ## 1. Mint a session token
 
 ```bash
-curl -X POST https://api.assemblix.ai/api/voice-agents/{voiceAgentId}/sessions \
+curl -X POST https://app.assmblx.com/api/voice-agents/{voiceAgentId}/sessions \
   -H "Authorization: Bearer sk_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
 ```
 
@@ -31,7 +31,7 @@ The agent must be active; an inactive one returns `400`.
 ## 2. Open the socket
 
 ```
-wss://api.assemblix.ai/api/voice-agents/sessions/{token}/stream
+wss://app.assmblx.com/api/voice-agents/sessions/{token}/stream
 ```
 
 No headers, no auth — the token is in the path, which is what makes this work from a
@@ -92,7 +92,7 @@ async function call(voiceAgentId) {
   });
 
   const socket = new WebSocket(
-    `wss://api.assemblix.ai/api/voice-agents/sessions/${token}/stream`
+    `wss://app.assmblx.com/api/voice-agents/sessions/${token}/stream`
   );
   socket.binaryType = "arraybuffer";
 

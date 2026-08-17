@@ -1,8 +1,10 @@
 # Assemblix
 
-**Assemblix** is a visual builder for **chat-driven AI workflows**. You wire typed nodes
+**Assemblix** is a visual builder for **conversational AI agents**. You wire typed nodes
 into a directed graph on a [React Flow](https://reactflow.dev/) canvas, then run it as a
-conversation — with text, **voice**, or a talking **AI avatar** on either end.
+conversation — with text, **voice**, or a talking **AI avatar** on either end. Alongside
+graph workflows it runs **realtime voice agents**: speech-to-speech conversations that
+answer in about half a second, with workflows attached to score and analyze every call.
 
 ![Chat workflow on the canvas](assets/chat.png)
 
@@ -20,7 +22,27 @@ an `END` node produces the reply.
 - **AI avatars** — an agent's output can drive a talking avatar persona, turning a workflow
   into a face-to-face conversation.
 
-## What else you can build
+## Realtime voice agents
+
+A **voice agent** is not a workflow: no canvas, no nodes. You write a prompt, choose a
+voice, and the caller talks to a speech-to-speech model directly — which is why it answers
+fast enough to interrupt. Workflows reach the conversation as **analysis hooks**: they run
+in the background on every turn and once at the end, scoring the call, extracting fields,
+or writing to a CRM.
+
+- **[Voice agents](voice-agents/index.md)** — what you configure, calls, and costs.
+- **[Providers](voice-agents/providers.md)** — OpenAI Realtime vs Gemini Live, honestly.
+- **[Analysis hooks](voice-agents/analysis.md)** — scoring and extracting from a live call.
+- **[Integrating a call](voice-agents/integrate.md)** — the session-token + WebSocket protocol.
+
+## What you can build
+
+Lead qualification and scoring, voice assistants that take calls, sales agents graded
+against your own criteria, employee training where the agent plays the customer, language
+practice and knowledge checks, structured interviews and surveys, and internal help desks
+grounded on your own documents.
+
+## What else is in the box
 
 - **Multiple LLM providers** — OpenAI, Gemini, DeepSeek, with fallbacks and per-credential
   routing.
