@@ -88,6 +88,9 @@ class Settings(BaseSettings):
     request_fee_usd: float = float(
         os.getenv("REQUEST_FEE_USD", "0.0001")
     )  # Price per request in USD
+    voice_platform_fee_usd_per_minute: float = float(
+        os.getenv("VOICE_PLATFORM_FEE_USD_PER_MINUTE", "0.02")
+    )  # Charged on every conversation minute, own keys included
 
     # OAuth Config
     google_oauth_client_id: str = os.getenv("GOOGLE_OAUTH_CLIENT_ID", "")
@@ -109,6 +112,7 @@ class Settings(BaseSettings):
     paddle_environment: str = os.getenv("PADDLE_ENVIRONMENT", "sandbox")
     paddle_price_starter: str = os.getenv("PADDLE_PRICE_STARTER", "")
     paddle_price_pro: str = os.getenv("PADDLE_PRICE_PRO", "")
+    paddle_price_business: str = os.getenv("PADDLE_PRICE_BUSINESS", "")
 
     # Host URL for webhooks
     host_url: str = os.getenv("HOST_URL", "http://localhost:8000")
