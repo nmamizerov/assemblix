@@ -20,7 +20,11 @@ class SubscriptionPaymentResponse(DTOModel):
     amount: int = Field(..., description="Amount in USD cents")
     amount_usd_cents: int = Field(..., description="Amount in USD cents")
     description: str = Field(..., description="Payment description")
-    target_plan: str = Field(..., description="Target plan tier")
+    target_plan: str | None = Field(
+        ...,
+        description="Target plan tier (raw stored value; None for an unparseable "
+        "legacy tier or a non-plan payment)",
+    )
     expires_at: datetime | None = Field(
         None,
         description="When the checkout link expires (usually 15 minutes)",
@@ -32,7 +36,11 @@ class PaymentStatusResponse(DTOModel):
     status: str = Field(..., description="Payment status")
     amount: int = Field(..., description="Amount in USD cents")
     description: str = Field(..., description="Payment description")
-    target_plan: str = Field(..., description="Target plan tier")
+    target_plan: str | None = Field(
+        ...,
+        description="Target plan tier (raw stored value; None for an unparseable "
+        "legacy tier or a non-plan payment)",
+    )
     payment_url: str | None = Field(None, description="Checkout URL")
     created_at: datetime = Field(..., description="Created at")
     updated_at: datetime = Field(..., description="Updated at")
@@ -44,7 +52,11 @@ class PaymentHistoryItem(DTOModel):
     amount: int = Field(..., description="Amount in USD cents")
     amount_usd_cents: int = Field(..., description="Amount in USD cents")
     description: str = Field(..., description="Payment description")
-    target_plan: str = Field(..., description="Target plan tier")
+    target_plan: str | None = Field(
+        ...,
+        description="Target plan tier (raw stored value; None for an unparseable "
+        "legacy tier or a non-plan payment)",
+    )
     is_recurrent: bool = Field(..., description="Recurrent payment")
     created_at: datetime = Field(..., description="Created at")
 

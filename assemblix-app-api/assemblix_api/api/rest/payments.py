@@ -80,7 +80,7 @@ async def create_subscription(
             amount=payment.amount,
             amount_usd_cents=payment.amount,
             description=payment.description,
-            target_plan=payment.target_plan.value,
+            target_plan=payment.target_plan_raw,
             expires_at=expires_at,
         )
 
@@ -179,7 +179,7 @@ async def get_payment_status(
         status=payment.status.value,
         amount=payment.amount,
         description=payment.description,
-        target_plan=payment.target_plan.value,
+        target_plan=payment.target_plan_raw,
         payment_url=payment.payment_url,
         created_at=payment.created_at,
         updated_at=payment.updated_at,
@@ -211,7 +211,7 @@ async def get_payment_history(
                 amount=p.amount,
                 amount_usd_cents=p.amount,
                 description=p.description,
-                target_plan=p.target_plan.value,
+                target_plan=p.target_plan_raw,
                 is_recurrent=p.is_recurrent,
                 created_at=p.created_at,
             )

@@ -175,8 +175,15 @@ class PaymentService:
         if not organization:
             raise ValueError(f"Organization {payment.organization_id} not found")
 
+        target_plan = payment.target_plan
+        if target_plan is None:
+            raise ValueError(
+                f"Payment {payment.id} has an unparseable target_plan "
+                f"({payment.target_plan_raw!r}); cannot activate a subscription for it."
+            )
+
         old_plan = organization.plan
-        organization.plan = payment.target_plan
+        organization.plan = target_plan
         await self._org_repo.update(organization)
 
         await self._credit_service.grant_plan_credits(organization.id)
@@ -184,7 +191,7 @@ class PaymentService:
         payment.meta = payment.meta or {}
         payment.meta["subscription_activated"] = True
         payment.meta["old_plan"] = old_plan.value
-        payment.meta["new_plan"] = payment.target_plan.value
+        payment.meta["new_plan"] = target_plan.value
         await self._payment_repo.update(payment)
 
     async def get_payment(self, payment_id: UUID) -> Payment | None:

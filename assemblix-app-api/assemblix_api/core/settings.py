@@ -110,7 +110,6 @@ class Settings(BaseSettings):
     paddle_api_key: str = os.getenv("PADDLE_API_KEY", "")
     paddle_webhook_secret: str = os.getenv("PADDLE_WEBHOOK_SECRET", "")
     paddle_environment: str = os.getenv("PADDLE_ENVIRONMENT", "sandbox")
-    paddle_price_starter: str = os.getenv("PADDLE_PRICE_STARTER", "")
     paddle_price_pro: str = os.getenv("PADDLE_PRICE_PRO", "")
     paddle_price_business: str = os.getenv("PADDLE_PRICE_BUSINESS", "")
 

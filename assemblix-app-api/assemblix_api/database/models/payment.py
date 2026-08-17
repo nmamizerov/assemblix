@@ -97,23 +97,39 @@ class Payment(UUIDMixin, TimestampMixin, Base):
         comment="Unique order ID (UUID)",
     )
 
-    _target_plan: Mapped[str] = mapped_column(
+    _target_plan: Mapped[str | None] = mapped_column(
         "target_plan",
         String(50),
-        nullable=False,
+        nullable=True,
         comment="Target plan tier",
     )
 
     @property
-    def target_plan(self) -> PlanTier:
-        return PlanTier(self._target_plan)
+    def target_plan(self) -> PlanTier | None:
+        """Parsed target plan, or None for a legacy/unparseable value (e.g. the
+        removed 'starter' tier) or a NULL column (future non-plan payments,
+        e.g. credit packs). Use `target_plan_raw` to read what was actually
+        stored, regardless of whether it still parses."""
+        if self._target_plan is None:
+            return None
+        try:
+            return PlanTier(self._target_plan)
+        except ValueError:
+            return None
 
     @target_plan.setter
-    def target_plan(self, value: PlanTier | str) -> None:
-        if isinstance(value, PlanTier):
+    def target_plan(self, value: PlanTier | str | None) -> None:
+        if value is None:
+            self._target_plan = None
+        elif isinstance(value, PlanTier):
             self._target_plan = value.value
         else:
             self._target_plan = value.lower()
+
+    @property
+    def target_plan_raw(self) -> str | None:
+        """The stored target_plan string, unparsed (survives a removed tier)."""
+        return self._target_plan
 
     # Recurrent payments (Paddle manages renewals via webhooks).
     is_recurrent: Mapped[bool] = mapped_column(
