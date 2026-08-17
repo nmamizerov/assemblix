@@ -5,6 +5,15 @@ All notable changes to this project are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.30](https://github.com/nmamizerov/assemblix/compare/v0.2.29...v0.2.30) (2026-08-17)
+
+
+### Documentation
+
+* document the MCP server in the README ([279aa70](https://github.com/nmamizerov/assemblix/commit/279aa705bfcdd9c430c1c5bda43ec5cd5976f78f))
+* reposition around conversational agents with voice and scoring ([024a5d8](https://github.com/nmamizerov/assemblix/commit/024a5d8166ef6b72e0ef05986ec00a34dd4886a6))
+* reposition around conversational agents with voice and scoring ([643fac7](https://github.com/nmamizerov/assemblix/commit/643fac7d2eb6212958b4e5d42df0c55c344b1d27))
+
 ## [0.2.29](https://github.com/nmamizerov/assemblix/compare/v0.2.28...v0.2.29) (2026-08-08)
 
 
