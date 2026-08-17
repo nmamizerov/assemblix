@@ -1,5 +1,5 @@
 site_name: Assemblix
-site_description: Visual AI agent / workflow automation platform — self-hosting & developer docs
+site_description: Visual builder for conversational AI agents — text, realtime voice, avatars — self-hosting & developer docs
 repo_url: https://github.com/nmamizerov/assemblix
 repo_name: nmamizerov/assemblix
 docs_dir: docs
