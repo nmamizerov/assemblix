@@ -17,8 +17,8 @@ from assemblix_api.dto.base import DTOModel, PaginatedResponse
 class SubscriptionPaymentResponse(DTOModel):
     payment_id: UUID = Field(..., description="Payment ID")
     payment_url: str = Field(..., description="Checkout URL")
-    amount: int = Field(..., description="Amount in kopecks")
-    amount_rub: int = Field(..., description="Amount in rubles")
+    amount: int = Field(..., description="Amount in USD cents")
+    amount_usd_cents: int = Field(..., description="Amount in USD cents")
     description: str = Field(..., description="Payment description")
     target_plan: str = Field(..., description="Target plan tier")
     expires_at: datetime | None = Field(
@@ -30,7 +30,7 @@ class SubscriptionPaymentResponse(DTOModel):
 class PaymentStatusResponse(DTOModel):
     payment_id: UUID = Field(..., description="Payment ID")
     status: str = Field(..., description="Payment status")
-    amount: int = Field(..., description="Amount in kopecks")
+    amount: int = Field(..., description="Amount in USD cents")
     description: str = Field(..., description="Payment description")
     target_plan: str = Field(..., description="Target plan tier")
     payment_url: str | None = Field(None, description="Checkout URL")
@@ -41,8 +41,8 @@ class PaymentStatusResponse(DTOModel):
 class PaymentHistoryItem(DTOModel):
     payment_id: UUID = Field(..., description="Payment ID")
     status: str = Field(..., description="Payment status")
-    amount: int = Field(..., description="Amount in kopecks")
-    amount_rub: int = Field(..., description="Amount in rubles")
+    amount: int = Field(..., description="Amount in USD cents")
+    amount_usd_cents: int = Field(..., description="Amount in USD cents")
     description: str = Field(..., description="Payment description")
     target_plan: str = Field(..., description="Target plan tier")
     is_recurrent: bool = Field(..., description="Recurrent payment")

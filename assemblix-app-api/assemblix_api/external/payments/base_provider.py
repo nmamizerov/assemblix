@@ -29,7 +29,7 @@ class BasePaymentProvider(ABC):
     async def init_payment(
         self,
         order_id: str,
-        amount: int,  # In kopecks
+        amount: int,  # In USD cents
         description: str,
         user_email: str,
         is_recurrent: bool = False,

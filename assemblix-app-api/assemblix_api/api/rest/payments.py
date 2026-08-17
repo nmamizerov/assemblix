@@ -57,7 +57,7 @@ async def create_subscription(
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=f"Invalid plan: {request_data.target_plan}. "
-                f"Valid plans: free, starter, pro, business",
+                f"Valid plans: free, pro, business",
             ) from e
 
         payment = await payment_service.create_subscription_payment(
@@ -78,7 +78,7 @@ async def create_subscription(
             payment_id=payment.id,
             payment_url=payment.payment_url,
             amount=payment.amount,
-            amount_rub=payment.amount // 100,
+            amount_usd_cents=payment.amount,
             description=payment.description,
             target_plan=payment.target_plan.value,
             expires_at=expires_at,
@@ -209,7 +209,7 @@ async def get_payment_history(
                 payment_id=p.id,
                 status=p.status.value,
                 amount=p.amount,
-                amount_rub=p.amount // 100,
+                amount_usd_cents=p.amount,
                 description=p.description,
                 target_plan=p.target_plan.value,
                 is_recurrent=p.is_recurrent,

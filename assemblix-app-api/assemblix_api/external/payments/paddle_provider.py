@@ -70,8 +70,8 @@ class PaddleProvider(BasePaymentProvider):
 
         # Map plan → Paddle price_id from env
         price_map = {
-            "starter": settings.paddle_price_starter,
             "pro": settings.paddle_price_pro,
+            "business": settings.paddle_price_business,
         }
         price_id = price_map.get(target_plan, "") if target_plan is not None else ""
         if not price_id:

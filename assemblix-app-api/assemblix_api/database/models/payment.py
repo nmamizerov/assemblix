@@ -54,7 +54,7 @@ class Payment(UUIDMixin, TimestampMixin, Base):
     amount: Mapped[int] = mapped_column(
         Integer,
         nullable=False,
-        comment="Amount in minor units (kopecks)",
+        comment="Amount in minor units (USD cents)",
     )
     description: Mapped[str] = mapped_column(
         Text,

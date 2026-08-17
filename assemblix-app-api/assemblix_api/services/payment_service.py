@@ -60,12 +60,11 @@ class PaymentService:
             raise ValueError(f"Organization {organization_id} not found")
 
         plan_config = get_plan_config(target_plan)
-        amount_rub = plan_config.price_rub
-        amount_kopecks = amount_rub * 100  # Convert to kopecks.
+        amount_cents = plan_config.price_usd_cents
 
         order_id = str(uuid4())
 
-        description = f"Подписка {plan_config.name} для Assemblix"
+        description = f"{plan_config.name} subscription for Assemblix"
 
         from assemblix_api.core.settings import get_settings
 
@@ -74,7 +73,7 @@ class PaymentService:
         payment = await self._payment_repo.create(
             organization_id=organization_id,
             user_email=user_email,
-            amount=amount_kopecks,
+            amount=amount_cents,
             description=description,
             order_id=order_id,
             target_plan=target_plan,
@@ -82,13 +81,13 @@ class PaymentService:
             provider=provider_name,
             meta={
                 "plan_name": plan_config.name,
-                "price_rub": amount_rub,
+                "price_usd_cents": amount_cents,
             },
         )
 
         result = await self._provider.init_payment(
             order_id=order_id,
-            amount=amount_kopecks,
+            amount=amount_cents,
             description=description,
             user_email=user_email,
             is_recurrent=is_recurrent,
