@@ -180,13 +180,11 @@ async def billing_run(api_client: Any, mock_llm: Any, billing_enabled: Any) -> S
         organization_id=org_id,
         project_id=project_id,
         jwt_headers=jwt_headers,
-        last_api_key_was_system=None,
     )
 
     async def execute(*, use_own_key: bool, cost_usd: float) -> Any:
         _arm_cost(mock_llm, cost_usd)
         workflow_id = own_workflow_id if use_own_key else system_workflow_id
-        result.last_api_key_was_system = not use_own_key
         return await api_client.post(
             f"/api/workflows/{workflow_id}/execute",
             json={"input": {"message": "hi"}},
