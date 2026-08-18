@@ -3,11 +3,13 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
+from datetime import datetime
 from uuid import UUID
 
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from assemblix_api.database.models.project import Project
 from assemblix_api.database.models.voice_session import VoiceSession
 from assemblix_api.database.repositories.base_repository import BaseRepository
 
@@ -37,3 +39,17 @@ class VoiceSessionRepository(BaseRepository[VoiceSession]):
             .where(self._model.voice_agent_id == voice_agent_id)
         )
         return result.scalars().all(), int(total or 0)
+
+    async def count_active_by_organization(self, organization_id: UUID, cutoff: datetime) -> int:
+        """Live calls of one organisation, ignoring rows stranded by a crashed process."""
+        stmt = (
+            select(func.count())
+            .select_from(self._model)
+            .join(Project, Project.id == self._model.project_id)
+            .where(
+                Project.organization_id == organization_id,
+                self._model.status == "active",
+                self._model.started_at >= cutoff,
+            )
+        )
+        return int(await self._session.scalar(stmt) or 0)

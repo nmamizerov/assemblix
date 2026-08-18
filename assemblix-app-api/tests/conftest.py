@@ -9,7 +9,8 @@ Fixture modules:
 * ``tests.plugins.database`` — app runtime, transactional ``db_session``, ``committed_db``;
 * ``tests.plugins.app``      — ``app`` / ``client`` (rolled back) and ``api_client`` (committed);
 * ``tests.plugins.auth``     — ``user_factory`` / ``auth_user`` / ``auth_headers`` / ``api_key``;
-* ``tests.plugins.llm``      — ``mock_llm`` (the ``litellm.acompletion`` seam) and ``fake_redis``.
+* ``tests.plugins.llm``      — ``mock_llm`` (the ``litellm.acompletion`` seam) and ``fake_redis``;
+* ``tests.plugins.voice``    — ``voice_session_service`` over the transactional session.
 
 Scope-local fixtures live in nested conftests, e.g. ``tests/integration/queue/conftest.py``.
 """
@@ -29,6 +30,7 @@ pytest_plugins = [
     "tests.plugins.auth",
     "tests.plugins.llm",
     "tests.plugins.tts_ws",
+    "tests.plugins.voice",
 ]
 
 # assemblix-app-api/ — one level up from tests/.

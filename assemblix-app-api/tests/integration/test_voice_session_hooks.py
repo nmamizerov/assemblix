@@ -12,16 +12,6 @@ import asyncio
 from collections.abc import AsyncIterator
 from typing import Any
 
-from assemblix_api.database.repositories.credentials_repository import CredentialsRepository
-from assemblix_api.database.repositories.knowledge_base_repository import KnowledgeBaseRepository
-from assemblix_api.database.repositories.knowledge_document_repository import (
-    KnowledgeDocumentRepository,
-)
-from assemblix_api.database.repositories.organization_repository import OrganizationRepository
-from assemblix_api.database.repositories.organization_user_repository import (
-    OrganizationUserRepository,
-)
-from assemblix_api.database.repositories.project_repository import ProjectRepository
 from assemblix_api.database.repositories.voice_agent_repository import VoiceAgentRepository
 from assemblix_api.database.repositories.voice_session_repository import VoiceSessionRepository
 from assemblix_api.external.voice.conversation.contract import (
@@ -32,8 +22,6 @@ from assemblix_api.external.voice.conversation.contract import (
 )
 from assemblix_api.realtime.hooks import TurnDispatcher
 from assemblix_api.realtime.runtime import VoiceSessionRuntime
-from assemblix_api.services.credentials_service import CredentialsService
-from assemblix_api.services.knowledge_base_service import KnowledgeBaseService
 from assemblix_api.services.voice_session_service import VoiceSessionService
 
 TURN_WORKFLOW_ID = "11111111-1111-1111-1111-111111111111"
@@ -94,22 +82,9 @@ class _RecordingRunner:
             raise RuntimeError("hook exploded")
 
 
-def _service(db_session: Any) -> VoiceSessionService:
-    return VoiceSessionService(
-        VoiceAgentRepository(db_session),
-        ProjectRepository(db_session),
-        OrganizationRepository(db_session),
-        KnowledgeBaseService(
-            KnowledgeBaseRepository(db_session), KnowledgeDocumentRepository(db_session)
-        ),
-        CredentialsService(
-            CredentialsRepository(db_session), OrganizationUserRepository(db_session)
-        ),
-        VoiceSessionRepository(db_session),
-    )
-
-
-async def test_call_records_transcript_hooks_and_cost(db_session: Any, auth_user: Any) -> None:
+async def test_call_records_transcript_hooks_and_cost(
+    db_session: Any, auth_user: Any, voice_session_service: VoiceSessionService
+) -> None:
     """A finished call leaves behind its transcript, its cost, and one hook run per
     user utterance — and a hook that raises neither ends the call nor is awaited."""
     # Arrange
@@ -123,8 +98,7 @@ async def test_call_records_transcript_hooks_and_cost(db_session: Any, auth_user
             "finalWorkflowId": FINAL_WORKFLOW_ID,
         },
     )
-    service = _service(db_session)
-    voice_session_id = await service.open_session(
+    voice_session_id = await voice_session_service.open_session(
         voice_agent_id=agent.id, project_id=auth_user.project_id
     )
 
@@ -160,7 +134,7 @@ async def test_call_records_transcript_hooks_and_cost(db_session: Any, auth_user
     # Per-turn hooks are fired and never awaited, so let the loop drain them.
     await asyncio.sleep(0)
     input_tokens, output_tokens = runtime.usage
-    await service.close_session(
+    await voice_session_service.close_session(
         voice_session_id=voice_session_id,
         transcript=runtime.transcript,
         duration_sec=7.3,
@@ -197,12 +171,13 @@ async def test_call_records_transcript_hooks_and_cost(db_session: Any, auth_user
         "Запишите меня на приём",
     ]
     assert (stored.input_tokens, stored.output_tokens) == (200, 75)
-    # Billed by wall-clock, not tokens, and quantized to what Numeric(20, 8) holds.
+    # Billed by wall-clock, not tokens: the $0.02/min platform fee plus provider
+    # margin, converted to credits and quantized to what Numeric(20, 8) holds.
     # Also the pin on credits staying a JSON float: the value written is the value read.
-    assert str(stored.total_credits) == "0.00365000"
-    assert float(stored.total_credits) == 0.00365
+    assert str(stored.total_credits) == "64.48333333"
+    assert float(stored.total_credits) == 64.48333333
 
     refreshed = await VoiceAgentRepository(db_session).get_by_id(agent.id)
     assert refreshed is not None
     assert refreshed.session_count == 1
-    assert float(refreshed.total_credits) == 0.00365
+    assert float(refreshed.total_credits) == 64.48333333

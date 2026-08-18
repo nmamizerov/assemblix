@@ -13,16 +13,22 @@ from __future__ import annotations
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from dataclasses import dataclass
-from datetime import UTC, datetime
-from decimal import ROUND_HALF_UP, Decimal
+from datetime import UTC, datetime, timedelta
+from decimal import Decimal
 from uuid import UUID
 
 import structlog
 from fastapi import HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from assemblix_api.billing.plans import credit_config, get_plan_config
 from assemblix_api.core.settings import get_settings
+from assemblix_api.database.models.credit_transaction import CreditTransactionType
+from assemblix_api.database.models.organization import Organization
 from assemblix_api.database.repositories.credentials_repository import CredentialsRepository
+from assemblix_api.database.repositories.credit_transaction_repository import (
+    CreditTransactionRepository,
+)
 from assemblix_api.database.repositories.knowledge_base_repository import KnowledgeBaseRepository
 from assemblix_api.database.repositories.knowledge_document_repository import (
     KnowledgeDocumentRepository,
@@ -43,6 +49,10 @@ logger = structlog.get_logger(__name__)
 
 # Credit columns are Numeric(20, 8); anything finer is noise the column cannot hold.
 _CREDITS_QUANTUM = Decimal("0.00000001")
+
+# A call whose row is still "active" past this age belongs to a runtime that died
+# without closing it. Counting it would let one crash hold a plan slot forever.
+_ACTIVE_SESSION_CUTOFF = timedelta(hours=4)
 
 # Where a realtime conversation connects. Deliberately NOT the chat/transcription
 # base URL: a REST gateway that fronts /v1/chat/completions answers the WebSocket
@@ -105,6 +115,7 @@ class VoiceSessionService:
         knowledge_bases: KnowledgeBaseService,
         credentials: CredentialsService,
         sessions: VoiceSessionRepository,
+        transactions: CreditTransactionRepository,
     ) -> None:
         self._voice_agents = voice_agents
         self._projects = projects
@@ -112,6 +123,7 @@ class VoiceSessionService:
         self._knowledge_bases = knowledge_bases
         self._credentials = credentials
         self._sessions = sessions
+        self._transactions = transactions
 
     async def build_setup(self, *, voice_agent_id: UUID, project_id: UUID) -> VoiceSessionSetup:
         """Resolve the agent's configuration into what the runtime needs.
@@ -128,15 +140,9 @@ class VoiceSessionService:
 
         config = VoiceAgentConfig(**agent.config)
 
-        project = await self._projects.get_by_id(project_id)
-        organization = (
-            await self._organizations.get_by_id(project.organization_id) if project else None
-        )
-        if organization is None:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Organization not found for this session",
-            )
+        # Resolved for its side effect: a project with no live organisation cannot
+        # host a call, and failing here beats failing once audio is flowing.
+        await self._organization_for_project(project_id)
 
         knowledge = ""
         if config.knowledge_base_ids:
@@ -174,7 +180,22 @@ class VoiceSessionService:
 
         It exists first because the analysis hooks stamp their executions with its
         id — a hook fired mid-call has nothing to point at otherwise.
+
+        Raises:
+            HTTPException 429: the plan's concurrent-call ceiling is already reached.
         """
+        if get_settings().billing_enabled:
+            organization = await self._organization_for_project(project_id)
+            ceiling = get_plan_config(organization.plan).concurrent_calls
+            live = await self._sessions.count_active_by_organization(
+                organization.id, cutoff=datetime.now(UTC) - _ACTIVE_SESSION_CUTOFF
+            )
+            if live >= ceiling:
+                raise HTTPException(
+                    status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+                    detail=f"Concurrent call limit reached for this plan: {ceiling}.",
+                )
+
         session = await self._sessions.create(
             voice_agent_id=voice_agent_id,
             project_id=project_id,
@@ -195,12 +216,7 @@ class VoiceSessionService:
         cost_per_minute: float,
         uses_system_key: bool,
     ) -> None:
-        """Write everything the call produced, in one go.
-
-        ``uses_system_key`` is accepted but not yet acted on — charging margin on
-        system-key usage is the next task's job. It travels through here so that
-        task can add it without a second plumbing pass.
-        """
+        """Write everything the call produced, and bill it, in one go."""
         session = await self._sessions.get_by_id(voice_session_id)
         if session is None:
             return
@@ -215,7 +231,10 @@ class VoiceSessionService:
                 detail=end_reason,
             )
 
-        credits = compute_session_credits(duration_sec, cost_per_minute)
+        fee_credits, margin_credits = compute_session_credits(
+            duration_sec, cost_per_minute, uses_system_key=uses_system_key
+        )
+        credits = fee_credits + margin_credits
         await self._sessions.update(
             session,
             status="failed" if reason == "error" else "completed",
@@ -236,6 +255,81 @@ class VoiceSessionService:
                 total_credits=agent.total_credits + credits,
             )
 
+        await self._charge(
+            project_id=session.project_id,
+            voice_session_id=voice_session_id,
+            fee_credits=fee_credits,
+            margin_credits=margin_credits,
+            uses_system_key=uses_system_key,
+        )
+
+    async def _charge(
+        self,
+        *,
+        project_id: UUID,
+        voice_session_id: UUID,
+        fee_credits: Decimal,
+        margin_credits: Decimal,
+        uses_system_key: bool,
+    ) -> None:
+        """Deduct a finished call from the organisation's balance and itemize it.
+
+        Both parts leave the balance in one atomic deduction, so a call can never be
+        half-charged. A balance too short to cover a call that already happened is
+        recorded and let through — the minutes were spent and cannot be un-spent.
+        """
+        if not get_settings().billing_enabled:
+            return
+
+        total = fee_credits + margin_credits
+        if total <= 0:
+            return
+
+        organization = await self._organization_for_project(project_id)
+        if not await self._organizations.deduct_credits(organization.id, total):
+            logger.warning(
+                "voice.session.insufficient_credits",
+                voice_session_id=str(voice_session_id),
+                organization_id=str(organization.id),
+                required=str(total),
+            )
+            return
+
+        meta = {
+            "voice_session_id": str(voice_session_id),
+            "uses_system_key": uses_system_key,
+        }
+        await self._transactions.create(
+            organization_id=organization.id,
+            amount_credits=-fee_credits,
+            amount_usd=-credit_config.credits_to_usd(fee_credits),
+            type=CreditTransactionType.REQUEST_FEE,
+            description=f"Platform fee for voice session {voice_session_id}",
+            meta=meta,
+        )
+        if margin_credits > 0:
+            await self._transactions.create(
+                organization_id=organization.id,
+                amount_credits=-margin_credits,
+                amount_usd=-credit_config.credits_to_usd(margin_credits),
+                type=CreditTransactionType.VOICE_USAGE,
+                description=f"Conversation usage (system keys) for voice session {voice_session_id}",
+                meta=meta,
+            )
+
+    async def _organization_for_project(self, project_id: UUID) -> Organization:
+        """Resolve a project to the organisation whose balance and plan govern it."""
+        project = await self._projects.get_by_id(project_id)
+        organization = (
+            await self._organizations.get_by_id(project.organization_id) if project else None
+        )
+        if organization is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Organization not found for this session",
+            )
+        return organization
+
     @staticmethod
     def _build_instructions(config: VoiceAgentConfig, knowledge: str) -> str:
         """Knowledge bases are inlined once, at session start — no retrieval mid-call."""
@@ -247,12 +341,23 @@ class VoiceSessionService:
         return "\n\n".join(parts)
 
 
-def compute_session_credits(duration_sec: float, cost_per_minute: float) -> Decimal:
-    """A conversation is billed by wall-clock, quantized to what the column holds."""
+def compute_session_credits(
+    duration_sec: float, cost_per_minute: float, *, uses_system_key: bool
+) -> tuple[Decimal, Decimal]:
+    """Return (platform_fee_credits, provider_margin_credits) for a finished call.
+
+    The platform fee is charged on every conversation; provider margin only when
+    the call ran on our keys. A conversation is billed by wall-clock — the one
+    number both providers agree on the meaning of.
+    """
     minutes = Decimal(str(duration_sec)) / Decimal(60)
-    return (minutes * Decimal(str(cost_per_minute))).quantize(
-        _CREDITS_QUANTUM, rounding=ROUND_HALF_UP
+    fee = credit_config.voice_platform_fee_credits(minutes)
+    margin = (
+        credit_config.usd_to_credits(minutes * Decimal(str(cost_per_minute)), with_margin=True)
+        if uses_system_key
+        else Decimal(0)
     )
+    return fee.quantize(_CREDITS_QUANTUM), margin.quantize(_CREDITS_QUANTUM)
 
 
 @asynccontextmanager
@@ -281,6 +386,7 @@ def _build_service(session: AsyncSession) -> VoiceSessionService:
         ),
         CredentialsService(CredentialsRepository(session), OrganizationUserRepository(session)),
         VoiceSessionRepository(session),
+        CreditTransactionRepository(session),
     )
 
 
@@ -298,6 +404,25 @@ async def open_voice_session(
         )
 
 
-async def close_voice_session(**kwargs) -> None:
+async def close_voice_session(
+    *,
+    voice_session_id: UUID,
+    transcript: list[dict],
+    duration_sec: float,
+    end_reason: str,
+    input_tokens: int,
+    output_tokens: int,
+    cost_per_minute: float,
+    uses_system_key: bool,
+) -> None:
     async with _voice_session_service() as service:
-        await service.close_session(**kwargs)
+        await service.close_session(
+            voice_session_id=voice_session_id,
+            transcript=transcript,
+            duration_sec=duration_sec,
+            end_reason=end_reason,
+            input_tokens=input_tokens,
+            output_tokens=output_tokens,
+            cost_per_minute=cost_per_minute,
+            uses_system_key=uses_system_key,
+        )
