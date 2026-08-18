@@ -27,6 +27,11 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
+    # Lossy on purpose, and not recoverable: the upgrade drops chat_plan outright,
+    # so every organization comes back on the 'free' default rather than the tier
+    # it actually had, and organizations that were 'starter' stay 'pro' — the
+    # original value was overwritten in place with no record of it. Downgrading
+    # restores the column's shape, never its contents.
     with op.batch_alter_table('organizations', schema=None) as batch_op:
         batch_op.add_column(
             sa.Column(
