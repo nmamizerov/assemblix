@@ -164,6 +164,28 @@ async def credit_service(db_session: Any) -> Any:
     )
 
 
+def _forced_billing_enabled(value: str) -> Any:
+    """Force ``BILLING_ENABLED=<value>`` for the test, restoring the prior value after.
+
+    Shared by ``billing_enabled``/``billing_disabled`` so both directions clear the
+    same ``get_settings`` LRU cache and restore the same way, keeping test order
+    irrelevant regardless of which fixture ran first.
+    """
+    from assemblix_api.core.settings import get_settings
+
+    previous = os.environ.get("BILLING_ENABLED")
+    os.environ["BILLING_ENABLED"] = value
+    get_settings.cache_clear()
+    try:
+        yield
+    finally:
+        if previous is None:
+            os.environ.pop("BILLING_ENABLED", None)
+        else:
+            os.environ["BILLING_ENABLED"] = previous
+        get_settings.cache_clear()
+
+
 @pytest.fixture
 def billing_enabled() -> Any:
     """Force ``BILLING_ENABLED=true`` for the test, restoring the prior value after.
@@ -174,16 +196,16 @@ def billing_enabled() -> Any:
     exercise billing behavior must force it on rather than rely on the base scope's
     ``BILLING_ENABLED=false``.
     """
-    from assemblix_api.core.settings import get_settings
+    yield from _forced_billing_enabled("true")
 
-    previous = os.environ.get("BILLING_ENABLED")
-    os.environ["BILLING_ENABLED"] = "true"
-    get_settings.cache_clear()
-    try:
-        yield
-    finally:
-        if previous is None:
-            os.environ.pop("BILLING_ENABLED", None)
-        else:
-            os.environ["BILLING_ENABLED"] = previous
-        get_settings.cache_clear()
+
+@pytest.fixture
+def billing_disabled() -> Any:
+    """Force ``BILLING_ENABLED=false`` for the test, restoring the prior value after.
+
+    The base test scope already runs with ``BILLING_ENABLED=false`` (see
+    ``tests/conftest.py``), but a test can run after ``billing_enabled`` flipped it
+    on, or want the intent explicit regardless of the base scope. Same mechanism as
+    ``billing_enabled``, inverted.
+    """
+    yield from _forced_billing_enabled("false")

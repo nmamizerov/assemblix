@@ -11,6 +11,7 @@ from typing import TYPE_CHECKING
 from uuid import UUID
 
 from assemblix_api.billing.plans import credit_config, get_plan_config
+from assemblix_api.core.settings import get_settings
 from assemblix_api.dto.responses.billing import (
     CreditsInfo,
     LimitsInfo,
@@ -46,6 +47,9 @@ class BillingService:
 
         Actual credit deduction happens after execution in WorkflowExecutor.
         """
+        if not get_settings().billing_enabled:
+            return
+
         organization = await self._org_repo.get_by_id(organization_id)
         if not organization:
             raise ValueError(f"Organization {organization_id} not found")

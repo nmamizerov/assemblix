@@ -31,7 +31,7 @@ async def _set_org_free_with_credits(org_id: str, credits: int) -> None:
         await session.commit()
 
 
-async def test_run_fails_without_enough_credits(api_client, mock_llm) -> None:
+async def test_run_fails_without_enough_credits(api_client, mock_llm, billing_enabled) -> None:
     """FREE org with 0 credits → POST /execute is rejected with 402."""
     # Arrange — register, force the org onto FREE, then drain its credits to zero.
     mock_llm.set_response("ok")
