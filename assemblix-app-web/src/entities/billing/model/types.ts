@@ -22,7 +22,7 @@ export interface BillingUsageResponse {
     plan: string;
     creditsPerMonth: number;
     periodStart: string; // ISO 8601 date
-    nextResetDate: string; // ISO 8601 date
+    nextReset: string; // ISO 8601 date
   };
 
   features: {
@@ -83,7 +83,7 @@ export interface CreditsInfoResponse {
   plan: string;
   creditsPerMonth: number;
   periodStart: string;
-  nextResetDate: string;
+  nextReset: string;
 }
 
 export interface TransactionsQueryParams {

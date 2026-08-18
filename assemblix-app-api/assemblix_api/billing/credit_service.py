@@ -14,10 +14,12 @@ from uuid import UUID
 
 from assemblix_api.billing.exceptions import BillingLimitExceeded
 from assemblix_api.billing.plans import credit_config, get_plan_config
+from assemblix_api.core.settings import get_settings
 from assemblix_api.database.models.credit_transaction import CreditTransactionType
 from assemblix_api.dto.responses.billing import CreditsInfo
 
 if TYPE_CHECKING:
+    from assemblix_api.database.models.organization import Organization
     from assemblix_api.database.repositories.credit_transaction_repository import (
         CreditTransactionRepository,
     )
@@ -52,6 +54,8 @@ class CreditService:
         required_credits: int,
     ) -> None:
         """Raise InsufficientCreditsError if the org balance is below required_credits."""
+        await self.ensure_current_period(organization_id)
+
         organization = await self._org_repo.get_by_id(organization_id)
         if not organization:
             raise ValueError(f"Organization {organization_id} not found")
@@ -79,6 +83,8 @@ class CreditService:
         (with margin); own-key usage is free (the user pays the provider directly).
         No per-request fee.
         """
+        await self.ensure_current_period(organization_id)
+
         organization = await self._org_repo.get_by_id(organization_id)
         if not organization:
             raise ValueError(f"Organization {organization_id} not found")
@@ -148,27 +154,42 @@ class CreditService:
             "total_usd": total_usd,
         }
 
-    async def grant_plan_credits(
-        self,
-        organization_id: UUID,
-    ) -> Decimal:
-        """Grant the monthly credit allowance for the org's plan and reset the period."""
+    async def ensure_current_period(self, organization_id: UUID) -> None:
+        """Apply the monthly grant if the period has lapsed. Idempotent within a period.
+
+        No-op while billing is disabled: self-host orgs sit on the unlimited BUSINESS
+        plan and never need a grant. The period rolls forward by whole months (not to
+        today's date) so several stale months still re-issue exactly one allowance
+        rather than accumulating one per elapsed month.
+        """
+        if not get_settings().billing_enabled:
+            return
+
         organization = await self._org_repo.get_by_id(organization_id)
         if not organization:
             raise ValueError(f"Organization {organization_id} not found")
 
+        today = date.today()
+        next_period = self._add_months(organization.credits_period_start, 1)
+        if next_period > today:
+            return
+
+        months_elapsed = self._whole_months_between(organization.credits_period_start, today)
+        new_period_start = self._add_months(organization.credits_period_start, months_elapsed)
+        await self._grant(organization, new_period_start)
+
+    async def _grant(self, organization: Organization, period_start: date) -> None:
+        """Re-issue the granted part of the balance for `period_start` and record it."""
         plan_config = get_plan_config(organization.plan)
         credits_to_grant = Decimal(plan_config.credits_per_month)
 
         await self._org_repo.reissue_granted_credits(
-            organization_id, credits_to_grant, period_start=datetime.utcnow().date()
+            organization.id, credits_to_grant, period_start=period_start
         )
-
-        credits_usd = credit_config.credits_to_usd(credits_to_grant)
         await self._tx_repo.create(
-            organization_id=organization_id,
+            organization_id=organization.id,
             amount_credits=credits_to_grant,
-            amount_usd=credits_usd,
+            amount_usd=credit_config.credits_to_usd(credits_to_grant),
             type=CreditTransactionType.PLAN_GRANT,
             description=f"Monthly credits grant for {organization.plan.value.upper()} plan",
             meta={
@@ -177,26 +198,54 @@ class CreditService:
             },
         )
 
-        return credits_to_grant
+    async def grant_plan_credits(self, organization_id: UUID) -> Decimal:
+        """Force a grant and restart the period. Used when a subscription activates."""
+        organization = await self._org_repo.get_by_id(organization_id)
+        if not organization:
+            raise ValueError(f"Organization {organization_id} not found")
+        await self._grant(organization, date.today())
+        return Decimal(get_plan_config(organization.plan).credits_per_month)
+
+    @staticmethod
+    def _add_months(start: date, months: int) -> date:
+        """`start` shifted forward by whole `months`, clamped to the target month's length."""
+        import calendar
+
+        month_index = start.month - 1 + months
+        year = start.year + month_index // 12
+        month = month_index % 12 + 1
+        day = min(start.day, calendar.monthrange(year, month)[1])
+        return date(year, month, day)
+
+    @classmethod
+    def _whole_months_between(cls, start: date, end: date) -> int:
+        """Number of whole calendar months between `start` and `end` (end >= start)."""
+        months = (end.year - start.year) * 12 + (end.month - start.month)
+        if cls._add_months(start, months) > end:
+            months -= 1
+        return months
 
     async def get_balance(
         self,
         organization_id: UUID,
     ) -> CreditsInfo:
         """Return current credit balance info for the organization."""
+        await self.ensure_current_period(organization_id)
+
         organization = await self._org_repo.get_by_id(organization_id)
         if not organization:
             raise ValueError(f"Organization {organization_id} not found")
 
         plan_config = get_plan_config(organization.plan)
-        next_reset = self._calculate_next_reset_date(organization.credits_period_start)
 
         return CreditsInfo(
             credits_balance=int(organization.credits_balance),
+            credits_granted=int(organization.credits_granted_balance),
+            credits_purchased=int(organization.credits_purchased_balance),
             plan=organization.plan.value,
             credits_per_month=plan_config.credits_per_month,
             period_start=organization.credits_period_start.isoformat(),
-            next_reset_date=next_reset.isoformat(),
+            next_reset=self._add_months(organization.credits_period_start, 1).isoformat(),
         )
 
     async def get_transactions(
@@ -242,21 +291,3 @@ class CreditService:
             ],
             total_count,
         )
-
-    def _calculate_next_reset_date(self, period_start: date) -> date:
-        """Next credit reset: same day of the next month, clamped to month length."""
-        year = period_start.year
-        month = period_start.month + 1
-        day = period_start.day
-
-        if month > 12:
-            month = 1
-            year += 1
-
-        import calendar
-
-        max_day = calendar.monthrange(year, month)[1]
-        if day > max_day:
-            day = max_day
-
-        return date(year, month, day)

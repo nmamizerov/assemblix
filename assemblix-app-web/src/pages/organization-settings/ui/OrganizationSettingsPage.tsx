@@ -259,7 +259,7 @@ export const OrganizationSettingsPage = () => {
                 <CreditsBalanceCard
                   creditsBalance={billingUsage.credits?.creditsBalance ?? 0}
                   creditsPerMonth={billingUsage.credits?.creditsPerMonth ?? 0}
-                  nextResetDate={billingUsage.credits?.nextResetDate ?? ""}
+                  nextReset={billingUsage.credits?.nextReset ?? ""}
                 />
               </div>
 

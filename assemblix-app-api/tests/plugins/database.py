@@ -135,3 +135,55 @@ async def committed_db() -> Any:
     finally:
         await _truncate_all_tables()
         await _dispose_global_async_engine()
+
+
+@pytest_asyncio.fixture
+async def organization_repository(db_session: Any) -> Any:
+    """OrganizationRepository over the per-test transactional session."""
+    from assemblix_api.database.repositories.organization_repository import (
+        OrganizationRepository,
+    )
+
+    return OrganizationRepository(db_session)
+
+
+@pytest_asyncio.fixture
+async def credit_service(db_session: Any) -> Any:
+    """CreditService wired over repositories on the per-test transactional session."""
+    from assemblix_api.billing.credit_service import CreditService
+    from assemblix_api.database.repositories.credit_transaction_repository import (
+        CreditTransactionRepository,
+    )
+    from assemblix_api.database.repositories.organization_repository import (
+        OrganizationRepository,
+    )
+
+    return CreditService(
+        OrganizationRepository(db_session),
+        CreditTransactionRepository(db_session),
+    )
+
+
+@pytest.fixture
+def billing_enabled() -> Any:
+    """Force ``BILLING_ENABLED=true`` for the test, restoring the prior value after.
+
+    ``billing_enabled`` gates the lazy grant, the execution/voice charging paths, and
+    the default plan an org is provisioned onto — every one of those short-circuits
+    (or defaults to the unlimited BUSINESS plan) while the flag is off, so tests that
+    exercise billing behavior must force it on rather than rely on the base scope's
+    ``BILLING_ENABLED=false``.
+    """
+    from assemblix_api.core.settings import get_settings
+
+    previous = os.environ.get("BILLING_ENABLED")
+    os.environ["BILLING_ENABLED"] = "true"
+    get_settings.cache_clear()
+    try:
+        yield
+    finally:
+        if previous is None:
+            os.environ.pop("BILLING_ENABLED", None)
+        else:
+            os.environ["BILLING_ENABLED"] = previous
+        get_settings.cache_clear()

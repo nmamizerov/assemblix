@@ -19,10 +19,12 @@ class CreditsInfo(DTOModel):
     """Credit balance information."""
 
     credits_balance: int = Field(..., description="Current credit balance")
+    credits_granted: int = Field(..., description="Granted (plan) part of the balance")
+    credits_purchased: int = Field(..., description="Purchased part of the balance")
     plan: str = Field(..., description="Current plan")
     credits_per_month: int = Field(..., description="Credits per month granted by the plan")
     period_start: str = Field(..., description="Start date of the credit period")
-    next_reset_date: str = Field(..., description="Date of the next credit reset")
+    next_reset: str = Field(..., description="Date of the next credit reset")
 
 
 class LimitsInfo(DTOModel):

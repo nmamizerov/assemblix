@@ -12,14 +12,14 @@ import { calculateUsageStatus } from "../index";
 interface CreditsBalanceCardProps {
   creditsBalance: number;
   creditsPerMonth: number;
-  nextResetDate: string;
+  nextReset: string;
   className?: string;
 }
 
 export const CreditsBalanceCard = ({
   creditsBalance,
   creditsPerMonth,
-  nextResetDate,
+  nextReset,
   className = "",
 }: CreditsBalanceCardProps) => {
   const { t } = useTranslation();
@@ -111,7 +111,7 @@ export const CreditsBalanceCard = ({
         <Calendar className="h-4 w-4" />
         <span>
           {t("billing.credits.nextRefill")}:{" "}
-          {formatNextResetDate(nextResetDate)}
+          {formatNextResetDate(nextReset)}
         </span>
       </div>
     </div>
