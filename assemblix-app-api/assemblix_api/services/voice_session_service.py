@@ -268,11 +268,15 @@ class VoiceSessionService:
                 total_credits=agent.total_credits + credits,
             )
 
+        minutes = Decimal(str(duration_sec)) / Decimal(60)
         await self._charge(
             project_id=session.project_id,
             voice_session_id=voice_session_id,
             fee_credits=fee_credits,
             margin_credits=margin_credits,
+            provider_cost_usd=(
+                minutes * Decimal(str(cost_per_minute)) if uses_system_key else Decimal(0)
+            ),
             uses_system_key=uses_system_key,
         )
 
@@ -283,6 +287,7 @@ class VoiceSessionService:
         voice_session_id: UUID,
         fee_credits: Decimal,
         margin_credits: Decimal,
+        provider_cost_usd: Decimal,
         uses_system_key: bool,
     ) -> None:
         """Deduct a finished call from the organisation's balance and itemize it.
@@ -324,6 +329,10 @@ class VoiceSessionService:
             "voice_session_id": str(voice_session_id),
             "uses_system_key": uses_system_key,
             "shortfall_credits": float(shortfall),
+            # Stamped per row so a historical charge stays re-derivable after the
+            # config moves, exactly as execution rows do.
+            "credit_value_usd": float(credit_config.credit_value_usd),
+            "margin_multiplier": float(credit_config.margin_multiplier),
         }
         if charged_fee > 0:
             await self._transactions.create(
@@ -335,10 +344,19 @@ class VoiceSessionService:
                 meta=meta,
             )
         if charged_margin > 0:
+            # amount_usd is what we paid the provider, never the margined price we
+            # charged for it — the credit column already carries that. Same meaning
+            # as on execution rows, so summing the column answers "what did the
+            # providers cost us?" across both.
+            charged_provider_usd = (
+                provider_cost_usd * charged_margin / margin_credits
+                if margin_credits > 0
+                else Decimal(0)
+            )
             await self._transactions.create(
                 organization_id=organization.id,
                 amount_credits=-charged_margin,
-                amount_usd=-credit_config.credits_to_usd(charged_margin),
+                amount_usd=-charged_provider_usd,
                 type=CreditTransactionType.VOICE_USAGE,
                 description=f"Conversation usage (system keys) for voice session {voice_session_id}",
                 meta=meta,
