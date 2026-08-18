@@ -27,6 +27,19 @@ from assemblix_api.enums import PlanTier
 # setup; here it is passed straight in, so the charge is pinned to a known price.
 _COST_PER_MINUTE = 0.0576
 
+# What a two-minute call on our keys costs: 2 x $0.02/min platform fee, plus
+# 2 x $0.0576/min provider cost at the 1.1 margin, both in credits ($0.0001 each).
+_FEE_CREDITS = Decimal("400")
+_MARGIN_CREDITS = Decimal("1267.2")
+
+
+def _credits_by_type(transactions: list[dict]) -> dict[str, list[Decimal]]:
+    """Charged amounts per transaction type, oldest first."""
+    by_type: dict[str, list[Decimal]] = {}
+    for tx in reversed(transactions):
+        by_type.setdefault(tx["type"], []).append(Decimal(str(tx["amount_credits"])))
+    return by_type
+
 
 @pytest_asyncio.fixture
 async def voice_session_repository(db_session: Any) -> VoiceSessionRepository:
@@ -108,11 +121,34 @@ async def test_voice_call_is_capped_and_charged(
     assert third_id is not None
 
     transactions, _ = await credit_service.get_transactions(org_id)
-    charged = {t["type"]: Decimal(str(t["amount_credits"])) for t in transactions}
-    # 2 minutes x $0.02/min platform fee, charged whatever key the call ran on.
-    assert charged[CreditTransactionType.REQUEST_FEE.value] == Decimal("-400")
-    # 2 minutes x $0.0576/min provider cost x 1.1 margin, because it ran on our key.
-    assert charged[CreditTransactionType.VOICE_USAGE.value] == Decimal("-1267.2")
+    charged = _credits_by_type(transactions)
+    # The platform fee is charged whatever key the call ran on...
+    assert charged[CreditTransactionType.REQUEST_FEE.value] == [-_FEE_CREDITS]
+    # ...the provider margin only because this one ran on our key.
+    assert charged[CreditTransactionType.VOICE_USAGE.value] == [-_MARGIN_CREDITS]
 
     org = await organization_repository.get_by_id(org_id)
-    assert org.credits_granted_balance == Decimal("500000") - Decimal("1667.2")
+    assert org.credits_balance == Decimal("500000") - _FEE_CREDITS - _MARGIN_CREDITS
+
+    # Act 3: a balance that clears the floor to start a call but cannot pay for it.
+    await organization_repository.reissue_granted_credits(org_id, Decimal("300"), period_start=None)
+    fourth_id = await voice_setup.open()
+    await voice_setup.close(fourth_id, duration_sec=120.0)
+
+    # Act 4: dial again on what that call left behind.
+    with pytest.raises(HTTPException) as fifth:
+        await voice_setup.open()
+
+    # Assert 3: the overdrawn call took everything there was and recorded the rest,
+    # which puts the account under the floor — so it gets no second free call.
+    org = await organization_repository.get_by_id(org_id)
+    assert org.credits_balance == Decimal("0")
+    assert fifth.value.status_code == 402
+
+    transactions, _ = await credit_service.get_transactions(org_id)
+    charged = _credits_by_type(transactions)
+    # The 300 on hand went to the fee first, so the margin bought nothing.
+    assert charged[CreditTransactionType.REQUEST_FEE.value] == [-_FEE_CREDITS, Decimal("-300")]
+    assert charged[CreditTransactionType.VOICE_USAGE.value] == [-_MARGIN_CREDITS]
+    unpaid = [t["metadata"]["shortfall_credits"] for t in transactions]
+    assert sorted(unpaid) == [0.0, 0.0, float(_FEE_CREDITS + _MARGIN_CREDITS - Decimal("300"))]

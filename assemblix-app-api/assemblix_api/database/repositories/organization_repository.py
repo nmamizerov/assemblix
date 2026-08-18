@@ -77,6 +77,39 @@ class OrganizationRepository(BaseRepository[Organization]):
         result = await self._session.execute(stmt)
         return result.rowcount == 1  # type: ignore[attr-defined]  # rowcount available on CursorResult for DML statements
 
+    async def deduct_credits_up_to(self, organization_id: UUID, amount: Decimal) -> Decimal:
+        """Spend up to `amount`, granted part first, draining to zero when short.
+
+        Returns how much was actually removed — the full `amount`, or the whole
+        balance when it could not cover it. One statement: the CTE locks the row and
+        carries the pre-update figures the UPDATE and the RETURNING both read, so a
+        concurrent deduction cannot make the returned number a lie the way a
+        read-then-subtract in Python would.
+        """
+        previous = (
+            select(
+                Organization.id.label("id"),
+                Organization.credits_granted_balance.label("granted"),
+                Organization.credits_purchased_balance.label("purchased"),
+            )
+            .where(Organization.id == organization_id)
+            .with_for_update()
+            .cte("previous_balance")
+        )
+        taken = func.least(previous.c.granted + previous.c.purchased, amount)
+        stmt = (
+            update(Organization)
+            .where(Organization.id == previous.c.id)
+            .values(
+                credits_granted_balance=func.greatest(previous.c.granted - taken, 0),
+                credits_purchased_balance=previous.c.purchased
+                - func.greatest(taken - previous.c.granted, 0),
+            )
+            .returning(taken)
+            .execution_options(synchronize_session="fetch")
+        )
+        return Decimal(await self._session.scalar(stmt) or 0)
+
     async def add_purchased_credits(self, organization_id: UUID, amount: Decimal) -> None:
         """Credit a purchase. Purchased credits never expire."""
         await self._session.execute(

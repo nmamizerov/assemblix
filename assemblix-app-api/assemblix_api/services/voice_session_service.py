@@ -21,6 +21,7 @@ import structlog
 from fastapi import HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from assemblix_api.billing.credit_service import CreditService
 from assemblix_api.billing.plans import credit_config, get_plan_config
 from assemblix_api.core.settings import get_settings
 from assemblix_api.database.models.credit_transaction import CreditTransactionType
@@ -116,6 +117,7 @@ class VoiceSessionService:
         credentials: CredentialsService,
         sessions: VoiceSessionRepository,
         transactions: CreditTransactionRepository,
+        credits: CreditService,
     ) -> None:
         self._voice_agents = voice_agents
         self._projects = projects
@@ -124,6 +126,7 @@ class VoiceSessionService:
         self._credentials = credentials
         self._sessions = sessions
         self._transactions = transactions
+        self._credits = credits
 
     async def build_setup(self, *, voice_agent_id: UUID, project_id: UUID) -> VoiceSessionSetup:
         """Resolve the agent's configuration into what the runtime needs.
@@ -182,10 +185,20 @@ class VoiceSessionService:
         id — a hook fired mid-call has nothing to point at otherwise.
 
         Raises:
+            HTTPException 402: the balance cannot cover even a minute of the call.
             HTTPException 429: the plan's concurrent-call ceiling is already reached.
         """
         if get_settings().billing_enabled:
             organization = await self._organization_for_project(project_id)
+            # One minute of platform fee is the floor to start a call. Reserving the
+            # worst case instead (the whole session cap at provider prices) would
+            # exceed an entire Free monthly grant and forbid Free calls outright.
+            # check_balance also rolls the monthly grant forward first, which is the
+            # only thing on the voice path that does.
+            await self._credits.check_balance(
+                organization.id, credit_config.voice_platform_fee_credits(Decimal(1))
+            )
+
             ceiling = get_plan_config(organization.plan).concurrent_calls
             live = await self._sessions.count_active_by_organization(
                 organization.id, cutoff=datetime.now(UTC) - _ACTIVE_SESSION_CUTOFF
@@ -275,8 +288,10 @@ class VoiceSessionService:
         """Deduct a finished call from the organisation's balance and itemize it.
 
         Both parts leave the balance in one atomic deduction, so a call can never be
-        half-charged. A balance too short to cover a call that already happened is
-        recorded and let through — the minutes were spent and cannot be un-spent.
+        half-charged. Minutes already spent cannot be un-spent, so a balance too thin
+        to cover them is drained to zero rather than left untouched: the account is
+        then below the floor `open_session` gates on, which is what bounds an
+        overdrawn org to a single free call. The unpaid remainder is recorded.
         """
         if not get_settings().billing_enabled:
             return
@@ -286,32 +301,44 @@ class VoiceSessionService:
             return
 
         organization = await self._organization_for_project(project_id)
-        if not await self._organizations.deduct_credits(organization.id, total):
+        charged = await self._organizations.deduct_credits_up_to(organization.id, total)
+        shortfall = total - charged
+        if shortfall > 0:
             logger.warning(
                 "voice.session.insufficient_credits",
                 voice_session_id=str(voice_session_id),
                 organization_id=str(organization.id),
                 required=str(total),
+                charged=str(charged),
+                shortfall=str(shortfall),
             )
+        if charged <= 0:
             return
+
+        # What was actually taken pays the platform fee first; only what is left over
+        # buys down the provider margin.
+        charged_fee = min(fee_credits, charged)
+        charged_margin = charged - charged_fee
 
         meta = {
             "voice_session_id": str(voice_session_id),
             "uses_system_key": uses_system_key,
+            "shortfall_credits": float(shortfall),
         }
-        await self._transactions.create(
-            organization_id=organization.id,
-            amount_credits=-fee_credits,
-            amount_usd=-credit_config.credits_to_usd(fee_credits),
-            type=CreditTransactionType.REQUEST_FEE,
-            description=f"Platform fee for voice session {voice_session_id}",
-            meta=meta,
-        )
-        if margin_credits > 0:
+        if charged_fee > 0:
             await self._transactions.create(
                 organization_id=organization.id,
-                amount_credits=-margin_credits,
-                amount_usd=-credit_config.credits_to_usd(margin_credits),
+                amount_credits=-charged_fee,
+                amount_usd=-credit_config.credits_to_usd(charged_fee),
+                type=CreditTransactionType.REQUEST_FEE,
+                description=f"Platform fee for voice session {voice_session_id}",
+                meta=meta,
+            )
+        if charged_margin > 0:
+            await self._transactions.create(
+                organization_id=organization.id,
+                amount_credits=-charged_margin,
+                amount_usd=-credit_config.credits_to_usd(charged_margin),
                 type=CreditTransactionType.VOICE_USAGE,
                 description=f"Conversation usage (system keys) for voice session {voice_session_id}",
                 meta=meta,
@@ -387,6 +414,7 @@ def _build_service(session: AsyncSession) -> VoiceSessionService:
         CredentialsService(CredentialsRepository(session), OrganizationUserRepository(session)),
         VoiceSessionRepository(session),
         CreditTransactionRepository(session),
+        CreditService(OrganizationRepository(session), CreditTransactionRepository(session)),
     )
 
 

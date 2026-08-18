@@ -16,6 +16,7 @@ import pytest_asyncio
 @pytest_asyncio.fixture
 async def voice_session_service(db_session: Any) -> Any:
     """VoiceSessionService with every repository bound to the transactional session."""
+    from assemblix_api.billing.credit_service import CreditService
     from assemblix_api.database.repositories.credentials_repository import CredentialsRepository
     from assemblix_api.database.repositories.credit_transaction_repository import (
         CreditTransactionRepository,
@@ -49,4 +50,5 @@ async def voice_session_service(db_session: Any) -> Any:
         ),
         VoiceSessionRepository(db_session),
         CreditTransactionRepository(db_session),
+        CreditService(OrganizationRepository(db_session), CreditTransactionRepository(db_session)),
     )
