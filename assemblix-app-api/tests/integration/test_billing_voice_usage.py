@@ -22,7 +22,7 @@ async def test_deduct_writes_voice_usage_row(auth_user, db_session) -> None:
     org_repo = OrganizationRepository(db_session)
     tx_repo = CreditTransactionRepository(db_session)
     org = await org_repo.get_by_id(auth_user.organization_id)
-    org.credits_balance = Decimal("1000000")
+    org.credits_granted_balance = Decimal("1000000")
     await org_repo.update(org)
 
     workflow = await WorkflowRepository(db_session).create(

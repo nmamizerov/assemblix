@@ -74,7 +74,7 @@ async def _setup(api_client) -> SimpleNamespace:
         org_repo = OrganizationRepository(session)
         org = await org_repo.get_by_id(org_id)
         org.plan = "pro"
-        org.credits_balance = Decimal("1000000")
+        org.credits_granted_balance = Decimal("1000000")
         await org_repo.update(org)
         await session.commit()
     return SimpleNamespace(key=key, workflow_id=workflow_id)

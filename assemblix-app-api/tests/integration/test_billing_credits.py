@@ -27,7 +27,7 @@ async def _set_org_free_with_credits(org_id: str, credits: int) -> None:
     async with AsyncSession(get_async_engine()) as session:
         repo = OrganizationRepository(session)
         org = await repo.get_by_id(uuid.UUID(org_id))
-        await repo.update(org, plan="free", credits_balance=0 if credits == 0 else credits)
+        await repo.update(org, plan="free", credits_granted_balance=0 if credits == 0 else credits)
         await session.commit()
 
 

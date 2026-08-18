@@ -109,7 +109,7 @@ async def test_voice_run_meters_system_key_and_scrubs_audio(
         org_repo = OrganizationRepository(session)
         org = await org_repo.get_by_id(setup.org_id)
         org.plan = "pro"
-        org.credits_balance = Decimal("1000000")
+        org.credits_granted_balance = Decimal("1000000")
         await org_repo.update(org)
         await session.commit()
 

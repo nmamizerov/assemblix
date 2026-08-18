@@ -108,12 +108,26 @@ class Organization(UUIDMixin, TimestampMixin, Base):
     )
 
     # Credits
-    credits_balance: Mapped[Decimal] = mapped_column(
+    credits_granted_balance: Mapped[Decimal] = mapped_column(
         Numeric(precision=20, scale=8),
         default=0,
         nullable=False,
-        comment="Current credit balance (up to 8 decimal places)",
+        server_default="0",
+        comment="Granted credits, re-issued by the monthly plan grant",
     )
+    credits_purchased_balance: Mapped[Decimal] = mapped_column(
+        Numeric(precision=20, scale=8),
+        default=0,
+        nullable=False,
+        server_default="0",
+        comment="Purchased credits, never expire",
+    )
+
+    @property
+    def credits_balance(self) -> Decimal:
+        """Total spendable balance. Read-only: deduction goes through the repository."""
+        return self.credits_granted_balance + self.credits_purchased_balance
+
     credits_period_start: Mapped[date] = mapped_column(
         Date,
         default=lambda: datetime.utcnow().date(),

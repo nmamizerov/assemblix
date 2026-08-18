@@ -103,7 +103,7 @@ class CreditService:
                     available=organization.credits_balance,
                 )
 
-            organization.credits_balance -= total_credits
+            organization.credits_granted_balance -= total_credits
             await self._org_repo.update(organization)
 
         full_metadata = {
@@ -160,7 +160,7 @@ class CreditService:
         plan_config = get_plan_config(organization.plan)
         credits_to_grant = Decimal(plan_config.credits_per_month)
 
-        organization.credits_balance = credits_to_grant
+        organization.credits_granted_balance = credits_to_grant
         organization.credits_period_start = datetime.utcnow().date()
         await self._org_repo.update(organization)
 
