@@ -300,56 +300,60 @@ export const PricingPage = () => {
             })}
           </div>
 
-          {/* Credit Packs */}
-          <div className="space-y-6">
-            <div className="text-center">
-              <h2 className="text-2xl font-bold tracking-tight text-foreground">
-                {t("billing.packs.title")}
-              </h2>
-              <p className="mt-2 text-muted-foreground">
-                {t("billing.packs.subtitle")}
-              </p>
-            </div>
+          {/* Credit Packs. The server lists a pack only when it can actually take
+              money for it, so an empty list means there is nothing to sell here —
+              a Buy button that always fails is worse than no button. */}
+          {(isLoadingPacks || packs.length > 0) && (
+            <div className="space-y-6">
+              <div className="text-center">
+                <h2 className="text-2xl font-bold tracking-tight text-foreground">
+                  {t("billing.packs.title")}
+                </h2>
+                <p className="mt-2 text-muted-foreground">
+                  {t("billing.packs.subtitle")}
+                </p>
+              </div>
 
-            {isLoadingPacks ? (
-              <div className="flex justify-center py-8">
-                <Loader2 className="h-6 w-6 animate-spin text-primary" />
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 gap-6 sm:grid-cols-3">
-                {packs.map((pack) => (
-                  <div
-                    key={pack.code}
-                    className="flex flex-col items-center gap-4 rounded-2xl border border-border p-6 text-center shadow-sm"
-                  >
-                    <span className="text-3xl font-bold text-foreground">
-                      {formatNumber(pack.credits)}
-                    </span>
-                    <span className="text-sm text-muted-foreground">
-                      {t("billing.packs.credits")}
-                    </span>
-                    <span className="text-xl font-semibold text-foreground">
-                      ${formatNumber(pack.priceUsdCents / 100)}
-                    </span>
-                    <Button
-                      onClick={() => handleBuyPack(pack)}
-                      disabled={processingPack === pack.code}
-                      className="w-full"
+              {isLoadingPacks ? (
+                <div className="flex justify-center py-8">
+                  <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 gap-6 sm:grid-cols-3">
+                  {packs.map((pack) => (
+                    <div
+                      key={pack.code}
+                      className="flex flex-col items-center gap-4 rounded-2xl border border-border p-6 text-center shadow-sm"
                     >
-                      {processingPack === pack.code ? (
-                        <>
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          {t("billing.payments.confirmDialog.loading")}
-                        </>
-                      ) : (
-                        t("billing.packs.buy")
-                      )}
-                    </Button>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
+                      <span className="text-3xl font-bold text-foreground">
+                        {formatNumber(pack.credits)}
+                      </span>
+                      <span className="text-sm text-muted-foreground">
+                        {t("billing.packs.credits")}
+                      </span>
+                      <span className="text-xl font-semibold text-foreground">
+                        ${formatNumber(pack.priceUsdCents / 100)}
+                      </span>
+                      <Button
+                        onClick={() => handleBuyPack(pack)}
+                        disabled={processingPack === pack.code}
+                        className="w-full"
+                      >
+                        {processingPack === pack.code ? (
+                          <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            {t("billing.payments.confirmDialog.loading")}
+                          </>
+                        ) : (
+                          t("billing.packs.buy")
+                        )}
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Common Features */}
           <div className="rounded-2xl border border-border bg-card p-8">

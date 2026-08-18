@@ -11,7 +11,7 @@ from datetime import datetime
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 
-from assemblix_api.billing.plans import CREDIT_PACKS, PLAN_CONFIGS, get_plan_config
+from assemblix_api.billing.plans import PLAN_CONFIGS, get_plan_config
 from assemblix_api.billing.service import BillingService
 from assemblix_api.database.models.credit_transaction import CreditTransactionType
 from assemblix_api.database.models.organization import Organization
@@ -111,13 +111,14 @@ async def get_all_plans(
 @router.get("/packs", response_model=CreditPacksResponse)
 async def get_credit_packs(
     current_user: User = Depends(get_current_user),
+    billing_service: BillingService = Depends(get_billing_service),
 ):
-    """List all available one-off credit packs."""
+    """List the one-off credit packs that are actually purchasable on this server."""
     packs = [
         CreditPackResponse(
             code=pack.code, price_usd_cents=pack.price_usd_cents, credits=pack.credits
         )
-        for pack in CREDIT_PACKS.values()
+        for pack in billing_service.get_credit_packs()
     ]
     return CreditPacksResponse(packs=packs)
 

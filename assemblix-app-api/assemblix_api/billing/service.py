@@ -10,13 +10,14 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 from uuid import UUID
 
-from assemblix_api.billing.plans import credit_config, get_plan_config
+from assemblix_api.billing.plans import CREDIT_PACKS, CreditPack, credit_config, get_plan_config
 from assemblix_api.core.settings import get_settings
 from assemblix_api.dto.responses.billing import (
     CreditsInfo,
     LimitsInfo,
     OrganizationUsageResponse,
 )
+from assemblix_api.external.payments.factory import PaymentProviderFactory
 
 if TYPE_CHECKING:
     from datetime import datetime
@@ -66,6 +67,19 @@ class BillingService:
             organization_id=organization_id,
             required_credits=credit_config.request_fee_credits,
         )
+
+    def get_credit_packs(self) -> list[CreditPack]:
+        """The packs a customer can actually buy right now.
+
+        A pack the payment provider has no price configured for would take the user
+        to a checkout that fails, so it is not offered at all; with billing off
+        nothing is for sale.
+        """
+        if not get_settings().billing_enabled:
+            return []
+
+        provider = PaymentProviderFactory.create()
+        return [pack for pack in CREDIT_PACKS.values() if provider.supports_credit_pack(pack.code)]
 
     async def get_credits(self, organization_id: UUID) -> CreditsInfo:
         """Delegate to CreditService: current credit balance info for the organization."""

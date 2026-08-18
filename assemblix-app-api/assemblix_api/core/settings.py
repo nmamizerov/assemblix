@@ -112,6 +112,10 @@ class Settings(BaseSettings):
     paddle_environment: str = os.getenv("PADDLE_ENVIRONMENT", "sandbox")
     paddle_price_pro: str = os.getenv("PADDLE_PRICE_PRO", "")
     paddle_price_business: str = os.getenv("PADDLE_PRICE_BUSINESS", "")
+    # One-off credit packs. A pack is offered for sale only while its price id is set.
+    paddle_price_pack_s: str = os.getenv("PADDLE_PRICE_PACK_S", "")
+    paddle_price_pack_m: str = os.getenv("PADDLE_PRICE_PACK_M", "")
+    paddle_price_pack_l: str = os.getenv("PADDLE_PRICE_PACK_L", "")
 
     # Host URL for webhooks
     host_url: str = os.getenv("HOST_URL", "http://localhost:8000")

@@ -93,6 +93,7 @@ class PaymentService:
             user_email=user_email,
             is_recurrent=is_recurrent,
             receipt={
+                "kind": PaymentKind.SUBSCRIPTION.value,
                 "target_plan": target_plan.value,
                 "organization_id": str(organization_id),
             },
@@ -156,6 +157,7 @@ class PaymentService:
             user_email=user_email,
             is_recurrent=False,
             receipt={
+                "kind": PaymentKind.CREDIT_PACK.value,
                 "pack_code": pack.code,
                 "organization_id": str(organization_id),
             },
