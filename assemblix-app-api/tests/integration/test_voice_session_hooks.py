@@ -168,6 +168,7 @@ async def test_call_records_transcript_hooks_and_cost(db_session: Any, auth_user
         input_tokens=input_tokens,
         output_tokens=output_tokens,
         cost_per_minute=COST_PER_MINUTE,
+        uses_system_key=True,
     )
 
     # Assert — the call itself survived a hook that raised

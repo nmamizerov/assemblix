@@ -212,6 +212,7 @@ async def stream_voice_session(websocket: WebSocket, token: str) -> None:
             input_tokens=input_tokens,
             output_tokens=output_tokens,
             cost_per_minute=setup.cost_per_minute,
+            uses_system_key=setup.uses_system_key,
         )
         with contextlib.suppress(RuntimeError):
             await websocket.close()

@@ -90,6 +90,10 @@ class VoiceSessionSetup:
     # From the voice catalog. A conversation is billed by wall-clock rather than by
     # tokens: it is the one number both providers agree on the meaning of.
     cost_per_minute: float
+    # True when the key came from the platform's own credentials (fallback), False
+    # when the caller supplied their own. Margin only applies to the former — the
+    # actual charging happens where this flag lands next, not here.
+    uses_system_key: bool
 
 
 class VoiceSessionService:
@@ -140,7 +144,7 @@ class VoiceSessionService:
                 [UUID(kb_id) for kb_id in config.knowledge_base_ids]
             )
 
-        api_key, _ = await self._credentials.get_voice_api_key_with_fallback(
+        api_key, uses_system_key = await self._credentials.get_voice_api_key_with_fallback(
             credentials_id=UUID(config.voice.credential_id) if config.voice.credential_id else None,
             project_id=project_id,
             voice_provider=config.voice.provider,
@@ -160,6 +164,7 @@ class VoiceSessionService:
             turn_workflow_id=config.turn_workflow_id,
             final_workflow_id=config.final_workflow_id,
             cost_per_minute=(catalog_entry.cost_per_minute or 0.0) if catalog_entry else 0.0,
+            uses_system_key=uses_system_key,
         )
 
     async def open_session(
@@ -188,8 +193,14 @@ class VoiceSessionService:
         input_tokens: int,
         output_tokens: int,
         cost_per_minute: float,
+        uses_system_key: bool,
     ) -> None:
-        """Write everything the call produced, in one go."""
+        """Write everything the call produced, in one go.
+
+        ``uses_system_key`` is accepted but not yet acted on — charging margin on
+        system-key usage is the next task's job. It travels through here so that
+        task can add it without a second plumbing pass.
+        """
         session = await self._sessions.get_by_id(voice_session_id)
         if session is None:
             return
