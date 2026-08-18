@@ -211,6 +211,27 @@ class CreditService:
             },
         )
 
+    async def record_manual_topup(
+        self,
+        organization_id: UUID,
+        credits: Decimal,
+        description: str,
+        meta: dict | None = None,
+    ) -> None:
+        """Credit a manual purchase (e.g. a credit pack) and record a MANUAL_TOPUP transaction.
+
+        Purchased credits never expire and are unaffected by the monthly grant.
+        """
+        await self._org_repo.add_purchased_credits(organization_id, credits)
+        await self._tx_repo.create(
+            organization_id=organization_id,
+            amount_credits=credits,
+            amount_usd=credit_config.credits_to_usd(credits),
+            type=CreditTransactionType.MANUAL_TOPUP,
+            description=description,
+            meta=meta,
+        )
+
     async def grant_plan_credits(self, organization_id: UUID) -> Decimal:
         """Force a grant and restart the period. Used when a subscription activates."""
         organization = await self._org_repo.get_by_id(organization_id)

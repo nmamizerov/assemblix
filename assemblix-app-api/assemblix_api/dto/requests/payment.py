@@ -20,3 +20,10 @@ class CreateSubscriptionRequest(DTOModel):
         default=True,
         description="Bind the card for automatic renewal",
     )
+
+
+class CreateCreditPackRequest(DTOModel):
+    pack_code: str = Field(
+        ...,
+        description="Credit pack code (s, m, l)",
+    )

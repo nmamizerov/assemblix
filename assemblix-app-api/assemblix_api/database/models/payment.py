@@ -33,6 +33,13 @@ class PaymentStatus(str, Enum):
     CANCELED = "canceled"
 
 
+class PaymentKind(str, Enum):
+    """What a payment is for: a plan subscription, or a one-off credit pack."""
+
+    SUBSCRIPTION = "subscription"
+    CREDIT_PACK = "credit_pack"
+
+
 class Payment(UUIDMixin, TimestampMixin, Base):
     """A subscription payment for an organization (supports recurrent payments)."""
 
@@ -81,6 +88,25 @@ class Payment(UUIDMixin, TimestampMixin, Base):
             self._status = value.value
         else:
             self._status = value
+
+    _kind: Mapped[str] = mapped_column(
+        "kind",
+        String(32),
+        nullable=False,
+        server_default=PaymentKind.SUBSCRIPTION.value,
+        comment="What the payment is for: subscription or credit_pack",
+    )
+
+    @property
+    def kind(self) -> PaymentKind:
+        return PaymentKind(self._kind)
+
+    @kind.setter
+    def kind(self, value: PaymentKind | str) -> None:
+        if isinstance(value, PaymentKind):
+            self._kind = value.value
+        else:
+            self._kind = value
 
     external_payment_id: Mapped[str | None] = mapped_column(
         String(255),

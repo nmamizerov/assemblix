@@ -8,12 +8,13 @@ Payment service
 
 from __future__ import annotations
 
+from decimal import Decimal
 from typing import TYPE_CHECKING
 from uuid import UUID, uuid4
 
 from assemblix_api.billing.credit_service import CreditService
-from assemblix_api.billing.plans import get_plan_config
-from assemblix_api.database.models.payment import Payment, PaymentStatus
+from assemblix_api.billing.plans import get_credit_pack, get_plan_config
+from assemblix_api.database.models.payment import Payment, PaymentKind, PaymentStatus
 from assemblix_api.enums import PlanTier
 from assemblix_api.external.payments.factory import PaymentProviderFactory
 
@@ -115,6 +116,69 @@ class PaymentService:
             await self._payment_repo.update(payment)
             raise ValueError(f"Payment initialization failed: {result.error_message}")
 
+    async def create_credit_pack_payment(
+        self, organization_id: UUID, user_email: str, pack_code: str
+    ) -> Payment:
+        """Create a one-off credit purchase. Independent of the subscription state.
+
+        Raises ValueError if the pack code or the organization is unknown.
+        """
+        pack = get_credit_pack(pack_code)
+
+        organization = await self._org_repo.get_by_id(organization_id)
+        if not organization:
+            raise ValueError(f"Organization {organization_id} not found")
+
+        order_id = str(uuid4())
+        description = f"{pack.credits} credits ({pack.code.upper()} pack) for Assemblix"
+
+        from assemblix_api.core.settings import get_settings
+
+        provider_name = get_settings().payment_provider
+
+        payment = await self._payment_repo.create(
+            organization_id=organization_id,
+            user_email=user_email,
+            amount=pack.price_usd_cents,
+            description=description,
+            order_id=order_id,
+            target_plan=None,
+            is_recurrent=False,
+            provider=provider_name,
+            kind=PaymentKind.CREDIT_PACK,
+            meta={"pack_code": pack.code, "credits": pack.credits},
+        )
+
+        result = await self._provider.init_payment(
+            order_id=order_id,
+            amount=pack.price_usd_cents,
+            description=description,
+            user_email=user_email,
+            is_recurrent=False,
+            receipt={
+                "pack_code": pack.code,
+                "organization_id": str(organization_id),
+            },
+        )
+
+        if result.success:
+            payment.external_payment_id = result.payment_id
+            payment.status = (
+                PaymentStatus(result.status.lower()) if result.status else PaymentStatus.NEW
+            )
+            # On a successful init the provider always returns a checkout URL.
+            assert result.payment_url is not None
+            await self._payment_repo.update_payment_url(payment, result.payment_url)
+
+            return payment
+        else:
+            payment.status = PaymentStatus.REJECTED
+            if payment.meta is None:
+                payment.meta = {}
+            payment.meta["error"] = result.error_message
+            await self._payment_repo.update(payment)
+            raise ValueError(f"Payment initialization failed: {result.error_message}")
+
     async def process_notification(self, payload: dict) -> bool:
         """
         Handle a webhook notification from the payment provider: verify the
@@ -162,7 +226,10 @@ class PaymentService:
         )
 
         if new_status == PaymentStatus.CONFIRMED:
-            await self._activate_subscription(payment)
+            if payment.kind == PaymentKind.CREDIT_PACK:
+                await self._credit_pack_purchased(payment)
+            else:
+                await self._activate_subscription(payment)
 
         return True
 
@@ -192,6 +259,28 @@ class PaymentService:
         payment.meta["subscription_activated"] = True
         payment.meta["old_plan"] = old_plan.value
         payment.meta["new_plan"] = target_plan.value
+        await self._payment_repo.update(payment)
+
+    async def _credit_pack_purchased(self, payment: Payment) -> None:
+        """Credit the purchased balance for a confirmed credit-pack payment.
+
+        The credit amount comes from ``payment.meta["credits"]``, which was set
+        server-side from the pack definition at creation time — never from anything
+        the client could supply on confirmation. Does not touch the plan.
+        """
+        meta = payment.meta or {}
+        credits = Decimal(str(meta["credits"]))
+        pack_code = meta.get("pack_code", "?")
+
+        await self._credit_service.record_manual_topup(
+            payment.organization_id,
+            credits,
+            description=f"Credit pack purchase ({pack_code.upper()})",
+            meta={"payment_id": str(payment.id), "pack_code": pack_code},
+        )
+
+        payment.meta = payment.meta or {}
+        payment.meta["credits_applied"] = True
         await self._payment_repo.update(payment)
 
     async def get_payment(self, payment_id: UUID) -> Payment | None:
