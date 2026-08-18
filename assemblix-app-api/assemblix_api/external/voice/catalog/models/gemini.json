@@ -6,7 +6,7 @@
       "description": "Google speech-to-speech over a stateful WebSocket. Markedly more natural non-English audio than the alternatives; weaker interruption handling.",
       "capability": "conversation",
       "route": "conversation",
-      "costPerMinute": 0.03
+      "costPerMinute": 0.014
     }
   ]
 }

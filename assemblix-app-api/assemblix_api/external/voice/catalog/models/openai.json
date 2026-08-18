@@ -21,7 +21,7 @@
       "description": "OpenAI speech-to-speech with built-in VAD and interruption handling. Strongest conversational feel; non-English audio is noticeably accented.",
       "capability": "conversation",
       "route": "conversation",
-      "costPerMinute": 0.06
+      "costPerMinute": 0.0576
     },
     {
       "id": "gpt-realtime-2.1-mini",
@@ -29,7 +29,7 @@
       "description": "Cheaper, faster OpenAI speech-to-speech model.",
       "capability": "conversation",
       "route": "conversation",
-      "costPerMinute": 0.02
+      "costPerMinute": 0.018
     }
   ]
 }

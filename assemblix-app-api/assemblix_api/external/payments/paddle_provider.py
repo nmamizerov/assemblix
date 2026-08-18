@@ -47,6 +47,29 @@ class PaddleProvider(BasePaymentProvider):
             else "https://api.paddle.com"
         )
 
+    @staticmethod
+    def price_for_plan(plan_code: str) -> str:
+        """Paddle price id for a subscription plan, or "" when none is configured."""
+        settings = get_settings()
+        return {
+            "pro": settings.paddle_price_pro,
+            "business": settings.paddle_price_business,
+        }.get(plan_code, "")
+
+    @staticmethod
+    def price_for_pack(pack_code: str) -> str:
+        """Paddle price id for a credit pack, or "" when none is configured."""
+        settings = get_settings()
+        return {
+            "s": settings.paddle_price_pack_s,
+            "m": settings.paddle_price_pack_m,
+            "l": settings.paddle_price_pack_l,
+        }.get(pack_code.lower(), "")
+
+    def supports_credit_pack(self, pack_code: str) -> bool:
+        """A pack is sellable only once its Paddle price id exists in the dashboard."""
+        return bool(self.price_for_pack(pack_code))
+
     async def init_payment(
         self,
         order_id: str,
@@ -60,25 +83,33 @@ class PaddleProvider(BasePaymentProvider):
         Create a Paddle transaction and return checkout URL.
 
         amount is ignored — price is determined by price_id in Paddle Dashboard.
-        target_plan and organization_id are passed via receipt dict.
+        The receipt carries the payment kind plus what identifies the thing bought:
+        ``target_plan`` for a subscription, ``pack_code`` for a credit pack.
         """
-        settings = get_settings()
+        receipt = receipt or {}
 
-        # Extract plan info from receipt
-        target_plan = receipt.get("target_plan") if receipt else None
-        organization_id = receipt.get("organization_id") if receipt else None
+        # Extract what is being bought from the receipt
+        target_plan = receipt.get("target_plan")
+        pack_code = receipt.get("pack_code")
+        organization_id = receipt.get("organization_id")
+        # A pack carries no plan, so the kind is what selects the price map. Older
+        # receipts predate the field; a pack_code identifies them just as well.
+        kind = receipt.get("kind") or ("credit_pack" if pack_code else "subscription")
 
-        # Map plan → Paddle price_id from env
-        price_map = {
-            "starter": settings.paddle_price_starter,
-            "pro": settings.paddle_price_pro,
-        }
-        price_id = price_map.get(target_plan, "") if target_plan is not None else ""
-        if not price_id:
-            return PaymentInitResult(
-                success=False,
-                error_message=f"No Paddle price configured for plan: {target_plan}",
-            )
+        if kind == "credit_pack":
+            price_id = self.price_for_pack(pack_code) if pack_code else ""
+            if not price_id:
+                return PaymentInitResult(
+                    success=False,
+                    error_message=f"No Paddle price configured for credit pack: {pack_code}",
+                )
+        else:
+            price_id = self.price_for_plan(target_plan) if target_plan else ""
+            if not price_id:
+                return PaymentInitResult(
+                    success=False,
+                    error_message=f"No Paddle price configured for plan: {target_plan}",
+                )
 
         # Create transaction via Paddle API
         try:
@@ -96,6 +127,7 @@ class PaddleProvider(BasePaymentProvider):
                             "order_id": order_id,
                             "organization_id": organization_id,
                             "target_plan": target_plan,
+                            "pack_code": pack_code,
                         },
                         "collection_mode": "automatic",
                     },

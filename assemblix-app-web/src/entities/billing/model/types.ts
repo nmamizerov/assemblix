@@ -3,48 +3,40 @@
 // MIT + Commons Clause license. Governed by LICENSE_EE.md; running or distributing
 // it requires a valid commercial agreement with the copyright holder.
 
-export type BillingPlan = "free" | "starter" | "pro" | "business";
+export type BillingPlan = "free" | "pro" | "business";
+
+export interface CreditsInfo {
+  creditsBalance: number;
+  creditsGranted: number;
+  creditsPurchased: number;
+  plan: string;
+  creditsPerMonth: number;
+  periodStart: string; // ISO 8601 date
+  nextReset: string; // ISO 8601 date
+}
+
+export interface LimitsInfo {
+  rpmLimit: number;
+  concurrentCalls: number;
+}
 
 export interface BillingUsageResponse {
   organizationId: string;
   plan: BillingPlan;
   billingPeriodStart: string; // ISO 8601 datetime
 
-  usage: {
-    agents: {
-      current: number;
-      limit: number | null; // null means unlimited
-    };
-  };
-
-  credits: {
-    creditsBalance: number;
-    plan: string;
-    creditsPerMonth: number;
-    periodStart: string; // ISO 8601 date
-    nextResetDate: string; // ISO 8601 date
-  };
-
-  features: {
-    projectVariables: boolean;
-    canUseOwnKeys: boolean;
-  };
-
-  limits: {
-    rpm_limit: number;
-  };
+  credits: CreditsInfo;
+  limits: LimitsInfo;
 }
 
 export interface PlanInfo {
   plan: BillingPlan;
-  name: string; // "Free", "Starter", "Pro", "Business"
-  priceRub: number;
-  maxAgents: number | null; // null = unlimited
+  name: string; // "Free", "Pro", "Business"
+  priceUsdCents: number;
   creditsPerMonth: number;
-  hasProjectVariables: boolean;
-  canUseOwnKeys: boolean;
   supportLevel: string;
   rpmLimit: number;
+  concurrentCalls: number;
 }
 
 export interface AllPlansResponse {
@@ -78,13 +70,7 @@ export interface CreditTransaction {
   createdAt: string;
 }
 
-export interface CreditsInfoResponse {
-  creditsBalance: number;
-  plan: string;
-  creditsPerMonth: number;
-  periodStart: string;
-  nextResetDate: string;
-}
+export type CreditsInfoResponse = CreditsInfo;
 
 export interface TransactionsQueryParams {
   skip?: number;
@@ -99,6 +85,17 @@ export interface TransactionsResponse {
   total: number;
   page: number;
   limit: number;
+}
+
+// One-off credit packs
+export interface CreditPack {
+  code: string;
+  priceUsdCents: number;
+  credits: number;
+}
+
+export interface CreditPacksResponse {
+  packs: CreditPack[];
 }
 
 // Payment types
@@ -117,13 +114,17 @@ export interface SubscribeRequest {
   isRecurrent?: boolean;
 }
 
+export interface PurchaseCreditPackRequest {
+  packCode: string;
+}
+
 export interface SubscribeResponse {
   paymentId: string;
   paymentUrl: string;
   amount: number;
-  amountRub: number;
+  amountUsdCents: number;
   description: string;
-  targetPlan: BillingPlan;
+  targetPlan: string | null;
   expiresAt: string;
 }
 
@@ -132,7 +133,7 @@ export interface PaymentStatusResponse {
   status: PaymentStatus;
   amount: number;
   description: string;
-  targetPlan: BillingPlan;
+  targetPlan: string | null;
   paymentUrl: string | null;
   createdAt: string;
   updatedAt: string;

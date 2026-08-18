@@ -10,6 +10,7 @@ import {
 } from "@/entities/workflow";
 import { selectCurrentProjectId } from "@/entities/organization";
 import { useGetBillingUsageQuery } from "@/entities/billing";
+import { useGetServerConfigQuery } from "@/entities/config";
 import { useOnboarding } from "@/features/onboarding-v2";
 import { toast } from "sonner";
 import { cn } from "@/shared/lib/utils";
@@ -35,34 +36,19 @@ export const HomePage = () => {
     skip: !currentProjectId,
   });
 
+  const { data: serverConfig } = useGetServerConfigQuery();
+
   const showPulse = workflows.length === 0;
 
-  // Проверка лимита агентов
-  const agentsLimit = billingUsage?.usage.agents.limit;
-  const agentsCurrent = billingUsage?.usage.agents.current ?? 0;
-  const isAgentsLimitReached =
-    agentsLimit !== null &&
-    agentsLimit !== undefined &&
-    agentsCurrent >= agentsLimit;
-
-  // Проверка баланса кредитов
+  // Проверка баланса кредитов. На self-host (billingEnabled = false) баланс
+  // не пополняется и ничего не ограничивает — блокировать по нему нельзя.
   const creditsBalance = billingUsage?.credits?.creditsBalance ?? 0;
-  const isCreditsInsufficient = creditsBalance < 1;
+  const isCreditsInsufficient =
+    (serverConfig?.billingEnabled ?? false) && creditsBalance < 1;
 
   const handleCreateWorkflow = async () => {
     if (!currentProjectId) {
       toast.error(t("agents.selectProject"));
-      return;
-    }
-
-    // Проверка лимита агентов
-    if (isAgentsLimitReached) {
-      toast.error(t("billing.errors.agentsLimitReached"), {
-        action: {
-          label: t("billing.upgrade"),
-          onClick: () => navigate("/pricing"),
-        },
-      });
       return;
     }
 
@@ -133,16 +119,11 @@ export const HomePage = () => {
             <div className="flex flex-col items-center gap-3">
               <Button
                 onClick={handleCreateWorkflow}
-                disabled={
-                  isCreating || isAgentsLimitReached || isCreditsInsufficient
-                }
+                disabled={isCreating || isCreditsInsufficient}
                 size="lg"
                 className={cn(
                   "h-12 rounded-full px-8 text-base",
-                  showPulse &&
-                    !isAgentsLimitReached &&
-                    !isCreditsInsufficient &&
-                    "animate-pulse-glow"
+                  showPulse && !isCreditsInsufficient && "animate-pulse-glow"
                 )}
                 data-tour="create-agent"
               >
@@ -153,18 +134,7 @@ export const HomePage = () => {
                 )}
                 {t("home.createAgent")}
               </Button>
-              {isAgentsLimitReached && (
-                <p className="text-sm text-muted-foreground">
-                  {t("billing.errors.agentsLimitReachedHint")}{" "}
-                  <button
-                    onClick={() => navigate("/pricing")}
-                    className="font-medium text-primary hover:underline"
-                  >
-                    {t("billing.upgradePlan")}
-                  </button>
-                </p>
-              )}
-              {isCreditsInsufficient && !isAgentsLimitReached && (
+              {isCreditsInsufficient && (
                 <p className="text-sm text-muted-foreground">
                   {t("billing.errors.creditsInsfficientHint")}{" "}
                   <button

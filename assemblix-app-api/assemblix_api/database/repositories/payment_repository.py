@@ -9,7 +9,7 @@ from uuid import UUID
 from sqlalchemy import and_, desc, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from assemblix_api.database.models.payment import Payment, PaymentStatus
+from assemblix_api.database.models.payment import Payment, PaymentKind, PaymentStatus
 from assemblix_api.enums import PlanTier
 
 from .base_repository import BaseRepository
@@ -26,10 +26,11 @@ class PaymentRepository(BaseRepository[Payment]):
         amount: int,
         description: str,
         order_id: str,
-        target_plan: PlanTier,
+        target_plan: PlanTier | None,
         is_recurrent: bool = False,
         provider: str = "paddle",
         meta: dict | None = None,
+        kind: PaymentKind = PaymentKind.SUBSCRIPTION,
     ) -> Payment:
         payment = Payment(
             organization_id=organization_id,
@@ -43,6 +44,7 @@ class PaymentRepository(BaseRepository[Payment]):
             meta=meta or {},
         )
         payment.status = PaymentStatus.INIT
+        payment.kind = kind
 
         self._session.add(payment)
         await self._session.flush()

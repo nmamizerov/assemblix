@@ -4,7 +4,6 @@ import { useTranslation } from "react-i18next";
 import { Popover, PopoverContent, PopoverTrigger } from "./popover";
 import type { StateVariable, Workflow } from "@/entities/workflow/model/types";
 import { VariableForm, type VariableFormData } from "@/features/variable-form";
-import { useGetBillingUsageQuery } from "@/entities/billing";
 import { selectCurrentProjectId } from "@/entities/organization";
 import {
   useGetProjectQuery,
@@ -34,17 +33,11 @@ export const AddVariablePopover = ({
   const [open, setOpen] = useState(false);
 
   const currentProjectId = useSelector(selectCurrentProjectId);
-  const { data: billingUsage } = useGetBillingUsageQuery(undefined, {
-    skip: !currentProjectId,
-  });
   const { data: project } = useGetProjectQuery(currentProjectId!, {
     skip: !currentProjectId,
   });
   const [updateProject, { isLoading: isUpdatingProject }] =
     useUpdateProjectMutation();
-
-  const hasProjectVariablesFeature =
-    billingUsage?.features.projectVariables ?? true;
 
   const initialFormValues: VariableFormData | undefined = editVariable
     ? {
@@ -107,7 +100,6 @@ export const AddVariablePopover = ({
           existingNames={variablesList.map((v) => v.name)}
           onSubmit={handleSubmit}
           showProjectVariableCheckbox={true}
-          hasProjectVariablesFeature={hasProjectVariablesFeature}
           isLoading={isUpdatingProject}
         />
       </PopoverContent>

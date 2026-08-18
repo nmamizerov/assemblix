@@ -33,6 +33,13 @@ class PaymentStatus(str, Enum):
     CANCELED = "canceled"
 
 
+class PaymentKind(str, Enum):
+    """What a payment is for: a plan subscription, or a one-off credit pack."""
+
+    SUBSCRIPTION = "subscription"
+    CREDIT_PACK = "credit_pack"
+
+
 class Payment(UUIDMixin, TimestampMixin, Base):
     """A subscription payment for an organization (supports recurrent payments)."""
 
@@ -54,7 +61,7 @@ class Payment(UUIDMixin, TimestampMixin, Base):
     amount: Mapped[int] = mapped_column(
         Integer,
         nullable=False,
-        comment="Amount in minor units (kopecks)",
+        comment="Amount in minor units (USD cents)",
     )
     description: Mapped[str] = mapped_column(
         Text,
@@ -82,6 +89,25 @@ class Payment(UUIDMixin, TimestampMixin, Base):
         else:
             self._status = value
 
+    _kind: Mapped[str] = mapped_column(
+        "kind",
+        String(32),
+        nullable=False,
+        server_default=PaymentKind.SUBSCRIPTION.value,
+        comment="What the payment is for: subscription or credit_pack",
+    )
+
+    @property
+    def kind(self) -> PaymentKind:
+        return PaymentKind(self._kind)
+
+    @kind.setter
+    def kind(self, value: PaymentKind | str) -> None:
+        if isinstance(value, PaymentKind):
+            self._kind = value.value
+        else:
+            self._kind = value
+
     external_payment_id: Mapped[str | None] = mapped_column(
         String(255),
         nullable=True,
@@ -97,23 +123,39 @@ class Payment(UUIDMixin, TimestampMixin, Base):
         comment="Unique order ID (UUID)",
     )
 
-    _target_plan: Mapped[str] = mapped_column(
+    _target_plan: Mapped[str | None] = mapped_column(
         "target_plan",
         String(50),
-        nullable=False,
+        nullable=True,
         comment="Target plan tier",
     )
 
     @property
-    def target_plan(self) -> PlanTier:
-        return PlanTier(self._target_plan)
+    def target_plan(self) -> PlanTier | None:
+        """Parsed target plan, or None for a legacy/unparseable value (e.g. the
+        removed 'starter' tier) or a NULL column (future non-plan payments,
+        e.g. credit packs). Use `target_plan_raw` to read what was actually
+        stored, regardless of whether it still parses."""
+        if self._target_plan is None:
+            return None
+        try:
+            return PlanTier(self._target_plan)
+        except ValueError:
+            return None
 
     @target_plan.setter
-    def target_plan(self, value: PlanTier | str) -> None:
-        if isinstance(value, PlanTier):
+    def target_plan(self, value: PlanTier | str | None) -> None:
+        if value is None:
+            self._target_plan = None
+        elif isinstance(value, PlanTier):
             self._target_plan = value.value
         else:
             self._target_plan = value.lower()
+
+    @property
+    def target_plan_raw(self) -> str | None:
+        """The stored target_plan string, unparsed (survives a removed tier)."""
+        return self._target_plan
 
     # Recurrent payments (Paddle manages renewals via webhooks).
     is_recurrent: Mapped[bool] = mapped_column(

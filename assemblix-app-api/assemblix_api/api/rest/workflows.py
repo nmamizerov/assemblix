@@ -93,7 +93,6 @@ async def create_workflow(
     data.project_id = resolve_project_id(data.project_id, auth)
     project = await project_service.authorize_project_access(auth, data.project_id)
 
-    # Create the workflow, enforcing billing limits.
     workflow = await service.create_workflow(
         data=data,
         organization_id=project.organization_id,

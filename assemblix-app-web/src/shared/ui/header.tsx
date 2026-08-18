@@ -69,8 +69,6 @@ export const Header = () => {
     switch (billingPlan.plan) {
       case "free":
         return "outline";
-      case "starter":
-        return "default";
       case "pro":
         return "default";
       case "business":
@@ -85,8 +83,6 @@ export const Header = () => {
     switch (billingPlan.plan) {
       case "free":
         return t("billing.upgrade");
-      case "starter":
-        return "STARTER";
       case "pro":
         return "PRO";
       case "business":

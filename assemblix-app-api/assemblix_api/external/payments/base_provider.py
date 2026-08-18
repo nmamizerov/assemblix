@@ -29,7 +29,7 @@ class BasePaymentProvider(ABC):
     async def init_payment(
         self,
         order_id: str,
-        amount: int,  # In kopecks
+        amount: int,  # In USD cents
         description: str,
         user_email: str,
         is_recurrent: bool = False,
@@ -47,3 +47,11 @@ class BasePaymentProvider(ABC):
     def parse_notification(self, payload: dict) -> dict:
         """Parse webhook data into {payment_id, status, order_id}."""
         pass
+
+    def supports_credit_pack(self, pack_code: str) -> bool:
+        """Whether this provider can actually take money for the given credit pack.
+
+        Providers that need per-pack configuration (a price id, a SKU) override this
+        so packs they cannot charge for are never offered for sale.
+        """
+        return True

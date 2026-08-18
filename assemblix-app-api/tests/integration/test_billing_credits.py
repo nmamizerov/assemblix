@@ -27,11 +27,11 @@ async def _set_org_free_with_credits(org_id: str, credits: int) -> None:
     async with AsyncSession(get_async_engine()) as session:
         repo = OrganizationRepository(session)
         org = await repo.get_by_id(uuid.UUID(org_id))
-        await repo.update(org, plan="free", credits_balance=0 if credits == 0 else credits)
+        await repo.update(org, plan="free", credits_granted_balance=0 if credits == 0 else credits)
         await session.commit()
 
 
-async def test_run_fails_without_enough_credits(api_client, mock_llm) -> None:
+async def test_run_fails_without_enough_credits(api_client, mock_llm, billing_enabled) -> None:
     """FREE org with 0 credits → POST /execute is rejected with 402."""
     # Arrange — register, force the org onto FREE, then drain its credits to zero.
     mock_llm.set_response("ok")

@@ -14,10 +14,12 @@ from uuid import UUID
 
 from assemblix_api.billing.exceptions import BillingLimitExceeded
 from assemblix_api.billing.plans import credit_config, get_plan_config
+from assemblix_api.core.settings import get_settings
 from assemblix_api.database.models.credit_transaction import CreditTransactionType
 from assemblix_api.dto.responses.billing import CreditsInfo
 
 if TYPE_CHECKING:
+    from assemblix_api.database.models.organization import Organization
     from assemblix_api.database.repositories.credit_transaction_repository import (
         CreditTransactionRepository,
     )
@@ -49,16 +51,18 @@ class CreditService:
     async def check_balance(
         self,
         organization_id: UUID,
-        required_credits: int,
+        required_credits: Decimal,
     ) -> None:
         """Raise InsufficientCreditsError if the org balance is below required_credits."""
+        await self.ensure_current_period(organization_id)
+
         organization = await self._org_repo.get_by_id(organization_id)
         if not organization:
             raise ValueError(f"Organization {organization_id} not found")
 
         if organization.credits_balance < required_credits:
             raise InsufficientCreditsError(
-                required=Decimal(required_credits),
+                required=required_credits,
                 available=organization.credits_balance,
             )
 
@@ -75,36 +79,39 @@ class CreditService:
     ) -> dict:
         """Deduct credits for a workflow execution.
 
-        Only system-key LLM usage and system-key voice (TTS) usage are charged
-        (with margin); own-key usage is free (the user pays the provider directly).
-        No per-request fee.
+        Every execution pays the fixed per-request fee, regardless of whose keys are
+        used. System-key LLM usage and system-key voice (TTS) usage are additionally
+        charged with margin; own-key usage is free (the user pays the provider
+        directly) beyond that fee.
         """
-        organization = await self._org_repo.get_by_id(organization_id)
-        if not organization:
-            raise ValueError(f"Organization {organization_id} not found")
+        if not get_settings().billing_enabled:
+            return {"total_credits": Decimal(0), "fee_credits": Decimal(0)}
 
-        # System keys: charge with margin. Own keys: not charged.
-        system_key_credits: Decimal = Decimal(0)
-        if system_key_cost_usd > 0:
-            system_key_credits = credit_config.usd_to_credits(system_key_cost_usd, with_margin=True)
-        own_key_credits: Decimal = Decimal(0)
+        await self.ensure_current_period(organization_id)
 
-        voice_credits: Decimal = Decimal(0)
-        if system_voice_cost_usd > 0:
-            voice_credits = credit_config.usd_to_credits(system_voice_cost_usd, with_margin=True)
-
-        total_credits = system_key_credits + voice_credits
+        fee_credits = credit_config.request_fee_credits
+        system_key_credits: Decimal = (
+            credit_config.usd_to_credits(system_key_cost_usd, with_margin=True)
+            if system_key_cost_usd > 0
+            else Decimal(0)
+        )
+        voice_credits: Decimal = (
+            credit_config.usd_to_credits(system_voice_cost_usd, with_margin=True)
+            if system_voice_cost_usd > 0
+            else Decimal(0)
+        )
+        total_credits = fee_credits + system_key_credits + voice_credits
         total_usd = system_key_cost_usd + system_voice_cost_usd
 
-        if total_credits > 0:
-            if organization.credits_balance < total_credits:
-                raise InsufficientCreditsError(
-                    required=total_credits,
-                    available=organization.credits_balance,
-                )
-
-            organization.credits_balance -= total_credits
-            await self._org_repo.update(organization)
+        # Atomic: insufficiency is reported by the repository (no row written), so
+        # parallel executions cannot spend the same credits twice, and a partial
+        # charge (fee without margin, or vice versa) is impossible.
+        if not await self._org_repo.deduct_credits(organization_id, total_credits):
+            organization = await self._org_repo.get_by_id(organization_id)
+            raise InsufficientCreditsError(
+                required=total_credits,
+                available=organization.credits_balance if organization else Decimal(0),
+            )
 
         full_metadata = {
             "system_key_cost_usd": float(system_key_cost_usd),
@@ -114,6 +121,17 @@ class CreditService:
             "margin_multiplier": float(credit_config.margin_multiplier),
             **(metadata or {}),
         }
+
+        # The per-request fee is charged unconditionally.
+        await self._tx_repo.create(
+            organization_id=organization_id,
+            amount_credits=-fee_credits,
+            amount_usd=-credit_config.request_fee_usd,
+            type=CreditTransactionType.REQUEST_FEE,
+            execution_id=execution_id,
+            description=f"Platform fee for execution {execution_id}",
+            meta=full_metadata,
+        )
 
         # Record a transaction only when system keys were actually charged
         if system_key_credits > 0:
@@ -140,35 +158,51 @@ class CreditService:
             )
 
         return {
+            "fee_credits": fee_credits,
             "system_key_credits": system_key_credits,
-            "own_key_credits": own_key_credits,
+            "own_key_credits": Decimal(0),
             "total_credits": total_credits,
             "system_key_usd": system_key_cost_usd,
             "own_key_usd": own_key_cost_usd,
             "total_usd": total_usd,
         }
 
-    async def grant_plan_credits(
-        self,
-        organization_id: UUID,
-    ) -> Decimal:
-        """Grant the monthly credit allowance for the org's plan and reset the period."""
+    async def ensure_current_period(self, organization_id: UUID) -> None:
+        """Apply the monthly grant if the period has lapsed. Idempotent within a period.
+
+        No-op while billing is disabled: self-host orgs sit on the unlimited BUSINESS
+        plan and never need a grant. The period rolls forward by whole months (not to
+        today's date) so several stale months still re-issue exactly one allowance
+        rather than accumulating one per elapsed month.
+        """
+        if not get_settings().billing_enabled:
+            return
+
         organization = await self._org_repo.get_by_id(organization_id)
         if not organization:
             raise ValueError(f"Organization {organization_id} not found")
 
+        today = date.today()
+        next_period = self._add_months(organization.credits_period_start, 1)
+        if next_period > today:
+            return
+
+        months_elapsed = self._whole_months_between(organization.credits_period_start, today)
+        new_period_start = self._add_months(organization.credits_period_start, months_elapsed)
+        await self._grant(organization, new_period_start)
+
+    async def _grant(self, organization: Organization, period_start: date) -> None:
+        """Re-issue the granted part of the balance for `period_start` and record it."""
         plan_config = get_plan_config(organization.plan)
         credits_to_grant = Decimal(plan_config.credits_per_month)
 
-        organization.credits_balance = credits_to_grant
-        organization.credits_period_start = datetime.utcnow().date()
-        await self._org_repo.update(organization)
-
-        credits_usd = credit_config.credits_to_usd(credits_to_grant)
+        await self._org_repo.reissue_granted_credits(
+            organization.id, credits_to_grant, period_start=period_start
+        )
         await self._tx_repo.create(
-            organization_id=organization_id,
+            organization_id=organization.id,
             amount_credits=credits_to_grant,
-            amount_usd=credits_usd,
+            amount_usd=credit_config.credits_to_usd(credits_to_grant),
             type=CreditTransactionType.PLAN_GRANT,
             description=f"Monthly credits grant for {organization.plan.value.upper()} plan",
             meta={
@@ -177,26 +211,75 @@ class CreditService:
             },
         )
 
-        return credits_to_grant
+    async def record_manual_topup(
+        self,
+        organization_id: UUID,
+        credits: Decimal,
+        description: str,
+        meta: dict | None = None,
+    ) -> None:
+        """Credit a manual purchase (e.g. a credit pack) and record a MANUAL_TOPUP transaction.
+
+        Purchased credits never expire and are unaffected by the monthly grant.
+        """
+        await self._org_repo.add_purchased_credits(organization_id, credits)
+        await self._tx_repo.create(
+            organization_id=organization_id,
+            amount_credits=credits,
+            amount_usd=credit_config.credits_to_usd(credits),
+            type=CreditTransactionType.MANUAL_TOPUP,
+            description=description,
+            meta=meta,
+        )
+
+    async def grant_plan_credits(self, organization_id: UUID) -> Decimal:
+        """Force a grant and restart the period. Used when a subscription activates."""
+        organization = await self._org_repo.get_by_id(organization_id)
+        if not organization:
+            raise ValueError(f"Organization {organization_id} not found")
+        await self._grant(organization, date.today())
+        return Decimal(get_plan_config(organization.plan).credits_per_month)
+
+    @staticmethod
+    def _add_months(start: date, months: int) -> date:
+        """`start` shifted forward by whole `months`, clamped to the target month's length."""
+        import calendar
+
+        month_index = start.month - 1 + months
+        year = start.year + month_index // 12
+        month = month_index % 12 + 1
+        day = min(start.day, calendar.monthrange(year, month)[1])
+        return date(year, month, day)
+
+    @classmethod
+    def _whole_months_between(cls, start: date, end: date) -> int:
+        """Number of whole calendar months between `start` and `end` (end >= start)."""
+        months = (end.year - start.year) * 12 + (end.month - start.month)
+        if cls._add_months(start, months) > end:
+            months -= 1
+        return months
 
     async def get_balance(
         self,
         organization_id: UUID,
     ) -> CreditsInfo:
         """Return current credit balance info for the organization."""
+        await self.ensure_current_period(organization_id)
+
         organization = await self._org_repo.get_by_id(organization_id)
         if not organization:
             raise ValueError(f"Organization {organization_id} not found")
 
         plan_config = get_plan_config(organization.plan)
-        next_reset = self._calculate_next_reset_date(organization.credits_period_start)
 
         return CreditsInfo(
             credits_balance=int(organization.credits_balance),
+            credits_granted=int(organization.credits_granted_balance),
+            credits_purchased=int(organization.credits_purchased_balance),
             plan=organization.plan.value,
             credits_per_month=plan_config.credits_per_month,
             period_start=organization.credits_period_start.isoformat(),
-            next_reset_date=next_reset.isoformat(),
+            next_reset=self._add_months(organization.credits_period_start, 1).isoformat(),
         )
 
     async def get_transactions(
@@ -242,21 +325,3 @@ class CreditService:
             ],
             total_count,
         )
-
-    def _calculate_next_reset_date(self, period_start: date) -> date:
-        """Next credit reset: same day of the next month, clamped to month length."""
-        year = period_start.year
-        month = period_start.month + 1
-        day = period_start.day
-
-        if month > 12:
-            month = 1
-            year += 1
-
-        import calendar
-
-        max_day = calendar.monthrange(year, month)[1]
-        if day > max_day:
-            day = max_day
-
-        return date(year, month, day)

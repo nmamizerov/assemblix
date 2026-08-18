@@ -1,6 +1,5 @@
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useSelector } from "react-redux";
 import { Search } from "lucide-react";
 import { Label } from "@/shared/ui/label";
 import { Input } from "@/shared/ui/input";
@@ -23,9 +22,7 @@ import {
   CredentialSelect,
   getCredentialTypeForProvider,
 } from "@/entities/credential";
-import { useGetBillingUsageQuery } from "@/entities/billing";
 import { useGetServerConfigQuery } from "@/entities/config";
-import { selectCurrentProjectId } from "@/entities/organization";
 import type { VoiceOutputConfig } from "../../../../model/types";
 
 interface VoiceOutputPickerProps {
@@ -122,11 +119,6 @@ export const VoiceOutputPicker = ({
       { skip: !value?.credentialId },
     );
 
-  const currentProjectId = useSelector(selectCurrentProjectId);
-  const { data: billingUsage } = useGetBillingUsageQuery(undefined, {
-    skip: !currentProjectId,
-  });
-  const canUseOwnKeys = billingUsage?.features.canUseOwnKeys ?? false;
   const { data: serverConfig } = useGetServerConfigQuery();
   const voiceCredentialType = provider
     ? getCredentialTypeForProvider(provider)
@@ -200,7 +192,7 @@ export const VoiceOutputPicker = ({
         </div>
       )}
 
-      {canUseOwnKeys && voiceCredentialType && (
+      {voiceCredentialType && (
         <div className="space-y-2">
           <Label className="text-xs">{t("nodeForms.end.voiceCredential")}</Label>
           <CredentialSelect

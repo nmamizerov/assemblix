@@ -49,14 +49,12 @@ def should_stream_voice(
 
 async def _resolve_key(cfg: AgentNodeConfig, context: ExecutionContext) -> tuple[str, bool]:
     assert context.credential_service is not None
-    assert context.organization_plan is not None
     v = cfg.voice
     assert v is not None
     return await context.credential_service.get_voice_api_key_with_fallback(
         credentials_id=UUID(v.credential_id) if v.credential_id else None,
         project_id=context.project_id,
         voice_provider=v.provider,
-        organization_plan=context.organization_plan,
     )
 
 

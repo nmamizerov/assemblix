@@ -14,9 +14,16 @@ from assemblix_api.dto.base import DTOModel
 class CreateSubscriptionRequest(DTOModel):
     target_plan: str = Field(
         ...,
-        description="Target plan tier (free, starter, pro, business)",
+        description="Target plan tier (free, pro, business)",
     )
     is_recurrent: bool = Field(
         default=True,
         description="Bind the card for automatic renewal",
+    )
+
+
+class CreateCreditPackRequest(DTOModel):
+    pack_code: str = Field(
+        ...,
+        description="Credit pack code (s, m, l)",
     )

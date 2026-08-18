@@ -13,7 +13,7 @@ from typing import TYPE_CHECKING
 from uuid import UUID
 
 if TYPE_CHECKING:
-    from assemblix_api.enums import AgentProvider, PlanTier
+    from assemblix_api.enums import AgentProvider
     from assemblix_api.services.credentials_service import CredentialsService
 
 
@@ -27,7 +27,6 @@ class CredentialResolver:
         credential_id: str | None,
         provider: AgentProvider,
         project_id: UUID,
-        organization_plan: PlanTier,
     ) -> tuple[str, bool]:
         """Return `(api_key, is_system_key)` with a fallback to system keys."""
         credentials_id = UUID(credential_id) if credential_id else None
@@ -35,5 +34,4 @@ class CredentialResolver:
             credentials_id=credentials_id,
             project_id=project_id,
             provider=provider,
-            organization_plan=organization_plan,
         )

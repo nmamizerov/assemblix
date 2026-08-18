@@ -1068,11 +1068,11 @@
       },
       "debug": {
         "title": "Test on the fly",
-        "description": "Hit Play and test your agent right now. You already have starter credits — send messages and watch how the agent thinks and responds at each step"
+        "description": "Hit Play and test your agent right now. You already have free credits — send messages and watch how the agent thinks and responds at each step"
       },
       "credits": {
         "title": "Credits & Savings",
-        "description": "Every agent run consumes credits from your balance. Want to spend less? Connect your own API keys from OpenAI, DeepSeek, or other providers — then only 1 credit per request instead of LLM call cost. Available on PRO and BUSINESS plans"
+        "description": "Every agent run consumes credits from your balance. Want to spend less? Connect your own API keys from OpenAI, DeepSeek, or other providers to control costs directly"
       },
       "publish": {
         "title": "Ready for production?",
@@ -1080,29 +1080,19 @@
       },
       "final": {
         "title": "Great! Let's test it",
-        "description": "The debug chat will open automatically. Send a message and see your agent in action. You already have starter credits!",
+        "description": "The debug chat will open automatically. Send a message and see your agent in action. You already have free credits!",
         "telegramButton": "Join Discord",
         "startButton": "Start Building"
       }
     }
   },
   "billing": {
-    "unlimited": "Unlimited",
     "upgrade": "Upgrade",
     "upgradePlan": "Upgrade plan",
-    "upgradeToPlan": "Upgrade to {{plan}}",
-    "availableInPlan": "Available in {{plan}}",
     "viewPlans": "View plans",
-    "highUsage": "You have high resource usage",
-    "criticalUsage": "You've reached critical usage level",
-    "nextReset": "Limits will reset on {{date}}",
     "section": {
       "title": "Billing & Usage",
       "subtitle": "Manage your billing plan and track resource usage"
-    },
-    "usage": {
-      "agents": "Agents",
-      "credits": "Credits"
     },
     "pricing": {
       "title": "Choose your plan",
@@ -1111,33 +1101,12 @@
       "perMonth": "mo",
       "currentPlan": "Current plan",
       "getStarted": "Get started for free",
-      "contactSales": "Contact us",
       "subscribe": "Subscribe",
-      "business": {
-        "price": "On request",
-        "description": "Individual conditions for large companies",
-        "features": {
-          "consulting": "Expert consulting and process audit",
-          "integration": "Turnkey integration and implementation support",
-          "sla": "Personal SLA and dedicated manager",
-          "onpremise": "On-Premise deployment option"
-        }
-      },
-      "agents_one": "{{count}} agent",
-      "agents_other": "{{count}} agents",
-      "unlimitedAgents": "Unlimited agents",
-      "agentsDesc": "Create AI agents",
       "creditsPerMonth": "credits/month",
       "creditsDesc": "Use to run agents",
       "rpmLimit_one": "{{count}} request/min",
       "rpmLimit_other": "{{count}} requests/min",
       "rpmDesc": "Maximum API request rate",
-      "unlimitedRequests": "Unlimited requests with your keys",
-      "unlimitedRequestsDesc": "0 credits when using your own API keys",
-      "ownApiKeys": "Own API keys",
-      "ownApiKeysDesc": "Use your own LLM provider keys",
-      "projectVariables": "Project variables",
-      "projectVariablesDesc": "Store secrets and client state with client_id",
       "support": {
         "community": "Community support",
         "email_24h": "Email support (24h)",
@@ -1156,54 +1125,38 @@
         "sessionManagement": "Session management",
         "logsMonitoring": "Logs and monitoring"
       },
-      "note": "Contact us to upgrade to a paid plan or get an enterprise solution"
-    },
-    "features": {
-      "projectVariables": {
-        "name": "Project variables",
-        "description": "Store API keys, secrets, and client state. Pass client_id — and all agents get access to shared data without losing context between conversations."
-      }
+      "note": "Buy a credit pack any time to top up — purchased credits never expire.",
+      "concurrentCalls_one": "{{count}} concurrent call",
+      "concurrentCalls_other": "{{count}} concurrent calls",
+      "concurrentCallsDesc": "Maximum simultaneous voice calls for your plan"
     },
     "errors": {
       "limitReached": "Usage limit reached",
-      "agentsLimitReached": "Time to scale up! 🚀",
-      "agentsLimitReachedHint": "You've hit your agent limit on the current plan. Upgrade to PRO or BUSINESS — get more agents, unlimited requests, and project variables for complex scenarios.",
-      "creditsLimitReached": "Out of credits 💳",
       "creditsInsufficient": "Insufficient credits to run",
-      "creditsInsfficientHint": "Connect your own API keys (PRO+ plan) and pay just 1 credit per request. Or upgrade to a plan with more credits.",
+      "creditsInsfficientHint": "Buy a credit pack to top up instantly, or upgrade to a plan with more monthly credits.",
       "featureNotAvailable": "This feature is not available on your current plan",
       "rateLimitExceeded": "Rate limit exceeded",
       "rateLimitHint": "You have exceeded the limit of {{rpm}} requests per minute. Slow down requests or upgrade your plan."
     },
     "limitWarning": {
       "warning": {
-        "agents": {
-          "title": "You'll need more agents soon",
-          "description": "Used {{current}} of {{limit}} agents ({{percentage}}%). Consider upgrading to scale your projects."
-        },
         "credits": {
           "title": "Credits running low",
-          "description": "{{current}} of {{limit}} credits remaining ({{percentage}}%). Connect your own API keys or upgrade to a plan with more credits."
+          "description": "{{current}} of {{limit}} credits remaining ({{percentage}}%). Buy a credit pack or upgrade to a plan with more credits."
         }
       },
       "critical": {
-        "agents": {
-          "title": "Time to upgrade! 🚀",
-          "description": "Used {{current}} of {{limit}} agents ({{percentage}}%). Upgrade to PRO or BUSINESS now to keep building."
-        },
         "credits": {
           "title": "Almost out of credits! 💳",
-          "description": "{{current}} of {{limit}} credits remaining ({{percentage}}%). Upgrade your plan or connect API keys to save costs."
+          "description": "{{current}} of {{limit}} credits remaining ({{percentage}}%). Buy a credit pack or upgrade your plan to keep running agents."
         }
       }
     },
     "credits": {
       "balance": "Credit balance",
-      "current": "Current balance",
-      "used": "Used",
-      "remaining": "Remaining",
+      "granted": "Granted",
+      "purchased": "Purchased",
       "nextRefill": "Next refill",
-      "refillIn": "Refill in",
       "dateUnknown": "Date unknown",
       "transactions": "Transaction history",
       "totalTransactions": "Total transactions",
@@ -1221,12 +1174,6 @@
         "type": "Transaction type",
         "period": "Period"
       }
-    },
-    "systemKeys": {
-      "title": "System API keys",
-      "description": "Using system LLM provider keys",
-      "upgradeMessage": "Own API keys are available on STARTER, PRO and BUSINESS plans",
-      "benefit": "When using your own keys, no credits are charged for requests"
     },
     "payments": {
       "confirmDialog": {
@@ -1252,6 +1199,19 @@
         "timeout": "Unable to verify status",
         "timeoutHint": "If money was charged, the plan will be activated automatically"
       }
+    },
+    "limits": {
+      "rpm": "Requests per minute",
+      "rpmDesc": "Maximum API request rate for your plan",
+      "concurrentCalls": "Concurrent voice calls",
+      "concurrentCallsDesc": "Maximum simultaneous voice calls for your plan"
+    },
+    "packs": {
+      "title": "Need more credits?",
+      "subtitle": "Buy a one-off credit pack any time — it tops up your balance and never expires.",
+      "credits": "credits",
+      "buy": "Buy",
+      "purchaseSuccess": "Credits added to your balance!"
     }
   },
   "variableForm": {

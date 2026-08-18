@@ -89,7 +89,7 @@ export const SubscribeConfirmDialog = ({
                 {t("billing.payments.confirmDialog.price")}
               </span>
               <span className="text-2xl font-bold text-foreground">
-                {formatNumber(plan.priceRub)}₽
+                ${formatNumber(plan.priceUsdCents / 100)}
                 <span className="text-sm font-normal text-muted-foreground">
                   /{t("billing.pricing.perMonth")}
                 </span>

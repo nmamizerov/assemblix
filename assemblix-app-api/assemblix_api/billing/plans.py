@@ -15,18 +15,17 @@ from assemblix_api.enums import PlanTier
 class CreditConfig:
     """Credit system configuration. Prices are stored in USD and converted to credits."""
 
-    # USD value of 1 credit
     credit_value_usd: Decimal = Decimal("0.0001")
-
-    # Margin applied to LLM costs (30% => 1.3)
-    margin_multiplier: Decimal = Decimal("1.3")
-
-    # Per-request fee in USD ($0.0001 = 1 credit by default)
+    margin_multiplier: Decimal = Decimal("1.1")
     request_fee_usd: Decimal = Decimal("0.0001")
+    voice_platform_fee_usd_per_minute: Decimal = Decimal("0.02")
 
     @property
     def request_fee_credits(self) -> Decimal:
         return self.usd_to_credits(self.request_fee_usd)
+
+    def voice_platform_fee_credits(self, minutes: Decimal) -> Decimal:
+        return self.usd_to_credits(minutes * self.voice_platform_fee_usd_per_minute)
 
     def usd_to_credits(self, amount_usd: Decimal, with_margin: bool = False) -> Decimal:
         """Convert USD to credits (margin applied for system keys), rounded to 8 decimals."""
@@ -41,60 +40,65 @@ class CreditConfig:
 
 @dataclass(frozen=True)
 class PlanConfig:
-    """Subscription plan configuration (max_agents=None means unlimited)."""
+    """Subscription plan configuration."""
 
     name: str
-    price_rub: int
-    max_agents: int | None  # None = unlimited
+    price_usd_cents: int
     credits_per_month: int
-    can_use_own_keys: bool
-    has_project_variables: bool
     support_level: str
-    rpm_limit: int  # Requests per minute
+    rpm_limit: int
+    concurrent_calls: int
 
 
 PLAN_CONFIGS: dict[PlanTier, PlanConfig] = {
     PlanTier.FREE: PlanConfig(
         name="Free",
-        price_rub=0,
-        max_agents=1,
-        credits_per_month=1000,
-        can_use_own_keys=False,  # system keys only
-        has_project_variables=False,
+        price_usd_cents=0,
+        credits_per_month=5_000,
         support_level="community",
         rpm_limit=10,
-    ),
-    PlanTier.STARTER: PlanConfig(
-        name="Starter",
-        price_rub=490,
-        max_agents=5,
-        credits_per_month=5000,
-        can_use_own_keys=True,
-        has_project_variables=True,
-        support_level="email_24h",
-        rpm_limit=30,
+        concurrent_calls=1,
     ),
     PlanTier.PRO: PlanConfig(
         name="Pro",
-        price_rub=1990,
-        max_agents=None,
-        credits_per_month=20000,
-        can_use_own_keys=True,
-        has_project_variables=True,
+        price_usd_cents=1900,
+        credits_per_month=60_000,
         support_level="email_24h",
         rpm_limit=60,
+        concurrent_calls=5,
     ),
     PlanTier.BUSINESS: PlanConfig(
         name="Business",
-        price_rub=4990,
-        max_agents=None,
-        credits_per_month=100000,
-        can_use_own_keys=True,
-        has_project_variables=True,
+        price_usd_cents=4900,
+        credits_per_month=200_000,
         support_level="priority_4h_slack",
         rpm_limit=150,
+        concurrent_calls=15,
     ),
 }
+
+
+@dataclass(frozen=True)
+class CreditPack:
+    """One-off credit purchase, available on any plan."""
+
+    code: str
+    price_usd_cents: int
+    credits: int
+
+
+CREDIT_PACKS: dict[str, CreditPack] = {
+    "s": CreditPack(code="s", price_usd_cents=1000, credits=25_000),
+    "m": CreditPack(code="m", price_usd_cents=2500, credits=70_000),
+    "l": CreditPack(code="l", price_usd_cents=5000, credits=160_000),
+}
+
+
+def get_credit_pack(code: str) -> CreditPack:
+    pack = CREDIT_PACKS.get(code.lower())
+    if pack is None:
+        raise ValueError(f"Unknown credit pack: {code}")
+    return pack
 
 
 def _get_credit_config_from_settings() -> CreditConfig:
@@ -108,6 +112,9 @@ def _get_credit_config_from_settings() -> CreditConfig:
             credit_value_usd=Decimal(str(settings.credit_value_usd)),
             margin_multiplier=Decimal(str(1 + settings.credit_margin_percent / 100)),
             request_fee_usd=Decimal(str(settings.request_fee_usd)),
+            voice_platform_fee_usd_per_minute=Decimal(
+                str(settings.voice_platform_fee_usd_per_minute)
+            ),
         )
     except Exception:
         return CreditConfig()
@@ -124,55 +131,10 @@ def get_default_plan() -> PlanTier:
     """Plan assigned to a new organization.
 
     Self-host builds (billing disabled) start on the top tier so usage is
-    effectively unlimited; the hosted build starts every org on FREE.
+    effectively unlimited; the hosted build starts every org on FREE. With no
+    build-time gates left, BUSINESS here only selects sane RPM/concurrency
+    numbers should someone enable billing later.
     """
     from assemblix_api.core.settings import get_settings
 
     return PlanTier.FREE if get_settings().billing_enabled else PlanTier.BUSINESS
-
-
-@dataclass(frozen=True)
-class ChatPlanConfig:
-    """Subscription plan configuration for Chat widgets (None means unlimited)."""
-
-    name: str
-    price_rub: int
-    max_widgets: int | None  # None = unlimited
-    credits_per_month: int
-    messages_per_month: int | None  # None = unlimited
-
-
-CHAT_PLAN_CONFIGS: dict[PlanTier, ChatPlanConfig] = {
-    PlanTier.FREE: ChatPlanConfig(
-        name="Free",
-        price_rub=0,
-        max_widgets=1,
-        credits_per_month=0,
-        messages_per_month=100,
-    ),
-    PlanTier.STARTER: ChatPlanConfig(
-        name="Starter",
-        price_rub=980,
-        max_widgets=5,
-        credits_per_month=5000,
-        messages_per_month=None,
-    ),
-    PlanTier.PRO: ChatPlanConfig(
-        name="Pro",
-        price_rub=3980,
-        max_widgets=None,
-        credits_per_month=20000,
-        messages_per_month=None,
-    ),
-    PlanTier.BUSINESS: ChatPlanConfig(
-        name="Business",
-        price_rub=9980,
-        max_widgets=None,
-        credits_per_month=100000,
-        messages_per_month=None,
-    ),
-}
-
-
-def get_chat_plan_config(plan: PlanTier) -> ChatPlanConfig:
-    return CHAT_PLAN_CONFIGS[plan]

@@ -79,7 +79,6 @@ class PlanTier(str, Enum):
     """Subscription plan tiers."""
 
     FREE = "free"
-    STARTER = "starter"
     PRO = "pro"
     BUSINESS = "business"
 

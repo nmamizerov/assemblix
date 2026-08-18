@@ -96,27 +96,6 @@ class Organization(UUIDMixin, TimestampMixin, Base):
         else:
             self._plan = value.lower()
 
-    _chat_plan: Mapped[str] = mapped_column(
-        "chat_plan",
-        String(50),
-        default="free",
-        nullable=False,
-        index=True,
-        server_default="free",
-        comment="Plan tier for chat widgets",
-    )
-
-    @property
-    def chat_plan(self) -> PlanTier:
-        return PlanTier(self._chat_plan.lower())
-
-    @chat_plan.setter
-    def chat_plan(self, value: PlanTier | str) -> None:
-        if isinstance(value, PlanTier):
-            self._chat_plan = value.value
-        else:
-            self._chat_plan = value.lower()
-
     billing_period_start: Mapped[datetime] = mapped_column(
         default=datetime.utcnow,
         nullable=False,
@@ -129,12 +108,26 @@ class Organization(UUIDMixin, TimestampMixin, Base):
     )
 
     # Credits
-    credits_balance: Mapped[Decimal] = mapped_column(
+    credits_granted_balance: Mapped[Decimal] = mapped_column(
         Numeric(precision=20, scale=8),
         default=0,
         nullable=False,
-        comment="Current credit balance (up to 8 decimal places)",
+        server_default="0",
+        comment="Granted credits, re-issued by the monthly plan grant",
     )
+    credits_purchased_balance: Mapped[Decimal] = mapped_column(
+        Numeric(precision=20, scale=8),
+        default=0,
+        nullable=False,
+        server_default="0",
+        comment="Purchased credits, never expire",
+    )
+
+    @property
+    def credits_balance(self) -> Decimal:
+        """Total spendable balance. Read-only: deduction goes through the repository."""
+        return self.credits_granted_balance + self.credits_purchased_balance
+
     credits_period_start: Mapped[date] = mapped_column(
         Date,
         default=lambda: datetime.utcnow().date(),

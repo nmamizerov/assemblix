@@ -19,14 +19,12 @@ export const PlanBadge = ({
 }: PlanBadgeProps) => {
   const planColors = {
     free: "bg-muted text-muted-foreground",
-    starter: "bg-indigo-500/10 text-indigo-600 dark:text-indigo-400",
     pro: "bg-primary/10 text-primary",
     business: "bg-warning/10 text-warning",
   };
 
   const planNames = {
     free: "FREE",
-    starter: "STARTER",
     pro: "PRO",
     business: "BUSINESS",
   };

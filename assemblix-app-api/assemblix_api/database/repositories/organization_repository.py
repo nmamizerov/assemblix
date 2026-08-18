@@ -3,9 +3,11 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
+from datetime import date
+from decimal import Decimal
 from uuid import UUID
 
-from sqlalchemy import select
+from sqlalchemy import func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from assemblix_api.database.models.organization import Organization
@@ -47,3 +49,87 @@ class OrganizationRepository(BaseRepository[Organization]):
         stmt = select(self._model).where(self._model.slug == slug)
         result = await self._session.execute(stmt)
         return result.scalar_one_or_none() is not None
+
+    async def deduct_credits(self, organization_id: UUID, amount: Decimal) -> bool:
+        """Spend `amount`, granted part first. False when the balance is short (no write).
+
+        Insufficiency is detected by the affected row count, not by a prior read, so
+        parallel deductions cannot oversell the balance. Every right-hand side below
+        reads the pre-update row, which is what lets the purchased part reference the
+        old granted value.
+        """
+        stmt = (
+            update(Organization)
+            .where(
+                Organization.id == organization_id,
+                Organization.credits_granted_balance + Organization.credits_purchased_balance
+                >= amount,
+            )
+            .values(
+                credits_granted_balance=func.greatest(
+                    Organization.credits_granted_balance - amount, 0
+                ),
+                credits_purchased_balance=Organization.credits_purchased_balance
+                - func.greatest(amount - Organization.credits_granted_balance, 0),
+            )
+            .execution_options(synchronize_session="fetch")
+        )
+        result = await self._session.execute(stmt)
+        return result.rowcount == 1  # type: ignore[attr-defined]  # rowcount available on CursorResult for DML statements
+
+    async def deduct_credits_up_to(self, organization_id: UUID, amount: Decimal) -> Decimal:
+        """Spend up to `amount`, granted part first, draining to zero when short.
+
+        Returns how much was actually removed — the full `amount`, or the whole
+        balance when it could not cover it. One statement: the CTE locks the row and
+        carries the pre-update figures the UPDATE and the RETURNING both read, so a
+        concurrent deduction cannot make the returned number a lie the way a
+        read-then-subtract in Python would.
+        """
+        previous = (
+            select(
+                Organization.id.label("id"),
+                Organization.credits_granted_balance.label("granted"),
+                Organization.credits_purchased_balance.label("purchased"),
+            )
+            .where(Organization.id == organization_id)
+            .with_for_update()
+            .cte("previous_balance")
+        )
+        taken = func.least(previous.c.granted + previous.c.purchased, amount)
+        stmt = (
+            update(Organization)
+            .where(Organization.id == previous.c.id)
+            .values(
+                credits_granted_balance=func.greatest(previous.c.granted - taken, 0),
+                credits_purchased_balance=previous.c.purchased
+                - func.greatest(taken - previous.c.granted, 0),
+            )
+            .returning(taken)
+            .execution_options(synchronize_session="fetch")
+        )
+        return Decimal(await self._session.scalar(stmt) or 0)
+
+    async def add_purchased_credits(self, organization_id: UUID, amount: Decimal) -> None:
+        """Credit a purchase. Purchased credits never expire."""
+        await self._session.execute(
+            update(Organization)
+            .where(Organization.id == organization_id)
+            .values(credits_purchased_balance=Organization.credits_purchased_balance + amount)
+            .execution_options(synchronize_session="fetch")
+        )
+
+    async def reissue_granted_credits(
+        self, organization_id: UUID, amount: Decimal, period_start: date | None
+    ) -> None:
+        """Overwrite the granted part with the plan allowance; leave purchases untouched."""
+        values: dict = {"credits_granted_balance": amount}
+        if period_start is not None:
+            values["credits_period_start"] = period_start
+
+        await self._session.execute(
+            update(Organization)
+            .where(Organization.id == organization_id)
+            .values(**values)
+            .execution_options(synchronize_session="fetch")
+        )

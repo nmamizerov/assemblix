@@ -88,6 +88,9 @@ class Settings(BaseSettings):
     request_fee_usd: float = float(
         os.getenv("REQUEST_FEE_USD", "0.0001")
     )  # Price per request in USD
+    voice_platform_fee_usd_per_minute: float = float(
+        os.getenv("VOICE_PLATFORM_FEE_USD_PER_MINUTE", "0.02")
+    )  # Charged on every conversation minute, own keys included
 
     # OAuth Config
     google_oauth_client_id: str = os.getenv("GOOGLE_OAUTH_CLIENT_ID", "")
@@ -107,8 +110,12 @@ class Settings(BaseSettings):
     paddle_api_key: str = os.getenv("PADDLE_API_KEY", "")
     paddle_webhook_secret: str = os.getenv("PADDLE_WEBHOOK_SECRET", "")
     paddle_environment: str = os.getenv("PADDLE_ENVIRONMENT", "sandbox")
-    paddle_price_starter: str = os.getenv("PADDLE_PRICE_STARTER", "")
     paddle_price_pro: str = os.getenv("PADDLE_PRICE_PRO", "")
+    paddle_price_business: str = os.getenv("PADDLE_PRICE_BUSINESS", "")
+    # One-off credit packs. A pack is offered for sale only while its price id is set.
+    paddle_price_pack_s: str = os.getenv("PADDLE_PRICE_PACK_S", "")
+    paddle_price_pack_m: str = os.getenv("PADDLE_PRICE_PACK_M", "")
+    paddle_price_pack_l: str = os.getenv("PADDLE_PRICE_PACK_L", "")
 
     # Host URL for webhooks
     host_url: str = os.getenv("HOST_URL", "http://localhost:8000")

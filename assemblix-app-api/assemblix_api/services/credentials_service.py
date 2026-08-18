@@ -10,7 +10,6 @@ from uuid import UUID
 
 from fastapi import HTTPException, status
 
-from assemblix_api.billing.plans import get_plan_config
 from assemblix_api.core.settings import get_settings
 from assemblix_api.database.models.credentials import Credentials, CredentialsType
 from assemblix_api.database.repositories.credentials_repository import (
@@ -19,7 +18,7 @@ from assemblix_api.database.repositories.credentials_repository import (
 from assemblix_api.database.repositories.organization_user_repository import (
     OrganizationUserRepository,
 )
-from assemblix_api.enums import AgentProvider, PlanTier
+from assemblix_api.enums import AgentProvider
 from assemblix_api.services.base_service import BaseService
 
 if TYPE_CHECKING:
@@ -101,23 +100,16 @@ class CredentialsService(BaseService[Credentials, CredentialsRepository]):
         credentials_id: UUID | None,
         project_id: UUID,
         provider: AgentProvider,
-        organization_plan: PlanTier,
     ) -> tuple[str, bool]:
         """
         Resolve the API key, falling back to a system key.
 
-        Key selection:
-        - Plans without can_use_own_keys (e.g. FREE): always the system key.
-        - Plans with own keys: use the supplied credential if present and valid,
-          otherwise fall back to the system key.
+        Key selection: use the supplied credential if present and valid,
+        otherwise fall back to the system key.
 
         Returns (api_key, is_system_key).
         """
         settings = get_settings()
-        plan_config = get_plan_config(organization_plan)
-
-        if not plan_config.can_use_own_keys:
-            return self._get_system_key(provider, settings), True
 
         if credentials_id:
             try:
@@ -150,19 +142,14 @@ class CredentialsService(BaseService[Credentials, CredentialsRepository]):
         credentials_id: UUID | None,
         project_id: UUID,
         voice_provider: str,
-        organization_plan: PlanTier,
     ) -> tuple[str, bool]:
         """Resolve a voice-provider API key, falling back to the system key.
 
         Mirrors get_api_key_with_fallback but for voice providers (not AgentProvider):
-        FREE always uses the system key; paid plans use a valid own credential else
-        fall back. Returns (api_key, is_system_key). Raises 503 when no key exists.
+        uses a valid own credential if present, else falls back to the system key.
+        Returns (api_key, is_system_key). Raises 503 when no key exists.
         """
         settings = get_settings()
-        plan_config = get_plan_config(organization_plan)
-
-        if not plan_config.can_use_own_keys:
-            return self._get_voice_system_key(voice_provider, settings), True
 
         if credentials_id:
             try:

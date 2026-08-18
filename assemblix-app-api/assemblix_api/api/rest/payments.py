@@ -22,7 +22,7 @@ from assemblix_api.dependencies import (
     get_current_user,
     get_payment_service,
 )
-from assemblix_api.dto.requests.payment import CreateSubscriptionRequest
+from assemblix_api.dto.requests.payment import CreateCreditPackRequest, CreateSubscriptionRequest
 from assemblix_api.dto.responses.payment import (
     PaymentHistoryItem,
     PaymentHistoryResponse,
@@ -57,7 +57,7 @@ async def create_subscription(
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=f"Invalid plan: {request_data.target_plan}. "
-                f"Valid plans: free, starter, pro, business",
+                f"Valid plans: free, pro, business",
             ) from e
 
         payment = await payment_service.create_subscription_payment(
@@ -78,9 +78,9 @@ async def create_subscription(
             payment_id=payment.id,
             payment_url=payment.payment_url,
             amount=payment.amount,
-            amount_rub=payment.amount // 100,
+            amount_usd_cents=payment.amount,
             description=payment.description,
-            target_plan=payment.target_plan.value,
+            target_plan=payment.target_plan_raw,
             expires_at=expires_at,
         )
 
@@ -91,6 +91,57 @@ async def create_subscription(
         ) from e
     except Exception as e:
         logger.exception("payment.subscription.create_failed")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to create payment. Please try again later.",
+        ) from e
+
+
+@router.post("/credits", response_model=SubscriptionPaymentResponse)
+async def create_credit_pack(
+    request_data: CreateCreditPackRequest,
+    current_user: Annotated[User, Depends(get_current_user)],
+    current_organization: Annotated[Organization, Depends(get_current_organization)],
+    payment_service: Annotated[PaymentService, Depends(get_payment_service)],
+) -> SubscriptionPaymentResponse:
+    """
+    Create a one-off credit pack payment and return a checkout URL.
+
+    Same flow as /subscribe: the client pays at payment_url, the provider posts a
+    webhook to /payments/notification, and the purchased balance is credited. This
+    is independent of the subscription — it never touches the organization's plan.
+    """
+    try:
+        payment = await payment_service.create_credit_pack_payment(
+            organization_id=current_organization.id,
+            user_email=current_user.email,
+            pack_code=request_data.pack_code,
+        )
+
+        # Checkout links typically expire after 15 minutes.
+        expires_at = datetime.utcnow() + timedelta(minutes=15)
+
+        # On success create_credit_pack_payment always sets payment_url
+        # (otherwise it raises ValueError).
+        assert payment.payment_url is not None
+
+        return SubscriptionPaymentResponse(
+            payment_id=payment.id,
+            payment_url=payment.payment_url,
+            amount=payment.amount,
+            amount_usd_cents=payment.amount,
+            description=payment.description,
+            target_plan=payment.target_plan_raw,
+            expires_at=expires_at,
+        )
+
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e),
+        ) from e
+    except Exception as e:
+        logger.exception("payment.credit_pack.create_failed")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to create payment. Please try again later.",
@@ -179,7 +230,7 @@ async def get_payment_status(
         status=payment.status.value,
         amount=payment.amount,
         description=payment.description,
-        target_plan=payment.target_plan.value,
+        target_plan=payment.target_plan_raw,
         payment_url=payment.payment_url,
         created_at=payment.created_at,
         updated_at=payment.updated_at,
@@ -209,9 +260,9 @@ async def get_payment_history(
                 payment_id=p.id,
                 status=p.status.value,
                 amount=p.amount,
-                amount_rub=p.amount // 100,
+                amount_usd_cents=p.amount,
                 description=p.description,
-                target_plan=p.target_plan.value,
+                target_plan=p.target_plan_raw,
                 is_recurrent=p.is_recurrent,
                 created_at=p.created_at,
             )

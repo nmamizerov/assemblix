@@ -23,7 +23,6 @@ interface FallbackModelRowProps {
   index: number;
   value: FallbackModelConfig;
   providerList: ProviderListItem[];
-  canUseOwnKeys: boolean;
   hasSystemKeyForProvider: (provider: Provider) => boolean;
   onChange: (next: FallbackModelConfig) => void;
   onRemove: () => void;
@@ -36,7 +35,6 @@ export const FallbackModelRow = ({
   index,
   value,
   providerList,
-  canUseOwnKeys,
   hasSystemKeyForProvider,
   onChange,
   onRemove,
@@ -111,7 +109,7 @@ export const FallbackModelRow = ({
         </Select>
       </div>
 
-      {canUseOwnKeys && credentialType && (
+      {credentialType && (
         <div className="flex flex-col gap-1.5">
           <Label className="text-xs">{t("nodeForms.agent.credential")}</Label>
           <CredentialSelect

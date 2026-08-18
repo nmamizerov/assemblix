@@ -169,11 +169,19 @@ async def stream_voice_session(websocket: WebSocket, token: str) -> None:
         await websocket.close(code=status.WS_1011_INTERNAL_ERROR)
         return
 
-    voice_session_id = await open_voice_session(
-        voice_agent_id=scope.voice_agent_id,
-        project_id=scope.project_id,
-        is_debug=scope.is_debug,
-    )
+    try:
+        voice_session_id = await open_voice_session(
+            voice_agent_id=scope.voice_agent_id,
+            project_id=scope.project_id,
+            is_debug=scope.is_debug,
+        )
+    except HTTPException as exc:
+        # Notably the plan's concurrent-call ceiling: the browser gets a reason
+        # rather than a socket that dies without one.
+        await websocket.send_json({"type": "session.closed", "reason": exc.detail})
+        await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
+        return
+
     runtime = VoiceSessionRuntime(
         bridge=create_bridge(
             provider=setup.provider,
@@ -212,6 +220,7 @@ async def stream_voice_session(websocket: WebSocket, token: str) -> None:
             input_tokens=input_tokens,
             output_tokens=output_tokens,
             cost_per_minute=setup.cost_per_minute,
+            uses_system_key=setup.uses_system_key,
         )
         with contextlib.suppress(RuntimeError):
             await websocket.close()

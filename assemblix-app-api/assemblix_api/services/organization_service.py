@@ -59,7 +59,6 @@ class OrganizationService(BaseService[Organization, OrganizationRepository]):
             owner_id=owner_id,
             is_personal=is_personal,
             plan=default_plan,
-            chat_plan=default_plan,
         )
 
         # Register the owner as a member of the organization

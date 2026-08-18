@@ -63,7 +63,6 @@ import {
 import { selectCurrentProjectId } from "@/entities/organization";
 import { selectHasAvatarConfig } from "../../model/editor-mode.slice";
 import { useGetServerConfigQuery } from "@/entities/config";
-import { useGetBillingUsageQuery } from "@/entities/billing";
 import { useGetKnowledgeBasesQuery } from "@/entities/knowledge-base";
 import {
   DynamicParamForm,
@@ -142,13 +141,6 @@ export const AgentNodeForm = ({
   const handleDataChange = useNodeDataChange(nodeId);
   const currentProjectId = useSelector(selectCurrentProjectId);
   const hasAvatarConfig = useSelector(selectHasAvatarConfig);
-
-  // Получаем информацию о биллинге для проверки canUseOwnKeys
-  const { data: billingUsage } = useGetBillingUsageQuery(undefined, {
-    skip: !currentProjectId,
-  });
-
-  const canUseOwnKeys = billingUsage?.features.canUseOwnKeys ?? false;
 
   // Получаем список баз знаний
   const { data: knowledgeBases = [], isLoading: isLoadingKBs } =
@@ -540,7 +532,7 @@ export const AgentNodeForm = ({
           </div>
 
           {/* Credential */}
-          {canUseOwnKeys && credentialTypeForProvider && (
+          {credentialTypeForProvider && (
             <div className="flex justify-between gap-4 items-center">
               <Label htmlFor="agent-credential">
                 {t("nodeForms.agent.credential")}
@@ -1278,7 +1270,6 @@ export const AgentNodeForm = ({
                         index={index}
                         value={fb}
                         providerList={providerList}
-                        canUseOwnKeys={canUseOwnKeys}
                         hasSystemKeyForProvider={hasSystemKeyForProvider}
                         onChange={(next) => handleFallbackChange(index, next)}
                         onRemove={() => handleRemoveFallback(index)}

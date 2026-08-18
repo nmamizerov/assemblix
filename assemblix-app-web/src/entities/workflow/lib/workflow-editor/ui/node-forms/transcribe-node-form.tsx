@@ -19,10 +19,7 @@ import {
   CredentialSelect,
   getCredentialTypeForProvider,
 } from "@/entities/credential";
-import { useGetBillingUsageQuery } from "@/entities/billing";
 import { useGetServerConfigQuery } from "@/entities/config";
-import { useSelector } from "react-redux";
-import { selectCurrentProjectId } from "@/entities/organization";
 import type { VoiceModelConfig } from "@/entities/workflow/model/types";
 
 type TranscribeNodeConfig = {
@@ -102,11 +99,6 @@ export const TranscribeNodeForm = ({
   const handleSaveAsUserMessageChange = (checked: boolean) =>
     setFormData((prev) => ({ ...prev, saveAsUserMessage: checked }));
 
-  const currentProjectId = useSelector(selectCurrentProjectId);
-  const { data: billingUsage } = useGetBillingUsageQuery(undefined, {
-    skip: !currentProjectId,
-  });
-  const canUseOwnKeys = billingUsage?.features.canUseOwnKeys ?? false;
   const { data: serverConfig } = useGetServerConfigQuery();
   const voiceCredentialType = voiceProvider
     ? getCredentialTypeForProvider(voiceProvider)
@@ -150,7 +142,7 @@ export const TranscribeNodeForm = ({
               </SelectContent>
             </Select>
           </div>
-          {canUseOwnKeys && voiceCredentialType && (
+          {voiceCredentialType && (
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="transcribe-voice-credential" className="text-xs">
                 {t("nodeForms.transcribe.voiceCredential")}
