@@ -97,14 +97,14 @@ class CreditService:
         total_usd = system_key_cost_usd + system_voice_cost_usd
 
         if total_credits > 0:
-            if organization.credits_balance < total_credits:
+            # Atomic: insufficiency is reported by the repository (no row written),
+            # so parallel executions cannot spend the same credits twice.
+            deducted = await self._org_repo.deduct_credits(organization_id, total_credits)
+            if not deducted:
                 raise InsufficientCreditsError(
                     required=total_credits,
                     available=organization.credits_balance,
                 )
-
-            organization.credits_granted_balance -= total_credits
-            await self._org_repo.update(organization)
 
         full_metadata = {
             "system_key_cost_usd": float(system_key_cost_usd),
@@ -160,9 +160,9 @@ class CreditService:
         plan_config = get_plan_config(organization.plan)
         credits_to_grant = Decimal(plan_config.credits_per_month)
 
-        organization.credits_granted_balance = credits_to_grant
-        organization.credits_period_start = datetime.utcnow().date()
-        await self._org_repo.update(organization)
+        await self._org_repo.reissue_granted_credits(
+            organization_id, credits_to_grant, period_start=datetime.utcnow().date()
+        )
 
         credits_usd = credit_config.credits_to_usd(credits_to_grant)
         await self._tx_repo.create(

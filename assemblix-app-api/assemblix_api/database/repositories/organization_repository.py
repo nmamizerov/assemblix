@@ -3,9 +3,11 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
+from datetime import date
+from decimal import Decimal
 from uuid import UUID
 
-from sqlalchemy import select
+from sqlalchemy import func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from assemblix_api.database.models.organization import Organization
@@ -47,3 +49,54 @@ class OrganizationRepository(BaseRepository[Organization]):
         stmt = select(self._model).where(self._model.slug == slug)
         result = await self._session.execute(stmt)
         return result.scalar_one_or_none() is not None
+
+    async def deduct_credits(self, organization_id: UUID, amount: Decimal) -> bool:
+        """Spend `amount`, granted part first. False when the balance is short (no write).
+
+        Insufficiency is detected by the affected row count, not by a prior read, so
+        parallel deductions cannot oversell the balance. Every right-hand side below
+        reads the pre-update row, which is what lets the purchased part reference the
+        old granted value.
+        """
+        stmt = (
+            update(Organization)
+            .where(
+                Organization.id == organization_id,
+                Organization.credits_granted_balance + Organization.credits_purchased_balance
+                >= amount,
+            )
+            .values(
+                credits_granted_balance=func.greatest(
+                    Organization.credits_granted_balance - amount, 0
+                ),
+                credits_purchased_balance=Organization.credits_purchased_balance
+                - func.greatest(amount - Organization.credits_granted_balance, 0),
+            )
+            .execution_options(synchronize_session="fetch")
+        )
+        result = await self._session.execute(stmt)
+        return result.rowcount == 1  # type: ignore[attr-defined]  # rowcount available on CursorResult for DML statements
+
+    async def add_purchased_credits(self, organization_id: UUID, amount: Decimal) -> None:
+        """Credit a purchase. Purchased credits never expire."""
+        await self._session.execute(
+            update(Organization)
+            .where(Organization.id == organization_id)
+            .values(credits_purchased_balance=Organization.credits_purchased_balance + amount)
+            .execution_options(synchronize_session="fetch")
+        )
+
+    async def reissue_granted_credits(
+        self, organization_id: UUID, amount: Decimal, period_start: date | None
+    ) -> None:
+        """Overwrite the granted part with the plan allowance; leave purchases untouched."""
+        values: dict = {"credits_granted_balance": amount}
+        if period_start is not None:
+            values["credits_period_start"] = period_start
+
+        await self._session.execute(
+            update(Organization)
+            .where(Organization.id == organization_id)
+            .values(**values)
+            .execution_options(synchronize_session="fetch")
+        )
