@@ -9,9 +9,11 @@ import type {
   PlanInfo,
   AllPlansResponse,
   CreditsInfoResponse,
+  CreditPacksResponse,
   TransactionsResponse,
   TransactionsQueryParams,
   SubscribeRequest,
+  PurchaseCreditPackRequest,
   SubscribeResponse,
   PaymentStatusResponse,
 } from "../model/types";
@@ -51,6 +53,12 @@ export const billingApi = baseApi.injectEndpoints({
       }),
       providesTags: ["Billing"],
     }),
+    getBillingPacks: build.query<CreditPacksResponse, void>({
+      query: () => ({
+        url: "/billing/packs",
+        method: "GET",
+      }),
+    }),
     getTransactions: build.query<
       TransactionsResponse,
       TransactionsQueryParams & { organizationId?: string }
@@ -79,6 +87,17 @@ export const billingApi = baseApi.injectEndpoints({
       }),
       invalidatesTags: ["Billing"],
     }),
+    purchaseCreditPack: build.mutation<
+      SubscribeResponse,
+      PurchaseCreditPackRequest
+    >({
+      query: (body) => ({
+        url: "/payments/credits",
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: ["Billing"],
+    }),
     getPaymentStatus: build.query<PaymentStatusResponse, string>({
       query: (paymentId) => ({
         url: `/payments/${paymentId}/status`,
@@ -92,8 +111,10 @@ export const {
   useGetBillingUsageQuery,
   useGetBillingPlanQuery,
   useGetBillingPlansQuery,
+  useGetBillingPacksQuery,
   useGetCreditsQuery,
   useGetTransactionsQuery,
   useSubscribeToPaymentMutation,
+  usePurchaseCreditPackMutation,
   useGetPaymentStatusQuery,
 } = billingApi;

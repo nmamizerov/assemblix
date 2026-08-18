@@ -11,15 +11,15 @@ import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 
 interface LimitWarningBannerProps {
-  type: "agents" | "credits";
   current: number;
   limit: number;
   percentage: number;
   dismissible?: boolean;
 }
 
+/** Low-balance warning: the only case left once agent caps and feature gates
+ *  were removed — there is no other limit left to warn about. */
 export const LimitWarningBanner = ({
-  type,
   current,
   limit,
   percentage,
@@ -48,17 +48,17 @@ export const LimitWarningBanner = ({
         <div className="flex-1">
           <h4 className={`font-semibold ${textColor}`}>
             {isCritical
-              ? t(`billing.limitWarning.critical.${type}.title`)
-              : t(`billing.limitWarning.warning.${type}.title`)}
+              ? t("billing.limitWarning.critical.credits.title")
+              : t("billing.limitWarning.warning.credits.title")}
           </h4>
           <p className="mt-1 text-sm text-muted-foreground">
             {isCritical
-              ? t(`billing.limitWarning.critical.${type}.description`, {
+              ? t("billing.limitWarning.critical.credits.description", {
                   current: formatNumber(current),
                   limit: formatNumber(limit),
                   percentage: Math.round(percentage),
                 })
-              : t(`billing.limitWarning.warning.${type}.description`, {
+              : t("billing.limitWarning.warning.credits.description", {
                   current: formatNumber(current),
                   limit: formatNumber(limit),
                   percentage: Math.round(percentage),

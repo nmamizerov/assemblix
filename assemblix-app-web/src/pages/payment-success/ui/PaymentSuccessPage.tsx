@@ -88,7 +88,7 @@ export const PaymentSuccessPage = () => {
             </h1>
             <p className="text-muted-foreground">
               {t("billing.payments.successPage.successHint", {
-                plan: paymentData.targetPlan.toUpperCase(),
+                plan: paymentData.targetPlan?.toUpperCase() ?? "",
               })}
             </p>
           </div>
@@ -99,7 +99,7 @@ export const PaymentSuccessPage = () => {
                   {t("billing.pricing.title")}:
                 </span>
                 <span className="font-medium text-foreground">
-                  {paymentData.targetPlan.toUpperCase()}
+                  {paymentData.targetPlan?.toUpperCase() ?? ""}
                 </span>
               </div>
               <div className="flex justify-between">
@@ -107,7 +107,7 @@ export const PaymentSuccessPage = () => {
                   {t("billing.payments.confirmDialog.price")}:
                 </span>
                 <span className="font-medium text-foreground">
-                  {formatNumber(paymentData.amount / 100)}₽
+                  ${formatNumber(paymentData.amount / 100)}
                 </span>
               </div>
             </div>

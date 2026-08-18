@@ -1072,7 +1072,7 @@
       },
       "credits": {
         "title": "Créditos y ahorro",
-        "description": "Cada ejecución de un agente consume créditos de tu saldo. ¿Quieres gastar menos? Conecta tus propias claves API de OpenAI, DeepSeek u otros proveedores — entonces solo 1 crédito por solicitud en lugar del costo de la llamada al LLM. Disponible en los planes PRO y BUSINESS"
+        "description": "Cada ejecución de un agente consume créditos de tu saldo. ¿Quieres gastar menos? Conecta tus propias claves API de OpenAI, DeepSeek u otros proveedores para controlar los costos directamente"
       },
       "publish": {
         "title": "¿Listo para producción?",
@@ -1087,22 +1087,12 @@
     }
   },
   "billing": {
-    "unlimited": "Ilimitado",
     "upgrade": "Mejorar",
     "upgradePlan": "Mejorar plan",
-    "upgradeToPlan": "Pasar a {{plan}}",
-    "availableInPlan": "Disponible en {{plan}}",
     "viewPlans": "Ver planes",
-    "highUsage": "Tienes un uso elevado de recursos",
-    "criticalUsage": "Has alcanzado un nivel crítico de uso",
-    "nextReset": "Los límites se restablecerán el {{date}}",
     "section": {
       "title": "Facturación y uso",
       "subtitle": "Gestiona tu plan de facturación y controla el uso de recursos"
-    },
-    "usage": {
-      "agents": "Agentes",
-      "credits": "Créditos"
     },
     "pricing": {
       "title": "Elige tu plan",
@@ -1111,33 +1101,12 @@
       "perMonth": "mes",
       "currentPlan": "Plan actual",
       "getStarted": "Empieza gratis",
-      "contactSales": "Contáctanos",
       "subscribe": "Suscribirse",
-      "business": {
-        "price": "Bajo consulta",
-        "description": "Condiciones individuales para grandes empresas",
-        "features": {
-          "consulting": "Consultoría experta y auditoría de procesos",
-          "integration": "Integración llave en mano y soporte de implementación",
-          "sla": "SLA personal y gerente dedicado",
-          "onpremise": "Opción de despliegue On-Premise"
-        }
-      },
-      "agents_one": "{{count}} agente",
-      "agents_other": "{{count}} agentes",
-      "unlimitedAgents": "Agentes ilimitados",
-      "agentsDesc": "Crea agentes de IA",
       "creditsPerMonth": "créditos/mes",
       "creditsDesc": "Úsalos para ejecutar agentes",
       "rpmLimit_one": "{{count}} solicitud/min",
       "rpmLimit_other": "{{count}} solicitudes/min",
       "rpmDesc": "Tasa máxima de solicitudes a la API",
-      "unlimitedRequests": "Solicitudes ilimitadas con tus claves",
-      "unlimitedRequestsDesc": "0 créditos al usar tus propias claves API",
-      "ownApiKeys": "Claves API propias",
-      "ownApiKeysDesc": "Usa tus propias claves de proveedores de LLM",
-      "projectVariables": "Variables del proyecto",
-      "projectVariablesDesc": "Almacena secretos y el estado de los clientes con client_id",
       "support": {
         "community": "Soporte de la comunidad",
         "email_24h": "Soporte por correo (24 h)",
@@ -1156,54 +1125,38 @@
         "sessionManagement": "Gestión de sesiones",
         "logsMonitoring": "Registros y monitoreo"
       },
-      "note": "Contáctanos para pasar a un plan de pago u obtener una solución empresarial"
-    },
-    "features": {
-      "projectVariables": {
-        "name": "Variables del proyecto",
-        "description": "Almacena claves API, secretos y el estado de los clientes. Pasa client_id — y todos los agentes acceden a los datos compartidos sin perder el contexto entre conversaciones."
-      }
+      "note": "Compra un paquete de créditos en cualquier momento para recargar tu saldo — los créditos comprados nunca caducan.",
+      "concurrentCalls_one": "{{count}} llamada simultánea",
+      "concurrentCalls_other": "{{count}} llamadas simultáneas",
+      "concurrentCallsDesc": "Máximo de llamadas de voz simultáneas en tu plan"
     },
     "errors": {
       "limitReached": "Límite de uso alcanzado",
-      "agentsLimitReached": "¡Hora de escalar! 🚀",
-      "agentsLimitReachedHint": "Has alcanzado el límite de agentes de tu plan actual. Pasa a PRO o BUSINESS — obtén más agentes, solicitudes ilimitadas y variables del proyecto para escenarios complejos.",
-      "creditsLimitReached": "Sin créditos 💳",
       "creditsInsufficient": "Créditos insuficientes para ejecutar",
-      "creditsInsfficientHint": "Conecta tus propias claves API (plan PRO+) y paga solo 1 crédito por solicitud. O pasa a un plan con más créditos.",
+      "creditsInsfficientHint": "Compra un paquete de créditos para recargar al instante, o mejora a un plan con más créditos mensuales.",
       "featureNotAvailable": "Esta función no está disponible en tu plan actual",
       "rateLimitExceeded": "Límite de solicitudes excedido",
       "rateLimitHint": "Has excedido el límite de {{rpm}} solicitudes por minuto. Reduce la frecuencia de las solicitudes o mejora tu plan."
     },
     "limitWarning": {
       "warning": {
-        "agents": {
-          "title": "Pronto necesitarás más agentes",
-          "description": "Usados {{current}} de {{limit}} agentes ({{percentage}}%). Considera mejorar tu plan para escalar tus proyectos."
-        },
         "credits": {
           "title": "Los créditos se están agotando",
-          "description": "Quedan {{current}} de {{limit}} créditos ({{percentage}}%). Conecta tus propias claves API o pasa a un plan con más créditos."
+          "description": "Quedan {{current}} de {{limit}} créditos ({{percentage}}%). Compra un paquete de créditos o mejora a un plan con más créditos."
         }
       },
       "critical": {
-        "agents": {
-          "title": "¡Hora de mejorar el plan! 🚀",
-          "description": "Usados {{current}} de {{limit}} agentes ({{percentage}}%). Pasa a PRO o BUSINESS ahora para seguir construyendo."
-        },
         "credits": {
           "title": "¡Casi sin créditos! 💳",
-          "description": "Quedan {{current}} de {{limit}} créditos ({{percentage}}%). Mejora tu plan o conecta claves API para ahorrar costos."
+          "description": "Quedan {{current}} de {{limit}} créditos ({{percentage}}%). Compra un paquete de créditos o mejora tu plan para seguir ejecutando agentes."
         }
       }
     },
     "credits": {
       "balance": "Saldo de créditos",
-      "current": "Saldo actual",
-      "used": "Usados",
-      "remaining": "Restantes",
+      "granted": "Otorgados",
+      "purchased": "Comprados",
       "nextRefill": "Próxima recarga",
-      "refillIn": "Recarga en",
       "dateUnknown": "Fecha desconocida",
       "transactions": "Historial de transacciones",
       "totalTransactions": "Total de transacciones",
@@ -1221,12 +1174,6 @@
         "type": "Tipo de transacción",
         "period": "Período"
       }
-    },
-    "systemKeys": {
-      "title": "Claves API del sistema",
-      "description": "Se usan las claves del sistema de los proveedores de LLM",
-      "upgradeMessage": "Las claves API propias están disponibles en los planes STARTER, PRO y BUSINESS",
-      "benefit": "Al usar tus propias claves, no se descuentan créditos por las solicitudes"
     },
     "payments": {
       "confirmDialog": {
@@ -1252,6 +1199,19 @@
         "timeout": "No se pudo verificar el estado",
         "timeoutHint": "Si el dinero fue cobrado, el plan se activará automáticamente"
       }
+    },
+    "limits": {
+      "rpm": "Solicitudes por minuto",
+      "rpmDesc": "Tasa máxima de solicitudes a la API en tu plan",
+      "concurrentCalls": "Llamadas de voz simultáneas",
+      "concurrentCallsDesc": "Máximo de llamadas de voz simultáneas en tu plan"
+    },
+    "packs": {
+      "title": "¿Necesitas más créditos?",
+      "subtitle": "Compra un paquete de créditos puntual en cualquier momento — recarga tu saldo y nunca caduca.",
+      "credits": "créditos",
+      "buy": "Comprar",
+      "purchaseSuccess": "¡Créditos añadidos a tu saldo!"
     }
   },
   "variableForm": {

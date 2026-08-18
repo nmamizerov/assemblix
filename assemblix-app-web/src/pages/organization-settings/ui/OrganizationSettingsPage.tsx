@@ -9,6 +9,8 @@ import {
   Building2,
   Crown,
   CreditCard,
+  Clock,
+  Phone,
 } from "lucide-react";
 import { Button } from "@/shared/ui/button";
 import { useFormatDate } from "@/shared/lib/format-date";
@@ -249,53 +251,47 @@ export const OrganizationSettingsPage = () => {
               </div>
 
               {/* Usage Stats */}
-              <div className="grid gap-4 md:grid-cols-2">
-                <UsageProgressCard
-                  title={t("billing.usage.agents")}
-                  current={billingUsage.usage.agents.current}
-                  limit={billingUsage.usage.agents.limit}
-                  icon={<Users className="h-5 w-5" />}
-                />
+              <div className="grid gap-4 md:grid-cols-3">
                 <CreditsBalanceCard
-                  creditsBalance={billingUsage.credits?.creditsBalance ?? 0}
-                  creditsPerMonth={billingUsage.credits?.creditsPerMonth ?? 0}
-                  nextReset={billingUsage.credits?.nextReset ?? ""}
+                  creditsBalance={billingUsage.credits.creditsBalance}
+                  creditsGranted={billingUsage.credits.creditsGranted}
+                  creditsPurchased={billingUsage.credits.creditsPurchased}
+                  nextReset={billingUsage.credits.nextReset}
+                  className="md:col-span-1"
+                />
+                <UsageProgressCard
+                  title={t("billing.limits.rpm")}
+                  value={billingUsage.limits.rpmLimit}
+                  description={t("billing.limits.rpmDesc")}
+                  icon={<Clock className="h-5 w-5" />}
+                />
+                <UsageProgressCard
+                  title={t("billing.limits.concurrentCalls")}
+                  value={billingUsage.limits.concurrentCalls}
+                  description={t("billing.limits.concurrentCallsDesc")}
+                  icon={<Phone className="h-5 w-5" />}
                 />
               </div>
 
-              {/* Warning Banners */}
+              {/* Low balance warning */}
               {(() => {
-                const agentsStatus = calculateUsageStatus(
-                  billingUsage.usage.agents.current,
-                  billingUsage.usage.agents.limit
-                );
                 const creditsUsed =
-                  (billingUsage.credits?.creditsPerMonth ?? 0) -
-                  (billingUsage.credits?.creditsBalance ?? 0);
+                  billingUsage.credits.creditsPerMonth -
+                  billingUsage.credits.creditsBalance;
                 const creditsStatus = calculateUsageStatus(
                   creditsUsed,
-                  billingUsage.credits?.creditsPerMonth ?? 0
+                  billingUsage.credits.creditsPerMonth
                 );
 
+                if (creditsStatus.percentage < 80) return null;
+
                 return (
-                  <div className="mt-4 space-y-3">
-                    {!agentsStatus.isUnlimited &&
-                      agentsStatus.percentage >= 80 && (
-                        <LimitWarningBanner
-                          type="agents"
-                          current={billingUsage.usage.agents.current}
-                          limit={billingUsage.usage.agents.limit!}
-                          percentage={agentsStatus.percentage}
-                        />
-                      )}
-                    {creditsStatus.percentage >= 80 && (
-                      <LimitWarningBanner
-                        type="credits"
-                        current={billingUsage.credits?.creditsBalance ?? 0}
-                        limit={billingUsage.credits?.creditsPerMonth ?? 0}
-                        percentage={creditsStatus.percentage}
-                      />
-                    )}
+                  <div className="mt-4">
+                    <LimitWarningBanner
+                      current={billingUsage.credits.creditsBalance}
+                      limit={billingUsage.credits.creditsPerMonth}
+                      percentage={creditsStatus.percentage}
+                    />
                   </div>
                 );
               })()}

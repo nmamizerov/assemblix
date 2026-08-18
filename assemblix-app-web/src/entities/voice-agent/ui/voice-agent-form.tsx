@@ -22,7 +22,6 @@ import {
   CredentialSelect,
   getCredentialTypeForProvider,
 } from "@/entities/credential";
-import { useGetBillingUsageQuery } from "@/entities/billing";
 import { useGetKnowledgeBasesQuery } from "@/entities/knowledge-base";
 import { useGetWorkflowsQuery } from "@/entities/workflow";
 import { selectCurrentProjectId } from "@/entities/organization";
@@ -76,13 +75,6 @@ export const VoiceAgentForm = ({ draft, errors, onChange }: VoiceAgentFormProps)
     { skip: !draft.provider }
   );
   const credentialType = getCredentialTypeForProvider(draft.provider);
-  // Matches voice-output-picker.tsx: the credential field only makes sense
-  // for plans that can actually use their own key — the backend otherwise
-  // silently ignores credentialId and falls back to the system key.
-  const { data: billingUsage } = useGetBillingUsageQuery(undefined, {
-    skip: !currentProjectId,
-  });
-  const canUseOwnKeys = billingUsage?.features.canUseOwnKeys ?? false;
 
   const handleField = <K extends keyof VoiceAgentDraft>(
     field: K,
@@ -298,7 +290,7 @@ export const VoiceAgentForm = ({ draft, errors, onChange }: VoiceAgentFormProps)
               </SelectContent>
             </Select>
           </div>
-          {canUseOwnKeys && credentialType && (
+          {credentialType && (
             <div className="space-y-2 sm:col-span-2">
               <Label>{t("voiceAgents.fields.credential")}</Label>
               <CredentialSelect

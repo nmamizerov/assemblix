@@ -7,7 +7,6 @@ import {
   useUpdateProjectMutation,
 } from "@/entities/project";
 import { selectCurrentProjectId } from "@/entities/organization";
-import { useGetBillingUsageQuery, FeatureLockedCard } from "@/entities/billing";
 import { Button } from "@/shared/ui/button";
 import {
   Dialog,
@@ -31,14 +30,9 @@ export const ProjectSettingsPage = () => {
     skip: !currentProjectId,
   });
 
-  const { data: billingUsage } = useGetBillingUsageQuery(undefined, {
-    skip: !currentProjectId,
-  });
-
   const [updateProject, { isLoading: isUpdating }] = useUpdateProjectMutation();
 
   const stateSchema = project?.stateSchema || [];
-  const hasProjectVariables = billingUsage?.features.projectVariables ?? true;
 
   const handleAddVariable = async (data: VariableFormData) => {
     try {
@@ -190,26 +184,14 @@ export const ProjectSettingsPage = () => {
                 {t("projectSettings.stateSchemaDescription")}
               </p>
             </div>
-            {hasProjectVariables && (
-              <Button onClick={() => setAddVariableOpen(true)} size="lg">
-                <Plus className="mr-2 h-5 w-5" />
-                {t("projectSettings.addVariable")}
-              </Button>
-            )}
+            <Button onClick={() => setAddVariableOpen(true)} size="lg">
+              <Plus className="mr-2 h-5 w-5" />
+              {t("projectSettings.addVariable")}
+            </Button>
           </div>
         </div>
 
-        {!hasProjectVariables ? (
-          <div className="p-6">
-            <FeatureLockedCard
-              featureName={t("billing.features.projectVariables.name")}
-              featureDescription={t(
-                "billing.features.projectVariables.description"
-              )}
-              requiredPlan="starter"
-            />
-          </div>
-        ) : stateSchema.length === 0 ? (
+        {stateSchema.length === 0 ? (
           <div className="flex min-h-[200px] flex-col items-center justify-center p-6 text-center">
             <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
               <SettingsIcon className="h-8 w-8 text-primary" />
