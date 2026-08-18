@@ -10,6 +10,7 @@ import {
 } from "@/entities/workflow";
 import { selectCurrentProjectId } from "@/entities/organization";
 import { useGetBillingUsageQuery } from "@/entities/billing";
+import { useGetServerConfigQuery } from "@/entities/config";
 import { useOnboarding } from "@/features/onboarding-v2";
 import { toast } from "sonner";
 import { cn } from "@/shared/lib/utils";
@@ -35,11 +36,15 @@ export const HomePage = () => {
     skip: !currentProjectId,
   });
 
+  const { data: serverConfig } = useGetServerConfigQuery();
+
   const showPulse = workflows.length === 0;
 
-  // Проверка баланса кредитов
+  // Проверка баланса кредитов. На self-host (billingEnabled = false) баланс
+  // не пополняется и ничего не ограничивает — блокировать по нему нельзя.
   const creditsBalance = billingUsage?.credits?.creditsBalance ?? 0;
-  const isCreditsInsufficient = creditsBalance < 1;
+  const isCreditsInsufficient =
+    (serverConfig?.billingEnabled ?? false) && creditsBalance < 1;
 
   const handleCreateWorkflow = async () => {
     if (!currentProjectId) {

@@ -36,6 +36,7 @@ import {
   calculateUsageStatus,
 } from "@/entities/billing";
 import { useMeQuery } from "@/entities/session";
+import { useGetServerConfigQuery } from "@/entities/config";
 import { AddMemberModal } from "./AddMemberModal";
 import { DeleteMemberDialog } from "./DeleteMemberDialog";
 import { toast } from "sonner";
@@ -64,6 +65,8 @@ export const OrganizationSettingsPage = () => {
   const { data: billingUsage } = useGetBillingUsageQuery(undefined, {
     skip: !currentOrganizationId,
   });
+
+  const { data: serverConfig } = useGetServerConfigQuery();
 
   const [transactionsPage, setTransactionsPage] = useState(1);
 
@@ -273,28 +276,31 @@ export const OrganizationSettingsPage = () => {
                 />
               </div>
 
-              {/* Low balance warning */}
-              {(() => {
-                const creditsUsed =
-                  billingUsage.credits.creditsPerMonth -
-                  billingUsage.credits.creditsBalance;
-                const creditsStatus = calculateUsageStatus(
-                  creditsUsed,
-                  billingUsage.credits.creditsPerMonth
-                );
+              {/* Low balance warning. Only meaningful where the balance is actually
+                  enforced — on self-host it never refills, so the banner would be
+                  permanent and would point at an upgrade that does not exist. */}
+              {serverConfig?.billingEnabled &&
+                (() => {
+                  const creditsUsed =
+                    billingUsage.credits.creditsPerMonth -
+                    billingUsage.credits.creditsBalance;
+                  const creditsStatus = calculateUsageStatus(
+                    creditsUsed,
+                    billingUsage.credits.creditsPerMonth
+                  );
 
-                if (creditsStatus.percentage < 80) return null;
+                  if (creditsStatus.percentage < 80) return null;
 
-                return (
-                  <div className="mt-4">
-                    <LimitWarningBanner
-                      current={billingUsage.credits.creditsBalance}
-                      limit={billingUsage.credits.creditsPerMonth}
-                      percentage={creditsStatus.percentage}
-                    />
-                  </div>
-                );
-              })()}
+                  return (
+                    <div className="mt-4">
+                      <LimitWarningBanner
+                        current={billingUsage.credits.creditsBalance}
+                        limit={billingUsage.credits.creditsPerMonth}
+                        percentage={creditsStatus.percentage}
+                      />
+                    </div>
+                  );
+                })()}
 
               {/* Transactions List */}
               {transactions && transactions.total > 0 && (
