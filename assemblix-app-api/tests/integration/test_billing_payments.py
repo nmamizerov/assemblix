@@ -125,3 +125,24 @@ async def test_pack_tops_up_and_subscription_upgrades(
     kinds = [t["type"] for t in transactions]
     assert kinds.count(CreditTransactionType.MANUAL_TOPUP.value) == 1
     assert kinds.count(CreditTransactionType.PLAN_GRANT.value) == 1
+
+
+async def test_repeated_pack_confirmation_credits_once(
+    payments_setup: SimpleNamespace, credit_service: Any, organization_repository: Any
+) -> None:
+    """Paddle fires both transaction.paid and transaction.completed for one purchase."""
+    # Arrange
+    org_id = payments_setup.organization_id
+    pack_payment = await payments_setup.create_pack("m")
+
+    # Act: the same confirmation arrives twice (two events, or a webhook retry).
+    await payments_setup.confirm(pack_payment)
+    await payments_setup.confirm(pack_payment)
+
+    # Assert: money is created once, not once per event.
+    org = await organization_repository.get_by_id(org_id)
+    assert org.credits_purchased_balance == Decimal("70000")  # pack M, credited once
+
+    transactions, _ = await credit_service.get_transactions(org_id)
+    kinds = [t["type"] for t in transactions]
+    assert kinds.count(CreditTransactionType.MANUAL_TOPUP.value) == 1

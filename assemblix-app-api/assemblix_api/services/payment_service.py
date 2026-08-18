@@ -221,13 +221,19 @@ class PaymentService:
             payment.meta = payment.meta or {}
             payment.meta["paddle_subscription_id"] = subscription_id
 
+        # Read before the write: Paddle sends both transaction.paid and
+        # transaction.completed for a single purchase, and retries either. Whatever
+        # a confirmation does to the balance must happen on the first one only —
+        # add_purchased_credits is additive, so a second pass mints free credits.
+        was_confirmed = payment.status == PaymentStatus.CONFIRMED
+
         await self._payment_repo.update_status(
             payment=payment,
             status=new_status,
             external_payment_id=payment_id_str,
         )
 
-        if new_status == PaymentStatus.CONFIRMED:
+        if new_status == PaymentStatus.CONFIRMED and not was_confirmed:
             if payment.kind == PaymentKind.CREDIT_PACK:
                 await self._credit_pack_purchased(payment)
             else:
