@@ -51,7 +51,7 @@ class CreditService:
     async def check_balance(
         self,
         organization_id: UUID,
-        required_credits: int,
+        required_credits: Decimal,
     ) -> None:
         """Raise InsufficientCreditsError if the org balance is below required_credits."""
         await self.ensure_current_period(organization_id)
@@ -62,7 +62,7 @@ class CreditService:
 
         if organization.credits_balance < required_credits:
             raise InsufficientCreditsError(
-                required=Decimal(required_credits),
+                required=required_credits,
                 available=organization.credits_balance,
             )
 
@@ -79,38 +79,39 @@ class CreditService:
     ) -> dict:
         """Deduct credits for a workflow execution.
 
-        Only system-key LLM usage and system-key voice (TTS) usage are charged
-        (with margin); own-key usage is free (the user pays the provider directly).
-        No per-request fee.
+        Every execution pays the fixed per-request fee, regardless of whose keys are
+        used. System-key LLM usage and system-key voice (TTS) usage are additionally
+        charged with margin; own-key usage is free (the user pays the provider
+        directly) beyond that fee.
         """
+        if not get_settings().billing_enabled:
+            return {"total_credits": Decimal(0), "fee_credits": Decimal(0)}
+
         await self.ensure_current_period(organization_id)
 
-        organization = await self._org_repo.get_by_id(organization_id)
-        if not organization:
-            raise ValueError(f"Organization {organization_id} not found")
-
-        # System keys: charge with margin. Own keys: not charged.
-        system_key_credits: Decimal = Decimal(0)
-        if system_key_cost_usd > 0:
-            system_key_credits = credit_config.usd_to_credits(system_key_cost_usd, with_margin=True)
-        own_key_credits: Decimal = Decimal(0)
-
-        voice_credits: Decimal = Decimal(0)
-        if system_voice_cost_usd > 0:
-            voice_credits = credit_config.usd_to_credits(system_voice_cost_usd, with_margin=True)
-
-        total_credits = system_key_credits + voice_credits
+        fee_credits = credit_config.request_fee_credits
+        system_key_credits: Decimal = (
+            credit_config.usd_to_credits(system_key_cost_usd, with_margin=True)
+            if system_key_cost_usd > 0
+            else Decimal(0)
+        )
+        voice_credits: Decimal = (
+            credit_config.usd_to_credits(system_voice_cost_usd, with_margin=True)
+            if system_voice_cost_usd > 0
+            else Decimal(0)
+        )
+        total_credits = fee_credits + system_key_credits + voice_credits
         total_usd = system_key_cost_usd + system_voice_cost_usd
 
-        if total_credits > 0:
-            # Atomic: insufficiency is reported by the repository (no row written),
-            # so parallel executions cannot spend the same credits twice.
-            deducted = await self._org_repo.deduct_credits(organization_id, total_credits)
-            if not deducted:
-                raise InsufficientCreditsError(
-                    required=total_credits,
-                    available=organization.credits_balance,
-                )
+        # Atomic: insufficiency is reported by the repository (no row written), so
+        # parallel executions cannot spend the same credits twice, and a partial
+        # charge (fee without margin, or vice versa) is impossible.
+        if not await self._org_repo.deduct_credits(organization_id, total_credits):
+            organization = await self._org_repo.get_by_id(organization_id)
+            raise InsufficientCreditsError(
+                required=total_credits,
+                available=organization.credits_balance if organization else Decimal(0),
+            )
 
         full_metadata = {
             "system_key_cost_usd": float(system_key_cost_usd),
@@ -120,6 +121,17 @@ class CreditService:
             "margin_multiplier": float(credit_config.margin_multiplier),
             **(metadata or {}),
         }
+
+        # The per-request fee is charged unconditionally.
+        await self._tx_repo.create(
+            organization_id=organization_id,
+            amount_credits=-fee_credits,
+            amount_usd=-credit_config.request_fee_usd,
+            type=CreditTransactionType.REQUEST_FEE,
+            execution_id=execution_id,
+            description=f"Platform fee for execution {execution_id}",
+            meta=full_metadata,
+        )
 
         # Record a transaction only when system keys were actually charged
         if system_key_credits > 0:
@@ -146,8 +158,9 @@ class CreditService:
             )
 
         return {
+            "fee_credits": fee_credits,
             "system_key_credits": system_key_credits,
-            "own_key_credits": own_key_credits,
+            "own_key_credits": Decimal(0),
             "total_credits": total_credits,
             "system_key_usd": system_key_cost_usd,
             "own_key_usd": own_key_cost_usd,

@@ -16,8 +16,13 @@ from assemblix_api.database.repositories.organization_repository import Organiza
 from assemblix_api.database.repositories.workflow_repository import WorkflowRepository
 
 
-async def test_deduct_writes_voice_usage_row(auth_user, db_session) -> None:
-    """system_voice_cost_usd → a VOICE_USAGE ledger row and a balance decrement."""
+async def test_deduct_writes_voice_usage_row(billing_enabled, auth_user, db_session) -> None:
+    """system_voice_cost_usd → a VOICE_USAGE ledger row and a balance decrement.
+
+    Requests ``billing_enabled``: Task 5 made ``deduct_for_execution`` a no-op while
+    billing is disabled (the default in tests), so this test must force it on for its
+    charge to actually run.
+    """
     # Arrange — top up the org's balance; execution_id must reference a real row (FK).
     org_repo = OrganizationRepository(db_session)
     tx_repo = CreditTransactionRepository(db_session)

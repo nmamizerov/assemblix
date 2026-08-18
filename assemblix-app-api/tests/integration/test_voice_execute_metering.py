@@ -91,9 +91,14 @@ async def _fake_synth(*, text, provider, model, voice_id, api_key):
 
 
 async def test_voice_run_meters_system_key_and_scrubs_audio(
-    api_client, mock_llm, mocker, monkeypatch
+    billing_enabled, api_client, mock_llm, mocker, monkeypatch
 ) -> None:
-    """A system-key voice run: response has audio, DB row is scrubbed, VOICE_USAGE recorded."""
+    """A system-key voice run: response has audio, DB row is scrubbed, VOICE_USAGE recorded.
+
+    Requests ``billing_enabled``: Task 5 made ``deduct_for_execution`` a no-op while
+    billing is disabled (the default in tests), so this test must force it on for its
+    charge to actually run.
+    """
     # Arrange
     from assemblix_api.core.settings import get_settings
 

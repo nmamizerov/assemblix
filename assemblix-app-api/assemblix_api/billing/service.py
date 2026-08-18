@@ -10,13 +10,12 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 from uuid import UUID
 
-from assemblix_api.billing.plans import get_plan_config
+from assemblix_api.billing.plans import credit_config, get_plan_config
 from assemblix_api.dto.responses.billing import (
     CreditsInfo,
     LimitsInfo,
     OrganizationUsageResponse,
 )
-from assemblix_api.enums import PlanTier
 
 if TYPE_CHECKING:
     from datetime import datetime
@@ -43,7 +42,7 @@ class BillingService:
         self._rate_limit_service = rate_limit_service
 
     async def check_and_deduct_credits(self, organization_id: UUID) -> None:
-        """Pre-execution gate: enforce the RPM limit, plus a credit-balance check on FREE.
+        """Pre-execution gate: enforce the RPM limit, plus a fee-sized balance check.
 
         Actual credit deduction happens after execution in WorkflowExecutor.
         """
@@ -57,13 +56,12 @@ class BillingService:
             plan=organization.plan,
         )
 
-        # 2. Credit balance check only for FREE: it always uses system keys, so a minimum
-        # balance is required. Paid plans may use their own keys (zero deduction).
-        if organization.plan == PlanTier.FREE:
-            await self._credit_service.check_balance(
-                organization_id=organization_id,
-                required_credits=1,
-            )
+        # 2. Every run costs at least the per-request fee, regardless of whose keys
+        # are used, so every plan needs at least that much balance to start.
+        await self._credit_service.check_balance(
+            organization_id=organization_id,
+            required_credits=credit_config.request_fee_credits,
+        )
 
     async def get_credits(self, organization_id: UUID) -> CreditsInfo:
         """Delegate to CreditService: current credit balance info for the organization."""
