@@ -8,6 +8,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query, status
 
+from assemblix_api.api.rest._scope import resolve_project_id
 from assemblix_api.core.auth_context import AuthContext
 from assemblix_api.database.models.organization import Organization
 from assemblix_api.database.models.user import User
@@ -19,9 +20,11 @@ from assemblix_api.dependencies import (
 )
 from assemblix_api.dto.requests.project import (
     ProjectCreateRequest,
+    ProjectStateSchemaUpdateRequest,
     ProjectUpdateRequest,
 )
 from assemblix_api.dto.responses.project import ProjectResponse
+from assemblix_api.schemas import StateVariable
 from assemblix_api.services.project_service import ProjectService
 
 router = APIRouter(prefix="/projects", tags=["Projects"])
@@ -46,6 +49,46 @@ async def list_projects(
         is_active=is_active,
     )
     return projects
+
+
+# Declared before /{project_id} so "state" is not parsed as a project id.
+@router.get("/state", response_model=list[StateVariable])
+async def get_project_state_schema(
+    project_id: UUID | None = Query(
+        default=None,
+        description="Project ID. Optional when authenticated with a project-scoped "
+        "API key - defaults to the key's project.",
+    ),
+    auth: AuthContext = Depends(get_auth_context),
+    service: ProjectService = Depends(get_project_service),
+):
+    """List the project state variables (name, type, default value)."""
+    effective_project_id = resolve_project_id(project_id, auth)
+    project = await service.authorize_project_access(auth, effective_project_id)
+    return project.state_schema
+
+
+@router.put("/state", response_model=list[StateVariable])
+async def update_project_state_schema(
+    data: ProjectStateSchemaUpdateRequest,
+    project_id: UUID | None = Query(
+        default=None,
+        description="Project ID. Optional when authenticated with a project-scoped "
+        "API key - defaults to the key's project.",
+    ),
+    auth: AuthContext = Depends(get_auth_context),
+    service: ProjectService = Depends(get_project_service),
+):
+    """Replace the project state schema with the given variables."""
+    effective_project_id = resolve_project_id(project_id, auth)
+    await service.authorize_project_access(auth, effective_project_id)
+
+    project = await service.update_project(
+        project_id=effective_project_id,
+        user=auth.user,
+        state_schema=[v.model_dump(mode="json") for v in data.state_schema],
+    )
+    return project.state_schema
 
 
 @router.get("/{project_id}", response_model=ProjectResponse)

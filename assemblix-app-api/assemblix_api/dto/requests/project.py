@@ -54,3 +54,10 @@ class ProjectUpdateRequest(DTOModel):
         default=None,
         description="Project state schema",
     )
+
+
+class ProjectStateSchemaUpdateRequest(DTOModel):
+    state_schema: list[StateVariable] = Field(
+        ...,
+        description="Full replacement for the project state schema",
+    )
