@@ -5,6 +5,14 @@ All notable changes to this project are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.31](https://github.com/nmamizerov/assemblix/compare/v0.2.30...v0.2.31) (2026-09-02)
+
+
+### Features
+
+* **projects:** add key-scoped endpoints for the project state schema ([326a0ee](https://github.com/nmamizerov/assemblix/commit/326a0ee02ea9c42b2348473b1c2fc7e760a09b82))
+* **projects:** add key-scoped endpoints for the project state schema ([7353cf8](https://github.com/nmamizerov/assemblix/commit/7353cf82006ce69bfd84f7a7395e30a8c41bffdd))
+
 ## [0.2.30](https://github.com/nmamizerov/assemblix/compare/v0.2.29...v0.2.30) (2026-08-17)
 
 
