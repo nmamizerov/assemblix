@@ -20,6 +20,10 @@ import {
   useUpdateClientSessionMetadataMutation,
   useDeactivateClientSessionMutation,
 } from "@/entities/client-session";
+import {
+  useGetClientVoiceSessionsQuery,
+  VoiceSessionList,
+} from "@/entities/voice-session";
 import { selectCurrentProjectId } from "@/entities/organization";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/shared/ui/tabs";
 import { Button } from "@/shared/ui/button";
@@ -47,6 +51,7 @@ export const ClientSessionDetailsPage = () => {
   const [activeTab, setActiveTab] = useState("overview");
   const [executionsPage, setExecutionsPage] = useState(1);
   const [chatsPage, setChatsPage] = useState(1);
+  const [voicePage, setVoicePage] = useState(1);
   const [editMetadataOpen, setEditMetadataOpen] = useState(false);
   const [deactivateDialogOpen, setDeactivateDialogOpen] = useState(false);
   const [metadataJson, setMetadataJson] = useState("");
@@ -81,6 +86,20 @@ export const ClientSessionDetailsPage = () => {
       },
       { skip: !currentProjectId || !clientId || activeTab !== "chatSessions" }
     );
+
+  const {
+    data: voiceData,
+    isLoading: voiceLoading,
+    isError: voiceError,
+  } = useGetClientVoiceSessionsQuery(
+    {
+      projectId: currentProjectId!,
+      clientId: decodeURIComponent(clientId!),
+      page: voicePage,
+      limit: 10,
+    },
+    { skip: !currentProjectId || !clientId || activeTab !== "voiceSessions" }
+  );
 
   const [updateMetadata, { isLoading: isUpdating }] =
     useUpdateClientSessionMetadataMutation();
@@ -146,6 +165,9 @@ export const ClientSessionDetailsPage = () => {
   const chats = chatsData?.data || [];
   const chatsTotalPages = chatsData ? Math.ceil(chatsData.total / 10) : 0;
 
+  const voiceSessions = voiceData?.data || [];
+  const voiceTotalPages = voiceData ? Math.ceil(voiceData.total / 10) : 0;
+
   return (
     <div className="flex flex-col gap-6">
       {/* Header */}
@@ -178,7 +200,7 @@ export const ClientSessionDetailsPage = () => {
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-6">
           <TabsTrigger value="overview">
             {t("clientSessions.tabs.overview")}
           </TabsTrigger>
@@ -193,6 +215,9 @@ export const ClientSessionDetailsPage = () => {
           </TabsTrigger>
           <TabsTrigger value="chatSessions">
             {t("clientSessions.tabs.chatSessions")}
+          </TabsTrigger>
+          <TabsTrigger value="voiceSessions">
+            {t("clientSessions.tabs.voiceSessions")}
           </TabsTrigger>
         </TabsList>
 
@@ -410,6 +435,24 @@ export const ClientSessionDetailsPage = () => {
                 />
               )}
             </>
+          )}
+        </TabsContent>
+        {/* Voice Sessions Tab */}
+        <TabsContent value="voiceSessions" className="space-y-4">
+          <VoiceSessionList
+            sessions={voiceSessions}
+            isLoading={voiceLoading}
+            isError={voiceError}
+            onOpen={(sessionId) =>
+              navigate(`/projects/${projectId}/voice-sessions/${sessionId}`)
+            }
+          />
+          {voiceTotalPages > 1 && (
+            <Pagination
+              currentPage={voicePage}
+              totalPages={voiceTotalPages}
+              onPageChange={setVoicePage}
+            />
           )}
         </TabsContent>
       </Tabs>

@@ -181,3 +181,123 @@ async def test_call_records_transcript_hooks_and_cost(
     assert refreshed is not None
     assert refreshed.session_count == 1
     assert float(refreshed.total_credits) == 64.48333333
+
+
+async def test_client_id_reaches_the_row_and_every_hook(
+    db_session: Any, auth_user: Any, voice_session_service: VoiceSessionService
+) -> None:
+    """A call opened for a client stamps that client on its row and on every analysis
+    hook it starts, so the conversation and its scoring runs share one ClientSession."""
+    # Arrange
+    agent = await VoiceAgentRepository(db_session).create(
+        project_id=auth_user.project_id,
+        name="Receptionist",
+        config={
+            "instructions": [{"role": "system", "content": "Answer calls."}],
+            "voice": {"provider": "openai", "model": "gpt-realtime-2.1", "voiceId": "alloy"},
+            "turnWorkflowId": TURN_WORKFLOW_ID,
+            "finalWorkflowId": FINAL_WORKFLOW_ID,
+        },
+    )
+    voice_session_id = await voice_session_service.open_session(
+        voice_agent_id=agent.id,
+        project_id=auth_user.project_id,
+        client_id="crm-user-42",
+    )
+
+    runner = _RecordingRunner()
+    dispatcher = TurnDispatcher(
+        voice_session_id=voice_session_id,
+        turn_workflow_id=TURN_WORKFLOW_ID,
+        final_workflow_id=FINAL_WORKFLOW_ID,
+        client_id="crm-user-42",
+        runner=runner,
+    )
+
+    # Act — the first hook raises on purpose; the client must still travel with it.
+    dispatcher.dispatch_turn(user_text="Здравствуйте", agent_reply=None, turn_index=0)
+    dispatcher.dispatch_turn(user_text="Запишите меня", agent_reply="Слушаю", turn_index=1)
+    await asyncio.sleep(0)
+    await dispatcher.dispatch_final(
+        transcript=[{"role": "user", "text": "Здравствуйте"}],
+        duration_sec=7.3,
+        end_reason="user_hangup",
+    )
+
+    # Assert
+    assert len(runner.calls) == 3
+    assert all(call["input_data"]["client_id"] == "crm-user-42" for call in runner.calls)
+
+    stored = await VoiceSessionRepository(db_session).get_by_id(voice_session_id)
+    assert stored is not None
+    assert stored.client_id == "crm-user-42"
+
+
+async def test_session_token_round_trips_the_client_id() -> None:
+    """The client is sealed into the session token, so the WebSocket — which carries
+    no body — still knows which client the call belongs to."""
+    # Arrange
+    from uuid import uuid4
+
+    from assemblix_api.realtime.session_token import mint_session_token, verify_session_token
+
+    agent_id, project_id = uuid4(), uuid4()
+
+    # Act
+    with_client = verify_session_token(
+        mint_session_token(
+            voice_agent_id=agent_id,
+            project_id=project_id,
+            is_debug=False,
+            client_id="crm-user-42",
+        )
+    )
+    without_client = verify_session_token(
+        mint_session_token(voice_agent_id=agent_id, project_id=project_id, is_debug=False)
+    )
+
+    # Assert
+    assert with_client.client_id == "crm-user-42"
+    assert without_client.client_id is None
+
+
+async def test_client_page_lists_the_calls_of_that_client(
+    db_session: Any,
+    client: Any,
+    auth_user: Any,
+    auth_headers: dict,
+    voice_session_service: VoiceSessionService,
+) -> None:
+    """The client's page lists that client's calls and nobody else's — including a call
+    that never started a hook, since the stamp is on the call rather than on a run."""
+    # Arrange
+    agent = await VoiceAgentRepository(db_session).create(
+        project_id=auth_user.project_id,
+        name="Receptionist",
+        config={
+            "instructions": [{"role": "system", "content": "Answer calls."}],
+            "voice": {"provider": "openai", "model": "gpt-realtime-2.1", "voiceId": "alloy"},
+        },
+    )
+    mine = await voice_session_service.open_session(
+        voice_agent_id=agent.id, project_id=auth_user.project_id, client_id="crm-user-42"
+    )
+    await voice_session_service.open_session(
+        voice_agent_id=agent.id, project_id=auth_user.project_id, client_id="crm-user-99"
+    )
+    await voice_session_service.open_session(
+        voice_agent_id=agent.id, project_id=auth_user.project_id
+    )
+
+    # Act
+    response = await client.get(
+        f"/api/projects/{auth_user.project_id}/client-sessions/crm-user-42/voice-sessions",
+        headers=auth_headers,
+    )
+
+    # Assert
+    assert response.status_code == 200
+    body = response.json()
+    assert body["total"] == 1
+    assert [item["id"] for item in body["data"]] == [str(mine)]
+    assert body["data"][0]["clientId"] == "crm-user-42"

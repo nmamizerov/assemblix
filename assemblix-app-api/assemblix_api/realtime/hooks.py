@@ -42,9 +42,11 @@ class TurnDispatcher:
         voice_session_id: UUID,
         turn_workflow_id: str | None,
         final_workflow_id: str | None,
+        client_id: str | None = None,
         runner: WorkflowRunner | None = None,
     ) -> None:
         self._voice_session_id = voice_session_id
+        self._client_id = client_id
         self._turn_workflow_id = turn_workflow_id
         self._final_workflow_id = final_workflow_id
         self._runner = runner or _default_runner
@@ -101,6 +103,11 @@ class TurnDispatcher:
         task.add_done_callback(self._tasks.discard)
 
     async def _run(self, workflow_id: str, input_data: dict) -> None:
+        # The call's client is the hook's client: a scoring run must land on the same
+        # ClientSession — and therefore the same project state — as the conversation
+        # it analyses.
+        if self._client_id:
+            input_data = {**input_data, "client_id": self._client_id}
         try:
             await self._runner(
                 workflow_id=UUID(workflow_id),

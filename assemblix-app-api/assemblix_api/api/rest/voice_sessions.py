@@ -33,6 +33,7 @@ from assemblix_api.dependencies import (
     get_voice_session_history_service,
 )
 from assemblix_api.dto.base import PaginatedResponse
+from assemblix_api.dto.requests.voice_agent import VoiceSessionCreateRequest
 from assemblix_api.dto.responses.voice_session import (
     VoiceSessionDetailResponse,
     VoiceSessionResponse,
@@ -96,11 +97,17 @@ async def get_voice_session(
 @router.post("/{agent_id}/sessions", response_model=VoiceSessionTokenResponse)
 async def create_voice_session(
     agent_id: UUID,
+    request: VoiceSessionCreateRequest | None = None,
     auth: AuthContext = Depends(get_auth_context),
     service: VoiceAgentService = Depends(get_voice_agent_service),
     project_service: ProjectService = Depends(get_project_service),
 ) -> VoiceSessionTokenResponse:
-    """Authorize the caller and hand back a token good for one session."""
+    """Authorize the caller and hand back a token good for one session.
+
+    An optional ``clientId`` in the body is sealed into the token and travels with the
+    call: it lands on the ``voice_sessions`` row and on every analysis-hook run the
+    call starts, so a conversation and its scoring workflows share one ClientSession.
+    """
     agent = await service.get_voice_agent(agent_id)
     await project_service.authorize_project_access(auth, agent.project_id)
 
@@ -117,6 +124,7 @@ async def create_voice_session(
             # A project API key means a program is placing this call from someone's
             # product; a JWT means a person is rehearsing in the editor.
             is_debug=auth.scoped_project_id is None,
+            client_id=request.client_id if request else None,
             ttl_seconds=_TOKEN_TTL_SECONDS,
         ),
         expires_in=_TOKEN_TTL_SECONDS,
@@ -174,6 +182,7 @@ async def stream_voice_session(websocket: WebSocket, token: str) -> None:
             voice_agent_id=scope.voice_agent_id,
             project_id=scope.project_id,
             is_debug=scope.is_debug,
+            client_id=scope.client_id,
         )
     except HTTPException as exc:
         # Notably the plan's concurrent-call ceiling: the browser gets a reason
@@ -199,6 +208,7 @@ async def stream_voice_session(websocket: WebSocket, token: str) -> None:
             voice_session_id=voice_session_id,
             turn_workflow_id=setup.turn_workflow_id,
             final_workflow_id=setup.final_workflow_id,
+            client_id=scope.client_id,
         ),
     )
 

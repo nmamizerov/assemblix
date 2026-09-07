@@ -1031,7 +1031,8 @@
       "state": "Состояние",
       "metadata": "Метаданные",
       "executions": "Запуски",
-      "chatSessions": "Чат-сессии"
+      "chatSessions": "Чат-сессии",
+      "voiceSessions": "Голосовые звонки"
     }
   },
   "projectSettings": {

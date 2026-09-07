@@ -39,6 +39,15 @@ class VoiceSessionHistoryService:
         )
         return [self._to_summary(session) for session in sessions], total
 
+    async def list_for_client(
+        self, project_id: UUID, client_id: str, *, limit: int, offset: int
+    ) -> tuple[list[VoiceSessionResponse], int]:
+        """Calls this end-user placed, across every voice agent of the project."""
+        sessions, total = await self._sessions.list_by_client(
+            project_id, client_id, limit=limit, offset=offset
+        )
+        return [self._to_summary(session) for session in sessions], total
+
     async def get_detail(self, voice_session_id: UUID) -> tuple[VoiceSessionDetailResponse, UUID]:
         """Return the call and the project it belongs to, for the caller to authorize."""
         session = await self._sessions.get_by_id(voice_session_id)
@@ -72,6 +81,7 @@ class VoiceSessionHistoryService:
         return VoiceSessionResponse(
             id=session.id,
             voice_agent_id=session.voice_agent_id,
+            client_id=session.client_id,
             status=session.status,
             started_at=session.started_at,
             ended_at=session.ended_at,

@@ -14,6 +14,7 @@ from assemblix_api.dependencies import (
     get_client_session_service,
     get_execution_service,
     get_project_service,
+    get_voice_session_history_service,
 )
 from assemblix_api.dto.base import PaginatedResponse
 from assemblix_api.dto.requests.client_session import (
@@ -26,10 +27,12 @@ from assemblix_api.dto.responses.client_session import (
     ClientSessionBaseResponse,
 )
 from assemblix_api.dto.responses.execution import ExecutionInfoResponse
+from assemblix_api.dto.responses.voice_session import VoiceSessionResponse
 from assemblix_api.services.chat_service import ChatService
 from assemblix_api.services.client_session_service import ClientSessionService
 from assemblix_api.services.execution_service import ExecutionService
 from assemblix_api.services.project_service import ProjectService
+from assemblix_api.services.voice_session_history_service import VoiceSessionHistoryService
 
 router = APIRouter(prefix="/projects", tags=["Client Sessions"])
 
@@ -309,3 +312,31 @@ async def deactivate_client_session(
         )
 
     await client_session_service.deactivate_session(session.id, project_id)
+
+
+@router.get(
+    "/{project_id}/client-sessions/{client_id}/voice-sessions",
+    response_model=PaginatedResponse[VoiceSessionResponse],
+)
+async def list_client_voice_sessions(
+    project_id: UUID,
+    client_id: str,
+    page: int = Query(default=1, ge=1, description="Page number"),
+    limit: int = Query(default=50, ge=1, le=100, description="Page size"),
+    auth: AuthContext = Depends(get_auth_context),
+    project_service: ProjectService = Depends(get_project_service),
+    voice_history: VoiceSessionHistoryService = Depends(get_voice_session_history_service),
+):
+    """List voice-agent calls placed under this client_id.
+
+    Unlike the executions and chat-sessions tabs, this reads the calls directly by
+    their own client_id rather than through the ClientSession row: a call is stamped
+    when it opens, so it is listed even if it never started a hook workflow.
+    """
+    await project_service.authorize_project_access(auth, project_id)
+
+    sessions, total = await voice_history.list_for_client(
+        project_id, client_id, limit=limit, offset=(page - 1) * limit
+    )
+
+    return PaginatedResponse(data=sessions, total=total, page=page, limit=limit)

@@ -177,7 +177,12 @@ class VoiceSessionService:
         )
 
     async def open_session(
-        self, *, voice_agent_id: UUID, project_id: UUID, is_debug: bool = True
+        self,
+        *,
+        voice_agent_id: UUID,
+        project_id: UUID,
+        is_debug: bool = True,
+        client_id: str | None = None,
     ) -> UUID:
         """Create the call's row before any audio flows.
 
@@ -214,6 +219,7 @@ class VoiceSessionService:
             project_id=project_id,
             status="active",
             is_debug=is_debug,
+            client_id=client_id,
         )
         return session.id
 
@@ -442,11 +448,18 @@ async def load_voice_session_setup(*, voice_agent_id: UUID, project_id: UUID) ->
 
 
 async def open_voice_session(
-    *, voice_agent_id: UUID, project_id: UUID, is_debug: bool = True
+    *,
+    voice_agent_id: UUID,
+    project_id: UUID,
+    is_debug: bool = True,
+    client_id: str | None = None,
 ) -> UUID:
     async with _voice_session_service() as service:
         return await service.open_session(
-            voice_agent_id=voice_agent_id, project_id=project_id, is_debug=is_debug
+            voice_agent_id=voice_agent_id,
+            project_id=project_id,
+            is_debug=is_debug,
+            client_id=client_id,
         )
 
 

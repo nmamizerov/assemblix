@@ -1029,7 +1029,8 @@
       "state": "State",
       "metadata": "Metadata",
       "executions": "Executions",
-      "chatSessions": "Chat Sessions"
+      "chatSessions": "Chat Sessions",
+      "voiceSessions": "Voice Calls"
     }
   },
   "projectSettings": {

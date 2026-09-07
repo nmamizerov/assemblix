@@ -14,12 +14,20 @@ The key never reaches the browser, and the token is useless a minute after it is
 
 ```bash
 curl -X POST https://app.assmblx.com/api/voice-agents/{voiceAgentId}/sessions \
-  -H "Authorization: Bearer sk_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+  -H "Authorization: Bearer sk_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" \
+  -H "Content-Type: application/json" \
+  -d '{"clientId": "your-end-user-id"}'
 ```
 
 ```json
 { "token": "eyJhbGciOi…", "expiresIn": 60 }
 ```
+
+The body is optional. Its one field:
+
+| Field | Meaning |
+|---|---|
+| `clientId` | Your own identifier for the end-user placing the call. Optional. |
 
 Do this from your server, in response to a request from your own authenticated user —
 the token authorizes exactly one call with one agent, and anyone holding it can place
@@ -27,6 +35,21 @@ that call. Mint it when the user presses the button, not when the page loads: it
 in 60 seconds, and that short life is the whole security model.
 
 The agent must be active; an inactive one returns `400`.
+
+### Tying a call to one of your users
+
+`clientId` is the same identifier `POST /api/executions` takes, and it means the same
+thing here: everything done under it shares one **client session**, and therefore one
+copy of your project state.
+
+Pass it and it is sealed into the token, so it survives into the WebSocket — which
+carries no body of its own. From there it lands on the call itself and on **every
+analysis-hook workflow the call starts**, per-turn and final alike. A scoring workflow
+then reads and writes the same project state your other workflows use for that user,
+which is what makes cumulative scoring across calls and chats possible at all.
+
+Omit it and the call is anonymous: the hooks still run, but with no client session, so
+whatever they write to project state has nowhere to go.
 
 ## 2. Open the socket
 

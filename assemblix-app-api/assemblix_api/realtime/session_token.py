@@ -32,6 +32,8 @@ class SessionScope:
     # A call placed from the editor is a rehearsal; one placed by a program
     # through a project API key is a real call in someone's product.
     is_debug: bool
+    # Optional end-user identifier the caller tied this call to.
+    client_id: str | None = None
 
 
 def mint_session_token(
@@ -39,6 +41,7 @@ def mint_session_token(
     voice_agent_id: UUID,
     project_id: UUID,
     is_debug: bool,
+    client_id: str | None = None,
     ttl_seconds: int = 60,
 ) -> str:
     settings = get_settings()
@@ -48,6 +51,7 @@ def mint_session_token(
         "agent": str(voice_agent_id),
         "project": str(project_id),
         "debug": is_debug,
+        "client": client_id,
         "iat": int(now.timestamp()),
         "exp": int((now + timedelta(seconds=ttl_seconds)).timestamp()),
     }
@@ -73,6 +77,7 @@ def verify_session_token(token: str) -> SessionScope:
             voice_agent_id=UUID(payload["agent"]),
             project_id=UUID(payload["project"]),
             is_debug=bool(payload.get("debug", False)),
+            client_id=payload.get("client") or None,
         )
     except (KeyError, ValueError) as exc:
         raise InvalidSessionToken("Token is missing its scope") from exc
