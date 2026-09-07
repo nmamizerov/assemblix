@@ -99,7 +99,13 @@ class VoiceSessionRuntime:
         return time.monotonic() - self._started_at
 
     async def run(self) -> str:
-        """Drive the session to completion and return the reason it ended."""
+        """Drive the session to completion and return the reason it ended.
+
+        Everything after the pumps stop runs in a ``finally``: by the time a call
+        ends the browser is usually already gone — the client sends
+        ``session.stop`` and closes the socket in the same tick — and the final
+        hook is precisely the thing that has to outlive it.
+        """
         await self._bridge.connect(
             instructions=self._instructions,
             voice=self._voice,
@@ -132,18 +138,22 @@ class VoiceSessionRuntime:
                 task.result()
         finally:
             await self._bridge.close()
+            reason = self._closed_reason or "completed"
 
-        reason = self._closed_reason or "completed"
-        await self._client.send_json({"type": "session.closed", "reason": reason})
+            # Best-effort: a farewell frame nobody is left to receive raises
+            # WebSocketDisconnect, and that must not cost the final hook.
+            with contextlib.suppress(Exception):
+                await self._client.send_json({"type": "session.closed", "reason": reason})
 
-        if self._dispatcher is not None:
-            # The one hook that is awaited: the call is already over, and the whole
-            # point of the final workflow is that it sees the finished transcript.
-            await self._dispatcher.dispatch_final(
-                transcript=self._transcript,
-                duration_sec=self.duration_sec,
-                end_reason=reason,
-            )
+            if self._dispatcher is not None:
+                # The one hook that is awaited: the call is already over, and the
+                # whole point of the final workflow is that it sees the finished
+                # transcript.
+                await self._dispatcher.dispatch_final(
+                    transcript=self._transcript,
+                    duration_sec=self.duration_sec,
+                    end_reason=reason,
+                )
         return reason
 
     async def _pump_client(self) -> None:
