@@ -5,6 +5,14 @@ All notable changes to this project are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.33](https://github.com/nmamizerov/assemblix/compare/v0.2.32...v0.2.33) (2026-09-07)
+
+
+### Bug Fixes
+
+* **voice:** run the final hook even when the caller already hung up ([6d5b9fe](https://github.com/nmamizerov/assemblix/commit/6d5b9fe9de0ea199a242f542e7869823d70b2701))
+* **voice:** run the final hook even when the caller already hung up ([9273275](https://github.com/nmamizerov/assemblix/commit/9273275a7d3451fff7aee8a314713b3fa440b0f5))
+
 ## [0.2.32](https://github.com/nmamizerov/assemblix/compare/v0.2.31...v0.2.32) (2026-09-07)
 
 
