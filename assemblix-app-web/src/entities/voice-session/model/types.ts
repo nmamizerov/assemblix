@@ -1,6 +1,7 @@
 export interface VoiceSession {
   id: string;
   voiceAgentId: string;
+  clientId: string | null;
   status: "active" | "completed" | "failed";
   startedAt: string;
   endedAt: string | null;

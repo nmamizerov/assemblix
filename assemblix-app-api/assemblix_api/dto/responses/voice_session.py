@@ -20,6 +20,9 @@ class VoiceSessionResponse(DTOModel):
 
     id: UUID = Field(description="Unique identifier of the session")
     voice_agent_id: UUID = Field(description="Agent that was called")
+    client_id: str | None = Field(
+        default=None, description="External client identifier this call was tied to"
+    )
     status: str = Field(description="active | completed | failed")
     started_at: datetime = Field(description="When the call started")
     ended_at: datetime | None = Field(default=None, description="When the call ended")

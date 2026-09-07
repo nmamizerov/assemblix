@@ -29,3 +29,15 @@ class VoiceAgentUpdateRequest(DTOModel):
         default=None, description="Full config replacement; omit to leave unchanged"
     )
     is_active: bool | None = None
+
+
+class VoiceSessionCreateRequest(DTOModel):
+    client_id: str | None = Field(
+        default=None,
+        max_length=255,
+        description=(
+            "External client identifier for this call. Ties the session — and every "
+            "analysis-hook workflow it starts — to the same ClientSession, so per-turn "
+            "and final scoring runs share the caller's project state"
+        ),
+    )

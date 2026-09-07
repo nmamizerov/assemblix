@@ -1,5 +1,6 @@
 export {
   useGetVoiceSessionsQuery,
+  useGetClientVoiceSessionsQuery,
   useGetVoiceSessionQuery,
 } from "./api/voice-session.api";
 export { formatCredits, formatDuration } from "./lib/format";

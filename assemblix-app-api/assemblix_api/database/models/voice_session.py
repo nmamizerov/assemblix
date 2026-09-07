@@ -37,6 +37,11 @@ class VoiceSession(UUIDMixin, TimestampMixin, Base):
         index=True,
     )
 
+    # External identifier of the end-user this call belongs to, as supplied by the
+    # caller when the session token was minted. Carried into every analysis hook so
+    # the call and its scoring runs land on the same ClientSession.
+    client_id: Mapped[str | None] = mapped_column(String(255), default=None, index=True)
+
     status: Mapped[str] = mapped_column(String(20), default="active", nullable=False)
     started_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
