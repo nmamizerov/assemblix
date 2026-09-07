@@ -5,6 +5,14 @@ All notable changes to this project are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.32](https://github.com/nmamizerov/assemblix/compare/v0.2.31...v0.2.32) (2026-09-07)
+
+
+### Features
+
+* **voice:** carry clientId from a call into its analysis workflows ([eafc68f](https://github.com/nmamizerov/assemblix/commit/eafc68fe6d55c00489572a13604b937efab7feaa))
+* **voice:** carry clientId from a call into its analysis workflows ([e82085c](https://github.com/nmamizerov/assemblix/commit/e82085cf163ca631c43d278f46738602ab014bbd))
+
 ## [0.2.31](https://github.com/nmamizerov/assemblix/compare/v0.2.30...v0.2.31) (2026-09-02)
 
 
