@@ -58,6 +58,12 @@ class HalfCascadeBridge:
         self._turn = 0
         self._cancelled_turn = -1
         self._turn_chars = 0
+        # What of this turn's reply has already gone to the synthesizer. The two
+        # bridges disagree about what ``AgentTranscript.text`` holds — OpenAI
+        # streams deltas but repeats the whole reply on the final event, Gemini
+        # accumulates from the first — so the only safe reading is "the reply so
+        # far", and only its unspoken tail may be spoken.
+        self._spoken = ""
 
     async def connect(
         self,
@@ -110,11 +116,13 @@ class HalfCascadeBridge:
                     # runtime applies with ``_agent_speaking``.
                     if self._session is not None:
                         self._cancelled_turn = self._turn
+                        self._spoken = ""
                         await self._abort_speech()
                     await self._queue.put(event)
                 case TurnEnded():
                     chars, self._turn_chars = self._turn_chars, 0
                     self._turn += 1
+                    self._spoken = ""
                     await self._queue.put(
                         TurnEnded(
                             input_tokens=event.input_tokens,
@@ -131,15 +139,30 @@ class HalfCascadeBridge:
     async def _speak(self, event: AgentTranscript) -> None:
         if self._turn == self._cancelled_turn:
             return
+        text = self._unspoken(event.text)
+        if not text and not event.is_final:
+            return
         if self._session is None:
             self._session = self._open_stream(
                 self._speech_out, on_audio=self._on_audio, on_error=self._on_error
             )
             await self._session.open()
-        await self._session.send_text(event.text)
+        if text:
+            await self._session.send_text(text)
         if event.is_final:
             session, self._session = self._session, None
+            self._spoken = ""
             self._turn_chars += await session.flush_and_close()
+
+    def _unspoken(self, text: str) -> str:
+        """The part of ``text`` not yet handed to the synthesizer.
+
+        Accumulated text extends what was spoken; a delta does not, and is taken
+        as the extension itself.
+        """
+        tail = text[len(self._spoken) :] if text.startswith(self._spoken) else text
+        self._spoken += tail
+        return tail
 
     async def _abort_speech(self) -> None:
         if self._session is None:

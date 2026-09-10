@@ -106,7 +106,9 @@ async def test_a_turn_is_written_by_the_model_and_spoken_by_the_provider() -> No
         [
             UserTranscript(text="привет", is_final=True),
             AgentTranscript(text="Здрав", is_final=False),
-            AgentTranscript(text="ствуйте", is_final=True),
+            AgentTranscript(text="ствуйте", is_final=False),
+            # The provider repeats the whole reply on the final event.
+            AgentTranscript(text="Здравствуйте", is_final=True),
             TurnEnded(input_tokens=10, output_tokens=5),
             SessionClosed(reason="closed"),
         ]
@@ -130,7 +132,7 @@ async def test_a_turn_is_written_by_the_model_and_spoken_by_the_provider() -> No
     assert tts.sent == ["Здрав", "ствуйте"]
     assert tts.flushed is True
     assert AudioDelta(pcm=b"\x01\x02") in seen
-    assert AgentTranscript(text="ствуйте", is_final=True) in seen
+    assert AgentTranscript(text="Здравствуйте", is_final=True) in seen
     turn = next(e for e in seen if isinstance(e, TurnEnded))
     assert turn.speech_chars == len("Здравствуйте")
     assert turn.input_tokens == 10
@@ -206,3 +208,43 @@ async def test_the_user_starting_to_speak_is_not_a_barge_in_by_itself() -> None:
 
     # Assert
     assert [tts.sent for tts in _FakeTTS.instances] == [["Здравствуйте"], ["Слушаю"]]
+
+
+async def test_only_the_unspoken_remainder_of_a_reply_is_sent_to_the_provider() -> None:
+    """Bridges disagree about what AgentTranscript.text means: OpenAI streams
+    deltas and then repeats the whole reply on the final event, while Gemini
+    accumulates from the start. Speaking every event verbatim says the reply
+    twice, so only the part not yet spoken may reach the synthesizer."""
+    # Arrange — the OpenAI shape: deltas, then the complete text on the final event
+    openai_shaped = _FakeInner(
+        [
+            AgentTranscript(text="Здрав", is_final=False),
+            AgentTranscript(text="ствуйте", is_final=False),
+            AgentTranscript(text="Здравствуйте", is_final=True),
+            TurnEnded(),
+            SessionClosed(reason="completed"),
+        ]
+    )
+    # Arrange — the Gemini shape: every event carries the accumulated text
+    gemini_shaped = _FakeInner(
+        [
+            AgentTranscript(text="Здрав", is_final=False),
+            AgentTranscript(text="Здравствуйте", is_final=False),
+            AgentTranscript(text="Здравствуйте", is_final=True),
+            TurnEnded(),
+            SessionClosed(reason="completed"),
+        ]
+    )
+
+    # Act
+    spoken: list[str] = []
+    for inner in (openai_shaped, gemini_shaped):
+        bridge = _bridge(inner)
+        await bridge.connect(instructions="i", voice="", language="ru", params={})
+        async for _event in bridge.events():
+            pass
+        await bridge.close()
+        spoken.append("".join(_FakeTTS.instances[0].sent))
+
+    # Assert
+    assert spoken == ["Здравствуйте", "Здравствуйте"]
