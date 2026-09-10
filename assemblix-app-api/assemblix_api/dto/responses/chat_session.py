@@ -21,6 +21,9 @@ class ChatSessionBaseResponse(DTOModel):
         description="ID of the API token used, None for debug mode sessions"
     )
     total_credits: float = Field(description="Total credits consumed by this chat session")
+    own_key_cost_usd: float = Field(
+        description="USD spent on the caller's own provider keys (never billed as credits)"
+    )
     message_count: int = Field(description="Number of messages exchanged in this session")
     is_active: bool = Field(description="Whether the chat session is currently active")
     is_debug: bool = Field(description="Whether the session is running in debug mode")

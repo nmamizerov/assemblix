@@ -31,6 +31,7 @@ export interface VoiceAgent {
   isActive: boolean;
   sessionCount: number;
   totalCredits: number;
+  ownKeyCostUsd: number;
   createdAt: string;
   updatedAt: string;
 }

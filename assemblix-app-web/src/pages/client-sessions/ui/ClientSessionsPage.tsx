@@ -17,6 +17,7 @@ import { Pagination } from "@/shared/ui";
 import { Label } from "@/shared/ui/label";
 import { cn } from "@/shared/lib/utils";
 import { useFormatDate } from "@/shared/lib/format-date";
+import { formatUsd } from "@/shared/lib/format-cost";
 
 export const ClientSessionsPage = () => {
   const { t } = useTranslation();
@@ -148,6 +149,9 @@ export const ClientSessionsPage = () => {
                 <th className="px-6 py-4 text-right text-sm font-semibold text-foreground">
                   {t("clientSessions.credits")}
                 </th>
+                <th className="px-6 py-4 text-right text-sm font-semibold text-foreground">
+                  {t("common.ownKeyCost")}
+                </th>
                 <th className="px-6 py-4 text-center text-sm font-semibold text-foreground">
                   {t("clientSessions.status")}
                 </th>
@@ -186,6 +190,13 @@ export const ClientSessionsPage = () => {
                         {formatNumber(session.totalCredits ?? 0)}
                       </span>
                     </div>
+                  </td>
+                  <td className="px-6 py-4 text-right">
+                    <span className="text-sm text-muted-foreground tabular-nums">
+                      {(session.ownKeyCostUsd ?? 0) > 0
+                        ? formatUsd(session.ownKeyCostUsd ?? 0)
+                        : "—"}
+                    </span>
                   </td>
                   <td className="px-6 py-4 text-center">
                     {session.isActive ? (

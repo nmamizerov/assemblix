@@ -9,6 +9,7 @@ import {
 } from "@/entities/voice-session";
 import type { VoiceSessionExecution } from "@/entities/voice-session";
 import { Button } from "@/shared/ui/button";
+import { formatUsd } from "@/shared/lib/format-cost";
 
 export const VoiceSessionDetailsPage = () => {
   const { t } = useTranslation();
@@ -79,6 +80,17 @@ export const VoiceSessionDetailsPage = () => {
             <span className="tabular-nums">
               {formatCredits(session.totalCredits)}
             </span>
+            {session.ownKeyCostUsd > 0 && (
+              <>
+                <span aria-hidden>·</span>
+                <span
+                  className="tabular-nums"
+                  title={t("common.ownKeyCostHint")}
+                >
+                  {formatUsd(session.ownKeyCostUsd)}
+                </span>
+              </>
+            )}
             <span aria-hidden>·</span>
             <span>
               {session.endReason
@@ -150,6 +162,8 @@ export const VoiceSessionDetailsPage = () => {
                         : "—"}
                       {" · "}
                       {formatCredits(execution.totalCredits)}
+                      {(execution.ownKeyCostUsd ?? 0) > 0 &&
+                        ` · ${formatUsd(execution.ownKeyCostUsd ?? 0)}`}
                     </p>
                   </button>
                 </li>

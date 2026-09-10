@@ -24,6 +24,9 @@ class ClientSessionBaseResponse(DTOModel):
     total_credits: float = Field(
         description="Total credits consumed across all executions in this session"
     )
+    own_key_cost_usd: float = Field(
+        description="USD spent on the caller's own provider keys (never billed as credits)"
+    )
     is_active: bool = Field(description="Whether the client session is currently active")
     last_activity_at: datetime | None = Field(
         description="Timestamp of the last activity in this session"

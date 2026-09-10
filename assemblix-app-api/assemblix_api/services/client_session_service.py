@@ -90,10 +90,12 @@ class ClientSessionService(BaseService[ClientSession, ClientSessionRepository]):
         self,
         session_id: UUID,
         credits: Decimal = Decimal("0"),
+        own_key_cost_usd: Decimal = Decimal("0"),
     ) -> None:
         await self._repository.increment_execution_stats(
             session_id=session_id,
             credits=credits,
+            own_key_cost_usd=own_key_cost_usd,
         )
 
     async def get_sessions_by_project(

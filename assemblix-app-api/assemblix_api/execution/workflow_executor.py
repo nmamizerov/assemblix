@@ -1060,6 +1060,7 @@ class WorkflowExecutor:
             await self._client_session_service.increment_execution_stats(
                 session_id=context.client_session_id,
                 credits=total_credits,
+                own_key_cost_usd=context.own_total_cost_usd,
             )
 
         # 4. Save chat messages (if stateful).
@@ -1091,7 +1092,9 @@ class WorkflowExecutor:
                     content=assistant_message,
                     execution_id=execution.id,
                     metadata={
-                        "credits": float(total_credits),  # Decimal -> float for JSON
+                        # Decimal -> float for JSON
+                        "credits": float(total_credits),
+                        "own_key_cost_usd": float(context.own_total_cost_usd),
                     },
                 )
 
@@ -1111,7 +1114,7 @@ class WorkflowExecutor:
             final_project_state=context.project_state,
             is_session_closed=is_session_end,
             total_credits=total_credits,
-            own_key_cost_usd=context.own_key_cost_usd,
+            own_key_cost_usd=context.own_total_cost_usd,
             steps_count=context.step_number,
             error_message=error_message if is_error else None,
         )
@@ -1133,7 +1136,7 @@ class WorkflowExecutor:
                 total_credits=total_credits,
                 duration_ms=execution.duration_ms or 0,
                 session_id=context.chat_session_id,
-                own_key_cost_usd=context.own_key_cost_usd,
+                own_key_cost_usd=context.own_total_cost_usd,
                 is_session_closed=is_session_end,
             )
             # Drop the stream buffer a TTL later, so a late/reconnecting subscriber can

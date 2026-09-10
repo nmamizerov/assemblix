@@ -7,6 +7,7 @@ export interface ChatSession {
   workflow: Workflow;
   userId: string;
   totalCredits: number;
+  ownKeyCostUsd: number;
   isActive: boolean;
   lastMessageAt: string | null;
   messageCount: number;

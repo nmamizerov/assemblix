@@ -6,6 +6,7 @@ export interface ClientSession {
   metadata: Record<string, unknown>;
   executionCount: number;
   totalCredits: number;
+  ownKeyCostUsd: number;
   isActive: boolean;
   lastActivityAt: string | null;
   createdAt: string;

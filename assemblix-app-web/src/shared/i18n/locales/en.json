@@ -40,7 +40,9 @@
     "showMore": "Show more",
     "showLess": "Show less",
     "or": "or",
-    "locale": "en"
+    "locale": "en",
+    "ownKeyCost": "Own keys",
+    "ownKeyCostHint": "Actual spend on your own provider keys"
   },
   "auth": {
     "login": "Login",

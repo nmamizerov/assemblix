@@ -42,6 +42,12 @@ class VoiceAgent(UUIDMixin, TimestampMixin, Base):
         default=0,
         nullable=False,
     )
+    own_key_cost_usd: Mapped[Decimal] = mapped_column(
+        Numeric(precision=20, scale=8),
+        default=0,
+        nullable=False,
+        comment="Total USD spent on the user's own provider keys (not billed as credits)",
+    )
 
     project: Mapped["Project"] = relationship(back_populates="voice_agents")
     sessions: Mapped[list["VoiceSession"]] = relationship(

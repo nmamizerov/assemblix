@@ -70,6 +70,11 @@ class VoiceSessionHistoryService:
                     status=execution.status,
                     started_at=execution.started_at,
                     total_credits=float(execution.total_credits),
+                    own_key_cost_usd=(
+                        float(execution.own_key_cost_usd)
+                        if execution.own_key_cost_usd is not None
+                        else None
+                    ),
                 )
                 for execution in executions
             ],
@@ -87,6 +92,7 @@ class VoiceSessionHistoryService:
             ended_at=session.ended_at,
             duration_sec=session.duration_sec,
             total_credits=float(session.total_credits),
+            own_key_cost_usd=float(session.own_key_cost_usd),
             turn_count=len(session.transcript),
             end_reason=session.end_reason,
         )

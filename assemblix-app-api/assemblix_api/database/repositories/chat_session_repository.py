@@ -112,14 +112,16 @@ class ChatSessionRepository(BaseRepository[ChatSession]):
         self,
         session_id: UUID,
         credits: Decimal = Decimal("0"),
+        own_key_cost_usd: Decimal = Decimal("0"),
     ) -> None:
-        """Atomically increment message_count, add credits, and set last_message_at to now."""
+        """Atomically increment message_count, add cost, and set last_message_at to now."""
         stmt = (
             update(self._model)
             .where(self._model.id == session_id)
             .values(
                 message_count=self._model.message_count + 1,
                 total_credits=self._model.total_credits + credits,
+                own_key_cost_usd=self._model.own_key_cost_usd + own_key_cost_usd,
                 last_message_at=datetime.now(),
             )
         )

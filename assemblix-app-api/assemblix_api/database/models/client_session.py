@@ -68,6 +68,12 @@ class ClientSession(UUIDMixin, TimestampMixin, Base):
         nullable=False,
         comment="Total credits consumed",
     )
+    own_key_cost_usd: Mapped[Decimal] = mapped_column(
+        Numeric(precision=20, scale=8),
+        default=0,
+        nullable=False,
+        comment="Total USD spent on the user's own provider keys (not billed as credits)",
+    )
 
     # Status
     is_active: Mapped[bool] = mapped_column(
