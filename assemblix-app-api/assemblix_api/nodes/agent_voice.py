@@ -9,15 +9,12 @@ from __future__ import annotations
 
 import base64
 from collections.abc import Awaitable, Callable
-from uuid import UUID
 
 from assemblix_api.core.settings import get_settings
+from assemblix_api.external.voice import speech_out
 from assemblix_api.external.voice.catalog import has_realtime_route
 from assemblix_api.external.voice.pricing import compute_tts_cost
-from assemblix_api.external.voice.streaming_tts import (
-    RealtimeSession,
-    create_realtime_session,
-)
+from assemblix_api.external.voice.streaming_tts import RealtimeSession
 from assemblix_api.external.voice.synthesis import synthesize
 from assemblix_api.schemas.execution import ExecutionContext
 from assemblix_api.schemas.node import AgentNodeConfig
@@ -47,17 +44,6 @@ def should_stream_voice(
     return bool(cfg.voice.realtime) and has_realtime_route(cfg.voice.provider, cfg.voice.model)
 
 
-async def _resolve_key(cfg: AgentNodeConfig, context: ExecutionContext) -> tuple[str, bool]:
-    assert context.credential_service is not None
-    v = cfg.voice
-    assert v is not None
-    return await context.credential_service.get_voice_api_key_with_fallback(
-        credentials_id=UUID(v.credential_id) if v.credential_id else None,
-        project_id=context.project_id,
-        voice_provider=v.provider,
-    )
-
-
 async def open_voice_session(
     cfg: AgentNodeConfig,
     context: ExecutionContext,
@@ -67,21 +53,18 @@ async def open_voice_session(
 ) -> tuple[RealtimeSession, OnDelta, bool]:
     """Open a live streaming session; return (session, tee_on_delta, is_system_key)."""
     assert cfg.voice is not None
-    api_key, is_system_key = await _resolve_key(cfg, context)
-    session = create_realtime_session(
-        provider=cfg.voice.provider,
-        api_key=api_key,
-        voice_id=cfg.voice.voice_id,  # type: ignore[arg-type]
-        model=cfg.voice.model,
-        on_audio=on_audio,
+    assert context.credential_service is not None
+    out = await speech_out.resolve(
+        cfg.voice, project_id=context.project_id, credentials=context.credential_service
     )
+    session = speech_out.open_stream(out, on_audio=on_audio)
     await session.open()
 
     async def tee(text: str) -> None:
         await on_delta(text)
         await session.send_text(text)
 
-    return session, tee, is_system_key
+    return session, tee, out.uses_system_key
 
 
 def voice_cost_metadata(cfg: AgentNodeConfig, *, chars: int, is_system_key: bool) -> dict:
@@ -104,21 +87,24 @@ async def synthesize_buffered(
     """Non-streaming path: one base64 synthesis under the char cap. Returns
     (audio_dict|None, cost_metadata). Over the cap or empty text -> (None, {})."""
     assert cfg.voice is not None
+    assert context.credential_service is not None
     limit = get_settings().voice_output_max_chars
     if not text or len(text) > limit or not cfg.voice.voice_id:
         return None, {}
-    api_key, is_system_key = await _resolve_key(cfg, context)
+    out = await speech_out.resolve(
+        cfg.voice, project_id=context.project_id, credentials=context.credential_service
+    )
     result = await synthesize(
         text=text,
-        provider=cfg.voice.provider,
-        model=cfg.voice.model,
-        voice_id=cfg.voice.voice_id,
-        api_key=api_key,
+        provider=out.provider,
+        model=out.model,
+        voice_id=out.voice_id,
+        api_key=out.api_key,
     )
     audio = {
         "base64": base64.b64encode(result.audio_bytes).decode("ascii"),
         "format": "mp3",
-        "voiceId": cfg.voice.voice_id,
-        "model": cfg.voice.model,
+        "voiceId": out.voice_id,
+        "model": out.model,
     }
-    return audio, voice_cost_metadata(cfg, chars=result.chars, is_system_key=is_system_key)
+    return audio, voice_cost_metadata(cfg, chars=result.chars, is_system_key=out.uses_system_key)
