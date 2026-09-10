@@ -11,6 +11,7 @@ from __future__ import annotations
 import contextlib
 import json
 from collections.abc import AsyncIterator
+from decimal import Decimal
 from uuid import UUID
 
 import structlog
@@ -39,6 +40,7 @@ from assemblix_api.dto.responses.voice_session import (
     VoiceSessionResponse,
     VoiceSessionTokenResponse,
 )
+from assemblix_api.external.voice import speech_out
 from assemblix_api.external.voice.conversation import create_bridge
 from assemblix_api.realtime.hooks import TurnDispatcher
 from assemblix_api.realtime.runtime import VoiceSessionRuntime
@@ -223,6 +225,11 @@ async def stream_voice_session(websocket: WebSocket, token: str) -> None:
         logger.exception("voice_session_failed", voice_agent_id=str(scope.voice_agent_id))
     finally:
         input_tokens, output_tokens = runtime.usage
+        tts_cost_usd = (
+            speech_out.cost_usd(setup.tts, runtime.speech_chars)
+            if setup.tts is not None
+            else Decimal(0)
+        )
         await close_voice_session(
             voice_session_id=voice_session_id,
             transcript=runtime.transcript,
@@ -232,6 +239,8 @@ async def stream_voice_session(websocket: WebSocket, token: str) -> None:
             output_tokens=output_tokens,
             cost_per_minute=setup.cost_per_minute,
             uses_system_key=setup.uses_system_key,
+            tts_cost_usd=tts_cost_usd,
+            tts_uses_system_key=setup.tts.uses_system_key if setup.tts else False,
         )
         with contextlib.suppress(RuntimeError):
             await websocket.close()

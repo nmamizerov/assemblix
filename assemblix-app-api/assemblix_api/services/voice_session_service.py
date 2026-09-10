@@ -262,6 +262,8 @@ class VoiceSessionService:
         output_tokens: int,
         cost_per_minute: float,
         uses_system_key: bool,
+        tts_cost_usd: Decimal = Decimal(0),
+        tts_uses_system_key: bool = False,
     ) -> None:
         """Write everything the call produced, and bill it, in one go."""
         session = await self._sessions.get_by_id(voice_session_id)
@@ -279,7 +281,11 @@ class VoiceSessionService:
             )
 
         fee_credits, margin_credits = compute_session_credits(
-            duration_sec, cost_per_minute, uses_system_key=uses_system_key
+            duration_sec,
+            cost_per_minute,
+            uses_system_key=uses_system_key,
+            tts_cost_usd=tts_cost_usd,
+            tts_uses_system_key=tts_uses_system_key,
         )
         credits = fee_credits + margin_credits
 
@@ -287,8 +293,16 @@ class VoiceSessionService:
         # already priced into the margin credits; on the caller's own key it is what they
         # paid directly, and the only place that figure is ever recorded.
         minutes = Decimal(str(duration_sec)) / Decimal(60)
-        provider_cost_usd = minutes * Decimal(str(cost_per_minute))
-        own_key_cost_usd = Decimal(0) if uses_system_key else provider_cost_usd
+        provider_cost_usd = Decimal(0)
+        own_key_cost_usd = Decimal(0)
+        for spend, on_system_key in (
+            (minutes * Decimal(str(cost_per_minute)), uses_system_key),
+            (tts_cost_usd, tts_uses_system_key),
+        ):
+            if on_system_key:
+                provider_cost_usd += spend
+            else:
+                own_key_cost_usd += spend
 
         await self._sessions.update(
             session,
@@ -317,7 +331,7 @@ class VoiceSessionService:
             voice_session_id=voice_session_id,
             fee_credits=fee_credits,
             margin_credits=margin_credits,
-            provider_cost_usd=provider_cost_usd if uses_system_key else Decimal(0),
+            provider_cost_usd=provider_cost_usd,
             uses_system_key=uses_system_key,
         )
 
@@ -428,21 +442,28 @@ class VoiceSessionService:
 
 
 def compute_session_credits(
-    duration_sec: float, cost_per_minute: float, *, uses_system_key: bool
+    duration_sec: float,
+    cost_per_minute: float,
+    *,
+    uses_system_key: bool,
+    tts_cost_usd: Decimal = Decimal(0),
+    tts_uses_system_key: bool = False,
 ) -> tuple[Decimal, Decimal]:
     """Return (platform_fee_credits, provider_margin_credits) for a finished call.
 
-    The platform fee is charged on every conversation; provider margin only when
-    the call ran on our keys. A conversation is billed by wall-clock — the one
-    number both providers agree on the meaning of.
+    The platform fee is charged on every conversation. Margin is the sum of two
+    independent terms: the conversation minutes and the speech synthesized for it.
+    The two system-key flags are independent because the two keys are — a call can
+    run the model on our key and the voice on the caller's, or the reverse.
     """
     minutes = Decimal(str(duration_sec)) / Decimal(60)
     fee = credit_config.voice_platform_fee_credits(minutes)
-    margin = (
-        credit_config.usd_to_credits(minutes * Decimal(str(cost_per_minute)), with_margin=True)
-        if uses_system_key
-        else Decimal(0)
-    )
+    provider_usd = Decimal(0)
+    if uses_system_key:
+        provider_usd += minutes * Decimal(str(cost_per_minute))
+    if tts_uses_system_key:
+        provider_usd += tts_cost_usd
+    margin = credit_config.usd_to_credits(provider_usd, with_margin=True)
     return fee.quantize(_CREDITS_QUANTUM), margin.quantize(_CREDITS_QUANTUM)
 
 
@@ -508,6 +529,8 @@ async def close_voice_session(
     output_tokens: int,
     cost_per_minute: float,
     uses_system_key: bool,
+    tts_cost_usd: Decimal = Decimal(0),
+    tts_uses_system_key: bool = False,
 ) -> None:
     async with _voice_session_service() as service:
         await service.close_session(
@@ -519,4 +542,6 @@ async def close_voice_session(
             output_tokens=output_tokens,
             cost_per_minute=cost_per_minute,
             uses_system_key=uses_system_key,
+            tts_cost_usd=tts_cost_usd,
+            tts_uses_system_key=tts_uses_system_key,
         )
