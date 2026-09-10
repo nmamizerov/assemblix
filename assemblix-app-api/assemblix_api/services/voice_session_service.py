@@ -41,7 +41,13 @@ from assemblix_api.database.repositories.organization_user_repository import (
 from assemblix_api.database.repositories.project_repository import ProjectRepository
 from assemblix_api.database.repositories.voice_agent_repository import VoiceAgentRepository
 from assemblix_api.database.repositories.voice_session_repository import VoiceSessionRepository
-from assemblix_api.external.voice.catalog.registry import find_voice_model
+from assemblix_api.external.voice import speech_out
+from assemblix_api.external.voice.catalog.registry import (
+    find_voice_model,
+    has_realtime_route,
+    supports_text_output,
+)
+from assemblix_api.external.voice.speech_out import SpeechOutput
 from assemblix_api.schemas.voice_agent import VoiceAgentConfig
 from assemblix_api.services.credentials_service import CredentialsService
 from assemblix_api.services.knowledge_base_service import KnowledgeBaseService
@@ -96,6 +102,8 @@ class VoiceSessionSetup:
     # Configured transport base URL — the same gateway chat and transcription use.
     # None means the provider SDK's own endpoint.
     api_base: str | None
+    # External synthesis target. None means the model speaks with its own voice.
+    tts: SpeechOutput | None
     turn_workflow_id: str | None
     final_workflow_id: str | None
     # From the voice catalog. A conversation is billed by wall-clock rather than by
@@ -159,6 +167,25 @@ class VoiceSessionService:
             voice_provider=config.voice.provider,
         )
 
+        tts = None
+        if config.tts is not None:
+            if not supports_text_output(config.voice.provider, config.voice.model):
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=(
+                        f"Model {config.voice.model} cannot answer in text, "
+                        "so an external voice cannot speak for it"
+                    ),
+                )
+            if not has_realtime_route(config.tts.provider, config.tts.model):
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"Voice model {config.tts.model} has no streaming route",
+                )
+            tts = await speech_out.resolve(
+                config.tts, project_id=project_id, credentials=self._credentials
+            )
+
         catalog_entry = find_voice_model(config.voice.provider, config.voice.model)
 
         return VoiceSessionSetup(
@@ -170,6 +197,7 @@ class VoiceSessionService:
             model=config.voice.model,
             api_key=api_key,
             api_base=resolve_conversation_base(config.voice.provider),
+            tts=tts,
             turn_workflow_id=config.turn_workflow_id,
             final_workflow_id=config.final_workflow_id,
             cost_per_minute=(catalog_entry.cost_per_minute or 0.0) if catalog_entry else 0.0,
@@ -234,6 +262,8 @@ class VoiceSessionService:
         output_tokens: int,
         cost_per_minute: float,
         uses_system_key: bool,
+        tts_cost_usd: Decimal = Decimal(0),
+        tts_uses_system_key: bool = False,
     ) -> None:
         """Write everything the call produced, and bill it, in one go."""
         session = await self._sessions.get_by_id(voice_session_id)
@@ -251,7 +281,11 @@ class VoiceSessionService:
             )
 
         fee_credits, margin_credits = compute_session_credits(
-            duration_sec, cost_per_minute, uses_system_key=uses_system_key
+            duration_sec,
+            cost_per_minute,
+            uses_system_key=uses_system_key,
+            tts_cost_usd=tts_cost_usd,
+            tts_uses_system_key=tts_uses_system_key,
         )
         credits = fee_credits + margin_credits
 
@@ -259,8 +293,16 @@ class VoiceSessionService:
         # already priced into the margin credits; on the caller's own key it is what they
         # paid directly, and the only place that figure is ever recorded.
         minutes = Decimal(str(duration_sec)) / Decimal(60)
-        provider_cost_usd = minutes * Decimal(str(cost_per_minute))
-        own_key_cost_usd = Decimal(0) if uses_system_key else provider_cost_usd
+        provider_cost_usd = Decimal(0)
+        own_key_cost_usd = Decimal(0)
+        for spend, on_system_key in (
+            (minutes * Decimal(str(cost_per_minute)), uses_system_key),
+            (tts_cost_usd, tts_uses_system_key),
+        ):
+            if on_system_key:
+                provider_cost_usd += spend
+            else:
+                own_key_cost_usd += spend
 
         await self._sessions.update(
             session,
@@ -289,7 +331,7 @@ class VoiceSessionService:
             voice_session_id=voice_session_id,
             fee_credits=fee_credits,
             margin_credits=margin_credits,
-            provider_cost_usd=provider_cost_usd if uses_system_key else Decimal(0),
+            provider_cost_usd=provider_cost_usd,
             uses_system_key=uses_system_key,
         )
 
@@ -400,21 +442,28 @@ class VoiceSessionService:
 
 
 def compute_session_credits(
-    duration_sec: float, cost_per_minute: float, *, uses_system_key: bool
+    duration_sec: float,
+    cost_per_minute: float,
+    *,
+    uses_system_key: bool,
+    tts_cost_usd: Decimal = Decimal(0),
+    tts_uses_system_key: bool = False,
 ) -> tuple[Decimal, Decimal]:
     """Return (platform_fee_credits, provider_margin_credits) for a finished call.
 
-    The platform fee is charged on every conversation; provider margin only when
-    the call ran on our keys. A conversation is billed by wall-clock — the one
-    number both providers agree on the meaning of.
+    The platform fee is charged on every conversation. Margin is the sum of two
+    independent terms: the conversation minutes and the speech synthesized for it.
+    The two system-key flags are independent because the two keys are — a call can
+    run the model on our key and the voice on the caller's, or the reverse.
     """
     minutes = Decimal(str(duration_sec)) / Decimal(60)
     fee = credit_config.voice_platform_fee_credits(minutes)
-    margin = (
-        credit_config.usd_to_credits(minutes * Decimal(str(cost_per_minute)), with_margin=True)
-        if uses_system_key
-        else Decimal(0)
-    )
+    provider_usd = Decimal(0)
+    if uses_system_key:
+        provider_usd += minutes * Decimal(str(cost_per_minute))
+    if tts_uses_system_key:
+        provider_usd += tts_cost_usd
+    margin = credit_config.usd_to_credits(provider_usd, with_margin=True)
     return fee.quantize(_CREDITS_QUANTUM), margin.quantize(_CREDITS_QUANTUM)
 
 
@@ -480,6 +529,8 @@ async def close_voice_session(
     output_tokens: int,
     cost_per_minute: float,
     uses_system_key: bool,
+    tts_cost_usd: Decimal = Decimal(0),
+    tts_uses_system_key: bool = False,
 ) -> None:
     async with _voice_session_service() as service:
         await service.close_session(
@@ -491,4 +542,6 @@ async def close_voice_session(
             output_tokens=output_tokens,
             cost_per_minute=cost_per_minute,
             uses_system_key=uses_system_key,
+            tts_cost_usd=tts_cost_usd,
+            tts_uses_system_key=tts_uses_system_key,
         )

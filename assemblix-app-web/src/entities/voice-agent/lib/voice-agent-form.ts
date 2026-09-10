@@ -51,6 +51,7 @@ export const emptyDraft = (): VoiceAgentDraft => ({
   turnWorkflowId: "",
   finalWorkflowId: "",
   credentialId: null,
+  tts: null,
   params: {},
 });
 
@@ -73,6 +74,7 @@ export const applyProviderChange = (
   if (provider === draft.provider) return draft;
   // A credential is provider-specific: leaving one behind on a switched
   // provider is either a hard 400 or a silent fall-back to the system key.
+  // `tts` is deliberately kept: it belongs to the voice, not to the model.
   return { ...draft, provider, model: "", voiceId: "", credentialId: null };
 };
 
@@ -95,6 +97,7 @@ export const toCreateRequest = (
       credentialId: draft.credentialId,
       realtime: false,
     },
+    tts: draft.tts,
     params: draft.params,
     turnWorkflowId: draft.turnWorkflowId || null,
     finalWorkflowId: draft.finalWorkflowId || null,

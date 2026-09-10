@@ -57,6 +57,7 @@ describe("voice agent form", () => {
           credentialId: null,
           realtime: false,
         },
+        tts: null,
         params: {},
         turnWorkflowId: "wf-1",
         finalWorkflowId: null,

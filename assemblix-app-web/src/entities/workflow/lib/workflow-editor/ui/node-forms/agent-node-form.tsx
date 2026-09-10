@@ -4,7 +4,6 @@ import { useSelector } from "react-redux";
 import { BaseForm } from "./base-form";
 import { FallbackModelRow } from "./fallback-model-row";
 import { useNodeDataChange } from "./useNodeDataChange";
-import { VoiceOutputPicker } from "./voice-output-picker";
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
 import { Button } from "@/shared/ui/button";
@@ -63,6 +62,7 @@ import {
 import { selectCurrentProjectId } from "@/entities/organization";
 import { selectHasAvatarConfig } from "../../model/editor-mode.slice";
 import { useGetServerConfigQuery } from "@/entities/config";
+import { VoiceOutputPicker } from "@/entities/voice-model";
 import { useGetKnowledgeBasesQuery } from "@/entities/knowledge-base";
 import {
   DynamicParamForm,

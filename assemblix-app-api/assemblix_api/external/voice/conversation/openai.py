@@ -82,6 +82,7 @@ class OpenAIRealtimeBridge:
         self._connect_factory = connect_factory
         self._connection: Any = None
         self._failed = False
+        self._text_output = False
         # id of the assistant item currently producing audio, for interrupt()'s truncate.
         self._active_item_id: str | None = None
 
@@ -102,7 +103,9 @@ class OpenAIRealtimeBridge:
         voice: str,
         language: str,
         params: dict,
+        text_output: bool = False,
     ) -> None:
+        self._text_output = text_output
         factory = self._connect_factory or self._default_connect
         result = factory(api_key=self._api_key, model=self._model)
         self._connection = await result if inspect.isawaitable(result) else result
@@ -124,12 +127,17 @@ class OpenAIRealtimeBridge:
                     },
                     "turn_detection": turn_detection,
                 },
-                "output": {
-                    "format": _AUDIO_FORMAT,
-                    "voice": _voice_payload(voice),
-                },
             },
         }
+        if text_output:
+            # An output audio format in the session reads as an implicit request for
+            # audio, so the whole output block goes rather than just the voice.
+            session["output_modalities"] = ["text"]
+        else:
+            session["audio"]["output"] = {
+                "format": _AUDIO_FORMAT,
+                "voice": _voice_payload(voice),
+            }
         await self._connection.session.update(session=session)
 
     async def send_audio(self, pcm: bytes) -> None:
@@ -186,10 +194,15 @@ class OpenAIRealtimeBridge:
                 return UserTranscript(text=event.transcript, is_final=True)
             case "response.output_item.added":
                 # Track the assistant item currently producing audio so interrupt()
-                # can target it with conversation.item.truncate.
-                if getattr(event.item, "role", None) == "assistant":
+                # can target it with conversation.item.truncate. In text mode there is
+                # no audio to truncate, so nothing is tracked.
+                if not self._text_output and getattr(event.item, "role", None) == "assistant":
                     self._active_item_id = event.item.id
                 return None
+            case "response.output_text.delta":
+                return AgentTranscript(text=event.delta, is_final=False)
+            case "response.output_text.done":
+                return AgentTranscript(text=event.text, is_final=True)
             case "response.output_audio.delta":
                 return AudioDelta(pcm=base64.b64decode(event.delta))
             case "response.output_audio_transcript.delta":

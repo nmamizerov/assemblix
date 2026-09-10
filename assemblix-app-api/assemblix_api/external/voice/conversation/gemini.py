@@ -114,6 +114,7 @@ class GeminiLiveBridge:
         voice: str,
         language: str,
         params: dict,
+        text_output: bool = False,
     ) -> None:
         from google.genai import types
 
@@ -121,16 +122,21 @@ class GeminiLiveBridge:
             **{key: params[key] for key in _ACTIVITY_DETECTION_PARAMS if key in params}
         )
         config = types.LiveConnectConfig(
-            response_modalities=[types.Modality.AUDIO],
+            response_modalities=[types.Modality.TEXT if text_output else types.Modality.AUDIO],
             system_instruction=instructions,
-            speech_config=types.SpeechConfig(
-                voice_config=types.VoiceConfig(
-                    prebuilt_voice_config=types.PrebuiltVoiceConfig(voice_name=voice)
-                ),
-                language_code=_BCP47.get(language, language),
+            speech_config=(
+                None
+                if text_output
+                else types.SpeechConfig(
+                    voice_config=types.VoiceConfig(
+                        prebuilt_voice_config=types.PrebuiltVoiceConfig(voice_name=voice)
+                    ),
+                    language_code=_BCP47.get(language, language),
+                )
             ),
             input_audio_transcription=types.AudioTranscriptionConfig(),
-            output_audio_transcription=types.AudioTranscriptionConfig(),
+            # No output audio in text mode, so there is nothing to transcribe.
+            output_audio_transcription=(None if text_output else types.AudioTranscriptionConfig()),
             realtime_input_config=types.RealtimeInputConfig(
                 automatic_activity_detection=activity_detection,
                 activity_handling=types.ActivityHandling.START_OF_ACTIVITY_INTERRUPTS,
@@ -226,6 +232,12 @@ class GeminiLiveBridge:
                     # a sign that the caller has stopped talking.
                     self._finalize_user(events)
                     events.append(AudioDelta(pcm=blob.data))
+                elif part.text:
+                    # Text mode: the reply arrives here instead of as a transcription
+                    # of audio, and answering still ends the caller's utterance.
+                    self._finalize_user(events)
+                    self._agent_text += part.text
+                    events.append(AgentTranscript(text=self._agent_text, is_final=False))
 
         if content.turn_complete:
             self._finalize_user(events)

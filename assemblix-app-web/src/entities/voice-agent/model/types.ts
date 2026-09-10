@@ -1,14 +1,8 @@
+import type { VoiceOutputConfig } from "@/entities/voice-model";
+
 export interface AgentInstruction {
   role: string;
   content: string;
-}
-
-export interface VoiceOutputConfig {
-  provider: string;
-  model: string;
-  voiceId: string | null;
-  credentialId: string | null;
-  realtime: boolean;
 }
 
 export interface VoiceAgentConfig {
@@ -17,6 +11,7 @@ export interface VoiceAgentConfig {
   firstMessage: string | null;
   language: string;
   voice: VoiceOutputConfig;
+  tts: VoiceOutputConfig | null;
   params: Record<string, unknown>;
   turnWorkflowId: string | null;
   finalWorkflowId: string | null;
@@ -66,5 +61,7 @@ export interface VoiceAgentDraft {
   // Carried through untouched by the form so a load → save round trip does not
   // drop config the UI does not expose.
   credentialId: string | null;
+  // null means the realtime model speaks with its own voice.
+  tts: VoiceOutputConfig | null;
   params: Record<string, unknown>;
 }

@@ -27,3 +27,6 @@ class VoiceModelMetadata(DTOModel):
     route: Literal["transcription", "completion", "speech", "realtime", "conversation"]
     cost_per_minute: float | None = None
     cost_per_char: float | None = None
+    # Conversation models only: whether the model can answer in text instead of
+    # audio. Native-audio models cannot, which rules out half-cascade output.
+    supports_text_output: bool = False

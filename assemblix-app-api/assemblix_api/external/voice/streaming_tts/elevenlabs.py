@@ -23,6 +23,7 @@ from assemblix_api.schemas.debug_events import AlignmentData
 logger = structlog.get_logger(__name__)
 
 OnAudio = Callable[[bytes, AlignmentData | None], Awaitable[None]]
+OnError = Callable[[str], Awaitable[None]]
 
 
 def _parse_alignment(raw: dict | None) -> AlignmentData | None:
@@ -47,12 +48,14 @@ class RealtimeTTSSession:
         connect: Callable[..., Awaitable] | None = None,
         output_format: str | None = None,
         chunk_schedule: list[int] | None = None,
+        on_error: OnError | None = None,
     ):
         settings = get_settings()
         self._api_key = api_key
         self._voice_id = voice_id
         self._model = model
         self._on_audio = on_audio
+        self._on_error = on_error
         self._connect = connect
         self._output_format = output_format or settings.voice_realtime_output_format
         self._chunk_schedule = chunk_schedule or settings.voice_realtime_chunk_schedule
@@ -61,6 +64,15 @@ class RealtimeTTSSession:
         self._recv_task: asyncio.Task | None = None
         self._chars_sent = 0
         self._failed = False
+
+    async def _fail(self, event: str, exc: BaseException) -> None:
+        """Audio is best-effort here, but a caller that owns a live call has to hear
+        about a dead provider rather than infer it from silence."""
+        self._failed = True
+        message = str(exc)
+        logger.info(event, error=message)
+        if self._on_error is not None:
+            await self._on_error(message)
 
     async def _default_connect(self, url: str) -> object:
         import websockets
@@ -101,8 +113,7 @@ class RealtimeTTSSession:
                 if payload.get("isFinal"):
                     break
         except Exception as exc:  # noqa: BLE001 — audio is best-effort; log and stop.
-            self._failed = True
-            logger.info("voice.realtime.recv_stopped", error=str(exc))
+            await self._fail("voice.realtime.recv_stopped", exc)
 
     async def send_text(self, text: str) -> None:
         if self._failed or self._ws is None:
@@ -111,15 +122,14 @@ class RealtimeTTSSession:
             await self._ws.send(json.dumps({"text": text, "try_trigger_generation": True}))
             self._chars_sent += len(text)
         except Exception as exc:  # noqa: BLE001 — best-effort.
-            self._failed = True
-            logger.info("voice.realtime.send_stopped", error=str(exc))
+            await self._fail("voice.realtime.send_stopped", exc)
 
     async def flush_and_close(self) -> int:
         if self._ws is not None and not self._failed:
             try:
                 await self._ws.send(json.dumps({"text": ""}))  # EOS
-            except Exception:  # noqa: BLE001
-                self._failed = True
+            except Exception as exc:  # noqa: BLE001
+                await self._fail("voice.realtime.eos_stopped", exc)
         if self._recv_task is not None:
             try:
                 await asyncio.wait_for(self._recv_task, timeout=30.0)

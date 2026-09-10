@@ -17,17 +17,20 @@ import {
   useGetVoiceProviderModelsQuery,
   useGetCredentialVoicesQuery,
   useGetSystemVoicesQuery,
-} from "@/entities/voice-model";
+} from "../api/voice-model.api";
 import {
   CredentialSelect,
   getCredentialTypeForProvider,
 } from "@/entities/credential";
 import { useGetServerConfigQuery } from "@/entities/config";
-import type { VoiceOutputConfig } from "../../../../model/types";
+import type { VoiceOutputConfig } from "../model/types";
 
 interface VoiceOutputPickerProps {
   value: VoiceOutputConfig | undefined;
   onChange: (voice: VoiceOutputConfig) => void;
+  // Half-cascade output can only use providers with a streaming route, so the
+  // choice is not the author's to make and the toggle is not shown.
+  requireRealtime?: boolean;
 }
 
 /**
@@ -38,25 +41,28 @@ interface VoiceOutputPickerProps {
  * Realtime toggle; flipping it switches the model list to that provider's
  * realtime models and records `realtime` on the config so the backend streams.
  * Providers without a realtime route (e.g. Yandex) simply never show the toggle —
- * new providers slot in with zero picker changes.
+ * new providers slot in with zero picker changes. With `requireRealtime` the
+ * cascade is realtime-only: the provider list is narrowed and the toggle is gone.
  */
 export const VoiceOutputPicker = ({
   value,
   onChange,
+  requireRealtime = false,
 }: VoiceOutputPickerProps) => {
   const { t } = useTranslation();
   const [voiceSearchQuery, setVoiceSearchQuery] = useState("");
   const debouncedVoiceSearch = useDebouncedValue(voiceSearchQuery, 300);
 
   const provider = value?.provider;
-  const realtime = value?.realtime ?? false;
+  const realtime = requireRealtime || (value?.realtime ?? false);
 
-  const { data: providers = [] } = useGetVoiceProvidersQuery({
+  const { data: speechProviders = [] } = useGetVoiceProvidersQuery({
     capability: "speech",
   });
   const { data: realtimeProviders = [] } = useGetVoiceProvidersQuery({
     capability: "realtime",
   });
+  const providers = requireRealtime ? realtimeProviders : speechProviders;
   const providerSupportsRealtime = useMemo(
     () => realtimeProviders.some((p) => p.name === provider),
     [realtimeProviders, provider],
@@ -65,7 +71,7 @@ export const VoiceOutputPicker = ({
   const capability = effectiveRealtime ? "realtime" : "speech";
 
   const handleProviderChange = (nextProvider: string) => {
-    onChange({ provider: nextProvider, model: "", realtime: false });
+    onChange({ provider: nextProvider, model: "", realtime: requireRealtime });
   };
   const handleRealtimeToggle = (next: boolean) => {
     // Model lists differ between routes — reset the model on toggle.
@@ -176,7 +182,7 @@ export const VoiceOutputPicker = ({
         </Select>
       </div>
 
-      {providerSupportsRealtime && (
+      {!requireRealtime && providerSupportsRealtime && (
         <div className="flex items-center justify-between gap-2">
           <div className="flex flex-col">
             <Label className="text-xs">{t("nodeForms.end.realtime")}</Label>
@@ -196,7 +202,7 @@ export const VoiceOutputPicker = ({
         <div className="space-y-2">
           <Label className="text-xs">{t("nodeForms.end.voiceCredential")}</Label>
           <CredentialSelect
-            selectedCredentialId={value?.credentialId}
+            selectedCredentialId={value?.credentialId ?? undefined}
             onSelect={handleCredentialChange}
             credentialType={voiceCredentialType}
             placeholder={t("nodeForms.end.selectVoiceCredential")}

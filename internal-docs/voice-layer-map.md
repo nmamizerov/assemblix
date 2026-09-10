@@ -13,8 +13,8 @@ names and are routinely mixed up.
 |---|---|---|---|---|
 | `transcription` | audio → text | `transcription.py::transcribe()` | LiteLLM, `yandex.py` | `transcribe` node |
 | `speech` | text → audio (one blob) | `synthesis.py::synthesize()` | `providers/elevenlabs.py`, `providers/yandex.py` | agent node, buffered voice output |
-| `realtime` (pkg `streaming_tts/`) | text → audio (streamed) | `streaming_tts/__init__.py::create_realtime_session()` | `streaming_tts/elevenlabs.py`, `streaming_tts/yandex.py` | agent node with live voice, avatars |
-| `conversation` | audio ↔ audio (duplex) | `conversation/__init__.py::create_bridge()` | `conversation/openai.py`, `conversation/gemini.py` | **Voice Agents** |
+| `realtime` (pkg `streaming_tts/`) | text → audio (streamed) | `streaming_tts/__init__.py::create_realtime_session()` | `streaming_tts/elevenlabs.py`, `streaming_tts/yandex.py` | agent node with live voice, avatars, **Voice Agents** (half-cascade output) |
+| `conversation` | audio ↔ audio (duplex) | `conversation/__init__.py::create_bridge()` | `conversation/openai.py`, `conversation/gemini.py` | **Voice Agents** (natively, or wrapped by half-cascade) |
 
 ### The name trap
 
@@ -26,7 +26,15 @@ conversation   audio ◄────────►  audio          the caller s
 ```
 
 `streaming_tts` belongs to **voice inside workflows**. `conversation` belongs to **Voice
-Agents**. They share nothing but the folder.
+Agents**. They share nothing but the folder — with exactly one deliberate exception.
+
+`conversation/half_cascade.py` wraps a conversation bridge in text mode and hands its
+text to a `streaming_tts` session, so a Voice Agent can answer in a voice the model
+itself cannot produce (native speech-to-speech models speak poor Russian). Both provider
+vocabularies still stop at their own seams: the composition happens above them, in
+`create_bridge()`, and the runtime sees the ordinary bridge vocabulary either way.
+`external/voice/speech_out.py` is the shared piece both callers of the TTS seam use to
+turn a `VoiceOutputConfig` into a running session.
 
 ## How a capability is wired
 

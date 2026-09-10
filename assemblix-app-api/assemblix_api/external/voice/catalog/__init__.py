@@ -13,6 +13,7 @@ from assemblix_api.external.voice.catalog.registry import (
     has_realtime_route,
     list_voice_models,
     list_voice_providers,
+    supports_text_output,
 )
 
 __all__ = [
@@ -23,4 +24,5 @@ __all__ = [
     "has_realtime_route",
     "list_voice_models",
     "list_voice_providers",
+    "supports_text_output",
 ]

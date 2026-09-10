@@ -67,3 +67,9 @@ def has_conversation_route(provider: str, model: str) -> bool:
     if provider not in VOICE_PROVIDER_LABELS:
         return False
     return any(m.id == model and m.capability == "conversation" for m in _provider_models(provider))
+
+
+def supports_text_output(provider: str, model: str) -> bool:
+    """True when ``(provider, model)`` can answer in text rather than audio."""
+    meta = find_voice_model(provider, model)
+    return bool(meta and meta.supports_text_output)
