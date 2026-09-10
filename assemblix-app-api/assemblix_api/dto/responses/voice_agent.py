@@ -20,5 +20,8 @@ class VoiceAgentResponse(DTOModel):
     is_active: bool = Field(description="Whether the agent can accept sessions")
     session_count: int = Field(description="Number of voice sessions started with this agent")
     total_credits: float = Field(description="Total credits consumed by this agent")
+    own_key_cost_usd: float = Field(
+        description="USD spent on the caller's own provider keys (never billed as credits)"
+    )
     created_at: datetime = Field(description="Creation timestamp")
     updated_at: datetime = Field(description="Last update timestamp")

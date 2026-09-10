@@ -55,3 +55,35 @@ def test_voiced_agent_step_accumulates_both_llm_and_voice() -> None:
     # Assert
     assert updated.system_key_cost_usd == Decimal("0.01")
     assert updated.system_voice_cost_usd == Decimal("0.003")
+
+
+def test_own_total_cost_usd_folds_llm_and_voice() -> None:
+    """The persisted own-key figure covers both buckets, not just the LLM one."""
+    # Arrange
+    context = make_context()
+    metadata = {
+        "cost": 0.01,
+        "used_system_key": False,
+        "voice_cost": 0.003,
+        "voice_used_system_key": False,
+    }
+    # Act
+    updated = accumulate_step_cost(context, metadata)
+    # Assert
+    assert updated.own_total_cost_usd == Decimal("0.013")
+
+
+def test_own_total_cost_usd_excludes_system_key_spend() -> None:
+    """System-key cost is billed as credits and must not leak into the own-key figure."""
+    # Arrange
+    context = make_context()
+    metadata = {
+        "cost": 0.01,
+        "used_system_key": True,
+        "voice_cost": 0.003,
+        "voice_used_system_key": True,
+    }
+    # Act
+    updated = accumulate_step_cost(context, metadata)
+    # Assert
+    assert updated.own_total_cost_usd == Decimal("0")

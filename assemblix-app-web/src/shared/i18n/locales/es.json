@@ -40,7 +40,9 @@
     "showMore": "Mostrar más",
     "showLess": "Mostrar menos",
     "or": "o",
-    "locale": "es"
+    "locale": "es",
+    "ownKeyCost": "Claves propias",
+    "ownKeyCostHint": "Gasto real con tus propias claves de proveedor"
   },
   "auth": {
     "login": "Iniciar sesión",

@@ -69,6 +69,7 @@ export interface ExecutionListItem {
   completedAt?: string | null;
   durationMs: number;
   totalCredits: number;
+  ownKeyCostUsd?: number | null;
   stepsCount: number;
   clientSessionId?: string | null;
   workflow: {

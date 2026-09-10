@@ -6,6 +6,7 @@ import { useGetChatSessionDetailQuery } from "@/entities/chat-session";
 import type { Message } from "@/entities/chat-session";
 import { Button } from "@/shared/ui/button";
 import { useFormatDate } from "@/shared/lib/format-date";
+import { formatUsd } from "@/shared/lib/format-cost";
 import { useEffect, useRef } from "react";
 
 export const ChatDetailsPage = () => {
@@ -143,6 +144,15 @@ export const ChatDetailsPage = () => {
                   {formatNumber(chatSession.totalCredits ?? 0)}{" "}
                   {t("chatDetails.credits")}
                 </span>
+                {(chatSession.ownKeyCostUsd ?? 0) > 0 && (
+                  <>
+                    <span>•</span>
+                    <span title={t("common.ownKeyCostHint")}>
+                      {formatUsd(chatSession.ownKeyCostUsd ?? 0)}{" "}
+                      {t("common.ownKeyCost")}
+                    </span>
+                  </>
+                )}
               </div>
             </div>
           </div>

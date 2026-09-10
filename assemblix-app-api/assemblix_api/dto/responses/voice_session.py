@@ -30,6 +30,9 @@ class VoiceSessionResponse(DTOModel):
     # Serialized as a JSON number over a Numeric(20, 8) column, matching every other
     # credit field in the API. See assemblix-app-api/CLAUDE.md on why.
     total_credits: float = Field(description="Credits the call consumed")
+    own_key_cost_usd: float = Field(
+        description="USD spent on the caller's own provider keys (never billed as credits)"
+    )
     turn_count: int = Field(description="Number of transcript lines")
     end_reason: str | None = Field(default=None, description="user_hangup | timeout | error")
 
@@ -47,6 +50,10 @@ class VoiceSessionExecutionResponse(DTOModel):
     status: str = Field(description="Execution status")
     started_at: datetime | None = Field(default=None, description="When the run started")
     total_credits: float = Field(description="Credits the run consumed")
+    own_key_cost_usd: float | None = Field(
+        default=None,
+        description="USD the run cost on the caller's own provider keys",
+    )
 
 
 class VoiceSessionDetailResponse(VoiceSessionResponse):

@@ -102,6 +102,15 @@ class ExecutionContext:
     db_checkpoint: Callable[[], Awaitable[None]] = _noop_checkpoint
 
     @property
+    def own_total_cost_usd(self) -> Decimal:
+        """What the run actually cost the user on their own keys — LLM plus voice.
+
+        Persisted as a single figure: the per-key-type split is already visible on
+        individual steps, and the run-level answer users ask for is one number.
+        """
+        return self.own_key_cost_usd + self.own_voice_cost_usd
+
+    @property
     def templates(self) -> TemplateEvaluator:
         """Render `{{...}}` templates. Uses the pre-built evaluator from the
         preparation phase; if it is absent (e.g. in unit tests where only

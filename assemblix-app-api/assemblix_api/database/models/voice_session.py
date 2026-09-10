@@ -57,6 +57,12 @@ class VoiceSession(UUIDMixin, TimestampMixin, Base):
         default=0,
         nullable=False,
     )
+    own_key_cost_usd: Mapped[Decimal] = mapped_column(
+        Numeric(precision=20, scale=8),
+        default=0,
+        nullable=False,
+        comment="Total USD spent on the user's own provider keys (not billed as credits)",
+    )
     # Provider token counts, kept for reconciling against an invoice. The charge is
     # computed from duration; these are observability, not billing.
     input_tokens: Mapped[int] = mapped_column(Integer, default=0, nullable=False)

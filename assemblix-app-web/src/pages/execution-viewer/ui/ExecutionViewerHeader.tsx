@@ -1,9 +1,10 @@
-import { ArrowLeft, Clock, DollarSign } from "lucide-react";
+import { ArrowLeft, Clock, DollarSign, Wallet } from "lucide-react";
 import { useNavigate, useLocation, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/shared/ui/button";
 import { cn } from "@/shared/lib/utils";
 import { useFormatDate } from "@/shared/lib/format-date";
+import { formatUsd } from "@/shared/lib/format-cost";
 import type { ExecutionDetailResponse } from "@/entities/execution";
 import {
   getStatusIcon,
@@ -111,6 +112,20 @@ export const ExecutionViewerHeader = ({
                     </p>
                   </div>
                 </div>
+
+                {(execution.ownKeyCostUsd ?? 0) > 0 && (
+                  <div className="flex items-center gap-2">
+                    <Wallet className="h-4 w-4 text-muted-foreground" />
+                    <div>
+                      <p className="text-xs text-muted-foreground">
+                        {t("common.ownKeyCost")}
+                      </p>
+                      <p className="text-sm font-medium">
+                        {formatUsd(execution.ownKeyCostUsd ?? 0)}
+                      </p>
+                    </div>
+                  </div>
+                )}
 
                 <div className="flex items-center gap-2">
                   <div>

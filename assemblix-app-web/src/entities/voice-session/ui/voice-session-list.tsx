@@ -1,6 +1,8 @@
 import { Loader2, PhoneOff } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
+import { formatUsd } from "@/shared/lib/format-cost";
+
 import { formatCredits, formatDuration } from "../lib/format";
 import type { VoiceSession } from "../model/types";
 
@@ -71,6 +73,9 @@ export const VoiceSessionList = ({
             <th className="px-4 py-2.5 text-right font-medium">
               {t("voiceSessions.columns.cost")}
             </th>
+            <th className="px-4 py-2.5 text-right font-medium">
+              {t("common.ownKeyCost")}
+            </th>
             <th className="px-4 py-2.5 text-left font-medium">
               {t("voiceSessions.columns.outcome")}
             </th>
@@ -94,6 +99,9 @@ export const VoiceSessionList = ({
               </td>
               <td className="px-4 py-3 text-right tabular-nums">
                 {formatCredits(session.totalCredits)}
+              </td>
+              <td className="px-4 py-3 text-right tabular-nums text-muted-foreground">
+                {session.ownKeyCostUsd > 0 ? formatUsd(session.ownKeyCostUsd) : "—"}
               </td>
               <td className={`px-4 py-3 ${outcomeTone(session)}`}>
                 {session.endReason

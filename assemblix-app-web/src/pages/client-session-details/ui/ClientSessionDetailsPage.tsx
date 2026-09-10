@@ -12,6 +12,7 @@ import {
   Edit3,
   CheckCircle2,
   XCircle,
+  Wallet,
 } from "lucide-react";
 import {
   useGetClientSessionQuery,
@@ -41,6 +42,7 @@ import { Pagination } from "@/shared/ui";
 import { toast } from "sonner";
 import { cn } from "@/shared/lib/utils";
 import { useFormatDate } from "@/shared/lib/format-date";
+import { formatUsd } from "@/shared/lib/format-cost";
 
 export const ClientSessionDetailsPage = () => {
   const { t } = useTranslation();
@@ -244,6 +246,15 @@ export const ClientSessionDetailsPage = () => {
             </div>
             <div className="rounded-lg border border-border bg-card p-4">
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Wallet className="h-4 w-4" />
+                {t("common.ownKeyCost")}
+              </div>
+              <div className="mt-2 text-2xl font-bold">
+                {formatUsd(session.ownKeyCostUsd ?? 0)}
+              </div>
+            </div>
+            <div className="rounded-lg border border-border bg-card p-4">
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Calendar className="h-4 w-4" />
                 {t("clientSessions.status")}
               </div>
@@ -365,6 +376,15 @@ export const ClientSessionDetailsPage = () => {
                           <Coins className="h-3.5 w-3.5" />
                           {formatNumber(execution.totalCredits ?? 0)}
                         </div>
+                        {(execution.ownKeyCostUsd ?? 0) > 0 && (
+                          <div
+                            className="flex items-center gap-1"
+                            title={t("common.ownKeyCostHint")}
+                          >
+                            <Wallet className="h-3.5 w-3.5" />
+                            {formatUsd(execution.ownKeyCostUsd ?? 0)}
+                          </div>
+                        )}
                       </div>
                     </div>
                   </Link>

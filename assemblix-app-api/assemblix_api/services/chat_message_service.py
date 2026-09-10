@@ -94,13 +94,15 @@ class ChatMessageService(BaseService[ChatMessage, ChatMessageRepository]):
         from decimal import Decimal
 
         metadata_dict = metadata or {}
-        credits = metadata_dict.get("credits", 0)
-        if not isinstance(credits, Decimal):
-            credits = Decimal(str(credits))
+
+        def _decimal(key: str) -> Decimal:
+            value = metadata_dict.get(key, 0) or 0
+            return value if isinstance(value, Decimal) else Decimal(str(value))
 
         await self._chat_session_repository.increment_message_stats(
             session_id=chat_session_id,
-            credits=credits,
+            credits=_decimal("credits"),
+            own_key_cost_usd=_decimal("own_key_cost_usd"),
         )
 
         return message

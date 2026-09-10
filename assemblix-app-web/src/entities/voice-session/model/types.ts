@@ -7,6 +7,7 @@ export interface VoiceSession {
   endedAt: string | null;
   durationSec: number;
   totalCredits: number;
+  ownKeyCostUsd: number;
   turnCount: number;
   endReason: string | null;
 }
@@ -23,6 +24,7 @@ export interface VoiceSessionExecution {
   status: string;
   startedAt: string | null;
   totalCredits: number;
+  ownKeyCostUsd?: number | null;
 }
 
 export interface VoiceSessionDetail extends VoiceSession {

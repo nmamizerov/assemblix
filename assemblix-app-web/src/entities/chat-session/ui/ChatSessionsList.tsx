@@ -1,4 +1,12 @@
-import { Loader2, MessageSquare, Coins, Circle, Pencil, Trash2 } from "lucide-react";
+import {
+  Loader2,
+  MessageSquare,
+  Coins,
+  Circle,
+  Pencil,
+  Trash2,
+  Wallet,
+} from "lucide-react";
 import { Link, useParams } from "react-router-dom";
 import { useState, useRef } from "react";
 import { useSelector } from "react-redux";
@@ -27,6 +35,7 @@ import { Button } from "@/shared/ui/button";
 import { Pagination } from "@/shared/ui";
 import { cn } from "@/shared/lib/utils";
 import { useFormatDate } from "@/shared/lib/format-date";
+import { formatUsd } from "@/shared/lib/format-cost";
 
 interface ChatSessionsListProps {
   workflowId?: string;
@@ -270,6 +279,22 @@ export const ChatSessionsList = ({
                       </p>
                     </TooltipContent>
                   </Tooltip>
+
+                  {(session.ownKeyCostUsd ?? 0) > 0 && (
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <div className="flex items-center gap-1 text-muted-foreground">
+                          <Wallet className="h-3.5 w-3.5" />
+                          <span className="text-xs">
+                            {formatUsd(session.ownKeyCostUsd ?? 0)}
+                          </span>
+                        </div>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>{t("common.ownKeyCostHint")}</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  )}
                 </div>
               </div>
 

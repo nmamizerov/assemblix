@@ -7,6 +7,7 @@ import {
   Clock,
   ListChecks,
   UsersRound,
+  Wallet,
 } from "lucide-react";
 import { Link, useParams } from "react-router-dom";
 import { useState } from "react";
@@ -22,6 +23,7 @@ import {
 } from "@/shared/ui/tooltip";
 import { Pagination } from "@/shared/ui";
 import { useFormatDate } from "@/shared/lib/format-date";
+import { formatUsd } from "@/shared/lib/format-cost";
 
 const formatDuration = (durationMs: number): string => {
   const seconds = Math.floor(durationMs / 1000);
@@ -236,6 +238,22 @@ export const ExecutionsList = ({
                       </p>
                     </TooltipContent>
                   </Tooltip>
+
+                  {(execution.ownKeyCostUsd ?? 0) > 0 && (
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <div className="flex items-center gap-1 text-muted-foreground">
+                          <Wallet className="h-3.5 w-3.5" />
+                          <span className="text-xs">
+                            {formatUsd(execution.ownKeyCostUsd ?? 0)}
+                          </span>
+                        </div>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>{t("common.ownKeyCostHint")}</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  )}
                 </div>
               </div>
 

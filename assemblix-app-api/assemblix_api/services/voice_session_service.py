@@ -254,6 +254,14 @@ class VoiceSessionService:
             duration_sec, cost_per_minute, uses_system_key=uses_system_key
         )
         credits = fee_credits + margin_credits
+
+        # What the minutes cost at the provider. On a system key that is our cost and is
+        # already priced into the margin credits; on the caller's own key it is what they
+        # paid directly, and the only place that figure is ever recorded.
+        minutes = Decimal(str(duration_sec)) / Decimal(60)
+        provider_cost_usd = minutes * Decimal(str(cost_per_minute))
+        own_key_cost_usd = Decimal(0) if uses_system_key else provider_cost_usd
+
         await self._sessions.update(
             session,
             status="failed" if reason == "error" else "completed",
@@ -261,6 +269,7 @@ class VoiceSessionService:
             duration_sec=duration_sec,
             transcript=transcript,
             total_credits=credits,
+            own_key_cost_usd=own_key_cost_usd,
             input_tokens=input_tokens,
             output_tokens=output_tokens,
             end_reason=reason,
@@ -272,17 +281,15 @@ class VoiceSessionService:
                 agent,
                 session_count=agent.session_count + 1,
                 total_credits=agent.total_credits + credits,
+                own_key_cost_usd=agent.own_key_cost_usd + own_key_cost_usd,
             )
 
-        minutes = Decimal(str(duration_sec)) / Decimal(60)
         await self._charge(
             project_id=session.project_id,
             voice_session_id=voice_session_id,
             fee_credits=fee_credits,
             margin_credits=margin_credits,
-            provider_cost_usd=(
-                minutes * Decimal(str(cost_per_minute)) if uses_system_key else Decimal(0)
-            ),
+            provider_cost_usd=provider_cost_usd if uses_system_key else Decimal(0),
             uses_system_key=uses_system_key,
         )
 
