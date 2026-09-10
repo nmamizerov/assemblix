@@ -5,6 +5,38 @@ All notable changes to this project are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.35](https://github.com/nmamizerov/assemblix/compare/v0.2.34...v0.2.35) (2026-09-10)
+
+
+### Features
+
+* **billing:** bill synthesized speech on half-cascade voice calls ([335fc3b](https://github.com/nmamizerov/assemblix/commit/335fc3bb6ee93d28eff927025b1bc9b3264759e3))
+* **voice:** add text-output mode to the conversation bridges ([2da33da](https://github.com/nmamizerov/assemblix/commit/2da33da5549e70676b7a921af0d281e7e68706a6))
+* **voice:** add the half-cascade bridge ([55c1d14](https://github.com/nmamizerov/assemblix/commit/55c1d140c342e91ef8821579989174904887f83a))
+* **voice:** configure and validate external speech output on voice agents ([6f5264d](https://github.com/nmamizerov/assemblix/commit/6f5264de3ec3294df4cb343e945182dde6b51b2d))
+* **voice:** expose sample rate and failures from streaming TTS sessions ([67bcc1a](https://github.com/nmamizerov/assemblix/commit/67bcc1a33eddfd7c1c327b6ee4c5fa9d31ceeb5b))
+* **voice:** mark conversation models that can answer in text ([c273586](https://github.com/nmamizerov/assemblix/commit/c2735869ce209e2cba98c620744d183efe3c8974))
+* **voice:** meter synthesized characters in the session runtime ([f064929](https://github.com/nmamizerov/assemblix/commit/f064929d6ac1a05e49e1d381ebd5a2ff260f8f8d))
+* **voice:** speak with a dedicated TTS provider instead of the model's own voice ([3e714e5](https://github.com/nmamizerov/assemblix/commit/3e714e5448dfa2619401d4f8db40f72b7a843748))
+* **web:** choose an external voice for a voice agent ([4cda226](https://github.com/nmamizerov/assemblix/commit/4cda226bf19f0ccaaed03efafc3f086645d2c4ee))
+
+
+### Bug Fixes
+
+* **voice:** stop the caller's first word from silencing the agent ([2666889](https://github.com/nmamizerov/assemblix/commit/2666889b964ef4d2d3014b5e061a2ca7a702f98d))
+* **voice:** stop the half-cascade agent from saying every reply twice ([97a8843](https://github.com/nmamizerov/assemblix/commit/97a88434edc1107d614226fa854ac7d605655607))
+
+
+### Documentation
+
+* record half-cascade in the voice layer map ([7e9d9d5](https://github.com/nmamizerov/assemblix/commit/7e9d9d5242d8b1f20f0fc3e1afd66b45b108c43a))
+
+
+### Refactoring
+
+* **voice:** extract the shared synthesis resolver ([924a6d9](https://github.com/nmamizerov/assemblix/commit/924a6d9e8a7851f511d9d2f422652ad3a3b84987))
+* **web:** move the voice output picker into the voice-model entity ([6238c93](https://github.com/nmamizerov/assemblix/commit/6238c93b3056727b5c0a9667584589ce1042b6b9))
+
 ## [0.2.34](https://github.com/nmamizerov/assemblix/compare/v0.2.33...v0.2.34) (2026-09-10)
 
 
