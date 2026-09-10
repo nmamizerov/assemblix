@@ -177,3 +177,40 @@ async def test_outbound_calls_configure_the_session_and_drive_audio() -> None:
         "conversation.item.truncate",
         {"item_id": "item_abc", "content_index": 0, "audio_end_ms": 750},
     )
+
+
+async def test_text_output_mode_speaks_text_and_never_truncates_audio() -> None:
+    """In text mode the session asks for text only, text deltas become agent
+    transcript events, and an interrupt cancels without truncating — there is no
+    audio item to truncate, and asking for one returns a spurious error event."""
+    # Arrange
+    recorder = _Recorder()
+    server_events = [
+        SimpleNamespace(
+            type="response.output_item.added",
+            item=SimpleNamespace(id="item_1", role="assistant"),
+        ),
+        SimpleNamespace(type="response.output_text.delta", delta="Здрав"),
+        SimpleNamespace(type="response.output_text.done", text="Здравствуйте"),
+    ]
+    bridge = OpenAIRealtimeBridge(
+        api_key="k",
+        model="gpt-realtime",
+        connect_factory=lambda **_: _fake_connection(server_events, recorder),
+    )
+
+    # Act
+    await bridge.connect(instructions="i", voice="", language="ru", params={}, text_output=True)
+    events = [event async for event in bridge.events()]
+    await bridge.interrupt(audio_end_ms=1200)
+
+    # Assert
+    session_update = next(kwargs for name, kwargs in recorder.calls if name == "session.update")
+    assert session_update["session"]["output_modalities"] == ["text"]
+    assert "output" not in session_update["session"]["audio"]
+    assert [e for e in events if isinstance(e, AgentTranscript)] == [
+        AgentTranscript(text="Здрав", is_final=False),
+        AgentTranscript(text="Здравствуйте", is_final=True),
+    ]
+    assert any(name == "response.cancel" for name, _ in recorder.calls)
+    assert not any(name == "conversation.item.truncate" for name, _ in recorder.calls)

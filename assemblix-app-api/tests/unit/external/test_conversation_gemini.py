@@ -30,6 +30,7 @@ def _message(
     output_text: str | None = None,
     output_done: bool = False,
     audio: bytes | None = None,
+    model_text: str | None = None,
     interrupted: bool = False,
     turn_complete: bool = False,
     usage: tuple[int, int] | None = None,
@@ -48,6 +49,8 @@ def _message(
         model_turn=(
             types.Content(parts=[types.Part(inline_data=types.Blob(data=audio))])
             if audio is not None
+            else types.Content(parts=[types.Part(text=model_text)])
+            if model_text is not None
             else None
         ),
         interrupted=interrupted or None,
@@ -120,3 +123,42 @@ async def test_provider_frames_become_bridge_events() -> None:
     ]
     assert bridge.input_sample_rate == 16000, "Gemini listens at 16kHz, unlike OpenAI"
     assert bridge.output_sample_rate == 24000
+
+
+async def test_text_output_mode_requests_text_and_speaks_through_model_turn() -> None:
+    """Text mode asks Live for the TEXT modality without an output-audio
+    transcription config — there is no output audio to transcribe — and the model
+    turn's text parts become the agent transcript the audio channel used to carry."""
+    # Arrange
+    captured: dict = {}
+    session = _FakeSession(
+        [
+            _message(input_text="привет"),
+            _message(model_text="Здрав"),
+            _message(model_text="ствуйте"),
+            _message(turn_complete=True, usage=(10, 5)),
+        ]
+    )
+
+    def _connect(**kwargs: Any) -> Any:
+        captured.update(kwargs)
+        return session
+
+    bridge = GeminiLiveBridge(
+        api_key="k", model="gemini-3.1-flash-live-preview", connect_factory=_connect
+    )
+
+    # Act
+    await bridge.connect(
+        instructions="Answer calls.", voice="", language="ru", params={}, text_output=True
+    )
+    events = [event async for event in bridge.events()]
+
+    # Assert
+    config = captured["config"]
+    assert config.response_modalities == [types.Modality.TEXT]
+    assert config.output_audio_transcription is None
+    assert AgentTranscript(text="Здрав", is_final=False) in events
+    assert AgentTranscript(text="Здравствуйте", is_final=True) in events
+    assert UserTranscript(text="привет", is_final=True) in events
+    assert TurnEnded(input_tokens=10, output_tokens=5) in events

@@ -43,6 +43,9 @@ class TurnEnded:
 
     input_tokens: int | None = None
     output_tokens: int | None = None
+    # Characters synthesized for this turn. ``None`` from a bridge that speaks with
+    # the model's own voice — nothing was synthesized to count.
+    speech_chars: int | None = None
 
 
 @dataclass(frozen=True)
@@ -85,7 +88,11 @@ class RealtimeBridge(Protocol):
         voice: str,
         language: str,
         params: dict,
-    ) -> None: ...
+        text_output: bool = False,
+    ) -> None:
+        """``text_output`` puts the model in text-answering mode: the caller is
+        producing the audio, so the provider must not."""
+        ...
 
     async def send_audio(self, pcm: bytes) -> None: ...
 
