@@ -5,6 +5,7 @@ import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
 import { Textarea } from "@/shared/ui/textarea";
 import { Checkbox } from "@/shared/ui/checkbox";
+import { Switch } from "@/shared/ui/switch";
 import {
   Select,
   SelectContent,
@@ -25,6 +26,7 @@ import {
 import { useGetKnowledgeBasesQuery } from "@/entities/knowledge-base";
 import { useGetWorkflowsQuery } from "@/entities/workflow";
 import { selectCurrentProjectId } from "@/entities/organization";
+import { VoiceOutputPicker } from "@/entities/voice-model";
 import {
   applyProviderChange,
   LANGUAGE_OPTIONS,
@@ -75,6 +77,10 @@ export const VoiceAgentForm = ({ draft, errors, onChange }: VoiceAgentFormProps)
     { skip: !draft.provider }
   );
   const credentialType = getCredentialTypeForProvider(draft.provider);
+  // Only a model that can answer in text can hand its reply to another provider
+  // to speak; a native-audio model always produces its own sound.
+  const canUseExternalVoice =
+    models.find((model) => model.id === draft.model)?.supportsTextOutput ?? false;
 
   const handleField = <K extends keyof VoiceAgentDraft>(
     field: K,
@@ -85,6 +91,15 @@ export const VoiceAgentForm = ({ draft, errors, onChange }: VoiceAgentFormProps)
 
   const handleProviderChange = (provider: string) => {
     onChange(applyProviderChange(draft, provider));
+  };
+
+  const handleTtsToggle = (enabled: boolean) => {
+    handleField(
+      "tts",
+      enabled
+        ? { provider: "", model: "", voiceId: null, credentialId: null, realtime: true }
+        : null
+    );
   };
 
   const handleCredentialChange = (credentialId: string) => {
@@ -228,6 +243,7 @@ export const VoiceAgentForm = ({ draft, errors, onChange }: VoiceAgentFormProps)
               <p className="text-xs text-destructive">{t(errors.model)}</p>
             )}
           </div>
+          {draft.tts === null && (
           <div className="space-y-2">
             <Label>{t("voiceAgents.fields.voiceId")}</Label>
             {supportsCustomVoices(draft.provider) ? (
@@ -272,6 +288,7 @@ export const VoiceAgentForm = ({ draft, errors, onChange }: VoiceAgentFormProps)
               </Select>
             )}
           </div>
+          )}
           <div className="space-y-2">
             <Label>{t("voiceAgents.fields.language")}</Label>
             <Select
@@ -303,6 +320,37 @@ export const VoiceAgentForm = ({ draft, errors, onChange }: VoiceAgentFormProps)
                 {t("voiceAgents.fields.credentialCaption")}
               </p>
             </div>
+          )}
+        </div>
+      </Section>
+
+      <Section
+        title={t("voiceAgents.sections.synthesis")}
+        hint={t("voiceAgents.sections.synthesisHint")}
+      >
+        <div className="space-y-3">
+          <div className="flex items-center justify-between gap-4">
+            <Label htmlFor="voice-agent-tts" className="font-normal">
+              {t("voiceAgents.fields.externalVoice")}
+            </Label>
+            <Switch
+              id="voice-agent-tts"
+              checked={draft.tts !== null}
+              disabled={!canUseExternalVoice}
+              onCheckedChange={handleTtsToggle}
+            />
+          </div>
+          {!canUseExternalVoice && (
+            <p className="text-xs text-muted-foreground">
+              {t("voiceAgents.fields.externalVoiceUnavailable")}
+            </p>
+          )}
+          {draft.tts !== null && (
+            <VoiceOutputPicker
+              requireRealtime
+              value={draft.tts}
+              onChange={(voice) => handleField("tts", voice)}
+            />
           )}
         </div>
       </Section>

@@ -1404,7 +1404,9 @@
       "agentHint": "Quién es el agente y cómo abre la conversación.",
       "voiceHint": "Cómo suena y qué clave paga la llamada.",
       "knowledgeHint": "Se inserta en el prompt al iniciar la llamada.",
-      "analysisHint": "Flujos que observan la llamada sin modificarla."
+      "analysisHint": "Flujos que observan la llamada sin modificarla.",
+      "synthesis": "Síntesis de voz",
+      "synthesisHint": "Quién pronuncia las respuestas: el propio modelo en tiempo real o un proveedor dedicado."
     },
     "fields": {
       "name": "Nombre",
@@ -1434,7 +1436,9 @@
       "turnWorkflowCaption": "Se ejecuta en segundo plano tras cada turno — no afecta a la conversación.",
       "finalWorkflowCaption": "Se ejecuta en segundo plano al finalizar la llamada — no afecta a la conversación.",
       "perMinute": "${{cost}}/min",
-      "customVoiceCaption": "Elige una voz integrada o pega el id de una voz personalizada (voice_…) creada en tu cuenta de OpenAI."
+      "customVoiceCaption": "Elige una voz integrada o pega el id de una voz personalizada (voice_…) creada en tu cuenta de OpenAI.",
+      "externalVoice": "Voz externa",
+      "externalVoiceUnavailable": "Este modelo siempre responde con su propio audio, por lo que una voz externa no puede hablar por él."
     },
     "testCall": {
       "title": "Llamada de prueba",

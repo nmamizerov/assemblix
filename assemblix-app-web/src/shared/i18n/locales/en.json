@@ -1404,7 +1404,9 @@
       "agentHint": "Who the agent is and how it opens the conversation.",
       "voiceHint": "How it sounds and which key pays for the call.",
       "knowledgeHint": "Inlined into the prompt when a call starts.",
-      "analysisHint": "Workflows that observe the call without shaping it."
+      "analysisHint": "Workflows that observe the call without shaping it.",
+      "synthesis": "Speech synthesis",
+      "synthesisHint": "Who speaks the replies: the realtime model itself, or a dedicated provider."
     },
     "fields": {
       "name": "Name",
@@ -1434,7 +1436,9 @@
       "turnWorkflowCaption": "Runs in the background after every turn — it does not affect the conversation.",
       "finalWorkflowCaption": "Runs in the background after the call ends — it does not affect the conversation.",
       "perMinute": "${{cost}}/min",
-      "customVoiceCaption": "Pick a built-in voice, or paste a custom voice id (voice_…) created in your OpenAI account."
+      "customVoiceCaption": "Pick a built-in voice, or paste a custom voice id (voice_…) created in your OpenAI account.",
+      "externalVoice": "External voice",
+      "externalVoiceUnavailable": "This model always answers with its own audio, so an external voice cannot speak for it."
     },
     "testCall": {
       "title": "Test call",

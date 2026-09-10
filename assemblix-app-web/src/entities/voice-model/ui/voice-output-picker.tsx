@@ -202,7 +202,7 @@ export const VoiceOutputPicker = ({
         <div className="space-y-2">
           <Label className="text-xs">{t("nodeForms.end.voiceCredential")}</Label>
           <CredentialSelect
-            selectedCredentialId={value?.credentialId}
+            selectedCredentialId={value?.credentialId ?? undefined}
             onSelect={handleCredentialChange}
             credentialType={voiceCredentialType}
             placeholder={t("nodeForms.end.selectVoiceCredential")}

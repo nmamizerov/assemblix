@@ -30,8 +30,10 @@ export interface VoiceListItem {
 export interface VoiceOutputConfig {
   provider: string;
   model: string;
-  voiceId?: string;
-  credentialId?: string;
+  // Nullable as well as optional: the API writes an explicit null for "not set",
+  // and both callers of this type round-trip that value untouched.
+  voiceId?: string | null;
+  credentialId?: string | null;
   // Explicit opt-in to live WS streaming. Only offered for providers that
   // expose a realtime route (e.g. ElevenLabs); ignored/absent otherwise.
   realtime?: boolean;
