@@ -34,11 +34,12 @@ from assemblix_api.schemas.debug_events import AlignmentData
 logger = structlog.get_logger(__name__)
 
 OnAudio = Callable[[bytes, AlignmentData | None], Awaitable[None]]
+OnError = Callable[[str], Awaitable[None]]
 
 Mode = Literal["utterance", "stream"]
 
 # anam passthrough is pcm_s16le / 16000 / mono — request exactly that from SpeechKit.
-_SAMPLE_RATE = 16000
+YANDEX_SAMPLE_RATE = 16000
 
 # A "complete" chunk ends on sentence-final punctuation or a newline; the trailing
 # incomplete fragment stays buffered until more text (or flush) closes it.
@@ -58,12 +59,14 @@ class YandexRealtimeSession:
         on_audio: OnAudio,
         mode: Mode = "utterance",
         stub: Any = None,
+        on_error: OnError | None = None,
     ):
         # ``credential`` is the combined "<folderId>:<apiKey>" form; split at open().
         self._credential = credential
         self._voice_id = voice_id
         self._model = model  # our catalog id (unused as a SpeechKit model name)
         self._on_audio = on_audio
+        self._on_error = on_error
         self._mode: Mode = mode
         self._stub = stub  # injectable for tests; a real aio stub is built in open()
         self._channel: Any = None
@@ -73,6 +76,15 @@ class YandexRealtimeSession:
         self._buffer = ""
         self._chars_sent = 0
         self._failed = False
+
+    async def _fail(self, event: str, exc: BaseException) -> None:
+        """Audio is best-effort here, but a caller that owns a live call has to hear
+        about a dead provider rather than infer it from silence."""
+        self._failed = True
+        message = str(exc)
+        logger.info(event, error=message)
+        if self._on_error is not None:
+            await self._on_error(message)
 
     # -- lifecycle ----------------------------------------------------------------
 
@@ -147,8 +159,7 @@ class YandexRealtimeSession:
                     return
                 await self._synthesize_utterance(item)
         except Exception as exc:  # noqa: BLE001 — best-effort; log and stop audio.
-            self._failed = True
-            logger.info("voice.realtime.yandex.utterance_stopped", error=str(exc))
+            await self._fail("voice.realtime.yandex.utterance_stopped", exc)
 
     async def _synthesize_utterance(self, text: str) -> None:
         from yandex.cloud.ai.tts.v3 import tts_pb2
@@ -177,8 +188,7 @@ class YandexRealtimeSession:
                 if data:
                     await self._on_audio(data, None)
         except Exception as exc:  # noqa: BLE001 — best-effort; log and stop audio.
-            self._failed = True
-            logger.info("voice.realtime.yandex.stream_stopped", error=str(exc))
+            await self._fail("voice.realtime.yandex.stream_stopped", exc)
 
     async def _stream_requests(self, tts_pb2: Any) -> AsyncIterator[Any]:
         # First message carries the synthesis options; the rest carry text as it arrives.
@@ -207,6 +217,6 @@ def _audio_spec(tts_pb2: Any) -> Any:
     return tts_pb2.AudioFormatOptions(
         raw_audio=tts_pb2.RawAudio(
             audio_encoding=tts_pb2.RawAudio.LINEAR16_PCM,
-            sample_rate_hertz=_SAMPLE_RATE,
+            sample_rate_hertz=YANDEX_SAMPLE_RATE,
         )
     )

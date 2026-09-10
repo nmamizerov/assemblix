@@ -14,7 +14,14 @@ from typing import Protocol
 from uuid import UUID
 
 from assemblix_api.external.voice.pricing import compute_tts_cost
-from assemblix_api.external.voice.streaming_tts import RealtimeSession, create_realtime_session
+from assemblix_api.external.voice.streaming_tts import (
+    OnError,
+    RealtimeSession,
+    create_realtime_session,
+)
+from assemblix_api.external.voice.streaming_tts import (
+    output_sample_rate as streaming_output_sample_rate,
+)
 from assemblix_api.external.voice.streaming_tts.elevenlabs import OnAudio
 from assemblix_api.schemas.node import VoiceOutputConfig
 
@@ -72,7 +79,9 @@ async def resolve(
     )
 
 
-def open_stream(out: SpeechOutput, *, on_audio: OnAudio) -> RealtimeSession:
+def open_stream(
+    out: SpeechOutput, *, on_audio: OnAudio, on_error: OnError | None = None
+) -> RealtimeSession:
     """Build (not yet open) the streaming session for this target."""
     return create_realtime_session(
         provider=out.provider,
@@ -80,7 +89,13 @@ def open_stream(out: SpeechOutput, *, on_audio: OnAudio) -> RealtimeSession:
         voice_id=out.voice_id,
         model=out.model,
         on_audio=on_audio,
+        on_error=on_error,
     )
+
+
+def output_sample_rate(out: SpeechOutput) -> int:
+    """The rate this target's audio will arrive at, known before it is opened."""
+    return streaming_output_sample_rate(out.provider)
 
 
 def cost_usd(out: SpeechOutput, chars: int) -> Decimal:
