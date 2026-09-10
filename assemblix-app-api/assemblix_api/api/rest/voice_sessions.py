@@ -197,6 +197,7 @@ async def stream_voice_session(websocket: WebSocket, token: str) -> None:
             api_key=setup.api_key,
             model=setup.model,
             api_base=setup.api_base,
+            speech_out=setup.tts,
         ),
         client=_WebSocketChannel(websocket),
         instructions=setup.instructions,

@@ -41,7 +41,13 @@ from assemblix_api.database.repositories.organization_user_repository import (
 from assemblix_api.database.repositories.project_repository import ProjectRepository
 from assemblix_api.database.repositories.voice_agent_repository import VoiceAgentRepository
 from assemblix_api.database.repositories.voice_session_repository import VoiceSessionRepository
-from assemblix_api.external.voice.catalog.registry import find_voice_model
+from assemblix_api.external.voice import speech_out
+from assemblix_api.external.voice.catalog.registry import (
+    find_voice_model,
+    has_realtime_route,
+    supports_text_output,
+)
+from assemblix_api.external.voice.speech_out import SpeechOutput
 from assemblix_api.schemas.voice_agent import VoiceAgentConfig
 from assemblix_api.services.credentials_service import CredentialsService
 from assemblix_api.services.knowledge_base_service import KnowledgeBaseService
@@ -96,6 +102,8 @@ class VoiceSessionSetup:
     # Configured transport base URL — the same gateway chat and transcription use.
     # None means the provider SDK's own endpoint.
     api_base: str | None
+    # External synthesis target. None means the model speaks with its own voice.
+    tts: SpeechOutput | None
     turn_workflow_id: str | None
     final_workflow_id: str | None
     # From the voice catalog. A conversation is billed by wall-clock rather than by
@@ -159,6 +167,25 @@ class VoiceSessionService:
             voice_provider=config.voice.provider,
         )
 
+        tts = None
+        if config.tts is not None:
+            if not supports_text_output(config.voice.provider, config.voice.model):
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=(
+                        f"Model {config.voice.model} cannot answer in text, "
+                        "so an external voice cannot speak for it"
+                    ),
+                )
+            if not has_realtime_route(config.tts.provider, config.tts.model):
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"Voice model {config.tts.model} has no streaming route",
+                )
+            tts = await speech_out.resolve(
+                config.tts, project_id=project_id, credentials=self._credentials
+            )
+
         catalog_entry = find_voice_model(config.voice.provider, config.voice.model)
 
         return VoiceSessionSetup(
@@ -170,6 +197,7 @@ class VoiceSessionService:
             model=config.voice.model,
             api_key=api_key,
             api_base=resolve_conversation_base(config.voice.provider),
+            tts=tts,
             turn_workflow_id=config.turn_workflow_id,
             final_workflow_id=config.final_workflow_id,
             cost_per_minute=(catalog_entry.cost_per_minute or 0.0) if catalog_entry else 0.0,

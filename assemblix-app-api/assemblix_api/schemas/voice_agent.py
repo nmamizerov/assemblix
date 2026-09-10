@@ -23,6 +23,10 @@ class VoiceAgentConfig(DTOModel):
     first_message: str | None = None
     language: str = "ru"
     voice: VoiceOutputConfig
+    # External speech synthesis. Present means the model answers in text and this
+    # provider speaks it; absent means the model's own voice. The block *is* the
+    # toggle, so "enabled but unconfigured" cannot be expressed.
+    tts: VoiceOutputConfig | None = None
     # Free-form provider tunables (vad_silence_ms, temperature, interruptible,
     # max_session_sec). Same pattern as AgentNodeConfig.params; system ceilings
     # in Settings always win.
