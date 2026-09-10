@@ -200,3 +200,34 @@ async def test_final_hook_runs_when_the_browser_is_already_gone() -> None:
     assert len(runs) == 1, "the final workflow runs even though the socket is dead"
     assert str(runs[0]["workflow_id"]) == final_workflow_id
     assert runs[0]["input_data"]["voice"]["end_reason"] == "user_hangup"
+
+
+async def test_speech_chars_accumulate_across_turns_and_tolerate_native_turns() -> None:
+    """A call mixing turns that were synthesized with turns that were not reports
+    only what a TTS provider actually spoke."""
+    # Arrange
+    bridge = _FakeBridge(
+        [
+            TurnEnded(input_tokens=1, output_tokens=2, speech_chars=12),
+            TurnEnded(input_tokens=1, output_tokens=2, speech_chars=None),
+            TurnEnded(input_tokens=1, output_tokens=2, speech_chars=30),
+            SessionClosed(reason="completed"),
+        ]
+    )
+    client = _FakeClient([])
+    runtime = VoiceSessionRuntime(
+        bridge=bridge,
+        client=client,
+        instructions="i",
+        voice="",
+        language="ru",
+        params={},
+        max_session_sec=5,
+    )
+
+    # Act
+    await runtime.run()
+
+    # Assert
+    assert runtime.speech_chars == 42
+    assert runtime.usage == (3, 6)

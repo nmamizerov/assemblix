@@ -82,6 +82,7 @@ class VoiceSessionRuntime:
         self._last_agent_text: str | None = None
         self._input_tokens = 0
         self._output_tokens = 0
+        self._speech_chars = 0
         self._started_at = time.monotonic()
 
     @property
@@ -93,6 +94,11 @@ class VoiceSessionRuntime:
     def usage(self) -> tuple[int, int]:
         """Provider token counts for the whole call — observability, not the charge."""
         return self._input_tokens, self._output_tokens
+
+    @property
+    def speech_chars(self) -> int:
+        """Characters spoken by a TTS provider — zero on a native-voice call."""
+        return self._speech_chars
 
     @property
     def duration_sec(self) -> float:
@@ -193,6 +199,7 @@ class VoiceSessionRuntime:
                     self._played_ms = 0
                     self._input_tokens += event.input_tokens or 0
                     self._output_tokens += event.output_tokens or 0
+                    self._speech_chars += event.speech_chars or 0
                 case BridgeError():
                     await self._client.send_json(
                         {
