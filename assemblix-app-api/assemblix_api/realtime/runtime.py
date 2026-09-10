@@ -201,6 +201,12 @@ class VoiceSessionRuntime:
                     self._output_tokens += event.output_tokens or 0
                     self._speech_chars += event.speech_chars or 0
                 case BridgeError():
+                    logger.warning(
+                        "voice.session.bridge_error",
+                        code=event.code,
+                        message=event.message,
+                        is_fatal=event.is_fatal,
+                    )
                     await self._client.send_json(
                         {
                             "type": "error",

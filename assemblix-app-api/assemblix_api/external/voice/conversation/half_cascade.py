@@ -14,6 +14,8 @@ import asyncio
 import contextlib
 from collections.abc import AsyncIterator, Callable
 
+import structlog
+
 from assemblix_api.external.voice import speech_out as speech_out_module
 from assemblix_api.external.voice.conversation.contract import (
     AgentTranscript,
@@ -28,6 +30,8 @@ from assemblix_api.external.voice.conversation.contract import (
 from assemblix_api.external.voice.speech_out import SpeechOutput
 from assemblix_api.external.voice.streaming_tts import RealtimeSession
 from assemblix_api.schemas.debug_events import AlignmentData
+
+logger = structlog.get_logger(__name__)
 
 OpenStream = Callable[..., RealtimeSession]
 
@@ -99,12 +103,14 @@ class HalfCascadeBridge:
                     await self._speak(event)
                     await self._queue.put(event)
                 case SpeechStarted():
-                    # Stop speaking here rather than waiting for the runtime's
-                    # interrupt(): the runtime only calls it while the agent is
-                    # audibly speaking, and a session opened but not yet heard from
-                    # would otherwise stay open for the rest of the call.
-                    self._cancelled_turn = self._turn
-                    await self._abort_speech()
+                    # Plain voice-activity detection, not a barge-in: it precedes
+                    # every turn. Only speech already in flight can be cancelled —
+                    # cancelling unconditionally would let the caller's first word
+                    # silence the agent for the rest of the call. Same guard the
+                    # runtime applies with ``_agent_speaking``.
+                    if self._session is not None:
+                        self._cancelled_turn = self._turn
+                        await self._abort_speech()
                     await self._queue.put(event)
                 case TurnEnded():
                     chars, self._turn_chars = self._turn_chars, 0
@@ -146,6 +152,7 @@ class HalfCascadeBridge:
         await self._queue.put(AudioDelta(pcm=pcm))
 
     async def _on_error(self, message: str) -> None:
+        logger.warning("voice.half_cascade.tts_failed", error=message)
         await self._queue.put(BridgeError(code="tts_unavailable", message=message, is_fatal=True))
 
     async def close(self) -> None:

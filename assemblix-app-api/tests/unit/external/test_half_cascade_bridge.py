@@ -176,3 +176,33 @@ async def test_barge_in_silences_the_turn_and_a_dead_provider_ends_the_call() ->
     assert len(_FakeTTS.instances) == 2
     error = next(e for e in seen if isinstance(e, BridgeError))
     assert error.is_fatal is True
+
+
+async def test_the_user_starting_to_speak_is_not_a_barge_in_by_itself() -> None:
+    """SpeechStarted is plain voice-activity detection: it precedes every turn,
+    not just an interruption. Only speech already in flight can be cancelled —
+    otherwise the first thing the caller says silences the agent for the rest of
+    the call."""
+    # Arrange
+    inner = _FakeInner(
+        [
+            SpeechStarted(),
+            UserTranscript(text="привет", is_final=True),
+            AgentTranscript(text="Здравствуйте", is_final=True),
+            TurnEnded(),
+            SpeechStarted(),
+            AgentTranscript(text="Слушаю", is_final=True),
+            TurnEnded(),
+            SessionClosed(reason="completed"),
+        ]
+    )
+    bridge = _bridge(inner)
+
+    # Act
+    await bridge.connect(instructions="i", voice="", language="ru", params={})
+    async for _event in bridge.events():
+        pass
+    await bridge.close()
+
+    # Assert
+    assert [tts.sent for tts in _FakeTTS.instances] == [["Здравствуйте"], ["Слушаю"]]
