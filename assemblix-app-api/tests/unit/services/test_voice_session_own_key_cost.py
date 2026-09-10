@@ -29,9 +29,7 @@ def _service(session, agent) -> tuple[VoiceSessionService, AsyncMock, AsyncMock]
 
 
 async def _close(*, uses_system_key: bool):
-    session = SimpleNamespace(
-        id=uuid4(), voice_agent_id=uuid4(), project_id=uuid4(), transcript=[]
-    )
+    session = SimpleNamespace(id=uuid4(), voice_agent_id=uuid4(), project_id=uuid4(), transcript=[])
     agent = SimpleNamespace(
         session_count=2, total_credits=Decimal("5"), own_key_cost_usd=Decimal("0.5")
     )
