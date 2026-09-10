@@ -5,6 +5,14 @@ All notable changes to this project are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.34](https://github.com/nmamizerov/assemblix/compare/v0.2.33...v0.2.34) (2026-09-10)
+
+
+### Bug Fixes
+
+* **billing:** show what a run cost on the user's own provider keys ([dce53f1](https://github.com/nmamizerov/assemblix/commit/dce53f157e15e11d1293087cfc5f56b8470ab479))
+* **billing:** show what a run cost on the user's own provider keys ([ae98d80](https://github.com/nmamizerov/assemblix/commit/ae98d80027490ebd46f0c58df03b32f26d69d994))
+
 ## [0.2.33](https://github.com/nmamizerov/assemblix/compare/v0.2.32...v0.2.33) (2026-09-07)
 
 
