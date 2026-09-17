@@ -5,6 +5,14 @@ All notable changes to this project are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.36](https://github.com/nmamizerov/assemblix/compare/v0.2.35...v0.2.36) (2026-09-17)
+
+
+### Bug Fixes
+
+* **api:** escape % in DATABASE_URL before handing it to alembic ([30bad65](https://github.com/nmamizerov/assemblix/commit/30bad65a999af0933c36fb469e0b077f527b8533))
+* **api:** escape % in DATABASE_URL before handing it to alembic ([d230f85](https://github.com/nmamizerov/assemblix/commit/d230f8579006cb40aa6e93e59a081eccf16fc67e))
+
 ## [0.2.35](https://github.com/nmamizerov/assemblix/compare/v0.2.34...v0.2.35) (2026-09-10)
 
 
