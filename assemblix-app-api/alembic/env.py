@@ -21,7 +21,7 @@ if config.config_file_name is not None:
 
 # Получаем DATABASE_URL из .env через settings
 settings = get_settings()
-config.set_main_option("sqlalchemy.url", settings.database_url)
+config.set_main_option("sqlalchemy.url", settings.database_url.replace("%", "%%"))
 
 # Metadata для автогенерации миграций
 target_metadata = Base.metadata
