@@ -48,6 +48,14 @@ class Settings(BaseSettings):
         "CORS_ALLOWED_ORIGINS",
         "http://localhost:5173,http://localhost:3000",
     )
+    # Public URL of the web app, used to build deep links in outbound messages
+    # (e.g. failure notifications). Blank = first CORS origin.
+    app_public_url: str = os.getenv("APP_PUBLIC_URL", "")
+
+    @property
+    def resolved_app_public_url(self) -> str:
+        url = self.app_public_url.strip() or self.cors_allowed_origins.split(",")[0].strip()
+        return url.rstrip("/")
 
     # Auth / JWT
     # Required secret — the app refuses to start without it (see validate_security_config).

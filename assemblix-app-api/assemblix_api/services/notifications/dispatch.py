@@ -26,6 +26,7 @@ async def dispatch_execution_failure(
     *,
     project_id: UUID,
     execution_id: UUID,
+    workflow_id: UUID,
     workflow_name: str,
     error_type: str | None = None,
     error_message: str | None = None,
@@ -48,6 +49,7 @@ async def dispatch_execution_failure(
                 ExecutionFailurePayload(
                     project_id=project_id,
                     execution_id=execution_id,
+                    workflow_id=workflow_id,
                     workflow_name=workflow_name,
                     error_type=error_type,
                     error_message=error_message,
