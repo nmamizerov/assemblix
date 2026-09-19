@@ -7,7 +7,7 @@ interface WorkspaceState {
 
 const initialState: WorkspaceState = {
   currentOrganizationId: localStorage.getItem("currentOrganizationId"),
-  currentProjectId: null,
+  currentProjectId: localStorage.getItem("currentProjectId"),
 };
 
 export const workspaceSlice = createSlice({
@@ -19,14 +19,17 @@ export const workspaceSlice = createSlice({
       // Reset project when organization changes
       state.currentProjectId = null;
       localStorage.setItem("currentOrganizationId", action.payload);
+      localStorage.removeItem("currentProjectId");
     },
     setCurrentProject: (state, action: PayloadAction<string>) => {
       state.currentProjectId = action.payload;
+      localStorage.setItem("currentProjectId", action.payload);
     },
     clearWorkspace: (state) => {
       state.currentOrganizationId = null;
       state.currentProjectId = null;
       localStorage.removeItem("currentOrganizationId");
+      localStorage.removeItem("currentProjectId");
     },
   },
 });

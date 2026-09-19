@@ -791,6 +791,7 @@ async def run_workflow_isolated(
                 execution_repo,
                 result.execution_id,
                 project_id=workflow_project_id,
+                workflow_id=workflow_id,
                 workflow_name=workflow_name,
             )
 
@@ -810,6 +811,7 @@ async def _maybe_notify_execution_failure(
     execution_id: UUID,
     *,
     project_id: UUID,
+    workflow_id: UUID,
     workflow_name: str,
 ) -> None:
     """Dispatch a notification if the execution ended with a technical error
@@ -831,6 +833,7 @@ async def _maybe_notify_execution_failure(
         dispatch_execution_failure(
             project_id=project_id,
             execution_id=execution.id,
+            workflow_id=workflow_id,
             workflow_name=workflow_name,
             error_type=(execution.error_type.value if execution.error_type else None),
             error_message=execution.error_message,
