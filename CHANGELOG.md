@@ -5,6 +5,14 @@ All notable changes to this project are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.37](https://github.com/nmamizerov/assemblix/compare/v0.2.36...v0.2.37) (2026-09-25)
+
+
+### Bug Fixes
+
+* remember the last project and link failure notifications to the UI ([a169617](https://github.com/nmamizerov/assemblix/commit/a1696177d2ea0093dd241c092f4f1054208a0328))
+* remember the last project and link failure notifications to the UI ([3324ea5](https://github.com/nmamizerov/assemblix/commit/3324ea5832f9503787a7bb66628dfa2c880e1c7f))
+
 ## [0.2.36](https://github.com/nmamizerov/assemblix/compare/v0.2.35...v0.2.36) (2026-09-17)
 
 
