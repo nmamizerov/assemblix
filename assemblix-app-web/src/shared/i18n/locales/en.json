@@ -1456,7 +1456,9 @@
         "micFailed": "Could not open the microphone",
         "timeout": "The call did not connect in time",
         "connectFailed": "Could not connect the call",
-        "providerFailed": "The voice provider ended the call"
+        "providerFailed": "The voice provider ended the call",
+        "avatarBusy": "The avatar is busy right now — try again shortly",
+        "avatarUnavailable": "The avatar is unavailable right now"
       },
       "state": {
         "idle": "Ready",

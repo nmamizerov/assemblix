@@ -19,7 +19,8 @@ const LATENCY_FAIR_MS = 1500;
 
 export const VoiceCallStage = ({ call }: VoiceCallStageProps) => {
   const { t } = useTranslation();
-  const { status, transcript, interim, firstAudioMs, error, levels } = call;
+  const { status, transcript, interim, firstAudioMs, error, levels, isAvatar, hasVideo, videoRef } =
+    call;
   const isLive = status === "live";
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -61,7 +62,20 @@ export const VoiceCallStage = ({ call }: VoiceCallStageProps) => {
 
       <div className="flex flex-col items-center px-5 pt-2">
         <div className="relative aspect-square w-full max-w-[236px]">
-          <VoiceOrb status={status} levels={levels} />
+          {isAvatar ? (
+            <video
+              ref={videoRef}
+              autoPlay
+              playsInline
+              muted
+              className={cn(
+                "h-full w-full rounded-xl bg-muted object-cover transition-opacity duration-300",
+                hasVideo ? "opacity-100" : "opacity-0",
+              )}
+            />
+          ) : (
+            <VoiceOrb status={status} levels={levels} />
+          )}
           <div className="pointer-events-none absolute inset-0 grid place-items-center">
             <AnimatePresence mode="wait">
               <motion.span
