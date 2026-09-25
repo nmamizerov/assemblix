@@ -214,3 +214,79 @@ async def test_text_output_mode_speaks_text_and_never_truncates_audio() -> None:
     ]
     assert any(name == "response.cancel" for name, _ in recorder.calls)
     assert not any(name == "conversation.item.truncate" for name, _ in recorder.calls)
+
+
+async def test_interrupt_after_the_reply_finished_truncates_without_cancelling() -> None:
+    """The client plays behind generation (a browser buffer, an avatar), so a
+    barge-in can land after response.done: the reply must still be cut to what
+    was heard, and cancelling a finished response only produces an error event."""
+    # Arrange
+    recorder = _Recorder()
+    server_events = [
+        SimpleNamespace(type="response.created"),
+        SimpleNamespace(
+            type="response.output_item.added",
+            item=SimpleNamespace(id="item_1", role="assistant"),
+        ),
+        SimpleNamespace(
+            type="response.done",
+            response=SimpleNamespace(usage=None),
+        ),
+    ]
+    bridge = OpenAIRealtimeBridge(
+        api_key="sk-test",
+        model="gpt-realtime-2.1",
+        connect_factory=lambda **_: _fake_connection(server_events, recorder),
+    )
+    await bridge.connect(instructions="x", voice="alloy", language="ru", params={})
+    _ = [event async for event in bridge.events()]
+    recorder.calls.clear()
+
+    # Act
+    await bridge.interrupt(audio_end_ms=1234)
+
+    # Assert
+    assert recorder.calls == [
+        (
+            "conversation.item.truncate",
+            {"item_id": "item_1", "content_index": 0, "audio_end_ms": 1234},
+        )
+    ]
+
+
+async def test_interrupt_with_nothing_said_does_nothing() -> None:
+    recorder = _Recorder()
+    bridge = OpenAIRealtimeBridge(
+        api_key="sk-test",
+        model="gpt-realtime-2.1",
+        connect_factory=lambda **_: _fake_connection([], recorder),
+    )
+    await bridge.connect(instructions="x", voice="alloy", language="ru", params={})
+    recorder.calls.clear()
+
+    await bridge.interrupt(audio_end_ms=10)
+
+    assert recorder.calls == []
+
+
+async def test_a_new_reply_forgets_the_previous_item() -> None:
+    recorder = _Recorder()
+    server_events = [
+        SimpleNamespace(
+            type="response.output_item.added", item=SimpleNamespace(id="old", role="assistant")
+        ),
+        SimpleNamespace(type="response.done", response=SimpleNamespace(usage=None)),
+        SimpleNamespace(type="response.created"),
+    ]
+    bridge = OpenAIRealtimeBridge(
+        api_key="sk-test",
+        model="gpt-realtime-2.1",
+        connect_factory=lambda **_: _fake_connection(server_events, recorder),
+    )
+    await bridge.connect(instructions="x", voice="alloy", language="ru", params={})
+    _ = [event async for event in bridge.events()]
+    recorder.calls.clear()
+
+    await bridge.interrupt(audio_end_ms=10)
+
+    assert recorder.calls == [("response.cancel", {})]

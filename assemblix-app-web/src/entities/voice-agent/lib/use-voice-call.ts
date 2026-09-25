@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { Room, RoomEvent, Track } from "livekit-client";
 
 import { usePcmPlayer } from "@/shared/lib/use-pcm-player";
 
@@ -17,6 +18,12 @@ const WORKLET_URL = "/pcm-recorder.worklet.js";
 // nobody answered, or a WebSocket the proxy never upgraded. Failing loudly beats
 // a spinner that turns forever.
 const CONNECT_TIMEOUT_MS = 15000;
+
+// Avatar calls also wait on the server's avatar-join timeout (20s) plus the
+// LiveKit provider's own connect time, so the client watchdog must outlast that.
+const AVATAR_CONNECT_TIMEOUT_MS = 30000;
+
+const AVATAR_IDENTITY = "avatar";
 
 const micErrorKey = (cause: unknown): string => {
   const name = cause instanceof Error ? cause.name : "";
@@ -53,6 +60,11 @@ interface UseVoiceCallResult {
   levels: React.RefObject<CallLevels>;
   start: () => Promise<void>;
   stop: () => void;
+  /** The call's media runs through LiveKit and shows an avatar. */
+  isAvatar: boolean;
+  /** The avatar's video track is attached. */
+  hasVideo: boolean;
+  videoRef: React.RefObject<HTMLVideoElement | null>;
 }
 
 /** Root-mean-square of a PCM16 frame, normalized to 0..1. */
@@ -73,11 +85,16 @@ export const useVoiceCall = (voiceAgentId: string): UseVoiceCallResult => {
   const [firstAudioMs, setFirstAudioMs] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const levels = useRef<CallLevels>({ user: 0, agent: 0 });
+  const [isAvatar, setIsAvatar] = useState(false);
+  const [hasVideo, setHasVideo] = useState(false);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
 
   const socketRef = useRef<WebSocket | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const ctxRef = useRef<AudioContext | null>(null);
   const watchdogRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const roomRef = useRef<Room | null>(null);
+  const avatarAudioRef = useRef<HTMLMediaElement | null>(null);
 
   const teardown = useCallback(() => {
     if (watchdogRef.current) clearTimeout(watchdogRef.current);
@@ -92,6 +109,15 @@ export const useVoiceCall = (voiceAgentId: string): UseVoiceCallResult => {
     levels.current.user = 0;
     levels.current.agent = 0;
     setInterim(null);
+    // Detach listeners before disconnecting so a stale room (already replaced
+    // by a redial) can never fire its Disconnected handler onto this call again.
+    roomRef.current?.removeAllListeners();
+    void roomRef.current?.disconnect();
+    roomRef.current = null;
+    avatarAudioRef.current?.remove();
+    avatarAudioRef.current = null;
+    setHasVideo(false);
+    setIsAvatar(false);
     setStatus("idle");
   }, [player]);
 
@@ -124,6 +150,11 @@ export const useVoiceCall = (voiceAgentId: string): UseVoiceCallResult => {
         case "session.ready":
           if (watchdogRef.current) clearTimeout(watchdogRef.current);
           watchdogRef.current = null;
+          if (frame.media === "livekit") {
+            // Media runs through the LiveKit room; the WebSocket only carries control.
+            setStatus("live");
+            break;
+          }
           player.setSampleRate(Number(frame.outputSampleRate));
           startCapture(Number(frame.inputSampleRate))
             .then(() => setStatus("live"))
@@ -163,6 +194,8 @@ export const useVoiceCall = (voiceAgentId: string): UseVoiceCallResult => {
           if (frame.isFatal) setError("providerFailed");
           break;
         case "session.closed":
+          if (frame.reason === "avatar_busy") setError("avatarBusy");
+          else if (frame.reason === "avatar_unavailable") setError("avatarUnavailable");
           teardown();
           break;
       }
@@ -199,7 +232,48 @@ export const useVoiceCall = (voiceAgentId: string): UseVoiceCallResult => {
     }, CONNECT_TIMEOUT_MS);
 
     try {
-      const { token } = await createSession(voiceAgentId).unwrap();
+      const { token, media } = await createSession(voiceAgentId).unwrap();
+
+      if (media?.transport === "livekit") {
+        setIsAvatar(true);
+        // Avatar joins wait on the server's own 20s timeout plus provider connect
+        // time, which outlasts the default watchdog — extend it before that budget
+        // could tick past its shorter deadline.
+        if (watchdogRef.current) clearTimeout(watchdogRef.current);
+        watchdogRef.current = setTimeout(() => {
+          setError("timeout");
+          teardown();
+        }, AVATAR_CONNECT_TIMEOUT_MS);
+        const room = new Room({ adaptiveStream: true, dynacast: true });
+        roomRef.current = room;
+        room.on(RoomEvent.TrackSubscribed, (track, _publication, participant) => {
+          if (participant.identity !== AVATAR_IDENTITY) return;
+          if (track.kind === Track.Kind.Video && videoRef.current) {
+            track.attach(videoRef.current);
+            setHasVideo(true);
+          } else if (track.kind === Track.Kind.Audio) {
+            const element = track.attach();
+            element.hidden = true;
+            document.body.appendChild(element);
+            avatarAudioRef.current = element;
+          }
+        });
+        room.on(RoomEvent.Disconnected, () => {
+          // On an avatar failure the server tears down the room before sending
+          // `session.closed{reason}` over the still-open control socket, so a
+          // Disconnected here can arrive first. Let the socket drive teardown
+          // while it is open — this only steps in once the socket is already
+          // gone, and only for the room that belongs to the current call.
+          if (roomRef.current !== room) return;
+          const socket = socketRef.current;
+          if (socket && socket.readyState === WebSocket.OPEN) return;
+          teardown();
+        });
+        await room.connect(media.url, media.token);
+        // Publish the microphone we already hold: no second permission prompt, and
+        // WebRTC's echo cancellation covers the avatar's playback.
+        await room.localParticipant.publishTrack(stream.getAudioTracks()[0]);
+      }
 
       const scheme = window.location.protocol === "https:" ? "wss" : "ws";
       const socket = new WebSocket(
@@ -244,5 +318,17 @@ export const useVoiceCall = (voiceAgentId: string): UseVoiceCallResult => {
   }, [teardown]);
   useEffect(() => () => teardownRef.current(), []);
 
-  return { status, transcript, interim, firstAudioMs, error, levels, start, stop };
+  return {
+    status,
+    transcript,
+    interim,
+    firstAudioMs,
+    error,
+    levels,
+    start,
+    stop,
+    isAvatar,
+    hasVideo,
+    videoRef,
+  };
 };

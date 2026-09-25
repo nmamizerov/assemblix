@@ -1406,7 +1406,9 @@
       "knowledgeHint": "Se inserta en el prompt al iniciar la llamada.",
       "analysisHint": "Flujos que observan la llamada sin modificarla.",
       "synthesis": "Síntesis de voz",
-      "synthesisHint": "Quién pronuncia las respuestas: el propio modelo en tiempo real o un proveedor dedicado."
+      "synthesisHint": "Quién pronuncia las respuestas: el propio modelo en tiempo real o un proveedor dedicado.",
+      "avatar": "Avatar",
+      "avatarHint": "Un rostro que sincroniza los labios con la voz del agente. Requiere LiveKit en el servidor."
     },
     "fields": {
       "name": "Nombre",
@@ -1438,7 +1440,8 @@
       "perMinute": "${{cost}}/min",
       "customVoiceCaption": "Elige una voz integrada o pega el id de una voz personalizada (voice_…) creada en tu cuenta de OpenAI.",
       "externalVoice": "Voz externa",
-      "externalVoiceUnavailable": "Este modelo siempre responde con su propio audio, por lo que una voz externa no puede hablar por él."
+      "externalVoiceUnavailable": "Este modelo siempre responde con su propio audio, por lo que una voz externa no puede hablar por él.",
+      "avatarEnabled": "Mostrar un avatar"
     },
     "testCall": {
       "title": "Llamada de prueba",
@@ -1453,7 +1456,9 @@
         "micFailed": "No se pudo abrir el micrófono",
         "timeout": "La llamada no se conectó a tiempo",
         "connectFailed": "No se pudo conectar la llamada",
-        "providerFailed": "El proveedor de voz terminó la llamada"
+        "providerFailed": "El proveedor de voz terminó la llamada",
+        "avatarBusy": "El avatar está ocupado ahora mismo — inténtalo de nuevo en un momento",
+        "avatarUnavailable": "El avatar no está disponible ahora mismo"
       },
       "state": {
         "idle": "Listo",
@@ -1470,6 +1475,7 @@
       "promptRequired": "El prompt del sistema es obligatorio",
       "providerRequired": "El proveedor es obligatorio",
       "modelRequired": "El modelo es obligatorio",
+      "avatarIncomplete": "Termina de configurar el avatar (proveedor, modelo, clave de API y avatar) o desactívalo",
       "formInvalid": "Corrige los campos marcados antes de guardar"
     }
   },

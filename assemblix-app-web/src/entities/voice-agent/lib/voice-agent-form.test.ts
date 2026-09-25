@@ -58,6 +58,7 @@ describe("voice agent form", () => {
           realtime: false,
         },
         tts: null,
+        avatar: null,
         params: {},
         turnWorkflowId: "wf-1",
         finalWorkflowId: null,
@@ -103,5 +104,38 @@ describe("voice agent form", () => {
 
     // Act — re-selecting the same provider is a no-op
     expect(applyProviderChange(draft, "openai")).toEqual(draft);
+  });
+
+  it("flags an enabled avatar that is missing required fields", () => {
+    // Arrange — an avatar switched on but not fully configured yet
+    const draft = {
+      ...emptyDraft(),
+      name: "Receptionist",
+      systemPrompt: "You are a clinic receptionist.",
+      avatar: { provider: "", avatarModel: "" },
+    };
+
+    // Assert — otherwise this would only fail on save with a backend 400
+    expect(validateDraft(draft).errors.avatar).toBeDefined();
+
+    // Act — filling in the required fields clears the error
+    const completed = {
+      ...draft,
+      avatar: {
+        provider: "heygen",
+        avatarModel: "interactive",
+        credentialId: "cred-1",
+        avatarId: "avatar-1",
+      },
+    };
+
+    // Assert
+    expect(validateDraft(completed).errors.avatar).toBeUndefined();
+
+    // Assert — the model is required too: the vendor rejects a session without one
+    expect(
+      validateDraft({ ...completed, avatar: { ...completed.avatar, avatarModel: "" } }).errors
+        .avatar,
+    ).toBeDefined();
   });
 });

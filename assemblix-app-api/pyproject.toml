@@ -40,6 +40,8 @@ dependencies = [
     "websockets>=15.0.1",
     "av>=18.0.0",
     "yandexcloud>=0.401.0",
+    "livekit>=1.1",
+    "livekit-api>=1.2",
 ]
 
 [project.optional-dependencies]

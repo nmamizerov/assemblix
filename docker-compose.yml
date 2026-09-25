@@ -191,5 +191,23 @@ services:
       retries: 5
     restart: unless-stopped
 
+  # --- Avatar media tier (opt-in via `COMPOSE_PROFILES=avatar`) ---------------
+  # Voice-agent avatars need a LiveKit server reachable by browsers AND by the
+  # avatar vendor's cloud: put 7880 behind your TLS proxy (its own domain) and
+  # open 7881/tcp + 7882/udp. LiveKit Cloud works too — then skip this service.
+  livekit:
+    image: livekit/livekit-server:v1.13.7
+    profiles: ["avatar"]
+    command: --config /etc/livekit.yaml
+    environment:
+      LIVEKIT_KEYS: "${LIVEKIT_API_KEY}: ${LIVEKIT_API_SECRET}"
+    ports:
+      - "7880:7880"
+      - "7881:7881/tcp"
+      - "7882:7882/udp"
+    volumes:
+      - ./deploy/livekit.yaml:/etc/livekit.yaml:ro
+    restart: unless-stopped
+
 volumes:
   assemblix-pgdata:

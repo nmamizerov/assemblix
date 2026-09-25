@@ -27,6 +27,7 @@ import { useGetKnowledgeBasesQuery } from "@/entities/knowledge-base";
 import { useGetWorkflowsQuery } from "@/entities/workflow";
 import { selectCurrentProjectId } from "@/entities/organization";
 import { VoiceOutputPicker } from "@/entities/voice-model";
+import { AvatarOutputPicker } from "@/entities/avatar-model";
 import {
   applyProviderChange,
   LANGUAGE_OPTIONS,
@@ -351,6 +352,35 @@ export const VoiceAgentForm = ({ draft, errors, onChange }: VoiceAgentFormProps)
               value={draft.tts}
               onChange={(voice) => handleField("tts", voice)}
             />
+          )}
+        </div>
+      </Section>
+
+      <Section
+        title={t("voiceAgents.sections.avatar")}
+        hint={t("voiceAgents.sections.avatarHint")}
+      >
+        <div className="space-y-3">
+          <div className="flex items-center justify-between gap-4">
+            <Label htmlFor="voice-agent-avatar" className="font-normal">
+              {t("voiceAgents.fields.avatarEnabled")}
+            </Label>
+            <Switch
+              id="voice-agent-avatar"
+              checked={draft.avatar !== null}
+              onCheckedChange={(checked) =>
+                handleField("avatar", checked ? { provider: "", avatarModel: "" } : null)
+              }
+            />
+          </div>
+          {draft.avatar !== null && (
+            <AvatarOutputPicker
+              value={draft.avatar}
+              onChange={(avatar) => handleField("avatar", avatar)}
+            />
+          )}
+          {errors.avatar && (
+            <p className="text-xs text-destructive">{t(errors.avatar)}</p>
           )}
         </div>
       </Section>

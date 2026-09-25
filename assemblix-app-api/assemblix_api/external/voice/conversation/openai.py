@@ -83,8 +83,10 @@ class OpenAIRealtimeBridge:
         self._connection: Any = None
         self._failed = False
         self._text_output = False
-        # id of the assistant item currently producing audio, for interrupt()'s truncate.
+        # Last assistant audio item: kept after response.done, because playback runs
+        # behind generation and a barge-in can arrive once the reply is fully sent.
         self._active_item_id: str | None = None
+        self._response_active = False
 
     async def _default_connect(self, *, api_key: str, model: str) -> Any:
         from openai import AsyncOpenAI
@@ -153,11 +155,11 @@ class OpenAIRealtimeBridge:
         if self._connection is None or self._failed:
             return
         try:
-            await self._connection.response.cancel()
+            if self._response_active:
+                await self._connection.response.cancel()
+                self._response_active = False
             # output_audio_buffer.clear() is WebRTC/SIP only; over our plain WebSocket
-            # transport, conversation.item.truncate is what actually stops in-flight
-            # audio. Only meaningful while a turn is in flight — nothing to truncate
-            # otherwise.
+            # transport, conversation.item.truncate is what trims what was not heard.
             if self._active_item_id is not None:
                 await self._connection.conversation.item.truncate(
                     item_id=self._active_item_id,
@@ -192,7 +194,14 @@ class OpenAIRealtimeBridge:
                 return UserTranscript(text=event.delta, is_final=False)
             case "conversation.item.input_audio_transcription.completed":
                 return UserTranscript(text=event.transcript, is_final=True)
+            case "response.created":
+                self._response_active = True
+                self._active_item_id = None
+                return None
             case "response.output_item.added":
+                # A response may be observed without response.created in older
+                # fakes/streams, so mark it active here too.
+                self._response_active = True
                 # Track the assistant item currently producing audio so interrupt()
                 # can target it with conversation.item.truncate. In text mode there is
                 # no audio to truncate, so nothing is tracked.
@@ -210,7 +219,7 @@ class OpenAIRealtimeBridge:
             case "response.output_audio_transcript.done":
                 return AgentTranscript(text=event.transcript, is_final=True)
             case "response.done":
-                self._active_item_id = None
+                self._response_active = False
                 usage = event.response.usage
                 return TurnEnded(
                     input_tokens=usage.input_tokens if usage else None,

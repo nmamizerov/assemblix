@@ -37,6 +37,12 @@ services:
       DATABASE_URL: ${DATABASE_URL}        # external Postgres, e.g. postgresql://user:pass@host:5432/db
       JWT_SECRET_KEY: ${JWT_SECRET_KEY}    # JWT signing secret, >= 32 chars
       ENCRYPTION_KEY: ${ENCRYPTION_KEY}    # Fernet key for stored credentials
+      # --- Optional: voice-agent avatars (LiveKit). Leave empty to disable. ---
+      LIVEKIT_URL: ${LIVEKIT_URL:-}
+      LIVEKIT_PUBLIC_URL: ${LIVEKIT_PUBLIC_URL:-}
+      LIVEKIT_API_KEY: ${LIVEKIT_API_KEY:-}
+      LIVEKIT_API_SECRET: ${LIVEKIT_API_SECRET:-}
+      AVATAR_JOIN_TIMEOUT_SECONDS: ${AVATAR_JOIN_TIMEOUT_SECONDS:-20}
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://localhost:8000/health').status==200 else 1)"]
       interval: 15s

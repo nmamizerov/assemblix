@@ -2,9 +2,12 @@
 
 from __future__ import annotations
 
+import asyncio
 from collections.abc import AsyncIterator
 from typing import Any
 from uuid import uuid4
+
+import pytest
 
 from assemblix_api.external.voice.conversation.contract import (
     AgentTranscript,
@@ -54,6 +57,8 @@ class _FakeBridge:
 class _FakeClient:
     """Feeds inbound frames once, then blocks until the bridge side finishes."""
 
+    media = "ws"
+
     def __init__(self, inbound: list[Any]) -> None:
         self._inbound = inbound
         self.json_frames: list[dict] = []
@@ -64,6 +69,11 @@ class _FakeClient:
 
     async def send_bytes(self, data: bytes) -> None:
         self.audio_frames.append(data)
+
+    async def interrupt_playback(self) -> int | None:
+        return None
+
+    async def end_of_utterance(self) -> None: ...
 
     async def __aiter__(self) -> AsyncIterator[Any]:
         for frame in self._inbound:
@@ -128,6 +138,7 @@ async def test_runtime_drives_a_full_call() -> None:
         "type": "session.ready",
         "inputSampleRate": 24000,
         "outputSampleRate": 24000,
+        "media": "ws",
     }
     assert client.json_frames[-1] == {"type": "session.closed", "reason": "completed"}
     assert bridge.closed is True
@@ -141,6 +152,8 @@ class _VanishedClient:
     as Starlette turns an OSError on a dead socket into WebSocketDisconnect.
     """
 
+    media = "ws"
+
     def __init__(self) -> None:
         self.json_frames: list[dict] = []
         self._gone = False
@@ -153,6 +166,11 @@ class _VanishedClient:
     async def send_bytes(self, data: bytes) -> None:
         if self._gone:
             raise RuntimeError("client is gone")
+
+    async def interrupt_playback(self) -> int | None:
+        return None
+
+    async def end_of_utterance(self) -> None: ...
 
     async def __aiter__(self) -> AsyncIterator[Any]:
         self._gone = True
@@ -231,3 +249,232 @@ async def test_speech_chars_accumulate_across_turns_and_tolerate_native_turns() 
     # Assert
     assert runtime.speech_chars == 42
     assert runtime.usage == (3, 6)
+
+
+class _PlaybackClient(_FakeClient):
+    """A channel whose playback runs behind generation, like an avatar."""
+
+    media = "livekit"
+
+    def __init__(self, inbound: list[Any], heard_ms: int | None) -> None:
+        super().__init__(inbound)
+        self._heard_ms = heard_ms
+        self.interrupts = 0
+        self.utterance_ends = 0
+
+    async def interrupt_playback(self) -> int | None:
+        self.interrupts += 1
+        return self._heard_ms
+
+    async def end_of_utterance(self) -> None:
+        self.utterance_ends += 1
+
+    async def __aiter__(self) -> AsyncIterator[Any]:
+        for frame in self._inbound:
+            yield frame
+        # Mirrors _FakeClient in test_voice_session_hooks.py: block instead of
+        # ending, so the client pump never wins the run() race against the
+        # scripted bridge events.
+        await asyncio.sleep(3600)
+        yield b""
+
+
+def _runtime(bridge: Any, client: Any, **kwargs: Any) -> VoiceSessionRuntime:
+    return VoiceSessionRuntime(
+        bridge=bridge,
+        client=client,
+        instructions="x",
+        voice="alloy",
+        language="ru",
+        params={},
+        max_session_sec=5,
+        **kwargs,
+    )
+
+
+async def test_barge_in_during_playback_truncates_after_generation_ended() -> None:
+    bridge = _FakeBridge(
+        [
+            AudioDelta(pcm=b"\x00\x00" * 24000),  # 1 s generated
+            TurnEnded(),  # generation done, avatar still talking
+            SpeechStarted(),
+            SessionClosed(reason="completed"),
+        ]
+    )
+    client = _PlaybackClient([], heard_ms=420)
+
+    await _runtime(bridge, client).run()
+
+    assert client.utterance_ends == 1
+    assert client.interrupts == 1
+    assert bridge.interrupts == [420]
+
+
+async def test_nothing_playing_and_nothing_generating_interrupts_nothing() -> None:
+    bridge = _FakeBridge([SpeechStarted(), SessionClosed(reason="completed")])
+    client = _PlaybackClient([], heard_ms=None)
+
+    await _runtime(bridge, client).run()
+
+    assert bridge.interrupts == []
+
+
+async def test_session_ready_names_the_media_plane() -> None:
+    bridge = _FakeBridge([SessionClosed(reason="completed")])
+    client = _PlaybackClient([], heard_ms=None)
+
+    await _runtime(bridge, client).run()
+
+    assert client.json_frames[0]["type"] == "session.ready"
+    assert client.json_frames[0]["media"] == "livekit"
+
+
+async def test_prepare_runs_before_session_ready_and_its_failure_propagates() -> None:
+    order: list[str] = []
+
+    class _Bridge(_FakeBridge):
+        async def connect(self, **kwargs: Any) -> None:
+            order.append("connect")
+
+    async def prepare() -> None:
+        order.append("prepare")
+
+    client = _PlaybackClient([], heard_ms=None)
+    await _runtime(_Bridge([SessionClosed(reason="completed")]), client, prepare=prepare).run()
+    assert sorted(order) == ["connect", "prepare"]
+    assert client.json_frames[0]["type"] == "session.ready"
+
+    async def failing() -> None:
+        raise RuntimeError("avatar failed")
+
+    failed_client = _PlaybackClient([], heard_ms=None)
+    with pytest.raises(RuntimeError):
+        await _runtime(_FakeBridge([]), failed_client, prepare=failing).run()
+    assert failed_client.json_frames == []
+
+
+async def test_prepare_failure_closes_the_bridge_and_skips_session_ready() -> None:
+    bridge = _FakeBridge([])
+
+    async def failing() -> None:
+        raise RuntimeError("avatar failed")
+
+    client = _PlaybackClient([], heard_ms=None)
+    with pytest.raises(RuntimeError):
+        await _runtime(bridge, client, prepare=failing).run()
+
+    assert bridge.closed is True
+    assert client.json_frames == []
+
+
+async def test_connect_failure_cancels_a_slow_prepare() -> None:
+    cancelled = False
+
+    class _FailingBridge(_FakeBridge):
+        async def connect(self, **kwargs: Any) -> None:
+            raise RuntimeError("connect failed")
+
+    async def slow_prepare() -> None:
+        nonlocal cancelled
+        try:
+            await asyncio.sleep(3600)
+        except asyncio.CancelledError:
+            cancelled = True
+            raise
+
+    client = _PlaybackClient([], heard_ms=None)
+    with pytest.raises(RuntimeError, match="connect failed"):
+        await _runtime(_FailingBridge([]), client, prepare=slow_prepare).run()
+
+    assert cancelled is True
+
+
+async def test_cancelling_run_while_joining_cancels_connect_and_prepare() -> None:
+    connect_cancelled = False
+    prepare_cancelled = False
+
+    class _SlowBridge(_FakeBridge):
+        async def connect(self, **kwargs: Any) -> None:
+            nonlocal connect_cancelled
+            try:
+                await asyncio.sleep(3600)
+            except asyncio.CancelledError:
+                connect_cancelled = True
+                raise
+
+    async def slow_prepare() -> None:
+        nonlocal prepare_cancelled
+        try:
+            await asyncio.sleep(3600)
+        except asyncio.CancelledError:
+            prepare_cancelled = True
+            raise
+
+    bridge = _SlowBridge([])
+    client = _PlaybackClient([], heard_ms=None)
+    run_task = asyncio.create_task(_runtime(bridge, client, prepare=slow_prepare).run())
+    # Give both children a chance to actually start their sleep before cancelling.
+    await asyncio.sleep(0.01)
+    run_task.cancel()
+
+    with pytest.raises(asyncio.CancelledError):
+        await run_task
+
+    assert connect_cancelled is True
+    assert prepare_cancelled is True
+    assert bridge.closed is True
+
+
+def _recording_dispatcher(order: list[str]) -> TurnDispatcher:
+    async def runner(**kwargs: Any) -> None:
+        order.append("final_hook")
+
+    return TurnDispatcher(
+        voice_session_id=uuid4(),
+        turn_workflow_id=None,
+        final_workflow_id="22222222-2222-2222-2222-222222222222",
+        runner=runner,
+    )
+
+
+async def test_on_stopped_runs_after_bridge_close_and_before_the_final_hook() -> None:
+    # Arrange
+    order: list[str] = []
+
+    class _Bridge(_FakeBridge):
+        async def close(self) -> None:
+            order.append("bridge_close")
+
+    async def on_stopped() -> None:
+        order.append("on_stopped")
+
+    # Act
+    await _runtime(
+        _Bridge([SessionClosed(reason="completed")]),
+        _PlaybackClient([], heard_ms=None),
+        dispatcher=_recording_dispatcher(order),
+        on_stopped=on_stopped,
+    ).run()
+
+    # Assert
+    assert order == ["bridge_close", "on_stopped", "final_hook"]
+
+
+async def test_on_stopped_failure_does_not_cost_the_final_hook() -> None:
+    # Arrange
+    order: list[str] = []
+
+    async def on_stopped() -> None:
+        raise RuntimeError("room teardown failed")
+
+    # Act
+    reason = await _runtime(
+        _FakeBridge([SessionClosed(reason="completed")]),
+        _PlaybackClient([], heard_ms=None),
+        dispatcher=_recording_dispatcher(order),
+        on_stopped=on_stopped,
+    ).run()
+
+    # Assert
+    assert reason == "completed"
+    assert order == ["final_hook"]

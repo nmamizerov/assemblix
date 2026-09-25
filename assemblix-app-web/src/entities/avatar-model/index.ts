@@ -12,3 +12,4 @@ export type {
   AvatarSessionResponse,
   WorkflowAvatarConfig,
 } from "./model/types";
+export { AvatarOutputPicker } from "./ui/avatar-output-picker";

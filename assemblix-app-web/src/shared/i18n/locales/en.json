@@ -1406,7 +1406,9 @@
       "knowledgeHint": "Inlined into the prompt when a call starts.",
       "analysisHint": "Workflows that observe the call without shaping it.",
       "synthesis": "Speech synthesis",
-      "synthesisHint": "Who speaks the replies: the realtime model itself, or a dedicated provider."
+      "synthesisHint": "Who speaks the replies: the realtime model itself, or a dedicated provider.",
+      "avatar": "Avatar",
+      "avatarHint": "A face that lip-syncs to the agent's voice. Needs LiveKit on the server."
     },
     "fields": {
       "name": "Name",
@@ -1438,7 +1440,8 @@
       "perMinute": "${{cost}}/min",
       "customVoiceCaption": "Pick a built-in voice, or paste a custom voice id (voice_…) created in your OpenAI account.",
       "externalVoice": "External voice",
-      "externalVoiceUnavailable": "This model always answers with its own audio, so an external voice cannot speak for it."
+      "externalVoiceUnavailable": "This model always answers with its own audio, so an external voice cannot speak for it.",
+      "avatarEnabled": "Show an avatar"
     },
     "testCall": {
       "title": "Test call",
@@ -1453,7 +1456,9 @@
         "micFailed": "Could not open the microphone",
         "timeout": "The call did not connect in time",
         "connectFailed": "Could not connect the call",
-        "providerFailed": "The voice provider ended the call"
+        "providerFailed": "The voice provider ended the call",
+        "avatarBusy": "The avatar is busy right now — try again shortly",
+        "avatarUnavailable": "The avatar is unavailable right now"
       },
       "state": {
         "idle": "Ready",
@@ -1470,6 +1475,7 @@
       "promptRequired": "System prompt is required",
       "providerRequired": "Provider is required",
       "modelRequired": "Model is required",
+      "avatarIncomplete": "Finish configuring the avatar (provider, model, API key and avatar) or turn it off",
       "formInvalid": "Fix the highlighted fields before saving"
     }
   },

@@ -13,7 +13,7 @@ from __future__ import annotations
 import asyncio
 import contextlib
 import time
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Awaitable, Callable
 from typing import Protocol
 
 import structlog
@@ -36,11 +36,21 @@ _BYTES_PER_SAMPLE = 2
 
 
 class ClientChannel(Protocol):
-    """The browser side of the session, narrowed to what the runtime uses."""
+    """The caller's side of the session, narrowed to what the runtime uses."""
+
+    # "ws": audio rides the WebSocket; "livekit": an avatar call's media room.
+    media: str
 
     async def send_json(self, data: dict) -> None: ...
 
     async def send_bytes(self, data: bytes) -> None: ...
+
+    async def interrupt_playback(self) -> int | None:
+        """Stop server-side playback; return how much of the reply was heard (ms),
+        or None when nothing is playing or playback lives in the browser."""
+        ...
+
+    async def end_of_utterance(self) -> None: ...
 
     def __aiter__(self) -> AsyncIterator[bytes | dict]: ...
 
@@ -57,6 +67,8 @@ class VoiceSessionRuntime:
         params: dict,
         max_session_sec: float,
         dispatcher: TurnDispatcher | None = None,
+        prepare: Callable[[], Awaitable[None]] | None = None,
+        on_stopped: Callable[[], Awaitable[None]] | None = None,
     ) -> None:
         self._bridge = bridge
         self._client = client
@@ -66,6 +78,8 @@ class VoiceSessionRuntime:
         self._params = params
         self._max_session_sec = max_session_sec
         self._dispatcher = dispatcher
+        self._prepare = prepare
+        self._on_stopped = on_stopped
 
         # Audio actually forwarded to the browser, in ms. On a barge-in the
         # provider needs to know how much of its answer was really heard.
@@ -112,17 +126,47 @@ class VoiceSessionRuntime:
         ``session.stop`` and closes the socket in the same tick — and the final
         hook is precisely the thing that has to outlive it.
         """
-        await self._bridge.connect(
+        connect = self._bridge.connect(
             instructions=self._instructions,
             voice=self._voice,
             language=self._language,
             params=self._params,
         )
+        if self._prepare is None:
+            await connect
+        else:
+            # An avatar takes seconds to join; overlap it with the provider handshake.
+            # Either side failing must not leave the other running unsupervised.
+            connect_task = asyncio.ensure_future(connect)
+            prepare_task = asyncio.ensure_future(self._prepare())
+            try:
+                done, pending = await asyncio.wait(
+                    {connect_task, prepare_task}, return_when=asyncio.FIRST_EXCEPTION
+                )
+                for task in pending:
+                    task.cancel()
+                    with contextlib.suppress(asyncio.CancelledError, Exception):
+                        await task
+                for task in done:
+                    task.result()
+            except BaseException:
+                # Covers a failure from either task *and* run() itself being
+                # cancelled while awaiting the wait above — asyncio.wait, unlike
+                # gather, does not cancel its children on cancellation.
+                for task in (connect_task, prepare_task):
+                    if not task.done():
+                        task.cancel()
+                    with contextlib.suppress(asyncio.CancelledError, Exception):
+                        await task
+                with contextlib.suppress(Exception):
+                    await self._bridge.close()
+                raise
         await self._client.send_json(
             {
                 "type": "session.ready",
                 "inputSampleRate": self._bridge.input_sample_rate,
                 "outputSampleRate": self._bridge.output_sample_rate,
+                "media": self._client.media,
             }
         )
 
@@ -144,6 +188,13 @@ class VoiceSessionRuntime:
                 task.result()
         finally:
             await self._bridge.close()
+            if self._on_stopped is not None:
+                # Media teardown must not wait for the final hook, which can run
+                # for minutes while an avatar vendor bills for an empty room.
+                try:
+                    await self._on_stopped()
+                except Exception:
+                    logger.exception("voice.session.on_stopped_failed")
             reason = self._closed_reason or "completed"
 
             # Best-effort: a farewell frame nobody is left to receive raises
@@ -186,15 +237,19 @@ class VoiceSessionRuntime:
                 case AgentTranscript():
                     await self._on_transcript("assistant", event.text, event.is_final)
                 case SpeechStarted():
-                    # Two-sided barge-in: the browser drops what it has queued and
-                    # the provider truncates to what was actually heard. Only a
-                    # speaking agent can be interrupted.
+                    # Two-sided barge-in: playback stops and the provider truncates to
+                    # what was actually heard. Playback can outlive generation (an
+                    # avatar speaks in real time), so the channel reports it first.
                     await self._client.send_json({"type": "speech.started"})
-                    if self._agent_speaking:
+                    heard_ms = await self._client.interrupt_playback()
+                    if heard_ms is not None:
+                        await self._bridge.interrupt(audio_end_ms=heard_ms)
+                    elif self._agent_speaking:
                         await self._bridge.interrupt(audio_end_ms=self._played_ms)
-                        self._agent_speaking = False
+                    self._agent_speaking = False
                     self._played_ms = 0
                 case TurnEnded():
+                    await self._client.end_of_utterance()
                     self._agent_speaking = False
                     self._played_ms = 0
                     self._input_tokens += event.input_tokens or 0

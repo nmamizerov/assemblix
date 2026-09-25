@@ -254,6 +254,26 @@ class Settings(BaseSettings):
     # the base URL to route through a proxy/gateway.
     anam_api_base_url: str = os.getenv("ANAM_API_BASE_URL", "https://api.anam.ai")
 
+    # LiveKit: the media plane for voice-agent avatar calls. All four must be set.
+    # LIVEKIT_URL is what the API itself dials (may be an in-network http:// URL);
+    # LIVEKIT_PUBLIC_URL is handed to browsers and to avatar vendors.
+    livekit_url: str = os.getenv("LIVEKIT_URL", "")
+    livekit_public_url: str = os.getenv("LIVEKIT_PUBLIC_URL", "")
+    livekit_api_key: str = os.getenv("LIVEKIT_API_KEY", "")
+    livekit_api_secret: str = os.getenv("LIVEKIT_API_SECRET", "")
+    avatar_join_timeout_seconds: float = float(os.getenv("AVATAR_JOIN_TIMEOUT_SECONDS", "20"))
+
+    @property
+    def livekit_enabled(self) -> bool:
+        return all(
+            (
+                self.livekit_url,
+                self.livekit_public_url,
+                self.livekit_api_key,
+                self.livekit_api_secret,
+            )
+        )
+
     # Yandex SpeechKit (voice input + output). Needs two secrets: an API key and a
     # folder id. Both are optional platform values for the hosted build; when unset,
     # only user-supplied credentials work (self-host default).

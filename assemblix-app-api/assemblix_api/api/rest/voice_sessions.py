@@ -12,6 +12,7 @@ import contextlib
 import json
 from collections.abc import AsyncIterator
 from decimal import Decimal
+from typing import Any
 from uuid import UUID
 
 import structlog
@@ -37,18 +38,30 @@ from assemblix_api.dto.base import PaginatedResponse
 from assemblix_api.dto.requests.voice_agent import VoiceSessionCreateRequest
 from assemblix_api.dto.responses.voice_session import (
     VoiceSessionDetailResponse,
+    VoiceSessionMedia,
     VoiceSessionResponse,
     VoiceSessionTokenResponse,
 )
+from assemblix_api.external.avatar.errors import AvatarError
 from assemblix_api.external.voice import speech_out
 from assemblix_api.external.voice.conversation import create_bridge
 from assemblix_api.realtime.hooks import TurnDispatcher
+from assemblix_api.realtime.livekit.channel import LiveKitChannel
+from assemblix_api.realtime.livekit.rooms import delete_room
+from assemblix_api.realtime.livekit.tokens import (
+    USER_IDENTITY,
+    new_room_name,
+    participant_token,
+    ws_url,
+)
 from assemblix_api.realtime.runtime import VoiceSessionRuntime
 from assemblix_api.realtime.session_token import (
     InvalidSessionToken,
     mint_session_token,
     verify_session_token,
 )
+from assemblix_api.schemas.voice_agent import VoiceAgentConfig
+from assemblix_api.services.avatar_service import ResolvedAvatar
 from assemblix_api.services.project_service import ProjectService
 from assemblix_api.services.voice_agent_service import VoiceAgentService
 from assemblix_api.services.voice_session_history_service import VoiceSessionHistoryService
@@ -119,6 +132,24 @@ async def create_voice_session(
             detail="This voice agent is not active",
         )
 
+    room: str | None = None
+    media: VoiceSessionMedia | None = None
+    if VoiceAgentConfig(**agent.config).avatar is not None:
+        settings = get_settings()
+        if not settings.livekit_enabled:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Avatars need LiveKit: set LIVEKIT_* (see self-hosting docs)",
+            )
+        room = new_room_name()
+        media = VoiceSessionMedia(
+            transport="livekit",
+            url=ws_url(settings.livekit_public_url),
+            token=participant_token(
+                room, USER_IDENTITY, ttl_seconds=_TOKEN_TTL_SECONDS, mic_only=True
+            ),
+        )
+
     return VoiceSessionTokenResponse(
         token=mint_session_token(
             voice_agent_id=agent.id,
@@ -128,13 +159,25 @@ async def create_voice_session(
             is_debug=auth.scoped_project_id is None,
             client_id=request.client_id if request else None,
             ttl_seconds=_TOKEN_TTL_SECONDS,
+            room=room,
         ),
         expires_in=_TOKEN_TTL_SECONDS,
+        media=media,
     )
+
+
+def avatar_call_mismatch(room: str | None, avatar: ResolvedAvatar | None) -> str | None:
+    """A token minted for an avatar call whose agent lost its avatar cannot run:
+    the caller already joined the media room and waits for a face."""
+    if room is not None and avatar is None:
+        return "avatar_unavailable"
+    return None
 
 
 class _WebSocketChannel:
     """Adapts a Starlette WebSocket to the runtime's narrow client contract."""
+
+    media = "ws"
 
     def __init__(self, websocket: WebSocket) -> None:
         self._ws = websocket
@@ -144,6 +187,13 @@ class _WebSocketChannel:
 
     async def send_bytes(self, data: bytes) -> None:
         await self._ws.send_bytes(data)
+
+    async def interrupt_playback(self) -> int | None:
+        # The browser owns playback and flushes on `speech.started`.
+        return None
+
+    async def end_of_utterance(self) -> None:
+        return None
 
     async def __aiter__(self) -> AsyncIterator[bytes | dict]:
         while True:
@@ -193,15 +243,44 @@ async def stream_voice_session(websocket: WebSocket, token: str) -> None:
         await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
         return
 
+    mismatch = avatar_call_mismatch(scope.room, setup.avatar)
+    avatar_call = scope.room is not None and setup.avatar is not None
+    bridge = create_bridge(
+        provider=setup.provider,
+        api_key=setup.api_key,
+        model=setup.model,
+        api_base=setup.api_base,
+        speech_out=setup.tts,
+    )
+    ws_channel = _WebSocketChannel(websocket)
+    client: Any = LiveKitChannel(ws_channel) if avatar_call else ws_channel
+    media: Any = None
+
+    async def prepare_avatar() -> None:
+        nonlocal media
+        from assemblix_api.realtime.livekit.session import open_avatar_media
+
+        assert scope.room is not None and setup.avatar is not None
+        media = await open_avatar_media(
+            room_name=scope.room,
+            avatar=setup.avatar,
+            timeout=get_settings().avatar_join_timeout_seconds,
+        )
+        client.attach(
+            mic=media.mic(bridge.input_sample_rate),
+            output=media.output,
+            output_sample_rate=bridge.output_sample_rate,
+        )
+
+    async def close_media() -> None:
+        nonlocal media
+        if media is not None:
+            opened, media = media, None
+            await opened.close()
+
     runtime = VoiceSessionRuntime(
-        bridge=create_bridge(
-            provider=setup.provider,
-            api_key=setup.api_key,
-            model=setup.model,
-            api_base=setup.api_base,
-            speech_out=setup.tts,
-        ),
-        client=_WebSocketChannel(websocket),
+        bridge=bridge,
+        client=client,
         instructions=setup.instructions,
         voice=setup.voice,
         language=setup.language,
@@ -213,17 +292,37 @@ async def stream_voice_session(websocket: WebSocket, token: str) -> None:
             final_workflow_id=setup.final_workflow_id,
             client_id=scope.client_id,
         ),
+        prepare=prepare_avatar if avatar_call else None,
+        on_stopped=close_media if avatar_call else None,
     )
 
     end_reason = "error"
+    close_reason: str | None = mismatch
     try:
-        end_reason = await runtime.run()
+        if mismatch is None:
+            end_reason = await runtime.run()
+        elif scope.room is not None:
+            await delete_room(scope.room)
+    except AvatarError as exc:
+        close_reason = exc.reason
+        logger.warning(
+            "voice_session_avatar_failed",
+            voice_agent_id=str(scope.voice_agent_id),
+            reason=exc.reason,
+            error=str(exc),
+        )
+        with contextlib.suppress(Exception):
+            await bridge.close()
     except WebSocketDisconnect:
         end_reason = "user_hangup"
         logger.info("voice_session_client_gone", voice_agent_id=str(scope.voice_agent_id))
     except Exception:
         logger.exception("voice_session_failed", voice_agent_id=str(scope.voice_agent_id))
+        # The caller is watching an empty media room: tell it why the call ended.
+        if avatar_call and close_reason is None:
+            close_reason = "avatar_unavailable"
     finally:
+        await close_media()
         input_tokens, output_tokens = runtime.usage
         tts_cost_usd = (
             speech_out.cost_usd(setup.tts, runtime.speech_chars)
@@ -242,5 +341,10 @@ async def stream_voice_session(websocket: WebSocket, token: str) -> None:
             tts_cost_usd=tts_cost_usd,
             tts_uses_system_key=setup.tts.uses_system_key if setup.tts else False,
         )
+        if close_reason is not None:
+            with contextlib.suppress(Exception):
+                await websocket.send_json({"type": "session.closed", "reason": close_reason})
+            with contextlib.suppress(RuntimeError):
+                await websocket.close(code=status.WS_1011_INTERNAL_ERROR)
         with contextlib.suppress(RuntimeError):
             await websocket.close()

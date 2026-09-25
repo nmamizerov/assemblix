@@ -6,6 +6,7 @@ ElevenLabs PCM from the agent node), so the persona carries no voice/LLM of its 
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 from uuid import UUID
 
 from fastapi import HTTPException, status
@@ -13,10 +14,40 @@ from fastapi import HTTPException, status
 from assemblix_api.database.models.user import User
 from assemblix_api.dto.responses.avatar import AvatarSessionResponse
 from assemblix_api.external.avatar.session import mint_session
+from assemblix_api.schemas.node import WorkflowAvatarConfig
 from assemblix_api.schemas.workflow import parse_avatar_config
 from assemblix_api.services.credentials_service import CredentialsService
 from assemblix_api.services.project_service import ProjectService
 from assemblix_api.services.workflow_service import WorkflowService
+
+
+@dataclass(frozen=True)
+class ResolvedAvatar:
+    provider: str
+    api_key: str
+    avatar_id: str
+    avatar_model: str
+
+
+async def resolve_avatar(
+    avatar: WorkflowAvatarConfig, *, project_id: UUID, credentials: CredentialsService
+) -> ResolvedAvatar:
+    if not avatar.avatar_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Select an avatar for this avatar config",
+        )
+    api_key = await credentials.get_avatar_api_key_with_fallback(
+        credentials_id=UUID(avatar.credential_id) if avatar.credential_id else None,
+        project_id=project_id,
+        avatar_provider=avatar.provider,
+    )
+    return ResolvedAvatar(
+        provider=avatar.provider,
+        api_key=api_key,
+        avatar_id=avatar.avatar_id,
+        avatar_model=avatar.avatar_model,
+    )
 
 
 class AvatarService:
@@ -51,35 +82,24 @@ class AvatarService:
                 detail="This workflow has no avatar configured",
             )
 
-        # Audio-passthrough persona only renders the face; the voice is our own
-        # ElevenLabs PCM streamed in from the agent node. So only the avatar must be
-        # selected — no anam voiceId/llmId (those drove anam's own TTS/brain, now unused).
-        if not avatar.avatar_id:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Select an avatar for this workflow's avatar",
-            )
-
-        api_key = await self._credentials.get_avatar_api_key_with_fallback(
-            credentials_id=UUID(avatar.credential_id) if avatar.credential_id else None,
-            project_id=workflow.project_id,
-            avatar_provider=avatar.provider,
+        resolved = await resolve_avatar(
+            avatar, project_id=workflow.project_id, credentials=self._credentials
         )
 
         # enableAudioPassthrough tells anam to lip-sync to the audio we push
         # (client-side createAgentAudioInputStream) instead of synthesizing its own.
         persona_config = {
-            "avatarId": avatar.avatar_id,
-            "avatarModel": avatar.avatar_model,
+            "avatarId": resolved.avatar_id,
+            "avatarModel": resolved.avatar_model,
             "enableAudioPassthrough": True,
         }
-        persona_config = {k: v for k, v in persona_config.items() if v is not None}
+        persona_config = {k: v for k, v in persona_config.items() if v}
 
         session_token = await mint_session(
-            provider=avatar.provider, api_key=api_key, persona_config=persona_config
+            provider=resolved.provider, api_key=resolved.api_key, persona_config=persona_config
         )
         return AvatarSessionResponse(
-            provider=avatar.provider,
+            provider=resolved.provider,
             session_token=session_token,
-            video_config={"avatarModel": avatar.avatar_model},
+            video_config={"avatarModel": resolved.avatar_model},
         )

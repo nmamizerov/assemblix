@@ -135,6 +135,16 @@ DB_DISABLE_STATEMENT_CACHE=true   # asyncpg-safe behind transaction pooling
 Migrations always connect to Postgres directly — DDL is unsafe through a transaction-mode
 pooler.
 
+### Voice-agent avatars (optional)
+
+Avatars need a LiveKit server that browsers **and** the avatar provider's cloud can
+reach: a public `wss://` URL with a valid certificate, plus ports 7881/tcp and
+7882/udp open. Either run the bundled one (`COMPOSE_PROFILES=avatar`, put port
+7880 behind your TLS proxy on its own domain) or use LiveKit Cloud, then set
+`LIVEKIT_URL`, `LIVEKIT_PUBLIC_URL`, `LIVEKIT_API_KEY`, `LIVEKIT_API_SECRET`.
+Raise the host's UDP buffers for production:
+`sysctl -w net.core.rmem_max=5000000 net.core.wmem_max=5000000`.
+
 ### `make` shortcuts
 
 The root `Makefile` wraps the common commands:

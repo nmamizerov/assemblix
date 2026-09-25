@@ -34,6 +34,8 @@ class SessionScope:
     is_debug: bool
     # Optional end-user identifier the caller tied this call to.
     client_id: str | None = None
+    # LiveKit room of an avatar call; None for a plain voice call.
+    room: str | None = None
 
 
 def mint_session_token(
@@ -43,6 +45,7 @@ def mint_session_token(
     is_debug: bool,
     client_id: str | None = None,
     ttl_seconds: int = 60,
+    room: str | None = None,
 ) -> str:
     settings = get_settings()
     now = datetime.now(UTC)
@@ -52,6 +55,7 @@ def mint_session_token(
         "project": str(project_id),
         "debug": is_debug,
         "client": client_id,
+        "room": room,
         "iat": int(now.timestamp()),
         "exp": int((now + timedelta(seconds=ttl_seconds)).timestamp()),
     }
@@ -78,6 +82,7 @@ def verify_session_token(token: str) -> SessionScope:
             project_id=UUID(payload["project"]),
             is_debug=bool(payload.get("debug", False)),
             client_id=payload.get("client") or None,
+            room=payload.get("room") or None,
         )
     except (KeyError, ValueError) as exc:
         raise InvalidSessionToken("Token is missing its scope") from exc

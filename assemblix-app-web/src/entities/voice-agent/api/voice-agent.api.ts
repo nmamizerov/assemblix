@@ -9,6 +9,18 @@ interface GetVoiceAgentsParams {
   projectId: string;
 }
 
+export interface VoiceSessionMedia {
+  transport: "livekit";
+  url: string;
+  token: string;
+}
+
+export interface VoiceSessionTokenResponse {
+  token: string;
+  expiresIn: number;
+  media: VoiceSessionMedia | null;
+}
+
 export const voiceAgentApi = baseApi.injectEndpoints({
   endpoints: (build) => ({
     getVoiceAgents: build.query<VoiceAgent[], GetVoiceAgentsParams>({
@@ -48,10 +60,7 @@ export const voiceAgentApi = baseApi.injectEndpoints({
       ],
     }),
 
-    createVoiceSession: build.mutation<
-      { token: string; expiresIn: number },
-      string
-    >({
+    createVoiceSession: build.mutation<VoiceSessionTokenResponse, string>({
       query: (agentId) => ({
         url: `/voice-agents/${agentId}/sessions`,
         method: "POST",
