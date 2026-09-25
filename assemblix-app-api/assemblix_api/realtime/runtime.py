@@ -13,7 +13,7 @@ from __future__ import annotations
 import asyncio
 import contextlib
 import time
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Awaitable, Callable
 from typing import Protocol
 
 import structlog
@@ -36,11 +36,21 @@ _BYTES_PER_SAMPLE = 2
 
 
 class ClientChannel(Protocol):
-    """The browser side of the session, narrowed to what the runtime uses."""
+    """The caller's side of the session, narrowed to what the runtime uses."""
+
+    # "ws": audio rides the WebSocket; "livekit": an avatar call's media room.
+    media: str
 
     async def send_json(self, data: dict) -> None: ...
 
     async def send_bytes(self, data: bytes) -> None: ...
+
+    async def interrupt_playback(self) -> int | None:
+        """Stop server-side playback; return how much of the reply was heard (ms),
+        or None when nothing is playing or playback lives in the browser."""
+        ...
+
+    async def end_of_utterance(self) -> None: ...
 
     def __aiter__(self) -> AsyncIterator[bytes | dict]: ...
 
@@ -57,6 +67,7 @@ class VoiceSessionRuntime:
         params: dict,
         max_session_sec: float,
         dispatcher: TurnDispatcher | None = None,
+        prepare: Callable[[], Awaitable[None]] | None = None,
     ) -> None:
         self._bridge = bridge
         self._client = client
@@ -66,6 +77,7 @@ class VoiceSessionRuntime:
         self._params = params
         self._max_session_sec = max_session_sec
         self._dispatcher = dispatcher
+        self._prepare = prepare
 
         # Audio actually forwarded to the browser, in ms. On a barge-in the
         # provider needs to know how much of its answer was really heard.
@@ -112,17 +124,23 @@ class VoiceSessionRuntime:
         ``session.stop`` and closes the socket in the same tick — and the final
         hook is precisely the thing that has to outlive it.
         """
-        await self._bridge.connect(
+        connect = self._bridge.connect(
             instructions=self._instructions,
             voice=self._voice,
             language=self._language,
             params=self._params,
         )
+        if self._prepare is None:
+            await connect
+        else:
+            # An avatar takes seconds to join; overlap it with the provider handshake.
+            await asyncio.gather(connect, self._prepare())
         await self._client.send_json(
             {
                 "type": "session.ready",
                 "inputSampleRate": self._bridge.input_sample_rate,
                 "outputSampleRate": self._bridge.output_sample_rate,
+                "media": self._client.media,
             }
         )
 
@@ -186,15 +204,19 @@ class VoiceSessionRuntime:
                 case AgentTranscript():
                     await self._on_transcript("assistant", event.text, event.is_final)
                 case SpeechStarted():
-                    # Two-sided barge-in: the browser drops what it has queued and
-                    # the provider truncates to what was actually heard. Only a
-                    # speaking agent can be interrupted.
+                    # Two-sided barge-in: playback stops and the provider truncates to
+                    # what was actually heard. Playback can outlive generation (an
+                    # avatar speaks in real time), so the channel reports it first.
                     await self._client.send_json({"type": "speech.started"})
-                    if self._agent_speaking:
+                    heard_ms = await self._client.interrupt_playback()
+                    if heard_ms is not None:
+                        await self._bridge.interrupt(audio_end_ms=heard_ms)
+                    elif self._agent_speaking:
                         await self._bridge.interrupt(audio_end_ms=self._played_ms)
-                        self._agent_speaking = False
+                    self._agent_speaking = False
                     self._played_ms = 0
                 case TurnEnded():
+                    await self._client.end_of_utterance()
                     self._agent_speaking = False
                     self._played_ms = 0
                     self._input_tokens += event.input_tokens or 0

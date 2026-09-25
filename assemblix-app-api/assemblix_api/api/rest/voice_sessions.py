@@ -157,6 +157,8 @@ async def create_voice_session(
 class _WebSocketChannel:
     """Adapts a Starlette WebSocket to the runtime's narrow client contract."""
 
+    media = "ws"
+
     def __init__(self, websocket: WebSocket) -> None:
         self._ws = websocket
 
@@ -165,6 +167,13 @@ class _WebSocketChannel:
 
     async def send_bytes(self, data: bytes) -> None:
         await self._ws.send_bytes(data)
+
+    async def interrupt_playback(self) -> int | None:
+        # The browser owns playback and flushes on `speech.started`.
+        return None
+
+    async def end_of_utterance(self) -> None:
+        return None
 
     async def __aiter__(self) -> AsyncIterator[bytes | dict]:
         while True:

@@ -56,6 +56,8 @@ class _FakeBridge:
 
 
 class _FakeClient:
+    media = "ws"
+
     def __init__(self) -> None:
         self.json_frames: list[dict] = []
 
@@ -63,6 +65,11 @@ class _FakeClient:
         self.json_frames.append(data)
 
     async def send_bytes(self, data: bytes) -> None: ...
+
+    async def interrupt_playback(self) -> int | None:
+        return None
+
+    async def end_of_utterance(self) -> None: ...
 
     async def __aiter__(self) -> AsyncIterator[Any]:
         # The browser says nothing; the provider drives this call to its end.
