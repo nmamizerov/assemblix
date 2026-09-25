@@ -1,7 +1,7 @@
 {
   "name": "assemblix-app-web",
   "private": true,
-  "version": "0.2.37",
+  "version": "0.2.38",
   "type": "module",
   "license": "SEE LICENSE IN LICENSE.md",
   "scripts": {

@@ -5,6 +5,55 @@ All notable changes to this project are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.38](https://github.com/nmamizerov/assemblix/compare/v0.2.37...v0.2.38) (2026-09-25)
+
+
+### Features
+
+* **api:** add LiveKit settings and SDK dependencies ([e382d6a](https://github.com/nmamizerov/assemblix/commit/e382d6ad53fb261b36cfb9d1bcaa046d6e8f48aa))
+* **api:** let the voice runtime drive server-side playback channels ([96bd3e3](https://github.com/nmamizerov/assemblix/commit/96bd3e395d0aeb71861f0d732737927d218d1762))
+* **api:** let voice agents carry an avatar config ([e892847](https://github.com/nmamizerov/assemblix/commit/e892847808e304750fa5f4857b653aa946811d6c))
+* **api:** mint LiveKit participant tokens and delete rooms ([84f11c9](https://github.com/nmamizerov/assemblix/commit/84f11c96848c618b9a002a89458d0832087db919))
+* **api:** open an avatar call's LiveKit room with agent, vendor and caller ([bafa9ba](https://github.com/nmamizerov/assemblix/commit/bafa9ba70469704118042642cd19a9b5df93f5f8))
+* **api:** return a LiveKit room when minting an avatar call ([b548f73](https://github.com/nmamizerov/assemblix/commit/b548f739dd1276bc8b1a8c268d5cda233769a237))
+* **api:** run avatar voice calls through LiveKit ([f062ca7](https://github.com/nmamizerov/assemblix/commit/f062ca773cb47d44a11c56049cfdbc09d7fd18a2))
+* **api:** start Anam avatars inside a LiveKit room ([cbebf2b](https://github.com/nmamizerov/assemblix/commit/cbebf2b2873bb1a530c882b4235b43717738fed2))
+* **api:** stream agent audio to an avatar over LiveKit data streams ([d0adbc6](https://github.com/nmamizerov/assemblix/commit/d0adbc645d96d30a32bb90d235024d1424b23bae))
+* **deploy:** add optional LiveKit tier for voice-agent avatars ([7926a3a](https://github.com/nmamizerov/assemblix/commit/7926a3a4fe70bf9560b71c306f9bfe41dcc4fb9f))
+* lip-synced avatars for voice agents over LiveKit ([e26fd47](https://github.com/nmamizerov/assemblix/commit/e26fd47e90df164a898f23ce4b83b44510f9e585))
+* **web:** configure an avatar on a voice agent ([53d67ee](https://github.com/nmamizerov/assemblix/commit/53d67eeed6e67a194fcdadfa5b7ea16b0db9a147))
+* **web:** place avatar test calls over LiveKit ([0c3c23f](https://github.com/nmamizerov/assemblix/commit/0c3c23fea5e516dc369a7f36b5e2af3d486b3c54))
+
+
+### Bug Fixes
+
+* **api:** bound avatar room teardown to five seconds ([0b00393](https://github.com/nmamizerov/assemblix/commit/0b003930ac133fcd95322594953873fa4d6b9456))
+* **api:** bound the whole avatar join by the join timeout ([27591f0](https://github.com/nmamizerov/assemblix/commit/27591f0b708c95f5bc0ca999692a8bb766ca6d07))
+* **api:** cancel both LiveKitChannel drain tasks before awaiting either ([2c81b0a](https://github.com/nmamizerov/assemblix/commit/2c81b0a2c3437cff50d69fed22b0d92cbdcf8969))
+* **api:** cancel connect/prepare when run() itself is cancelled ([766ed8f](https://github.com/nmamizerov/assemblix/commit/766ed8f64e982255dbb0062a71ff1aa23db1c5d9))
+* **api:** give every failed avatar call a close reason ([ac085ee](https://github.com/nmamizerov/assemblix/commit/ac085ee2dfa6d31fd3178ad4c259e4017ba17028))
+* **api:** hand out LIVEKIT_PUBLIC_URL as a WebSocket URL ([da89a46](https://github.com/nmamizerov/assemblix/commit/da89a4685f458167684f10246f89facab26d0e55))
+* **api:** let the caller publish only its microphone in an avatar room ([bbb7979](https://github.com/nmamizerov/assemblix/commit/bbb797913618c75acd05e4daacd2f42b36acdd3e))
+* **api:** never raise from LiveKit room deletion ([ba1a2c3](https://github.com/nmamizerov/assemblix/commit/ba1a2c3aad7c25945eb6a8580ac62663afa20635))
+* **api:** require the avatar model on a voice agent's avatar ([b9d91e2](https://github.com/nmamizerov/assemblix/commit/b9d91e2d6d63cd894e941693867370c06a8643be))
+* **api:** tear the avatar down before the final hook runs ([bc8ba0e](https://github.com/nmamizerov/assemblix/commit/bc8ba0ef318b39be0624963259c3f091b0a7c27f))
+* **api:** truncate a finished reply when the caller barges in during playback ([f751f35](https://github.com/nmamizerov/assemblix/commit/f751f35158ac9c423b2bba5dc9f924a6a7c8b487))
+* pass AVATAR_JOIN_TIMEOUT_SECONDS through the app compose file ([aedb27f](https://github.com/nmamizerov/assemblix/commit/aedb27f27c841c1d9e7e95f7bacaa561478dfc1d))
+* **web:** let session.closed drive avatar teardown before a stale room can ([e366c55](https://github.com/nmamizerov/assemblix/commit/e366c553995796a3577d3d038536383c0cd1c2b6))
+* **web:** require the avatar model before saving a voice agent ([94641f0](https://github.com/nmamizerov/assemblix/commit/94641f023c5bbf54decf35e2ffec32710e01096b))
+
+
+### Documentation
+
+* document voice-agent avatar calls and the LiveKit tier ([2c732cd](https://github.com/nmamizerov/assemblix/commit/2c732cd590976aa1dcb0c6df195f31072aad0323))
+* note the Gemini Live limit on interrupting an avatar ([515ca8e](https://github.com/nmamizerov/assemblix/commit/515ca8ee0728b7334a2085fd8c1ac5814be4729c))
+
+
+### Refactoring
+
+* **api:** share avatar key and persona resolution ([841a3d9](https://github.com/nmamizerov/assemblix/commit/841a3d94111a55da8b5979f542ecec454a026e61))
+* **web:** move the avatar picker into the avatar entity ([56e3ea6](https://github.com/nmamizerov/assemblix/commit/56e3ea6795754fc9da81b29730800f7d559e6f31))
+
 ## [0.2.37](https://github.com/nmamizerov/assemblix/compare/v0.2.36...v0.2.37) (2026-09-25)
 
 
