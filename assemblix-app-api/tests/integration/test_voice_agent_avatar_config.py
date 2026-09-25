@@ -55,9 +55,13 @@ async def test_avatar_requires_avatar_and_credential(
 
 
 async def test_avatar_requires_avatar_model(client, auth_user, auth_headers, livekit_on) -> None:
-    response = await _create(
-        client, auth_user, auth_headers, _config(avatar={**_AVATAR, "avatarModel": ""})
-    )
+    # Arrange
+    config = _config(avatar={**_AVATAR, "avatarModel": ""})
+
+    # Act
+    response = await _create(client, auth_user, auth_headers, config)
+
+    # Assert
     assert response.status_code == 400
 
 

@@ -438,6 +438,7 @@ def _recording_dispatcher(order: list[str]) -> TurnDispatcher:
 
 
 async def test_on_stopped_runs_after_bridge_close_and_before_the_final_hook() -> None:
+    # Arrange
     order: list[str] = []
 
     class _Bridge(_FakeBridge):
@@ -447,6 +448,7 @@ async def test_on_stopped_runs_after_bridge_close_and_before_the_final_hook() ->
     async def on_stopped() -> None:
         order.append("on_stopped")
 
+    # Act
     await _runtime(
         _Bridge([SessionClosed(reason="completed")]),
         _PlaybackClient([], heard_ms=None),
@@ -454,15 +456,18 @@ async def test_on_stopped_runs_after_bridge_close_and_before_the_final_hook() ->
         on_stopped=on_stopped,
     ).run()
 
+    # Assert
     assert order == ["bridge_close", "on_stopped", "final_hook"]
 
 
 async def test_on_stopped_failure_does_not_cost_the_final_hook() -> None:
+    # Arrange
     order: list[str] = []
 
     async def on_stopped() -> None:
         raise RuntimeError("room teardown failed")
 
+    # Act
     reason = await _runtime(
         _FakeBridge([SessionClosed(reason="completed")]),
         _PlaybackClient([], heard_ms=None),
@@ -470,5 +475,6 @@ async def test_on_stopped_failure_does_not_cost_the_final_hook() -> None:
         on_stopped=on_stopped,
     ).run()
 
+    # Assert
     assert reason == "completed"
     assert order == ["final_hook"]

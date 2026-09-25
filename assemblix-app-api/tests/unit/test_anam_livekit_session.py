@@ -52,6 +52,7 @@ async def test_posts_engine_session_with_room_environment(monkeypatch) -> None:
 
 
 async def test_empty_avatar_model_is_left_to_anam(monkeypatch) -> None:
+    # Arrange
     captured: dict = {}
 
     async def handler(request: httpx.Request) -> httpx.Response:
@@ -60,8 +61,10 @@ async def test_empty_avatar_model_is_left_to_anam(monkeypatch) -> None:
 
     _mock(monkeypatch, handler)
 
+    # Act
     await anam.start_livekit_session(**{**_ARGS, "avatar_model": ""})
 
+    # Assert
     assert "avatarModel" not in captured["body"]["personaConfig"]
 
 
