@@ -14,7 +14,7 @@ from typing import Any
 from pydantic import Field
 
 from assemblix_api.dto.base import DTOModel
-from assemblix_api.schemas.node import AgentInstruction, VoiceOutputConfig
+from assemblix_api.schemas.node import AgentInstruction, VoiceOutputConfig, WorkflowAvatarConfig
 
 
 class VoiceAgentConfig(DTOModel):
@@ -27,6 +27,9 @@ class VoiceAgentConfig(DTOModel):
     # provider speaks it; absent means the model's own voice. The block *is* the
     # toggle, so "enabled but unconfigured" cannot be expressed.
     tts: VoiceOutputConfig | None = None
+    # A face lip-synced to whatever voice the agent speaks with. Present means the
+    # call's media runs through LiveKit; absent means a plain voice call.
+    avatar: WorkflowAvatarConfig | None = None
     # Free-form provider tunables (vad_silence_ms, temperature, interruptible,
     # max_session_sec). Same pattern as AgentNodeConfig.params; system ceilings
     # in Settings always win.

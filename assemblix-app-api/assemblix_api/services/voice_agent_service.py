@@ -7,6 +7,7 @@ from uuid import UUID
 
 from fastapi import HTTPException, status
 
+from assemblix_api.core.settings import get_settings
 from assemblix_api.database.models.voice_agent import VoiceAgent
 from assemblix_api.database.repositories.voice_agent_repository import VoiceAgentRepository
 from assemblix_api.database.repositories.workflow_repository import WorkflowRepository
@@ -14,6 +15,7 @@ from assemblix_api.dto.requests.voice_agent import (
     VoiceAgentCreateRequest,
     VoiceAgentUpdateRequest,
 )
+from assemblix_api.external.avatar.avatar_catalog import AVATAR_PROVIDER_LABELS
 from assemblix_api.external.voice.catalog import has_conversation_route
 from assemblix_api.schemas.voice_agent import VoiceAgentConfig
 
@@ -37,6 +39,27 @@ class VoiceAgentService:
                     f"{config.voice.provider}/{config.voice.model} is not a conversation "
                     "(speech-to-speech) model"
                 ),
+            )
+
+    @staticmethod
+    def _assert_avatar(config: VoiceAgentConfig) -> None:
+        avatar = config.avatar
+        if avatar is None:
+            return
+        if not get_settings().livekit_enabled:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Avatars need LiveKit: set LIVEKIT_* (see self-hosting docs)",
+            )
+        if avatar.provider not in AVATAR_PROVIDER_LABELS:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Unknown avatar provider {avatar.provider!r}",
+            )
+        if not avatar.avatar_id or not avatar.credential_id:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Select an avatar and its provider credential",
             )
 
     async def _assert_hook_workflows_in_project(
@@ -68,6 +91,7 @@ class VoiceAgentService:
         data: VoiceAgentCreateRequest,
     ) -> VoiceAgent:
         self._assert_conversation_model(data.config)
+        self._assert_avatar(data.config)
         await self._assert_hook_workflows_in_project(project_id, data.config)
         return await self._repository.create(
             project_id=project_id,
@@ -104,6 +128,7 @@ class VoiceAgentService:
             update_fields["description"] = data.description
         if data.config is not None:
             self._assert_conversation_model(data.config)
+            self._assert_avatar(data.config)
             await self._assert_hook_workflows_in_project(agent.project_id, data.config)
             update_fields["config"] = data.config.model_dump()
         if data.is_active is not None:
