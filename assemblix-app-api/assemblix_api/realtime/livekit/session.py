@@ -93,33 +93,35 @@ async def open_avatar_media(
     settings = get_settings()
     room = (room_factory or _new_room)()
     try:
-        await room.connect(
-            ws_url(settings.livekit_url),
-            participant_token(room_name, AGENT_IDENTITY, ttl_seconds=60, agent=True),
-        )
-        output = AvatarAudioOutput(room.local_participant, destination=AVATAR_IDENTITY)
-        session_id = await start_vendor(
-            provider=avatar.provider,
-            api_key=avatar.api_key,
-            avatar_id=avatar.avatar_id,
-            avatar_model=avatar.avatar_model,
-            livekit_url=settings.livekit_public_url,
-            livekit_token=participant_token(
-                room_name,
-                AVATAR_IDENTITY,
-                ttl_seconds=_VENDOR_TOKEN_TTL_SECONDS,
-                agent=True,
-                attributes={PUBLISH_ON_BEHALF: AGENT_IDENTITY},
-            ),
-        )
-        logger.info("avatar.vendor_started", room=room_name, vendor_session_id=session_id)
-        try:
-            mic_track = await asyncio.wait_for(_wait_for_both_sides(room), timeout)
-        except TimeoutError as exc:
-            raise AvatarUnavailable("The avatar or the caller did not join in time") from exc
-    except BaseException:
+        # One budget for the whole join: a LiveKit server that never answers the
+        # connect must fail as fast as an avatar that never shows up.
+        async with asyncio.timeout(timeout):
+            await room.connect(
+                ws_url(settings.livekit_url),
+                participant_token(room_name, AGENT_IDENTITY, ttl_seconds=60, agent=True),
+            )
+            output = AvatarAudioOutput(room.local_participant, destination=AVATAR_IDENTITY)
+            session_id = await start_vendor(
+                provider=avatar.provider,
+                api_key=avatar.api_key,
+                avatar_id=avatar.avatar_id,
+                avatar_model=avatar.avatar_model,
+                livekit_url=settings.livekit_public_url,
+                livekit_token=participant_token(
+                    room_name,
+                    AVATAR_IDENTITY,
+                    ttl_seconds=_VENDOR_TOKEN_TTL_SECONDS,
+                    agent=True,
+                    attributes={PUBLISH_ON_BEHALF: AGENT_IDENTITY},
+                ),
+            )
+            logger.info("avatar.vendor_started", room=room_name, vendor_session_id=session_id)
+            mic_track = await _wait_for_both_sides(room)
+    except BaseException as exc:
         with contextlib.suppress(Exception):
             await room.disconnect()
         await delete_room(room_name)
+        if isinstance(exc, TimeoutError):
+            raise AvatarUnavailable("The avatar or the caller did not join in time") from exc
         raise
     return AvatarMedia(room_name=room_name, output=output, _room=room, _mic_track=mic_track)

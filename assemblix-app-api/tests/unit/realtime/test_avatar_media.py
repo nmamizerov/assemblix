@@ -1,5 +1,6 @@
 """open_avatar_media: join, start the vendor, wait for both sides, clean up on failure."""
 
+import asyncio
 from typing import Any
 
 import pytest
@@ -125,3 +126,32 @@ async def test_avatar_that_never_shows_up_is_unavailable(_livekit) -> None:
         )
     assert room.disconnected
     assert _livekit == ["va-3"]
+
+
+async def test_a_livekit_connect_that_hangs_is_bounded_by_the_join_timeout(_livekit) -> None:
+    # Arrange
+    class _HangingRoom(_Room):
+        async def connect(self, url: str, token: str) -> None:
+            await asyncio.sleep(3600)
+
+    room = _HangingRoom({})
+
+    async def start_vendor(**kwargs: Any) -> str:
+        return "s-4"
+
+    # Act
+    with pytest.raises(AvatarUnavailable):
+        await asyncio.wait_for(
+            media_module.open_avatar_media(
+                room_name="va-4",
+                avatar=_AVATAR,
+                timeout=0.2,
+                start_vendor=start_vendor,
+                room_factory=lambda: room,
+            ),
+            timeout=2,
+        )
+
+    # Assert
+    assert room.disconnected
+    assert _livekit == ["va-4"]
