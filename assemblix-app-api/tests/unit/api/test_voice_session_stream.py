@@ -128,9 +128,7 @@ def _call(room: str | None = _ROOM) -> list[dict]:
     """Open the stream, collect every JSON frame until the server closes it."""
     app = FastAPI()
     app.include_router(voice_sessions.router)
-    token = mint_session_token(
-        voice_agent_id=uuid4(), project_id=uuid4(), is_debug=True, room=room
-    )
+    token = mint_session_token(voice_agent_id=uuid4(), project_id=uuid4(), is_debug=True, room=room)
     frames: list[dict] = []
     with TestClient(app).websocket_connect(f"/voice-agents/sessions/{token}/stream") as ws:
         while True:
