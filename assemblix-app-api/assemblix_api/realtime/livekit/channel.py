@@ -9,7 +9,6 @@ so the media side is attached later.
 from __future__ import annotations
 
 import asyncio
-import contextlib
 from collections.abc import AsyncIterator
 from typing import Any
 
@@ -67,7 +66,14 @@ class LiveKitChannel:
             while (item := await queue.get()) is not _DONE:
                 yield item
         finally:
+            # Cancel both before awaiting either — one drain raising (e.g. a
+            # malformed control frame) must not leave the other pulling into an
+            # orphaned queue.
             for task in tasks:
                 task.cancel()
-                with contextlib.suppress(asyncio.CancelledError):
-                    await task
+            results = await asyncio.gather(*tasks, return_exceptions=True)
+            for result in results:
+                if isinstance(result, BaseException) and not isinstance(
+                    result, asyncio.CancelledError
+                ):
+                    raise result

@@ -4,6 +4,8 @@ import asyncio
 from collections.abc import AsyncIterator
 from typing import Any
 
+import pytest
+
 from assemblix_api.realtime.livekit.channel import LiveKitChannel
 
 
@@ -67,6 +69,37 @@ async def test_ends_when_the_user_leaves_the_room() -> None:
 
 async def _collect(channel: LiveKitChannel) -> list[Any]:
     return [frame async for frame in channel]
+
+
+class _RaisingControl:
+    """Yields one frame, then blows up mid-iteration (e.g. a malformed WS frame)."""
+
+    async def send_json(self, data: dict) -> None:
+        raise AssertionError("not exercised")
+
+    async def __aiter__(self) -> AsyncIterator[Any]:
+        yield {"type": "ok"}
+        raise ValueError("malformed control frame")
+
+
+async def test_a_broken_control_socket_still_cancels_the_mic_drain() -> None:
+    closed = asyncio.Event()
+
+    async def mic() -> AsyncIterator[bytes]:
+        try:
+            while True:
+                await asyncio.sleep(3600)
+                yield b"never"
+        finally:
+            closed.set()
+
+    channel = LiveKitChannel(_RaisingControl())
+    channel.attach(mic=mic(), output=_Output(), output_sample_rate=24000)
+
+    with pytest.raises(ValueError, match="malformed control frame"):
+        await asyncio.wait_for(_collect(channel), timeout=1)
+
+    assert closed.is_set()
 
 
 async def test_outbound_goes_to_the_avatar_and_json_to_the_ws() -> None:
