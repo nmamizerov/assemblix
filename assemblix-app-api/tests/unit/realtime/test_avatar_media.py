@@ -155,3 +155,31 @@ async def test_a_livekit_connect_that_hangs_is_bounded_by_the_join_timeout(_live
     # Assert
     assert room.disconnected
     assert _livekit == ["va-4"]
+
+
+async def test_closing_media_gives_up_on_a_hanging_disconnect(_livekit, monkeypatch) -> None:
+    # Arrange
+    monkeypatch.setattr(media_module, "_TEARDOWN_TIMEOUT_SECONDS", 0.1)
+
+    class _HangingDisconnect(_Room):
+        async def disconnect(self) -> None:
+            await asyncio.sleep(3600)
+
+    room = _HangingDisconnect(_ready_room().remote_participants)
+
+    async def start_vendor(**kwargs: Any) -> str:
+        return "s-5"
+
+    media = await media_module.open_avatar_media(
+        room_name="va-5",
+        avatar=_AVATAR,
+        timeout=1,
+        start_vendor=start_vendor,
+        room_factory=lambda: room,
+    )
+
+    # Act
+    await asyncio.wait_for(media.close(), timeout=2)
+
+    # Assert
+    assert _livekit == ["va-5"]

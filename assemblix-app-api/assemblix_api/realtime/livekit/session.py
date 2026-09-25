@@ -33,6 +33,7 @@ KIND_VIDEO = 2
 # The vendor's token must outlive the whole call, not just the join.
 _VENDOR_TOKEN_TTL_SECONDS = 2 * 60 * 60
 _POLL_SECONDS = 0.1
+_TEARDOWN_TIMEOUT_SECONDS = 5.0
 
 
 @dataclass
@@ -54,7 +55,8 @@ class AvatarMedia:
 
     async def close(self) -> None:
         with contextlib.suppress(Exception):
-            await self._room.disconnect()
+            async with asyncio.timeout(_TEARDOWN_TIMEOUT_SECONDS):
+                await self._room.disconnect()
         await delete_room(self.room_name)
 
 

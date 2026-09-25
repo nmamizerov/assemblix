@@ -1,5 +1,7 @@
 """LiveKit tokens carry exactly the grants a participant needs."""
 
+import asyncio
+
 import jwt
 
 from assemblix_api.core.settings import get_settings
@@ -126,3 +128,23 @@ async def test_delete_room_swallows_aclose_failure(monkeypatch) -> None:
 
     monkeypatch.setattr(rooms.api, "LiveKitAPI", _BoomOnClose)
     await rooms.delete_room("va-1")  # must not raise
+
+
+async def test_delete_room_gives_up_on_a_hanging_server(monkeypatch) -> None:
+    # Arrange
+    _configure(monkeypatch)
+    monkeypatch.setattr(rooms, "_TEARDOWN_TIMEOUT_SECONDS", 0.1)
+
+    class _Hanging:
+        def __init__(self, *args, **kwargs) -> None:
+            self.room = self
+
+        async def delete_room(self, request) -> None:
+            await asyncio.sleep(3600)
+
+        async def aclose(self) -> None: ...
+
+    monkeypatch.setattr(rooms.api, "LiveKitAPI", _Hanging)
+
+    # Act / Assert — returns quietly well before the outer guard fires
+    await asyncio.wait_for(rooms.delete_room("va-1"), timeout=2)

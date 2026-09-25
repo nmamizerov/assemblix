@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import asyncio
+
 import structlog
 from livekit import api
 
@@ -9,6 +11,8 @@ from assemblix_api.core.settings import get_settings
 from assemblix_api.realtime.livekit.tokens import http_url
 
 logger = structlog.get_logger(__name__)
+
+_TEARDOWN_TIMEOUT_SECONDS = 5.0
 
 
 async def delete_room(room: str) -> None:
@@ -20,7 +24,8 @@ async def delete_room(room: str) -> None:
             http_url(settings.livekit_url), settings.livekit_api_key, settings.livekit_api_secret
         )
         try:
-            await client.room.delete_room(api.DeleteRoomRequest(room=room))
+            async with asyncio.timeout(_TEARDOWN_TIMEOUT_SECONDS):
+                await client.room.delete_room(api.DeleteRoomRequest(room=room))
         finally:
             await client.aclose()
     except Exception as exc:  # noqa: BLE001 — best-effort cleanup.
