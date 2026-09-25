@@ -47,6 +47,7 @@ from assemblix_api.external.voice import speech_out
 from assemblix_api.external.voice.conversation import create_bridge
 from assemblix_api.realtime.hooks import TurnDispatcher
 from assemblix_api.realtime.livekit.channel import LiveKitChannel
+from assemblix_api.realtime.livekit.rooms import delete_room
 from assemblix_api.realtime.livekit.tokens import USER_IDENTITY, new_room_name, participant_token
 from assemblix_api.realtime.runtime import VoiceSessionRuntime
 from assemblix_api.realtime.session_token import (
@@ -293,6 +294,8 @@ async def stream_voice_session(websocket: WebSocket, token: str) -> None:
     try:
         if mismatch is None:
             end_reason = await runtime.run()
+        elif scope.room is not None:
+            await delete_room(scope.room)
     except AvatarError as exc:
         close_reason = exc.reason
         logger.warning(
@@ -308,6 +311,9 @@ async def stream_voice_session(websocket: WebSocket, token: str) -> None:
         logger.info("voice_session_client_gone", voice_agent_id=str(scope.voice_agent_id))
     except Exception:
         logger.exception("voice_session_failed", voice_agent_id=str(scope.voice_agent_id))
+        # The caller is watching an empty media room: tell it why the call ended.
+        if avatar_call and close_reason is None:
+            close_reason = "avatar_unavailable"
     finally:
         await close_media()
         input_tokens, output_tokens = runtime.usage
