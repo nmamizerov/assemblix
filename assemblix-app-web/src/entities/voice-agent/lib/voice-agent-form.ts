@@ -69,7 +69,10 @@ export const validateDraft = (draft: VoiceAgentDraft): DraftValidation => {
   // backend 400 — catch it here alongside the other required fields.
   if (
     draft.avatar !== null &&
-    (!draft.avatar.provider || !draft.avatar.credentialId || !draft.avatar.avatarId)
+    (!draft.avatar.provider ||
+      !draft.avatar.avatarModel ||
+      !draft.avatar.credentialId ||
+      !draft.avatar.avatarId)
   ) {
     errors.avatar = "voiceAgents.errors.avatarIncomplete";
   }

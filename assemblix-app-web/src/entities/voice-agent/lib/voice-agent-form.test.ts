@@ -131,5 +131,11 @@ describe("voice agent form", () => {
 
     // Assert
     expect(validateDraft(completed).errors.avatar).toBeUndefined();
+
+    // Assert — the model is required too: the vendor rejects a session without one
+    expect(
+      validateDraft({ ...completed, avatar: { ...completed.avatar, avatarModel: "" } }).errors
+        .avatar,
+    ).toBeDefined();
   });
 });

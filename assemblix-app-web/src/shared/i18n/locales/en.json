@@ -1475,7 +1475,7 @@
       "promptRequired": "System prompt is required",
       "providerRequired": "Provider is required",
       "modelRequired": "Model is required",
-      "avatarIncomplete": "Finish configuring the avatar (provider, API key and avatar) or turn it off",
+      "avatarIncomplete": "Finish configuring the avatar (provider, model, API key and avatar) or turn it off",
       "formInvalid": "Fix the highlighted fields before saving"
     }
   },
