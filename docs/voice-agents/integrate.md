@@ -182,6 +182,40 @@ Route the worklet through a **muted** gain node into the destination. A worklet 
 runs while it is connected to the graph, but the captured microphone must never reach
 the speakers.
 
+## Avatar calls
+
+When the agent has an avatar, the session response also carries `media`:
+
+```json
+{ "token": "…", "expiresIn": 60,
+  "media": { "transport": "livekit", "url": "wss://rtc.example.com", "token": "…" } }
+```
+
+The call's audio and video then flow through LiveKit, and the WebSocket carries
+only control frames (`session.ready` has `"media": "livekit"`; no binary audio is
+sent either way). Your client talks only to your Assemblix deployment.
+
+1. Join the room and publish the microphone:
+
+   ```ts
+   import { Room, RoomEvent, Track } from "livekit-client";
+
+   const room = new Room();
+   room.on(RoomEvent.TrackSubscribed, (track, _pub, participant) => {
+     if (participant.identity !== "avatar") return;
+     if (track.kind === Track.Kind.Video) track.attach(videoElement);
+     else document.body.appendChild(track.attach());
+   });
+   await room.connect(media.url, media.token);
+   await room.localParticipant.setMicrophoneEnabled(true);
+   ```
+
+2. Open the WebSocket with `token` exactly as for a voice call and handle the
+   same control frames. Hang up with `session.stop`; the server closes the room.
+
+If the avatar cannot start, `session.closed` arrives with reason `avatar_busy`
+(the avatar provider's concurrency limit) or `avatar_unavailable`.
+
 ## Reading the call back
 
 Every call is recorded, whoever placed it:
