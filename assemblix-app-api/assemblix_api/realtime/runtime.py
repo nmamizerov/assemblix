@@ -137,17 +137,25 @@ class VoiceSessionRuntime:
             # Either side failing must not leave the other running unsupervised.
             connect_task = asyncio.ensure_future(connect)
             prepare_task = asyncio.ensure_future(self._prepare())
-            done, pending = await asyncio.wait(
-                {connect_task, prepare_task}, return_when=asyncio.FIRST_EXCEPTION
-            )
-            for task in pending:
-                task.cancel()
-                with contextlib.suppress(asyncio.CancelledError, Exception):
-                    await task
             try:
+                done, pending = await asyncio.wait(
+                    {connect_task, prepare_task}, return_when=asyncio.FIRST_EXCEPTION
+                )
+                for task in pending:
+                    task.cancel()
+                    with contextlib.suppress(asyncio.CancelledError, Exception):
+                        await task
                 for task in done:
                     task.result()
             except BaseException:
+                # Covers a failure from either task *and* run() itself being
+                # cancelled while awaiting the wait above — asyncio.wait, unlike
+                # gather, does not cancel its children on cancellation.
+                for task in (connect_task, prepare_task):
+                    if not task.done():
+                        task.cancel()
+                    with contextlib.suppress(asyncio.CancelledError, Exception):
+                        await task
                 with contextlib.suppress(Exception):
                     await self._bridge.close()
                 raise

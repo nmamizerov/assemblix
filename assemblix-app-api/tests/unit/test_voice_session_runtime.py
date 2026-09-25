@@ -387,3 +387,39 @@ async def test_connect_failure_cancels_a_slow_prepare() -> None:
         await _runtime(_FailingBridge([]), client, prepare=slow_prepare).run()
 
     assert cancelled is True
+
+
+async def test_cancelling_run_while_joining_cancels_connect_and_prepare() -> None:
+    connect_cancelled = False
+    prepare_cancelled = False
+
+    class _SlowBridge(_FakeBridge):
+        async def connect(self, **kwargs: Any) -> None:
+            nonlocal connect_cancelled
+            try:
+                await asyncio.sleep(3600)
+            except asyncio.CancelledError:
+                connect_cancelled = True
+                raise
+
+    async def slow_prepare() -> None:
+        nonlocal prepare_cancelled
+        try:
+            await asyncio.sleep(3600)
+        except asyncio.CancelledError:
+            prepare_cancelled = True
+            raise
+
+    bridge = _SlowBridge([])
+    client = _PlaybackClient([], heard_ms=None)
+    run_task = asyncio.create_task(_runtime(bridge, client, prepare=slow_prepare).run())
+    # Give both children a chance to actually start their sleep before cancelling.
+    await asyncio.sleep(0.01)
+    run_task.cancel()
+
+    with pytest.raises(asyncio.CancelledError):
+        await run_task
+
+    assert connect_cancelled is True
+    assert prepare_cancelled is True
+    assert bridge.closed is True
