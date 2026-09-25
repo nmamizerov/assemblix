@@ -71,6 +71,9 @@ def pytest_configure(config: pytest.Config) -> None:
     # 10-per-5-min window. Lift it so the base suite never trips a 429 on register/login.
     os.environ["LOGIN_RATE_LIMIT_PER_5MIN"] = "100000"
     os.environ["REDIS_URL"] = ""  # no Redis in the base scope; use fakeredis fixtures
+    # LiveKit is opt-in per test (monkeypatch); a developer's .env must not enable it.
+    for var in ("LIVEKIT_URL", "LIVEKIT_PUBLIC_URL", "LIVEKIT_API_KEY", "LIVEKIT_API_SECRET"):
+        os.environ[var] = ""
     # Dummy system LLM keys so credential resolution succeeds for mocked agent runs
     # (the LLM call itself is patched). setdefault keeps any real keys for `external`.
     os.environ.setdefault("SYSTEM_OPENAI_API_KEY", "sk-test-system-openai")
