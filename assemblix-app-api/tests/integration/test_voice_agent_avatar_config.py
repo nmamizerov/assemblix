@@ -54,9 +54,7 @@ async def test_avatar_requires_avatar_and_credential(
     assert response.status_code == 400
 
 
-async def test_avatar_rejects_unknown_provider(
-    client, auth_user, auth_headers, livekit_on
-) -> None:
+async def test_avatar_rejects_unknown_provider(client, auth_user, auth_headers, livekit_on) -> None:
     response = await _create(
         client, auth_user, auth_headers, _config(avatar={**_AVATAR, "provider": "nobody"})
     )

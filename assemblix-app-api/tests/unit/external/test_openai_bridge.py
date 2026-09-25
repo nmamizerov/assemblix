@@ -272,7 +272,9 @@ async def test_interrupt_with_nothing_said_does_nothing() -> None:
 async def test_a_new_reply_forgets_the_previous_item() -> None:
     recorder = _Recorder()
     server_events = [
-        SimpleNamespace(type="response.output_item.added", item=SimpleNamespace(id="old", role="assistant")),
+        SimpleNamespace(
+            type="response.output_item.added", item=SimpleNamespace(id="old", role="assistant")
+        ),
         SimpleNamespace(type="response.done", response=SimpleNamespace(usage=None)),
         SimpleNamespace(type="response.created"),
     ]

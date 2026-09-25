@@ -99,8 +99,11 @@ async def test_vendor_refusal_cleans_up_and_propagates(_livekit) -> None:
 
     with pytest.raises(AvatarBusy):
         await media_module.open_avatar_media(
-            room_name="va-2", avatar=_AVATAR, timeout=1,
-            start_vendor=start_vendor, room_factory=lambda: room,
+            room_name="va-2",
+            avatar=_AVATAR,
+            timeout=1,
+            start_vendor=start_vendor,
+            room_factory=lambda: room,
         )
     assert room.disconnected
     assert _livekit == ["va-2"]
@@ -114,8 +117,11 @@ async def test_avatar_that_never_shows_up_is_unavailable(_livekit) -> None:
 
     with pytest.raises(AvatarUnavailable):
         await media_module.open_avatar_media(
-            room_name="va-3", avatar=_AVATAR, timeout=0.3,
-            start_vendor=start_vendor, room_factory=lambda: room,
+            room_name="va-3",
+            avatar=_AVATAR,
+            timeout=0.3,
+            start_vendor=start_vendor,
+            room_factory=lambda: room,
         )
     assert room.disconnected
     assert _livekit == ["va-3"]

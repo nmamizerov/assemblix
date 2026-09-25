@@ -152,5 +152,7 @@ async def start_livekit_session(
     if resp.status_code == 429:
         raise AvatarBusy(resp.text[:500])
     if not resp.is_success:
-        raise AvatarUnavailable(f"anam engine session failed ({resp.status_code}): {resp.text[:500]}")
+        raise AvatarUnavailable(
+            f"anam engine session failed ({resp.status_code}): {resp.text[:500]}"
+        )
     return str(resp.json().get("sessionId", ""))
