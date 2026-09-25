@@ -49,6 +49,7 @@ from assemblix_api.external.voice.catalog.registry import (
 )
 from assemblix_api.external.voice.speech_out import SpeechOutput
 from assemblix_api.schemas.voice_agent import VoiceAgentConfig
+from assemblix_api.services.avatar_service import ResolvedAvatar, resolve_avatar
 from assemblix_api.services.credentials_service import CredentialsService
 from assemblix_api.services.knowledge_base_service import KnowledgeBaseService
 
@@ -113,6 +114,8 @@ class VoiceSessionSetup:
     # when the caller supplied their own. Margin only applies to the former — the
     # actual charging happens where this flag lands next, not here.
     uses_system_key: bool
+    # The face of an avatar call, resolved with its key. None for a plain voice call.
+    avatar: ResolvedAvatar | None = None
 
 
 class VoiceSessionService:
@@ -186,6 +189,14 @@ class VoiceSessionService:
                 config.tts, project_id=project_id, credentials=self._credentials
             )
 
+        avatar = (
+            await resolve_avatar(
+                config.avatar, project_id=project_id, credentials=self._credentials
+            )
+            if config.avatar is not None
+            else None
+        )
+
         catalog_entry = find_voice_model(config.voice.provider, config.voice.model)
 
         return VoiceSessionSetup(
@@ -202,6 +213,7 @@ class VoiceSessionService:
             final_workflow_id=config.final_workflow_id,
             cost_per_minute=(catalog_entry.cost_per_minute or 0.0) if catalog_entry else 0.0,
             uses_system_key=uses_system_key,
+            avatar=avatar,
         )
 
     async def open_session(
