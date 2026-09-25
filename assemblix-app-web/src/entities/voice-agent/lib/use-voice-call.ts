@@ -109,6 +109,9 @@ export const useVoiceCall = (voiceAgentId: string): UseVoiceCallResult => {
     levels.current.user = 0;
     levels.current.agent = 0;
     setInterim(null);
+    // Detach listeners before disconnecting so a stale room (already replaced
+    // by a redial) can never fire its Disconnected handler onto this call again.
+    roomRef.current?.removeAllListeners();
     void roomRef.current?.disconnect();
     roomRef.current = null;
     avatarAudioRef.current?.remove();
@@ -255,7 +258,17 @@ export const useVoiceCall = (voiceAgentId: string): UseVoiceCallResult => {
             avatarAudioRef.current = element;
           }
         });
-        room.on(RoomEvent.Disconnected, () => teardown());
+        room.on(RoomEvent.Disconnected, () => {
+          // On an avatar failure the server tears down the room before sending
+          // `session.closed{reason}` over the still-open control socket, so a
+          // Disconnected here can arrive first. Let the socket drive teardown
+          // while it is open — this only steps in once the socket is already
+          // gone, and only for the room that belongs to the current call.
+          if (roomRef.current !== room) return;
+          const socket = socketRef.current;
+          if (socket && socket.readyState === WebSocket.OPEN) return;
+          teardown();
+        });
         await room.connect(media.url, media.token);
         // Publish the microphone we already hold: no second permission prompt, and
         // WebRTC's echo cancellation covers the avatar's playback.
