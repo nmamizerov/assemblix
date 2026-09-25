@@ -83,3 +83,20 @@ async def test_delete_room_swallows_failures(monkeypatch) -> None:
 
     monkeypatch.setattr(rooms.api, "LiveKitAPI", _Boom)
     await rooms.delete_room("va-1")  # must not raise
+
+
+async def test_delete_room_swallows_aclose_failure(monkeypatch) -> None:
+    _configure(monkeypatch)
+
+    class _BoomOnClose:
+        def __init__(self, *args, **kwargs) -> None:
+            self.room = self
+
+        async def delete_room(self, request) -> None:
+            pass  # succeeds
+
+        async def aclose(self) -> None:
+            raise RuntimeError("aclose failed")
+
+    monkeypatch.setattr(rooms.api, "LiveKitAPI", _BoomOnClose)
+    await rooms.delete_room("va-1")  # must not raise
