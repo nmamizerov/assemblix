@@ -130,14 +130,16 @@ async def start_livekit_session(
     livekit_token: str,
 ) -> str:
     """Start an audio-passthrough persona that joins our LiveKit room as a participant."""
+    persona_config = {
+        "type": "ephemeral",
+        "name": "assemblix",
+        "avatarId": avatar_id,
+        "llmId": "CUSTOMER_CLIENT_V1",
+    }
+    if avatar_model:
+        persona_config["avatarModel"] = avatar_model
     payload = {
-        "personaConfig": {
-            "type": "ephemeral",
-            "name": "assemblix",
-            "avatarId": avatar_id,
-            "avatarModel": avatar_model,
-            "llmId": "CUSTOMER_CLIENT_V1",
-        },
+        "personaConfig": persona_config,
         "environment": {"livekitUrl": livekit_url, "livekitToken": livekit_token},
     }
     try:

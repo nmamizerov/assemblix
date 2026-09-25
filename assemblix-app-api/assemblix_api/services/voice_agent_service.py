@@ -56,10 +56,10 @@ class VoiceAgentService:
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=f"Unknown avatar provider {avatar.provider!r}",
             )
-        if not avatar.avatar_id or not avatar.credential_id:
+        if not avatar.avatar_model or not avatar.avatar_id or not avatar.credential_id:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Select an avatar and its provider credential",
+                detail="Select an avatar model, an avatar and its provider credential",
             )
 
     async def _assert_hook_workflows_in_project(

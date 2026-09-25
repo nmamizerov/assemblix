@@ -51,6 +51,20 @@ async def test_posts_engine_session_with_room_environment(monkeypatch) -> None:
     }
 
 
+async def test_empty_avatar_model_is_left_to_anam(monkeypatch) -> None:
+    captured: dict = {}
+
+    async def handler(request: httpx.Request) -> httpx.Response:
+        captured["body"] = json.loads(request.content)
+        return httpx.Response(200, json={"sessionId": "s-1"})
+
+    _mock(monkeypatch, handler)
+
+    await anam.start_livekit_session(**{**_ARGS, "avatar_model": ""})
+
+    assert "avatarModel" not in captured["body"]["personaConfig"]
+
+
 async def test_concurrency_limit_is_busy(monkeypatch) -> None:
     async def handler(request: httpx.Request) -> httpx.Response:
         return httpx.Response(429, json={"reason": "concurrent_limit"})
