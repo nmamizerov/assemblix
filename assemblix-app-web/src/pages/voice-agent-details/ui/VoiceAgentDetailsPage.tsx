@@ -45,6 +45,7 @@ const draftFromVoiceAgent = (voiceAgent: VoiceAgent): VoiceAgentDraft => {
     finalWorkflowId: config.finalWorkflowId ?? "",
     credentialId: config.voice.credentialId ?? null,
     tts: config.tts ?? null,
+    avatar: config.avatar ?? null,
     params: config.params,
   };
 };

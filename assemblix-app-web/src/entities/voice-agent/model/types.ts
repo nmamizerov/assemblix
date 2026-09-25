@@ -1,4 +1,5 @@
 import type { VoiceOutputConfig } from "@/entities/voice-model";
+import type { WorkflowAvatarConfig } from "@/entities/avatar-model";
 
 export interface AgentInstruction {
   role: string;
@@ -12,6 +13,7 @@ export interface VoiceAgentConfig {
   language: string;
   voice: VoiceOutputConfig;
   tts: VoiceOutputConfig | null;
+  avatar: WorkflowAvatarConfig | null;
   params: Record<string, unknown>;
   turnWorkflowId: string | null;
   finalWorkflowId: string | null;
@@ -63,5 +65,7 @@ export interface VoiceAgentDraft {
   credentialId: string | null;
   // null means the realtime model speaks with its own voice.
   tts: VoiceOutputConfig | null;
+  // null means no avatar is shown; the agent is voice/text only.
+  avatar: WorkflowAvatarConfig | null;
   params: Record<string, unknown>;
 }

@@ -52,6 +52,7 @@ export const emptyDraft = (): VoiceAgentDraft => ({
   finalWorkflowId: "",
   credentialId: null,
   tts: null,
+  avatar: null,
   params: {},
 });
 
@@ -63,6 +64,15 @@ export const validateDraft = (draft: VoiceAgentDraft): DraftValidation => {
   if (!draft.systemPrompt.trim()) errors.systemPrompt = "voiceAgents.errors.promptRequired";
   if (!draft.provider) errors.provider = "voiceAgents.errors.providerRequired";
   if (!draft.model) errors.model = "voiceAgents.errors.modelRequired";
+
+  // An enabled-but-incomplete avatar would otherwise only fail on save with a
+  // backend 400 — catch it here alongside the other required fields.
+  if (
+    draft.avatar !== null &&
+    (!draft.avatar.provider || !draft.avatar.credentialId || !draft.avatar.avatarId)
+  ) {
+    errors.avatar = "voiceAgents.errors.avatarIncomplete";
+  }
 
   return { isValid: Object.keys(errors).length === 0, errors };
 };
@@ -98,6 +108,7 @@ export const toCreateRequest = (
       realtime: false,
     },
     tts: draft.tts,
+    avatar: draft.avatar,
     params: draft.params,
     turnWorkflowId: draft.turnWorkflowId || null,
     finalWorkflowId: draft.finalWorkflowId || null,
