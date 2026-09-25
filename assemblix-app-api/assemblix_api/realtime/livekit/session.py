@@ -108,7 +108,7 @@ async def open_avatar_media(
                 api_key=avatar.api_key,
                 avatar_id=avatar.avatar_id,
                 avatar_model=avatar.avatar_model,
-                livekit_url=settings.livekit_public_url,
+                livekit_url=ws_url(settings.livekit_public_url),
                 livekit_token=participant_token(
                     room_name,
                     AVATAR_IDENTITY,

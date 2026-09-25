@@ -183,3 +183,25 @@ async def test_closing_media_gives_up_on_a_hanging_disconnect(_livekit, monkeypa
 
     # Assert
     assert _livekit == ["va-5"]
+
+
+async def test_the_vendor_gets_the_public_url_as_a_websocket_url(_livekit, monkeypatch) -> None:
+    # Arrange
+    monkeypatch.setattr(get_settings(), "livekit_public_url", "https://rtc.example.com")
+    vendor_calls: list[dict] = []
+
+    async def start_vendor(**kwargs: Any) -> str:
+        vendor_calls.append(kwargs)
+        return "s-6"
+
+    # Act
+    await media_module.open_avatar_media(
+        room_name="va-6",
+        avatar=_AVATAR,
+        timeout=1,
+        start_vendor=start_vendor,
+        room_factory=_ready_room,
+    )
+
+    # Assert
+    assert vendor_calls[0]["livekit_url"] == "wss://rtc.example.com"

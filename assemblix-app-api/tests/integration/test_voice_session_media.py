@@ -79,6 +79,21 @@ async def test_caller_may_only_publish_its_microphone(
     assert claims["video"]["canPublishSources"] == ["microphone"]
 
 
+async def test_an_https_public_url_is_handed_out_as_wss(
+    client, db_session, auth_user, auth_headers, livekit_on, monkeypatch
+) -> None:
+    # Arrange
+    monkeypatch.setattr(get_settings(), "livekit_public_url", "https://rtc.example.com")
+    agent = await _agent(db_session, auth_user, {**_BASE, "avatar": _AVATAR})
+
+    # Act
+    response = await client.post(f"/api/voice-agents/{agent.id}/sessions", headers=auth_headers)
+
+    # Assert
+    assert response.status_code == 200, response.text
+    assert response.json()["media"]["url"] == "wss://rtc.example.com"
+
+
 async def test_avatar_agent_without_livekit_is_a_400(
     client, db_session, auth_user, auth_headers
 ) -> None:

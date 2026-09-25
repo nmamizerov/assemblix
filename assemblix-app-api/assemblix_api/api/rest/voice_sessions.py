@@ -48,7 +48,12 @@ from assemblix_api.external.voice.conversation import create_bridge
 from assemblix_api.realtime.hooks import TurnDispatcher
 from assemblix_api.realtime.livekit.channel import LiveKitChannel
 from assemblix_api.realtime.livekit.rooms import delete_room
-from assemblix_api.realtime.livekit.tokens import USER_IDENTITY, new_room_name, participant_token
+from assemblix_api.realtime.livekit.tokens import (
+    USER_IDENTITY,
+    new_room_name,
+    participant_token,
+    ws_url,
+)
 from assemblix_api.realtime.runtime import VoiceSessionRuntime
 from assemblix_api.realtime.session_token import (
     InvalidSessionToken,
@@ -139,7 +144,7 @@ async def create_voice_session(
         room = new_room_name()
         media = VoiceSessionMedia(
             transport="livekit",
-            url=settings.livekit_public_url,
+            url=ws_url(settings.livekit_public_url),
             token=participant_token(
                 room, USER_IDENTITY, ttl_seconds=_TOKEN_TTL_SECONDS, mic_only=True
             ),
