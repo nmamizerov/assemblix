@@ -37,18 +37,21 @@ from assemblix_api.dto.base import PaginatedResponse
 from assemblix_api.dto.requests.voice_agent import VoiceSessionCreateRequest
 from assemblix_api.dto.responses.voice_session import (
     VoiceSessionDetailResponse,
+    VoiceSessionMedia,
     VoiceSessionResponse,
     VoiceSessionTokenResponse,
 )
 from assemblix_api.external.voice import speech_out
 from assemblix_api.external.voice.conversation import create_bridge
 from assemblix_api.realtime.hooks import TurnDispatcher
+from assemblix_api.realtime.livekit.tokens import USER_IDENTITY, new_room_name, participant_token
 from assemblix_api.realtime.runtime import VoiceSessionRuntime
 from assemblix_api.realtime.session_token import (
     InvalidSessionToken,
     mint_session_token,
     verify_session_token,
 )
+from assemblix_api.schemas.voice_agent import VoiceAgentConfig
 from assemblix_api.services.project_service import ProjectService
 from assemblix_api.services.voice_agent_service import VoiceAgentService
 from assemblix_api.services.voice_session_history_service import VoiceSessionHistoryService
@@ -119,6 +122,22 @@ async def create_voice_session(
             detail="This voice agent is not active",
         )
 
+    room: str | None = None
+    media: VoiceSessionMedia | None = None
+    if VoiceAgentConfig(**agent.config).avatar is not None:
+        settings = get_settings()
+        if not settings.livekit_enabled:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Avatars need LiveKit: set LIVEKIT_* (see self-hosting docs)",
+            )
+        room = new_room_name()
+        media = VoiceSessionMedia(
+            transport="livekit",
+            url=settings.livekit_public_url,
+            token=participant_token(room, USER_IDENTITY, ttl_seconds=_TOKEN_TTL_SECONDS),
+        )
+
     return VoiceSessionTokenResponse(
         token=mint_session_token(
             voice_agent_id=agent.id,
@@ -128,8 +147,10 @@ async def create_voice_session(
             is_debug=auth.scoped_project_id is None,
             client_id=request.client_id if request else None,
             ttl_seconds=_TOKEN_TTL_SECONDS,
+            room=room,
         ),
         expires_in=_TOKEN_TTL_SECONDS,
+        media=media,
     )
 
 

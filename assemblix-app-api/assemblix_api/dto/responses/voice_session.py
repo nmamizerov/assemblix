@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from datetime import datetime
+from typing import Literal
 from uuid import UUID
 
 from pydantic import Field
@@ -10,9 +11,20 @@ from pydantic import Field
 from assemblix_api.dto.base import DTOModel
 
 
+class VoiceSessionMedia(DTOModel):
+    """Where an avatar call's audio and video flow. Joined before the WS is opened."""
+
+    transport: Literal["livekit"]
+    url: str
+    token: str
+
+
 class VoiceSessionTokenResponse(DTOModel):
     token: str = Field(description="Short-lived token authorizing one voice session")
     expires_in: int = Field(description="Token lifetime in seconds")
+    media: VoiceSessionMedia | None = Field(
+        default=None, description="LiveKit room to join for an avatar call; absent for plain voice"
+    )
 
 
 class VoiceSessionResponse(DTOModel):
