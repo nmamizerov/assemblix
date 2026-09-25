@@ -351,3 +351,39 @@ async def test_prepare_runs_before_session_ready_and_its_failure_propagates() ->
     with pytest.raises(RuntimeError):
         await _runtime(_FakeBridge([]), failed_client, prepare=failing).run()
     assert failed_client.json_frames == []
+
+
+async def test_prepare_failure_closes_the_bridge_and_skips_session_ready() -> None:
+    bridge = _FakeBridge([])
+
+    async def failing() -> None:
+        raise RuntimeError("avatar failed")
+
+    client = _PlaybackClient([], heard_ms=None)
+    with pytest.raises(RuntimeError):
+        await _runtime(bridge, client, prepare=failing).run()
+
+    assert bridge.closed is True
+    assert client.json_frames == []
+
+
+async def test_connect_failure_cancels_a_slow_prepare() -> None:
+    cancelled = False
+
+    class _FailingBridge(_FakeBridge):
+        async def connect(self, **kwargs: Any) -> None:
+            raise RuntimeError("connect failed")
+
+    async def slow_prepare() -> None:
+        nonlocal cancelled
+        try:
+            await asyncio.sleep(3600)
+        except asyncio.CancelledError:
+            cancelled = True
+            raise
+
+    client = _PlaybackClient([], heard_ms=None)
+    with pytest.raises(RuntimeError, match="connect failed"):
+        await _runtime(_FailingBridge([]), client, prepare=slow_prepare).run()
+
+    assert cancelled is True

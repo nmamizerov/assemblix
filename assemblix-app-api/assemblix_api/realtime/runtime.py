@@ -134,7 +134,23 @@ class VoiceSessionRuntime:
             await connect
         else:
             # An avatar takes seconds to join; overlap it with the provider handshake.
-            await asyncio.gather(connect, self._prepare())
+            # Either side failing must not leave the other running unsupervised.
+            connect_task = asyncio.ensure_future(connect)
+            prepare_task = asyncio.ensure_future(self._prepare())
+            done, pending = await asyncio.wait(
+                {connect_task, prepare_task}, return_when=asyncio.FIRST_EXCEPTION
+            )
+            for task in pending:
+                task.cancel()
+                with contextlib.suppress(asyncio.CancelledError, Exception):
+                    await task
+            try:
+                for task in done:
+                    task.result()
+            except BaseException:
+                with contextlib.suppress(Exception):
+                    await self._bridge.close()
+                raise
         await self._client.send_json(
             {
                 "type": "session.ready",
