@@ -27,13 +27,18 @@ def participant_token(
     ttl_seconds: int,
     agent: bool = False,
     attributes: dict[str, str] | None = None,
+    mic_only: bool = False,
 ) -> str:
     settings = get_settings()
+    grants = api.VideoGrants(room_join=True, room=room)
+    if mic_only:
+        grants.can_publish_data = False
+        grants.can_publish_sources = ["microphone"]
     token = (
         api.AccessToken(settings.livekit_api_key, settings.livekit_api_secret)
         .with_identity(identity)
         .with_name(identity)
-        .with_grants(api.VideoGrants(room_join=True, room=room))
+        .with_grants(grants)
         .with_ttl(timedelta(seconds=ttl_seconds))
     )
     if agent:

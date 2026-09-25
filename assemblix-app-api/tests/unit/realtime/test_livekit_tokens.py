@@ -60,6 +60,32 @@ def test_user_token_is_not_an_agent(monkeypatch) -> None:
     assert claims.get("kind") != "agent"
 
 
+def test_mic_only_token_may_publish_the_microphone_and_nothing_else(monkeypatch) -> None:
+    # Arrange
+    _configure(monkeypatch)
+
+    # Act
+    token = participant_token("va-1", "user", ttl_seconds=60, mic_only=True)
+
+    # Assert
+    claims = jwt.decode(token, _SECRET, algorithms=["HS256"])
+    assert claims["video"]["canPublishData"] is False
+    assert claims["video"]["canPublishSources"] == ["microphone"]
+
+
+def test_tokens_are_unrestricted_by_default(monkeypatch) -> None:
+    # Arrange
+    _configure(monkeypatch)
+
+    # Act
+    token = participant_token("va-1", AGENT_IDENTITY, ttl_seconds=60, agent=True)
+
+    # Assert
+    claims = jwt.decode(token, _SECRET, algorithms=["HS256"])
+    assert claims["video"].get("canPublishData", True) is True
+    assert "canPublishSources" not in claims["video"]
+
+
 def test_url_schemes_are_normalized_for_each_client() -> None:
     assert ws_url("http://livekit:7880") == "ws://livekit:7880"
     assert ws_url("https://rtc.example.com") == "wss://rtc.example.com"

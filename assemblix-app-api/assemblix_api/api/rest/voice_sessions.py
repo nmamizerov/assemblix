@@ -140,7 +140,9 @@ async def create_voice_session(
         media = VoiceSessionMedia(
             transport="livekit",
             url=settings.livekit_public_url,
-            token=participant_token(room, USER_IDENTITY, ttl_seconds=_TOKEN_TTL_SECONDS),
+            token=participant_token(
+                room, USER_IDENTITY, ttl_seconds=_TOKEN_TTL_SECONDS, mic_only=True
+            ),
         )
 
     return VoiceSessionTokenResponse(

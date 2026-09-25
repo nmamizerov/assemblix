@@ -63,6 +63,22 @@ async def test_avatar_agent_gets_a_room(
     assert claims["video"]["room"] == room
 
 
+async def test_caller_may_only_publish_its_microphone(
+    client, db_session, auth_user, auth_headers, livekit_on
+) -> None:
+    # Arrange
+    agent = await _agent(db_session, auth_user, {**_BASE, "avatar": _AVATAR})
+
+    # Act
+    response = await client.post(f"/api/voice-agents/{agent.id}/sessions", headers=auth_headers)
+
+    # Assert
+    assert response.status_code == 200, response.text
+    claims = jwt.decode(response.json()["media"]["token"], _SECRET, algorithms=["HS256"])
+    assert claims["video"]["canPublishData"] is False
+    assert claims["video"]["canPublishSources"] == ["microphone"]
+
+
 async def test_avatar_agent_without_livekit_is_a_400(
     client, db_session, auth_user, auth_headers
 ) -> None:
