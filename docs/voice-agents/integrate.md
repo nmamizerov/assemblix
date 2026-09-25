@@ -216,6 +216,10 @@ sent either way). Your client talks only to your Assemblix deployment.
 If the avatar cannot start, `session.closed` arrives with reason `avatar_busy`
 (the avatar provider's concurrency limit) or `avatar_unavailable`.
 
+Interrupting the avatar is most reliable with OpenAI realtime voices; with Gemini
+Live the avatar can only be interrupted while the model is still generating its
+reply.
+
 ## Reading the call back
 
 Every call is recorded, whoever placed it:
