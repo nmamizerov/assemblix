@@ -264,6 +264,12 @@ async def stream_voice_session(websocket: WebSocket, token: str) -> None:
             output_sample_rate=bridge.output_sample_rate,
         )
 
+    async def close_media() -> None:
+        nonlocal media
+        if media is not None:
+            opened, media = media, None
+            await opened.close()
+
     runtime = VoiceSessionRuntime(
         bridge=bridge,
         client=client,
@@ -279,6 +285,7 @@ async def stream_voice_session(websocket: WebSocket, token: str) -> None:
             client_id=scope.client_id,
         ),
         prepare=prepare_avatar if avatar_call else None,
+        on_stopped=close_media if avatar_call else None,
     )
 
     end_reason = "error"
@@ -302,8 +309,7 @@ async def stream_voice_session(websocket: WebSocket, token: str) -> None:
     except Exception:
         logger.exception("voice_session_failed", voice_agent_id=str(scope.voice_agent_id))
     finally:
-        if media is not None:
-            await media.close()
+        await close_media()
         input_tokens, output_tokens = runtime.usage
         tts_cost_usd = (
             speech_out.cost_usd(setup.tts, runtime.speech_chars)

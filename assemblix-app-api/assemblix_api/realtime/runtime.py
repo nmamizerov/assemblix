@@ -68,6 +68,7 @@ class VoiceSessionRuntime:
         max_session_sec: float,
         dispatcher: TurnDispatcher | None = None,
         prepare: Callable[[], Awaitable[None]] | None = None,
+        on_stopped: Callable[[], Awaitable[None]] | None = None,
     ) -> None:
         self._bridge = bridge
         self._client = client
@@ -78,6 +79,7 @@ class VoiceSessionRuntime:
         self._max_session_sec = max_session_sec
         self._dispatcher = dispatcher
         self._prepare = prepare
+        self._on_stopped = on_stopped
 
         # Audio actually forwarded to the browser, in ms. On a barge-in the
         # provider needs to know how much of its answer was really heard.
@@ -186,6 +188,13 @@ class VoiceSessionRuntime:
                 task.result()
         finally:
             await self._bridge.close()
+            if self._on_stopped is not None:
+                # Media teardown must not wait for the final hook, which can run
+                # for minutes while an avatar vendor bills for an empty room.
+                try:
+                    await self._on_stopped()
+                except Exception:
+                    logger.exception("voice.session.on_stopped_failed")
             reason = self._closed_reason or "completed"
 
             # Best-effort: a farewell frame nobody is left to receive raises

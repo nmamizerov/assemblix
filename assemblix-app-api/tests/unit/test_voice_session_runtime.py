@@ -423,3 +423,52 @@ async def test_cancelling_run_while_joining_cancels_connect_and_prepare() -> Non
     assert connect_cancelled is True
     assert prepare_cancelled is True
     assert bridge.closed is True
+
+
+def _recording_dispatcher(order: list[str]) -> TurnDispatcher:
+    async def runner(**kwargs: Any) -> None:
+        order.append("final_hook")
+
+    return TurnDispatcher(
+        voice_session_id=uuid4(),
+        turn_workflow_id=None,
+        final_workflow_id="22222222-2222-2222-2222-222222222222",
+        runner=runner,
+    )
+
+
+async def test_on_stopped_runs_after_bridge_close_and_before_the_final_hook() -> None:
+    order: list[str] = []
+
+    class _Bridge(_FakeBridge):
+        async def close(self) -> None:
+            order.append("bridge_close")
+
+    async def on_stopped() -> None:
+        order.append("on_stopped")
+
+    await _runtime(
+        _Bridge([SessionClosed(reason="completed")]),
+        _PlaybackClient([], heard_ms=None),
+        dispatcher=_recording_dispatcher(order),
+        on_stopped=on_stopped,
+    ).run()
+
+    assert order == ["bridge_close", "on_stopped", "final_hook"]
+
+
+async def test_on_stopped_failure_does_not_cost_the_final_hook() -> None:
+    order: list[str] = []
+
+    async def on_stopped() -> None:
+        raise RuntimeError("room teardown failed")
+
+    reason = await _runtime(
+        _FakeBridge([SessionClosed(reason="completed")]),
+        _PlaybackClient([], heard_ms=None),
+        dispatcher=_recording_dispatcher(order),
+        on_stopped=on_stopped,
+    ).run()
+
+    assert reason == "completed"
+    assert order == ["final_hook"]
