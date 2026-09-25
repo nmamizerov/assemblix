@@ -11,8 +11,8 @@ import {
   useGetAvatarProvidersQuery,
   useGetAvatarProviderModelsQuery,
   useGetCredentialAvatarsQuery,
-  type WorkflowAvatarConfig,
-} from "@/entities/avatar-model";
+} from "../api/avatar-model.api";
+import type { WorkflowAvatarConfig } from "../model/types";
 import {
   CredentialSelect,
   getCredentialTypeForProvider,
@@ -24,10 +24,10 @@ interface AvatarOutputPickerProps {
 }
 
 /**
- * Provider → credential → avatar-model → avatar cascade for the workflow-global
- * avatar persona (the face only). BYO-key only (no system-key branch). The voice is
- * configured per agent node: the avatar runs in audio-passthrough mode and lip-syncs
- * to the node's realtime ElevenLabs voice, so no voice is selected here.
+ * Provider → credential → avatar-model → avatar cascade for an avatar persona (the face only).
+ * BYO-key only (no system-key branch). The voice is configured per agent node: the avatar runs
+ * in audio-passthrough mode and lip-syncs to the node's realtime ElevenLabs voice, so no voice
+ * is selected here.
  */
 export const AvatarOutputPicker = ({
   value,

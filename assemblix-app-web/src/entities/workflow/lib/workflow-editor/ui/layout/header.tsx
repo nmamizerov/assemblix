@@ -41,7 +41,7 @@ import { PublishSuccessDialog } from "@/entities/workflow/ui/actions/publish-suc
 import { VersionsDropdown } from "@/entities/workflow/ui/versions-dropdown";
 import { AgentCallsDialog } from "@/entities/workflow/ui/agent-calls-dialog";
 import { BulkInstructionsDialog } from "@/entities/workflow/ui/bulk-instructions-dialog";
-import { AvatarOutputPicker } from "../node-forms/avatar-output-picker";
+import { AvatarOutputPicker } from "@/entities/avatar-model";
 import { useState } from "react";
 import { toast } from "sonner";
 
