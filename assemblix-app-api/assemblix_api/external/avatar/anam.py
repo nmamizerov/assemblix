@@ -12,6 +12,7 @@ from fastapi import HTTPException, status
 from pydantic import BaseModel
 
 from assemblix_api.core.settings import get_settings
+from assemblix_api.external.avatar.errors import AvatarBusy, AvatarUnavailable
 
 _TIMEOUT = httpx.Timeout(30.0, connect=10.0)
 
@@ -118,3 +119,38 @@ async def mint_session_token(*, api_key: str, persona_config: dict) -> str:
             detail=f"anam session-token response missing 'sessionToken': {str(body)[:500]}",
         )
     return token
+
+
+async def start_livekit_session(
+    *,
+    api_key: str,
+    avatar_id: str,
+    avatar_model: str,
+    livekit_url: str,
+    livekit_token: str,
+) -> str:
+    """Start an audio-passthrough persona that joins our LiveKit room as a participant."""
+    payload = {
+        "personaConfig": {
+            "type": "ephemeral",
+            "name": "assemblix",
+            "avatarId": avatar_id,
+            "avatarModel": avatar_model,
+            "llmId": "CUSTOMER_CLIENT_V1",
+        },
+        "environment": {"livekitUrl": livekit_url, "livekitToken": livekit_token},
+    }
+    try:
+        async with _client() as client:
+            resp = await client.post(
+                f"{_base_url()}/v1/engine/session",
+                headers={"Authorization": f"Bearer {api_key}"},
+                json=payload,
+            )
+    except httpx.HTTPError as exc:
+        raise AvatarUnavailable(f"anam unreachable: {exc}") from exc
+    if resp.status_code == 429:
+        raise AvatarBusy(resp.text[:500])
+    if not resp.is_success:
+        raise AvatarUnavailable(f"anam engine session failed ({resp.status_code}): {resp.text[:500]}")
+    return str(resp.json().get("sessionId", ""))
