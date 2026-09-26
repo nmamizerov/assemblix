@@ -214,6 +214,7 @@ export const WorkflowEditorHeader = ({
             </Tooltip>
             <PopoverContent align="end" className="w-80">
               <AvatarOutputPicker
+                surface="workflow"
                 value={avatarConfig ?? undefined}
                 onChange={handleAvatarConfigChange}
               />

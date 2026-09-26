@@ -375,6 +375,7 @@ export const VoiceAgentForm = ({ draft, errors, onChange }: VoiceAgentFormProps)
           </div>
           {draft.avatar !== null && (
             <AvatarOutputPicker
+              surface="voiceAgent"
               value={draft.avatar}
               onChange={(avatar) => handleField("avatar", avatar)}
             />
