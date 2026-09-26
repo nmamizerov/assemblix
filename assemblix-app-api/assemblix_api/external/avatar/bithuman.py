@@ -28,6 +28,11 @@ def _base_url() -> str:
     return get_settings().bithuman_api_base_url.rstrip("/")
 
 
+# Agent listings name first-generation models "essence-1"/"expression-1"; the
+# session start API only accepts the unsuffixed spelling.
+_START_MODEL_NAMES = {"essence-1": "essence", "expression-1": "expression"}
+
+
 class BithumanAvatar(BaseModel):
     id: str
     name: str
@@ -110,7 +115,7 @@ async def start_livekit_session(
                     ),
                     "room_name": room_name,
                     "agent_id": avatar_id,
-                    "model": avatar_model,
+                    "model": _START_MODEL_NAMES.get(avatar_model, avatar_model),
                     # Legacy engine hint the cloud API still reads.
                     "mode": "gpu" if avatar_model.startswith("expression") else "cpu",
                 },

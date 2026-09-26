@@ -195,3 +195,22 @@ async def test_list_avatars_error_is_bad_gateway(monkeypatch) -> None:
     with pytest.raises(HTTPException) as exc:
         await bithuman.list_avatars("wrong")
     assert exc.value.status_code == 502
+
+
+async def test_first_generation_models_use_the_start_api_spelling(monkeypatch) -> None:
+    # Arrange
+    calls: list[httpx.Request] = []
+    _mock(monkeypatch, _ok_handler(calls))
+
+    # Act
+    await bithuman.start_livekit_session(
+        make_livekit_token=lambda extra: "t", **{**_ARGS, "avatar_model": "essence-1"}
+    )
+    await bithuman.start_livekit_session(
+        make_livekit_token=lambda extra: "t", **{**_ARGS, "avatar_model": "expression-1"}
+    )
+
+    # Assert
+    first, second = json.loads(calls[1].content), json.loads(calls[3].content)
+    assert (first["model"], first["mode"]) == ("essence", "cpu")
+    assert (second["model"], second["mode"]) == ("expression", "gpu")

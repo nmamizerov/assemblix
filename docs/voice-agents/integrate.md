@@ -228,8 +228,9 @@ changes for your client.
 
 1. Create an API secret at <https://www.bithuman.ai/developer/api-keys> and add it to
    the project as a **bitHuman API Secret** credential.
-2. Create an agent in the bitHuman console. The free plan can use bitHuman's public
-   agents but can't create its own.
+2. Create an agent in the bitHuman console. Only your account's own agents are
+   listed, and the free plan can't create agents, so you need a paid plan or
+   purchased credits.
 3. In the voice agent, pick **bitHuman**, the credential, a model, then an agent. Only
    agents that have the chosen model generated are listed.
 
