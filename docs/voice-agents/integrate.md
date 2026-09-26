@@ -220,6 +220,23 @@ Interrupting the avatar is most reliable with OpenAI realtime voices; with Gemin
 Live the avatar can only be interrupted while the model is still generating its
 reply.
 
+### bitHuman avatars
+
+Besides Anam, a voice agent can use a [bitHuman](https://www.bithuman.ai) avatar. It
+runs in bitHuman's cloud and joins the call exactly like Anam's, so nothing above
+changes for your client.
+
+1. Create an API secret at <https://www.bithuman.ai/developer/api-keys> and add it to
+   the project as a **bitHuman API Secret** credential.
+2. Create an agent in the bitHuman console. The free plan can use bitHuman's public
+   agents but can't create its own.
+3. In the voice agent, pick **bitHuman**, the credential, a model, then an agent. Only
+   agents that have the chosen model generated are listed.
+
+bitHuman bills per talking minute and caps concurrent sessions per plan; a call over
+the cap ends with `avatar_busy`. bitHuman avatars are available in voice agents only,
+not in workflow avatars, and self-hosted (local) bitHuman rendering is not supported.
+
 ## Reading the call back
 
 Every call is recorded, whoever placed it:
