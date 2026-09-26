@@ -103,19 +103,24 @@ async def open_avatar_media(
                 participant_token(room_name, AGENT_IDENTITY, ttl_seconds=60, agent=True),
             )
             output = AvatarAudioOutput(room.local_participant, destination=AVATAR_IDENTITY)
+
+            def make_avatar_token(extra: dict[str, str]) -> str:
+                return participant_token(
+                    room_name,
+                    AVATAR_IDENTITY,
+                    ttl_seconds=_VENDOR_TOKEN_TTL_SECONDS,
+                    agent=True,
+                    attributes={PUBLISH_ON_BEHALF: AGENT_IDENTITY, **extra},
+                )
+
             session_id = await start_vendor(
                 provider=avatar.provider,
                 api_key=avatar.api_key,
                 avatar_id=avatar.avatar_id,
                 avatar_model=avatar.avatar_model,
                 livekit_url=ws_url(settings.livekit_public_url),
-                livekit_token=participant_token(
-                    room_name,
-                    AVATAR_IDENTITY,
-                    ttl_seconds=_VENDOR_TOKEN_TTL_SECONDS,
-                    agent=True,
-                    attributes={PUBLISH_ON_BEHALF: AGENT_IDENTITY},
-                ),
+                room_name=room_name,
+                make_livekit_token=make_avatar_token,
             )
             logger.info("avatar.vendor_started", room=room_name, vendor_session_id=session_id)
             mic_track = await _wait_for_both_sides(room)

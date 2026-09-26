@@ -95,11 +95,49 @@ async def test_transport_errors_are_unavailable(monkeypatch) -> None:
         await anam.start_livekit_session(**_ARGS)
 
 
+_SEAM_ARGS = dict(
+    api_key="anam-key",
+    avatar_id="av-1",
+    avatar_model="cara-4",
+    livekit_url="wss://rtc.example.com",
+    room_name="va-1",
+)
+
+
 async def test_dispatch_routes_anam_and_rejects_unknown(monkeypatch) -> None:
     async def handler(request: httpx.Request) -> httpx.Response:
         return httpx.Response(200, json={"sessionId": "s-2"})
 
     _mock(monkeypatch, handler)
-    assert await start_vendor_session(provider="anam", **_ARGS) == "s-2"
+
+    def make(extra: dict[str, str]) -> str:
+        return "lk-token"
+
+    assert (
+        await start_vendor_session(provider="anam", make_livekit_token=make, **_SEAM_ARGS) == "s-2"
+    )
     with pytest.raises(AvatarUnavailable):
-        await start_vendor_session(provider="nobody", **_ARGS)
+        await start_vendor_session(provider="nobody", make_livekit_token=make, **_SEAM_ARGS)
+
+
+async def test_anam_gets_a_token_without_extra_attributes(monkeypatch) -> None:
+    # Arrange
+    requested: list[dict] = []
+    captured: dict = {}
+
+    async def handler(request: httpx.Request) -> httpx.Response:
+        captured["body"] = json.loads(request.content)
+        return httpx.Response(200, json={"sessionId": "s-3"})
+
+    _mock(monkeypatch, handler)
+
+    def make(extra: dict[str, str]) -> str:
+        requested.append(extra)
+        return "lk-token"
+
+    # Act
+    await start_vendor_session(provider="anam", make_livekit_token=make, **_SEAM_ARGS)
+
+    # Assert
+    assert requested == [{}]
+    assert captured["body"]["environment"]["livekitToken"] == "lk-token"

@@ -3,6 +3,7 @@
 import asyncio
 from typing import Any
 
+import jwt
 import pytest
 
 from assemblix_api.core.settings import get_settings
@@ -205,3 +206,29 @@ async def test_the_vendor_gets_the_public_url_as_a_websocket_url(_livekit, monke
 
     # Assert
     assert vendor_calls[0]["livekit_url"] == "wss://rtc.example.com"
+
+
+async def test_the_token_factory_publishes_on_behalf_of_the_agent(_livekit) -> None:
+    # Arrange
+    vendor_calls: list[dict] = []
+
+    async def start_vendor(**kwargs: Any) -> str:
+        vendor_calls.append(kwargs)
+        return "s-7"
+
+    # Act
+    await media_module.open_avatar_media(
+        room_name="va-7",
+        avatar=_AVATAR,
+        timeout=1,
+        start_vendor=start_vendor,
+        room_factory=_ready_room,
+    )
+
+    # Assert
+    assert vendor_calls[0]["room_name"] == "va-7"
+    token = vendor_calls[0]["make_livekit_token"]({"agent_id": "A1"})
+    claims = jwt.decode(token, "s" * 32, algorithms=["HS256"])
+    assert claims["sub"] == "avatar"
+    assert claims["video"]["room"] == "va-7"
+    assert claims["attributes"] == {"lk.publish_on_behalf": "agent", "agent_id": "A1"}
