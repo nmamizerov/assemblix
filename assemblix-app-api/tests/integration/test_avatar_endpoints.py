@@ -50,7 +50,7 @@ async def test_list_credential_avatars(client, auth_user, auth_headers, mocker, 
 
         return [AnamAvatar(id="a1", name="Cara")]
 
-    mocker.patch("assemblix_api.api.rest.avatar.list_avatars", side_effect=_fake)
+    mocker.patch("assemblix_api.external.avatar.anam.list_avatars", side_effect=_fake)
     # Act
     resp = await client.get(f"/api/avatar/credentials/{cred.id}/avatars", headers=auth_headers)
     # Assert
@@ -71,7 +71,7 @@ async def test_list_credential_voices(client, auth_user, auth_headers, mocker, d
 
         return [AnamVoice(id="v1", name="Aurora")]
 
-    mocker.patch("assemblix_api.api.rest.avatar.list_voices", side_effect=_fake)
+    mocker.patch("assemblix_api.external.avatar.anam.list_voices", side_effect=_fake)
     # Act
     resp = await client.get(
         f"/api/avatar/credentials/{cred.id}/voices?search=aur", headers=auth_headers
@@ -188,4 +188,65 @@ async def test_mint_session_400_for_a_voice_agent_only_provider(
     # Act
     resp = await client.post(f"/api/workflows/{wf.id}/avatar/session", headers=auth_headers)
     # Assert
+    assert resp.status_code == 400
+
+
+async def test_bithuman_avatars_are_filtered_by_model(
+    client, auth_user, auth_headers, mocker, db_session
+) -> None:
+    # Arrange
+    from assemblix_api.external.avatar.bithuman import BithumanAvatar
+
+    cred = await _make_credential(
+        db_session, auth_user.project_id, cred_type=CredentialsType.BITHUMAN_TOKEN, value="bh"
+    )
+
+    async def _fake(api_key):
+        assert api_key == "bh"
+        return [
+            BithumanAvatar(id="A1", name="Pup", supported_models=["essence-2"]),
+            BithumanAvatar(id="A2", name="Owl", supported_models=["expression-2"]),
+        ]
+
+    mocker.patch("assemblix_api.external.avatar.bithuman.list_avatars", side_effect=_fake)
+    url = f"/api/avatar/credentials/{cred.id}/avatars"
+
+    # Act
+    everything = await client.get(url, headers=auth_headers)
+    filtered = await client.get(url, params={"model": "expression-2"}, headers=auth_headers)
+
+    # Assert
+    assert [a["id"] for a in everything.json()] == ["A1", "A2"]
+    assert filtered.json() == [{"id": "A2", "name": "Owl"}]
+
+
+async def test_anam_listing_ignores_model(
+    client, auth_user, auth_headers, mocker, db_session
+) -> None:
+    # Arrange
+    from assemblix_api.external.avatar.anam import AnamAvatar
+
+    cred = await _make_credential(db_session, auth_user.project_id)
+
+    async def _fake(api_key):
+        return [AnamAvatar(id="a1", name="Cara")]
+
+    mocker.patch("assemblix_api.external.avatar.anam.list_avatars", side_effect=_fake)
+    # Act
+    resp = await client.get(
+        f"/api/avatar/credentials/{cred.id}/avatars",
+        params={"model": "cara-4"},
+        headers=auth_headers,
+    )
+    # Assert
+    assert resp.json() == [{"id": "a1", "name": "Cara"}]
+
+
+async def test_avatars_400_for_a_non_avatar_credential(
+    client, auth_user, auth_headers, db_session
+) -> None:
+    cred = await _make_credential(
+        db_session, auth_user.project_id, cred_type=CredentialsType.OPENAI_TOKEN, value="sk"
+    )
+    resp = await client.get(f"/api/avatar/credentials/{cred.id}/avatars", headers=auth_headers)
     assert resp.status_code == 400
