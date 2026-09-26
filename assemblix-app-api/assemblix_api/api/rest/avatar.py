@@ -29,6 +29,7 @@ from assemblix_api.dto.responses.avatar import (
 from assemblix_api.external.avatar.anam import list_avatars, list_voices
 from assemblix_api.external.avatar.avatar_catalog import (
     AVATAR_PROVIDER_LABELS,
+    AVATAR_WORKFLOW_PROVIDERS,
     list_avatar_models,
     list_avatar_providers,
 )
@@ -50,6 +51,7 @@ async def list_providers(
             name=name,
             label=AVATAR_PROVIDER_LABELS[name],
             models_count=len(list_avatar_models(name)),
+            supports_workflow=name in AVATAR_WORKFLOW_PROVIDERS,
         )
         for name in list_avatar_providers()
     ]

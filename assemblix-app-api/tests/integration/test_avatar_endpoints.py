@@ -155,3 +155,37 @@ async def test_mint_session_400_when_avatar_missing(
     resp = await client.post(f"/api/workflows/{wf.id}/avatar/session", headers=auth_headers)
     # Assert
     assert resp.status_code == 400
+
+
+async def test_providers_say_which_work_in_workflows(client, auth_headers) -> None:
+    # Act
+    resp = await client.get("/api/avatar/providers", headers=auth_headers)
+    # Assert
+    flags = {p["name"]: p["supportsWorkflow"] for p in resp.json()}
+    assert flags["anam"] is True
+    assert flags["bithuman"] is False
+
+
+async def test_mint_session_400_for_a_voice_agent_only_provider(
+    client, auth_user, auth_headers, db_session
+) -> None:
+    # Arrange
+    cred = await _make_credential(
+        db_session, auth_user.project_id, cred_type=CredentialsType.BITHUMAN_TOKEN, value="bh"
+    )
+    wf = await _make_workflow(
+        db_session,
+        auth_user.project_id,
+        config={
+            "avatar": {
+                "provider": "bithuman",
+                "avatarModel": "essence-2",
+                "avatarId": "A1",
+                "credentialId": str(cred.id),
+            }
+        },
+    )
+    # Act
+    resp = await client.post(f"/api/workflows/{wf.id}/avatar/session", headers=auth_headers)
+    # Assert
+    assert resp.status_code == 400

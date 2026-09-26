@@ -13,6 +13,7 @@ from fastapi import HTTPException, status
 
 from assemblix_api.database.models.user import User
 from assemblix_api.dto.responses.avatar import AvatarSessionResponse
+from assemblix_api.external.avatar.avatar_catalog import AVATAR_WORKFLOW_PROVIDERS
 from assemblix_api.external.avatar.session import mint_session
 from assemblix_api.schemas.node import WorkflowAvatarConfig
 from assemblix_api.schemas.workflow import parse_avatar_config
@@ -80,6 +81,11 @@ class AvatarService:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="This workflow has no avatar configured",
+            )
+        if avatar.provider not in AVATAR_WORKFLOW_PROVIDERS:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"{avatar.provider} avatars are only available in voice agents",
             )
 
         resolved = await resolve_avatar(
