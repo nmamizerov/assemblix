@@ -37,6 +37,8 @@ services:
       DATABASE_URL: ${DATABASE_URL}        # external Postgres, e.g. postgresql://user:pass@host:5432/db
       JWT_SECRET_KEY: ${JWT_SECRET_KEY}    # JWT signing secret, >= 32 chars
       ENCRYPTION_KEY: ${ENCRYPTION_KEY}    # Fernet key for stored credentials
+      # --- Optional: scaling ---
+      WEB_CONCURRENCY: ${WEB_CONCURRENCY:-1}  # uvicorn worker processes; one process uses at most one CPU core
       # --- Optional: voice-agent avatars (LiveKit). Leave empty to disable. ---
       LIVEKIT_URL: ${LIVEKIT_URL:-}
       LIVEKIT_PUBLIC_URL: ${LIVEKIT_PUBLIC_URL:-}
