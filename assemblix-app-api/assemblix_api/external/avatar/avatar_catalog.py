@@ -17,7 +17,10 @@ _AVATAR_MODELS_DIR = Path(__file__).parent / "models"
 
 # Registered avatar providers -> display label. A provider without an entry here
 # is invisible even if a JSON exists.
-AVATAR_PROVIDER_LABELS: dict[str, str] = {"anam": "Anam"}
+AVATAR_PROVIDER_LABELS: dict[str, str] = {"anam": "Anam", "bithuman": "bitHuman"}
+
+# Providers the browser-side workflow avatar can drive; the rest are voice-agent only.
+AVATAR_WORKFLOW_PROVIDERS: frozenset[str] = frozenset({"anam"})
 
 
 @cache

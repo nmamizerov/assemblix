@@ -1,0 +1,32 @@
+{
+  "models": [
+    {
+      "id": "essence-2",
+      "label": "Essence 2",
+      "description": "Up to 1080p at 25 fps. The agent must have this model generated.",
+      "avatar_model": "essence-2",
+      "cost_per_minute": null
+    },
+    {
+      "id": "expression-2",
+      "label": "Expression 2",
+      "description": "Expressive face, 416x720 at 20 fps. The agent must have this model generated.",
+      "avatar_model": "expression-2",
+      "cost_per_minute": null
+    },
+    {
+      "id": "essence-1",
+      "label": "Essence 1",
+      "description": "First-generation, lightest model.",
+      "avatar_model": "essence-1",
+      "cost_per_minute": null
+    },
+    {
+      "id": "expression-1",
+      "label": "Expression 1",
+      "description": "First-generation expressive model (GPU).",
+      "avatar_model": "expression-1",
+      "cost_per_minute": null
+    }
+  ]
+}

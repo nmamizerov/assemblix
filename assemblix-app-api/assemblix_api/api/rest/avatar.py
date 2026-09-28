@@ -26,9 +26,10 @@ from assemblix_api.dto.responses.avatar import (
     AvatarProviderListItem,
     AvatarSessionResponse,
 )
-from assemblix_api.external.avatar.anam import list_avatars, list_voices
+from assemblix_api.external.avatar import anam, bithuman
 from assemblix_api.external.avatar.avatar_catalog import (
     AVATAR_PROVIDER_LABELS,
+    AVATAR_WORKFLOW_PROVIDERS,
     list_avatar_models,
     list_avatar_providers,
 )
@@ -50,6 +51,7 @@ async def list_providers(
             name=name,
             label=AVATAR_PROVIDER_LABELS[name],
             models_count=len(list_avatar_models(name)),
+            supports_workflow=name in AVATAR_WORKFLOW_PROVIDERS,
         )
         for name in list_avatar_providers()
     ]
@@ -72,23 +74,29 @@ async def list_provider_models(
 @router.get("/avatar/credentials/{credentials_id}/avatars", response_model=list[AvatarListItem])
 async def list_credential_avatars(
     credentials_id: UUID,
+    model: str | None = Query(default=None, description="Only avatars that can run this model"),
     auth: AuthContext = Depends(get_auth_context),
     credentials_service: CredentialsService = Depends(get_credentials_service),
     project_service: ProjectService = Depends(get_project_service),
 ) -> list[AvatarListItem]:
-    """List the anam avatars available to a stored credential."""
+    """List the avatars available to a stored avatar-provider credential."""
     credentials = await credentials_service.get_by_id(credentials_id)
     await project_service.authorize_project_access(auth, credentials.project_id)
-    if credentials.type != CredentialsType.ANAM_TOKEN:
+    if credentials.type not in (CredentialsType.ANAM_TOKEN, CredentialsType.BITHUMAN_TOKEN):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="This credential is not an anam token",
+            detail="This credential is not an avatar provider token",
         )
     api_key = await credentials_service.get_decrypted_api_key(
         credentials_id, credentials.project_id
     )
-    avatars = await list_avatars(api_key)
-    return [AvatarListItem(id=a.id, name=a.name) for a in avatars]
+    if credentials.type == CredentialsType.ANAM_TOKEN:
+        return [AvatarListItem(id=a.id, name=a.name) for a in await anam.list_avatars(api_key)]
+    return [
+        AvatarListItem(id=a.id, name=a.name)
+        for a in await bithuman.list_avatars(api_key)
+        if model is None or model in a.supported_models
+    ]
 
 
 @router.get("/avatar/credentials/{credentials_id}/voices", response_model=list[AvatarListItem])
@@ -110,7 +118,7 @@ async def list_credential_voices(
     api_key = await credentials_service.get_decrypted_api_key(
         credentials_id, credentials.project_id
     )
-    voices = await list_voices(api_key, search=search)
+    voices = await anam.list_voices(api_key, search=search)
     return [AvatarListItem(id=v.id, name=v.name) for v in voices]
 
 

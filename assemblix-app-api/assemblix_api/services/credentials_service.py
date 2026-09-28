@@ -168,7 +168,10 @@ class CredentialsService(BaseService[Credentials, CredentialsRepository]):
 
         return self._get_voice_system_key(voice_provider, settings), True
 
-    _AVATAR_PROVIDER_TO_CREDENTIALS_TYPE = {"anam": CredentialsType.ANAM_TOKEN}
+    _AVATAR_PROVIDER_TO_CREDENTIALS_TYPE = {
+        "anam": CredentialsType.ANAM_TOKEN,
+        "bithuman": CredentialsType.BITHUMAN_TOKEN,
+    }
 
     async def get_avatar_api_key_with_fallback(
         self,

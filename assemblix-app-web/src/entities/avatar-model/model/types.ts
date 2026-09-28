@@ -2,6 +2,7 @@ export interface AvatarProviderListItem {
   name: string;
   label: string;
   modelsCount: number;
+  supportsWorkflow: boolean;
 }
 
 export interface AvatarModelMetadata {

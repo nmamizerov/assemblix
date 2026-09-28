@@ -21,6 +21,8 @@ import {
 interface AvatarOutputPickerProps {
   value: WorkflowAvatarConfig | undefined;
   onChange: (avatar: WorkflowAvatarConfig) => void;
+  // Workflow avatars run in the browser and only some providers support that.
+  surface: "voiceAgent" | "workflow";
 }
 
 /**
@@ -32,6 +34,7 @@ interface AvatarOutputPickerProps {
 export const AvatarOutputPicker = ({
   value,
   onChange,
+  surface,
 }: AvatarOutputPickerProps) => {
   const { t } = useTranslation();
 
@@ -53,7 +56,7 @@ export const AvatarOutputPicker = ({
       provider: value?.provider ?? "",
       avatarModel,
       credentialId: value?.credentialId,
-      avatarId: value?.avatarId,
+      avatarId: undefined,
     });
   };
   const handleAvatarIdChange = (avatarId: string) => {
@@ -65,7 +68,11 @@ export const AvatarOutputPicker = ({
     });
   };
 
-  const { data: providers = [] } = useGetAvatarProvidersQuery();
+  const { data: allProviders = [] } = useGetAvatarProvidersQuery();
+  const providers =
+    surface === "workflow"
+      ? allProviders.filter((p) => p.supportsWorkflow)
+      : allProviders;
   const { data: models = [], isLoading: isLoadingModels } =
     useGetAvatarProviderModelsQuery(
       { providerName: provider ?? "" },
@@ -73,7 +80,10 @@ export const AvatarOutputPicker = ({
     );
   const { data: avatars = [], isLoading: isLoadingAvatars } =
     useGetCredentialAvatarsQuery(
-      { credentialId: value?.credentialId ?? "" },
+      {
+        credentialId: value?.credentialId ?? "",
+        model: value?.avatarModel || undefined,
+      },
       { skip: !value?.credentialId },
     );
 
