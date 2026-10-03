@@ -7,10 +7,23 @@ import type { ModelMetadata, ParamDef } from "@/entities/llm-provider";
 // A voice reply is spoken, never parsed — the brain has no use for JSON mode.
 const HIDDEN_BRAIN_PARAMS = new Set(["response_format"]);
 
+// The main voice-latency knobs stay visible instead of under "more settings".
+const PROMINENT_BRAIN_PARAMS = new Set([
+  "thinking_level",
+  "thinking_budget",
+  "reasoning_effort",
+]);
+
 const REPLY_TOKEN_CAP = 300;
+// OpenAI counts reasoning tokens against this cap; too low a cap yields empty replies.
+const REASONING_TOKEN_CAP = 1000;
 
 export const brainParamSchema = (schema: ParamDef[]): ParamDef[] =>
-  schema.filter((param) => !HIDDEN_BRAIN_PARAMS.has(param.name));
+  schema
+    .filter((param) => !HIDDEN_BRAIN_PARAMS.has(param.name))
+    .map((param) =>
+      PROMINENT_BRAIN_PARAMS.has(param.name) ? { ...param, advanced: false } : param
+    );
 
 /**
  * Latency-friendly params for a voice brain: the least thinking the model
@@ -54,10 +67,11 @@ export const voiceBrainDefaults = (
     if (lowest) params.reasoning_effort = lowest.value;
   }
 
-  const tokenCap = ["max_completion_tokens", "max_tokens"].find((name) =>
-    visible.has(name)
-  );
-  if (tokenCap) params[tokenCap] = REPLY_TOKEN_CAP;
+  if (visible.has("max_completion_tokens")) {
+    params.max_completion_tokens = REASONING_TOKEN_CAP;
+  } else if (visible.has("max_tokens")) {
+    params.max_tokens = REPLY_TOKEN_CAP;
+  }
 
   return params;
 };
