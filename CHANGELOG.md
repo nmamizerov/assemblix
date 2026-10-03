@@ -5,6 +5,32 @@ All notable changes to this project are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.39](https://github.com/nmamizerov/assemblix/compare/v0.2.38...v0.2.39) (2026-10-03)
+
+
+### Features
+
+* **api:** add cascade mode to the voice agent config ([53459b3](https://github.com/nmamizerov/assemblix/commit/53459b3659e7b5c7fbb58cbf4bd886eeb1693562))
+* **api:** add cascade turn detector (VAD gating + Smart Turn) ([7bbdccd](https://github.com/nmamizerov/assemblix/commit/7bbdccd11db1767dcf6cbf7d6a95a05f8683ddf8))
+* **api:** add Silero VAD and Smart Turn v3 models for cascade turn detection ([de86c56](https://github.com/nmamizerov/assemblix/commit/de86c56f376434df2b5d4dd1027b4a3415312193))
+* **api:** add the cascade conversation bridge ([90c7ab4](https://github.com/nmamizerov/assemblix/commit/90c7ab41123d6880d7964756d03a82387fb2e588))
+* **api:** add the prompt brain for cascade voice agents ([7b8a59d](https://github.com/nmamizerov/assemblix/commit/7b8a59d710fa75e0d20848b64539c9f02721e335))
+* **api:** add Yandex SpeechKit v3 streaming recognition adapter ([3afd065](https://github.com/nmamizerov/assemblix/commit/3afd0657f3ad7bf915b0fdd7a4c48c9593c251f1))
+* **api:** cascade mode for voice agents (STT → turn detection → LLM → TTS) ([b592460](https://github.com/nmamizerov/assemblix/commit/b5924609178c712e00a9d2923782a24856ab62e3))
+* **api:** make cascade voice agents callable ([ff31c91](https://github.com/nmamizerov/assemblix/commit/ff31c91807f8f219a942e23d7b4f6508f78a2f40))
+* **api:** record per-stage turn timings for cascade voice calls ([50270c6](https://github.com/nmamizerov/assemblix/commit/50270c66e0351391a04f4d3f1b386dbaee8d7fdf))
+* **api:** share one Yandex TTS channel per call and add economical chunk mode ([1988399](https://github.com/nmamizerov/assemblix/commit/1988399f69bf9a62d4adb4707ac0346cf82955f8))
+
+
+### Bug Fixes
+
+* **api:** build the voice bridge before opening the session row ([1c6e325](https://github.com/nmamizerov/assemblix/commit/1c6e3258523fac3c26b1e93248ea00d45c84d166))
+* **api:** close the shared TTS channel when the inner bridge fails to connect ([35db1e9](https://github.com/nmamizerov/assemblix/commit/35db1e960d63db43419bc7bcf467705a6c303ab7))
+* **api:** close the STT stream on a failed cascade connect and keep caller cancellation ([20b9a1f](https://github.com/nmamizerov/assemblix/commit/20b9a1f1bf6387e79ab1d9ed8dc1675461fb283a))
+* **api:** harden cascade bridge turn and interrupt handling ([471edd1](https://github.com/nmamizerov/assemblix/commit/471edd1d7c9d9f2aa94086d7a2f42595ae8c84f2))
+* **api:** report cascade turn timings once, with firstAudioMs ([e4e1cf5](https://github.com/nmamizerov/assemblix/commit/e4e1cf5510f854bf4579c1975ecd28c618a057e1))
+* **api:** stop Yandex TTS synthesis on barge-in with a shared channel ([6c635b5](https://github.com/nmamizerov/assemblix/commit/6c635b50494ca3425b9b54bbf1e16d042436c6ce))
+
 ## [0.2.38](https://github.com/nmamizerov/assemblix/compare/v0.2.37...v0.2.38) (2026-09-25)
 
 
