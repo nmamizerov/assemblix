@@ -12,9 +12,27 @@ export interface VoiceSession {
   endReason: string | null;
 }
 
+/** Cascade stage durations (ms) of the turn an assistant line ended. */
+export interface VoiceTurnTimings {
+  eouMs?: number;
+  sttFinalMs?: number;
+  brainFirstTokenMs?: number;
+  ttsFirstAudioMs?: number;
+  totalMs?: number;
+  firstAudioMs?: number;
+}
+
+export type VoiceTimingStage =
+  | "eouMs"
+  | "sttFinalMs"
+  | "brainFirstTokenMs"
+  | "ttsFirstAudioMs"
+  | "totalMs";
+
 export interface VoiceSessionTranscriptLine {
   role: "user" | "assistant";
   text: string;
+  timings?: VoiceTurnTimings | null;
 }
 
 /** One analysis-hook run started by the call. */
@@ -32,4 +50,5 @@ export interface VoiceSessionDetail extends VoiceSession {
   inputTokens: number;
   outputTokens: number;
   executions: VoiceSessionExecution[];
+  timingSummary?: Partial<Record<VoiceTimingStage, { p50: number; p95: number }>> | null;
 }
