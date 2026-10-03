@@ -7,6 +7,7 @@ import type {
   VoiceAgentDraft,
   VoiceAgentMode,
 } from "../model/types";
+import { defaultSystemPrompt, isDefaultSystemPrompt } from "./default-prompts";
 
 export type DraftErrorField =
   | keyof VoiceAgentDraft
@@ -100,7 +101,7 @@ export const emptyDraft = (): VoiceAgentDraft => ({
   name: "",
   description: "",
   mode: "realtime",
-  systemPrompt: "",
+  systemPrompt: defaultSystemPrompt("ru"),
   firstMessage: "",
   language: "ru",
   provider: DEFAULT_PROVIDER,
@@ -254,6 +255,17 @@ export const validateDraft = (draft: VoiceAgentDraft): DraftValidation => {
   }
 
   return { isValid: Object.keys(errors).length === 0, errors };
+};
+
+export const applyLanguageChange = (
+  draft: VoiceAgentDraft,
+  language: string
+): VoiceAgentDraft => {
+  if (language === draft.language) return draft;
+  const systemPrompt = isDefaultSystemPrompt(draft.systemPrompt)
+    ? defaultSystemPrompt(language)
+    : draft.systemPrompt;
+  return { ...draft, language, systemPrompt };
 };
 
 export const applyProviderChange = (

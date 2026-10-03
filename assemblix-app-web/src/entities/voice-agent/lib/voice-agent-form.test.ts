@@ -17,7 +17,7 @@ describe("voice agent form", () => {
     // Assert — only the fields a user must supply are missing; the seeded
     // provider/model pair is one the backend accepts as a conversation route
     expect(validateDraft(draft).isValid).toBe(false);
-    expect(validateDraft(draft).errors.systemPrompt).toBeDefined();
+    expect(validateDraft(draft).errors.systemPrompt).toBeUndefined();
     expect(validateDraft(draft).errors.name).toBeDefined();
     expect(validateDraft(draft).errors.provider).toBeUndefined();
     expect(validateDraft(draft).errors.model).toBeUndefined();

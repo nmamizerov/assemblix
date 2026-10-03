@@ -29,6 +29,7 @@ import { selectCurrentProjectId } from "@/entities/organization";
 import { VoiceOutputPicker } from "@/entities/voice-model";
 import { AvatarOutputPicker } from "@/entities/avatar-model";
 import {
+  applyLanguageChange,
   applyModeChange,
   applyProviderChange,
   LANGUAGE_OPTIONS,
@@ -340,7 +341,7 @@ export const VoiceAgentForm = ({ draft, errors, onChange }: VoiceAgentFormProps)
                 <Label>{t("voiceAgents.fields.language")}</Label>
                 <Select
                   value={draft.language}
-                  onValueChange={(value) => handleField("language", value)}
+                  onValueChange={(value) => onChange(applyLanguageChange(draft, value))}
                 >
                   <SelectTrigger className="w-full">
                     <SelectValue placeholder={t("voiceAgents.fields.selectLanguage")} />
