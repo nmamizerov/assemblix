@@ -58,7 +58,7 @@ def _create_default_workflow_structure(language: str = "en") -> dict:
         config=AgentNodeConfig(
             name=defaults["agent_node_name"],
             provider=AgentProvider.OPENAI,
-            model="gpt-4.1-nano",
+            model="gpt-4.1-mini",
             instructions=[
                 AgentInstruction(
                     role="system",

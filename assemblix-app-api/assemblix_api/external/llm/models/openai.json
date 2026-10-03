@@ -96,10 +96,21 @@
           "value": "off"
         },
         {
+          "label": "None",
+          "value": "none",
+          "show": {
+            "capability": [
+              "reasoning_effort_none"
+            ]
+          }
+        },
+        {
           "label": "Minimal",
           "value": "minimal",
           "show": {
-            "capability": ["reasoning_effort_minimal"]
+            "capability": [
+              "reasoning_effort_minimal"
+            ]
           }
         },
         {
@@ -118,7 +129,18 @@
           "label": "X-High",
           "value": "xhigh",
           "show": {
-            "capability": ["reasoning_effort_xhigh"]
+            "capability": [
+              "reasoning_effort_xhigh"
+            ]
+          }
+        },
+        {
+          "label": "Max",
+          "value": "max",
+          "show": {
+            "capability": [
+              "reasoning_effort_max"
+            ]
           }
         }
       ],
@@ -149,26 +171,128 @@
   ],
   "models": [
     {
-      "id": "gpt-5.5",
-      "label": "GPT-5.5",
-      "contextWindow": 400000,
-      "maxOutputTokens": 16384,
-      "inputCostPerMillion": 2.5,
+      "id": "gpt-6-astra",
+      "label": "GPT-6 Astra",
+      "description": "Top-tier reasoning model. No tool calling via Chat Completions — don't attach tools.",
+      "contextWindow": 1050000,
+      "maxOutputTokens": 128000,
+      "inputCostPerMillion": 10.0,
+      "outputCostPerMillion": 50.0,
+      "capabilities": {
+        "reasoning": true,
+        "reasoning_effort_xhigh": true,
+        "reasoning_effort_max": true
+      }
+    },
+    {
+      "id": "gpt-6.1-sol",
+      "label": "GPT-6.1 Sol",
+      "description": "Balanced flagship. No tool calling via Chat Completions — don't attach tools.",
+      "contextWindow": 1050000,
+      "maxOutputTokens": 128000,
+      "inputCostPerMillion": 2.0,
       "outputCostPerMillion": 10.0,
       "capabilities": {
         "reasoning": true,
+        "reasoning_effort_xhigh": true,
+        "reasoning_effort_max": true
+      }
+    },
+    {
+      "id": "gpt-6-sol",
+      "label": "GPT-6 Sol",
+      "description": "Tool calling via Chat Completions requires reasoning effort None.",
+      "contextWindow": 1050000,
+      "maxOutputTokens": 128000,
+      "inputCostPerMillion": 2.0,
+      "outputCostPerMillion": 10.0,
+      "capabilities": {
+        "reasoning": true,
+        "reasoning_effort_none": true,
+        "reasoning_effort_xhigh": true,
+        "reasoning_effort_max": true
+      }
+    },
+    {
+      "id": "gpt-6-luna",
+      "label": "GPT-6 Luna",
+      "description": "Cheap, high-volume. Tool calling via Chat Completions requires reasoning effort None.",
+      "contextWindow": 1050000,
+      "maxOutputTokens": 128000,
+      "inputCostPerMillion": 0.1,
+      "outputCostPerMillion": 0.5,
+      "capabilities": {
+        "reasoning": true,
+        "reasoning_effort_none": true,
+        "reasoning_effort_xhigh": true,
+        "reasoning_effort_max": true
+      }
+    },
+    {
+      "id": "gpt-5.6-sol",
+      "label": "GPT-5.6 Sol",
+      "contextWindow": 1050000,
+      "maxOutputTokens": 128000,
+      "inputCostPerMillion": 4.0,
+      "outputCostPerMillion": 20.0,
+      "capabilities": {
+        "reasoning": true,
+        "reasoning_effort_none": true,
+        "reasoning_effort_xhigh": true,
+        "reasoning_effort_max": true
+      }
+    },
+    {
+      "id": "gpt-5.6-terra",
+      "label": "GPT-5.6 Terra",
+      "contextWindow": 1050000,
+      "maxOutputTokens": 128000,
+      "inputCostPerMillion": 2.0,
+      "outputCostPerMillion": 12.0,
+      "capabilities": {
+        "reasoning": true,
+        "reasoning_effort_none": true,
+        "reasoning_effort_xhigh": true,
+        "reasoning_effort_max": true
+      }
+    },
+    {
+      "id": "gpt-5.6-luna",
+      "label": "GPT-5.6 Luna",
+      "contextWindow": 1050000,
+      "maxOutputTokens": 128000,
+      "inputCostPerMillion": 0.2,
+      "outputCostPerMillion": 1.2,
+      "capabilities": {
+        "reasoning": true,
+        "reasoning_effort_none": true,
+        "reasoning_effort_xhigh": true,
+        "reasoning_effort_max": true
+      }
+    },
+    {
+      "id": "gpt-5.5",
+      "label": "GPT-5.5",
+      "contextWindow": 1050000,
+      "maxOutputTokens": 128000,
+      "inputCostPerMillion": 5.0,
+      "outputCostPerMillion": 30.0,
+      "capabilities": {
+        "reasoning": true,
+        "reasoning_effort_none": true,
         "reasoning_effort_xhigh": true
       }
     },
     {
       "id": "gpt-5.4",
       "label": "GPT-5.4",
-      "contextWindow": 400000,
-      "maxOutputTokens": 16384,
+      "contextWindow": 1050000,
+      "maxOutputTokens": 128000,
       "inputCostPerMillion": 2.5,
-      "outputCostPerMillion": 10.0,
+      "outputCostPerMillion": 15.0,
       "capabilities": {
         "reasoning": true,
+        "reasoning_effort_none": true,
         "reasoning_effort_xhigh": true
       }
     },
@@ -176,23 +300,12 @@
       "id": "gpt-5.4-mini",
       "label": "GPT-5.4 Mini",
       "contextWindow": 400000,
-      "maxOutputTokens": 16384,
-      "inputCostPerMillion": 0.5,
-      "outputCostPerMillion": 2.0,
+      "maxOutputTokens": 128000,
+      "inputCostPerMillion": 0.75,
+      "outputCostPerMillion": 4.5,
       "capabilities": {
         "reasoning": true,
-        "reasoning_effort_xhigh": true
-      }
-    },
-    {
-      "id": "gpt-5.4-nano",
-      "label": "GPT-5.4 Nano",
-      "contextWindow": 400000,
-      "maxOutputTokens": 16384,
-      "inputCostPerMillion": 0.15,
-      "outputCostPerMillion": 0.6,
-      "capabilities": {
-        "reasoning": true,
+        "reasoning_effort_none": true,
         "reasoning_effort_xhigh": true
       }
     },
@@ -200,59 +313,13 @@
       "id": "gpt-5.2",
       "label": "GPT-5.2",
       "contextWindow": 400000,
-      "maxOutputTokens": 16384,
-      "inputCostPerMillion": 2.5,
-      "outputCostPerMillion": 10.0,
+      "maxOutputTokens": 128000,
+      "inputCostPerMillion": 1.75,
+      "outputCostPerMillion": 14.0,
       "capabilities": {
         "reasoning": true,
+        "reasoning_effort_none": true,
         "reasoning_effort_xhigh": true
-      }
-    },
-    {
-      "id": "gpt-5.1",
-      "label": "GPT-5.1",
-      "contextWindow": 400000,
-      "maxOutputTokens": 16384,
-      "inputCostPerMillion": 2.5,
-      "outputCostPerMillion": 10.0,
-      "capabilities": {
-        "reasoning": true
-      }
-    },
-    {
-      "id": "gpt-5",
-      "label": "GPT-5",
-      "contextWindow": 400000,
-      "maxOutputTokens": 16384,
-      "inputCostPerMillion": 3.0,
-      "outputCostPerMillion": 12.0,
-      "capabilities": {
-        "reasoning": true,
-        "reasoning_effort_minimal": true
-      }
-    },
-    {
-      "id": "gpt-5-mini",
-      "label": "GPT-5 Mini",
-      "contextWindow": 400000,
-      "maxOutputTokens": 16384,
-      "inputCostPerMillion": 0.6,
-      "outputCostPerMillion": 2.4,
-      "capabilities": {
-        "reasoning": true,
-        "reasoning_effort_minimal": true
-      }
-    },
-    {
-      "id": "gpt-5-nano",
-      "label": "GPT-5 Nano",
-      "contextWindow": 400000,
-      "maxOutputTokens": 16384,
-      "inputCostPerMillion": 0.2,
-      "outputCostPerMillion": 0.8,
-      "capabilities": {
-        "reasoning": true,
-        "reasoning_effort_minimal": true
       }
     },
     {
@@ -274,26 +341,8 @@
       "capabilities": {}
     },
     {
-      "id": "gpt-4.1-nano",
-      "label": "GPT-4.1 Nano",
-      "contextWindow": 1047576,
-      "maxOutputTokens": 32768,
-      "inputCostPerMillion": 0.1,
-      "outputCostPerMillion": 0.4,
-      "capabilities": {}
-    },
-    {
-      "id": "gpt-4-turbo",
-      "label": "GPT-4 Turbo",
-      "contextWindow": 128000,
-      "maxOutputTokens": 4096,
-      "inputCostPerMillion": 10.0,
-      "outputCostPerMillion": 30.0,
-      "capabilities": {}
-    },
-    {
-      "id": "gpt-audio",
-      "label": "GPT Audio",
+      "id": "gpt-audio-1.5",
+      "label": "GPT Audio 1.5",
       "description": "Audio-in, text-out. Accepts speech natively; pair with a voice-enabled START node.",
       "contextWindow": 128000,
       "maxOutputTokens": 16384,
@@ -304,9 +353,107 @@
       }
     },
     {
+      "id": "gpt-5.4-nano",
+      "label": "GPT-5.4 Nano (deprecated)",
+      "description": "Deprecated: shuts down 2027-04-01. Use GPT-6 Luna.",
+      "contextWindow": 400000,
+      "maxOutputTokens": 128000,
+      "inputCostPerMillion": 0.2,
+      "outputCostPerMillion": 1.25,
+      "capabilities": {
+        "reasoning": true,
+        "reasoning_effort_none": true,
+        "reasoning_effort_xhigh": true
+      }
+    },
+    {
+      "id": "gpt-5.1",
+      "label": "GPT-5.1 (deprecated)",
+      "description": "Deprecated: shuts down 2027-04-01. Use GPT-6 Sol.",
+      "contextWindow": 400000,
+      "maxOutputTokens": 128000,
+      "inputCostPerMillion": 1.25,
+      "outputCostPerMillion": 10.0,
+      "capabilities": {
+        "reasoning": true,
+        "reasoning_effort_none": true
+      }
+    },
+    {
+      "id": "gpt-5",
+      "label": "GPT-5 (deprecated)",
+      "description": "Deprecated: shuts down 2026-12-11. Use GPT-5.6 Sol.",
+      "contextWindow": 400000,
+      "maxOutputTokens": 128000,
+      "inputCostPerMillion": 1.25,
+      "outputCostPerMillion": 10.0,
+      "capabilities": {
+        "reasoning": true,
+        "reasoning_effort_minimal": true
+      }
+    },
+    {
+      "id": "gpt-5-mini",
+      "label": "GPT-5 Mini (deprecated)",
+      "description": "Deprecated: shuts down 2026-12-11. Use GPT-5.6 Terra.",
+      "contextWindow": 400000,
+      "maxOutputTokens": 128000,
+      "inputCostPerMillion": 0.25,
+      "outputCostPerMillion": 2.0,
+      "capabilities": {
+        "reasoning": true,
+        "reasoning_effort_minimal": true
+      }
+    },
+    {
+      "id": "gpt-5-nano",
+      "label": "GPT-5 Nano (deprecated)",
+      "description": "Deprecated: shuts down 2026-12-11. Use GPT-5.6 Luna.",
+      "contextWindow": 400000,
+      "maxOutputTokens": 128000,
+      "inputCostPerMillion": 0.05,
+      "outputCostPerMillion": 0.4,
+      "capabilities": {
+        "reasoning": true,
+        "reasoning_effort_minimal": true
+      }
+    },
+    {
+      "id": "gpt-4.1-mini",
+      "label": "GPT-4.1 Nano (deprecated)",
+      "description": "Deprecated: shuts down 2026-10-23. Use GPT-5.6 Luna.",
+      "contextWindow": 1047576,
+      "maxOutputTokens": 32768,
+      "inputCostPerMillion": 0.1,
+      "outputCostPerMillion": 0.4,
+      "capabilities": {}
+    },
+    {
+      "id": "gpt-4-turbo",
+      "label": "GPT-4 Turbo (deprecated)",
+      "description": "Deprecated: shuts down 2026-10-23. Use GPT-5.6 Sol.",
+      "contextWindow": 128000,
+      "maxOutputTokens": 4096,
+      "inputCostPerMillion": 10.0,
+      "outputCostPerMillion": 30.0,
+      "capabilities": {}
+    },
+    {
+      "id": "gpt-audio",
+      "label": "GPT Audio (deprecated)",
+      "description": "Deprecated: shuts down 2027-01-20. Use GPT Audio 1.5.",
+      "contextWindow": 128000,
+      "maxOutputTokens": 16384,
+      "inputCostPerMillion": 2.5,
+      "outputCostPerMillion": 10.0,
+      "capabilities": {
+        "accepts_audio": true
+      }
+    },
+    {
       "id": "gpt-audio-mini",
-      "label": "GPT Audio Mini",
-      "description": "Cheaper audio-in, text-out model for simpler voice turns.",
+      "label": "GPT Audio Mini (deprecated)",
+      "description": "Deprecated: shuts down 2027-01-20. Use GPT Audio 1.5.",
       "contextWindow": 128000,
       "maxOutputTokens": 16384,
       "inputCostPerMillion": 0.6,

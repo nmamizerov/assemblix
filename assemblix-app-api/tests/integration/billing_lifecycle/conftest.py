@@ -30,28 +30,28 @@ from assemblix_api.database.repositories.credit_transaction_repository import (
 from assemblix_api.database.repositories.organization_repository import OrganizationRepository
 from tests.fixtures.workflows import agent_config, edge, node
 
-# gpt-5.4-mini pricing (assemblix_api/external/llm/models/openai.json): $2.00 / 1M
+# gpt-4.1 pricing (assemblix_api/external/llm/models/openai.json): $8.00 / 1M
 # output tokens, $0 input tokens used here — lets a test pick an exact USD cost by
 # choosing completion_tokens, without depending on real provider pricing.
-_OUTPUT_COST_PER_MILLION = Decimal("2.0")
+_OUTPUT_COST_PER_MILLION = Decimal("8.0")
 
 
 def _arm_cost(mock_llm: Any, cost_usd: float) -> None:
-    """Arm the next agent completion to cost exactly ``cost_usd`` (gpt-5.4-mini pricing)."""
+    """Arm the next agent completion to cost exactly ``cost_usd`` (gpt-4.1 pricing)."""
     completion_tokens = int(Decimal(str(cost_usd)) * Decimal(1_000_000) / _OUTPUT_COST_PER_MILLION)
     mock_llm.set_response(
-        "ok", model="gpt-5.4-mini", prompt_tokens=0, completion_tokens=completion_tokens
+        "ok", model="gpt-4.1", prompt_tokens=0, completion_tokens=completion_tokens
     )
 
 
 def _billing_workflow(*, credential_id: str | None) -> tuple[list[dict], list[dict]]:
-    """START -> AGENT (gpt-5.4-mini, given credential) -> END."""
+    """START -> AGENT (gpt-4.1, given credential) -> END."""
     nodes = [
         node("start", "start", {}),
         node(
             "agent",
             "agent",
-            agent_config(model="gpt-5.4-mini", credential_id=credential_id),
+            agent_config(model="gpt-4.1", credential_id=credential_id),
         ),
         node("end", "end", {}),
     ]
