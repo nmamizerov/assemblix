@@ -14,10 +14,11 @@ from assemblix_api.external.voice.conversation.contract import (
     UserTranscript,
 )
 from assemblix_api.external.voice.stt_stream import SttResult, SttUnavailable
-from assemblix_api.realtime.cascade.brain import BrainUsage, OnDelta, Turn
+from assemblix_api.realtime.cascade.brain import BrainUsage, OnDelta, PromptBrain, Turn
 from assemblix_api.realtime.cascade.bridge import CascadeBridge, heard_prefix
 from assemblix_api.realtime.cascade.setup import CascadeMeter
 from assemblix_api.realtime.cascade.turn import EndOfTurn, SpeechStart, TurnUpdate
+from assemblix_api.schemas.execution import AgentExecutionResult
 
 
 class _Stt:
@@ -68,6 +69,13 @@ class _Brain:
 
     async def prepare(self, *, instructions: str) -> None:
         self.instructions = instructions
+
+    def describe(self) -> dict[str, Any]:
+        return {"provider": "fake", "model": "fake-1", "params": {}}
+
+    def conversation(self, history: Sequence[Turn], user_text: str) -> list[dict[str, str]]:
+        turns = [{"role": t.role, "content": t.text} for t in history if t.text]
+        return [*turns, {"role": "user", "content": user_text}]
 
     async def reply(
         self, *, history: Sequence[Turn], user_text: str, on_delta: OnDelta
@@ -127,7 +135,8 @@ async def test_full_turn_emits_user_text_timings_reply_and_usage() -> None:
     assert isinstance(seen[2], TurnTimings) and seen[2].eou_ms == 224
     assert seen[4] == AgentTranscript(text="Здравствуйте!", is_final=False)
     assert seen[5] == AgentTranscript(text="Здравствуйте!", is_final=True)
-    assert seen[6] == TurnEnded(input_tokens=10, output_tokens=2)
+    assert isinstance(seen[6], TurnEnded)
+    assert (seen[6].input_tokens, seen[6].output_tokens) == (10, 2)
     assert stt.audio == [b"speech", b"tail"] and stt.finalized == 1
     assert meter.brain_cost_usd == Decimal("0.001")
     assert brain.instructions == "Роль."
@@ -448,4 +457,155 @@ async def test_a_barge_in_does_not_swallow_a_cancellation_of_the_caller() -> Non
 
     with pytest.raises(asyncio.CancelledError):
         await barge_in
+    await bridge.close()
+
+
+class _Runner:
+    """AgentRunner stand-in: streams one scripted reply per call and records the call."""
+
+    def __init__(self, replies: list[str]) -> None:
+        self.replies = replies
+        self.calls: list[dict[str, Any]] = []
+
+    async def run(self, **kwargs: Any) -> AgentExecutionResult:
+        self.calls.append(kwargs)
+        reply = self.replies[len(self.calls) - 1]
+        await kwargs["on_delta"](reply)
+        return AgentExecutionResult(
+            content=reply,
+            parsed_content=None,
+            metadata={
+                "input_tokens": 120,
+                "output_tokens": 6,
+                "cached_input_tokens": 64,
+                "cost": 0.0002,
+                "effective_model": "gpt-4.1-mini-2025",
+            },
+            messages=[],
+            tool_executions=[],
+        )
+
+
+def _turn_ends(seen: list[Any]) -> list[TurnEnded]:
+    return [e for e in seen if isinstance(e, TurnEnded)]
+
+
+async def test_a_turn_records_the_exact_llm_call_with_heard_truncation() -> None:
+    """The record holds the messages the runner actually got — history window plus the
+    current message, the interrupted reply cut to what was heard — and the call's
+    params, usage, timing and per-turn STT spend."""
+    # Arrange
+    long_reply = "Конечно, у нас есть несколько вариантов от кашля, давайте я расскажу подробнее"
+    runner = _Runner([long_reply, "Хорошо."])
+    brain = PromptBrain(
+        provider="openai",
+        model="gpt-4.1-mini",
+        api_key="k",
+        params={"max_completion_tokens": 200},
+        history_turns=1,
+        runner=runner,
+        build_model=lambda *a, **kw: "MODEL",
+    )
+    stt = _Stt()
+    meter = CascadeMeter()
+    bridge = CascadeBridge(
+        stt=stt,
+        detector=_Detector(),
+        brain=brain,
+        meter=meter,
+        stt_final_timeout=0.2,
+        stt_cost_per_minute=0.6,
+    )
+    await bridge.connect(instructions="Роль.", voice="", language="ru", params={})
+    seen: list[Any] = []
+
+    async def consume() -> None:
+        async for event in bridge.events():
+            seen.append(event)
+
+    asyncio.get_running_loop().create_task(consume())
+    stt.finals = ["есть сироп?", "стоп"]
+    await bridge.send_audio(b"S")
+    await bridge.send_audio(b"E")
+    await _settle()
+    await bridge.interrupt(audio_end_ms=1000)
+
+    # Act
+    await bridge.send_audio(b"S")
+    await bridge.send_audio(b"E")
+    await _settle()
+
+    # Assert
+    record = _turn_ends(seen)[-1].llm_call
+    assert record is not None
+    assert record["messages"] == runner.calls[-1]["conversation"]
+    assert record["messages"][0] == {"role": "assistant", "content": "Конечно, у нас"}
+    assert record["messages"][-1] == {"role": "user", "content": "стоп"}
+    assert len(record["messages"]) == 2  # history_turns=1 plus the current message
+    assert record["provider"] == "openai" and record["model"] == "gpt-4.1-mini"
+    assert record["effectiveModel"] == "gpt-4.1-mini-2025"
+    assert record["params"] == {"max_completion_tokens": 200}
+    assert record["response"] == "Хорошо."
+    assert (record["inputTokens"], record["outputTokens"], record["cachedInputTokens"]) == (
+        120,
+        6,
+        64,
+    )
+    assert record["costUsd"] == 0.0002
+    assert isinstance(record["ttftMs"], int) and record["ttftMs"] >= 0
+    assert record["durationMs"] >= record["ttftMs"]
+    assert record["outcome"] == "ok" and record["error"] is None
+    usage = _turn_ends(seen)[-1].usage
+    assert usage == {
+        "sttSeconds": round(10 / 32000, 3),
+        "sttCostUsdEstimate": float(Decimal(str(10 / 32000)) / Decimal(60) * Decimal("0.6")),
+        "llmCostUsd": 0.0002,
+    }
+    await bridge.close()
+
+
+async def test_a_barge_in_records_the_call_as_cancelled() -> None:
+    # Arrange
+    gate = asyncio.Event()
+    brain = _Brain(["Конечно, давайте", " подробнее"], gate=gate)
+    bridge, stt, _, seen = await _bridge(brain)
+    stt.finals = ["есть сироп?"]
+    await bridge.send_audio(b"S")
+    await bridge.send_audio(b"E")
+    await _settle()
+
+    # Act
+    await bridge.send_audio(b"S")
+    await _settle()
+
+    # Assert
+    [ended] = _turn_ends(seen)
+    assert ended.llm_call is not None
+    assert ended.llm_call["outcome"] == "cancelled"
+    assert ended.llm_call["response"] == "Конечно, давайте"
+    assert ended.llm_call["messages"] == [{"role": "user", "content": "есть сироп?"}]
+    await bridge.close()
+
+
+async def test_a_brain_failure_records_the_outcome_and_error() -> None:
+    # Arrange
+    class _BrokenBrain(_Brain):
+        async def reply(self, **_kw: Any) -> BrainUsage:
+            raise RuntimeError("provider down")
+
+    bridge, stt, _, seen = await _bridge(_BrokenBrain([]))
+    stt.finals = ["алло"]
+
+    # Act
+    await bridge.send_audio(b"S")
+    await bridge.send_audio(b"E")
+    await _settle()
+
+    # Assert
+    [ended] = _turn_ends(seen)
+    assert ended.llm_call is not None
+    assert ended.llm_call["outcome"] == "brain_failed"
+    assert ended.llm_call["error"] == "provider down"
+    assert ended.llm_call["ttftMs"] is None
+    assert ended.llm_call["messages"] == [{"role": "user", "content": "алло"}]
     await bridge.close()

@@ -34,6 +34,8 @@ from assemblix_api.realtime.hooks import TurnDispatcher
 logger = structlog.get_logger(__name__)
 
 _BYTES_PER_SAMPLE = 2
+# Per-turn debug data on transcript lines; kept out of what the final hook sees.
+_DEBUG_KEYS = ("llmCall", "usage")
 
 
 class ClientChannel(Protocol):
@@ -106,6 +108,8 @@ class VoiceSessionRuntime:
         # measured turn would emit a second, inbound-audio based timing.
         self._stage_timings_sent = False
         self._transcript: list[dict] = []
+        # Where the current turn's lines start; a cascade TurnEnded annotates one of them.
+        self._turn_start = 0
         self._closed_reason: str | None = None
         self._turn_index = 0
         # The agent's last finished reply — context the per-turn hook needs, since
@@ -224,7 +228,10 @@ class VoiceSessionRuntime:
                 # whole point of the final workflow is that it sees the finished
                 # transcript.
                 await self._dispatcher.dispatch_final(
-                    transcript=self._transcript,
+                    transcript=[
+                        {k: v for k, v in line.items() if k not in _DEBUG_KEYS}
+                        for line in self._transcript
+                    ],
                     duration_sec=self.duration_sec,
                     end_reason=reason,
                 )
@@ -293,6 +300,7 @@ class VoiceSessionRuntime:
                     self._input_tokens += event.input_tokens or 0
                     self._output_tokens += event.output_tokens or 0
                     self._speech_chars += event.speech_chars or 0
+                    self._attach_turn_record(event)
                 case TurnTimings():
                     self._pending_timings = event
                 case BridgeError():
@@ -316,6 +324,23 @@ class VoiceSessionRuntime:
                 case SessionClosed():
                     self._closed_reason = event.reason
                     return
+
+    def _attach_turn_record(self, event: TurnEnded) -> None:
+        """Put the turn's LLM call and spend on its reply — or, if the brain produced
+        none, on the user line it answered."""
+        lines = self._transcript[self._turn_start :]
+        self._turn_start = len(self._transcript)
+        if event.llm_call is None and event.usage is None:
+            return
+        target = next((line for line in reversed(lines) if line["role"] == "assistant"), None)
+        if target is None:
+            target = next((line for line in reversed(lines) if line["role"] == "user"), None)
+        if target is None:
+            return
+        if event.llm_call is not None:
+            target["llmCall"] = event.llm_call
+        if event.usage is not None:
+            target["usage"] = event.usage
 
     def _track_gap(self, now: float, chunk_ms: int) -> None:
         if self._play_end is not None and now > self._play_end:

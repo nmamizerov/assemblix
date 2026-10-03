@@ -346,6 +346,7 @@ class VoiceSessionService:
         tts_cost_usd: Decimal = Decimal(0),
         tts_uses_system_key: bool = False,
         extra_costs: Sequence[tuple[Decimal, bool]] = (),
+        call_details: dict | None = None,
     ) -> None:
         """Write everything the call produced, and bill it, in one go."""
         session = await self._sessions.get_by_id(voice_session_id)
@@ -371,6 +372,15 @@ class VoiceSessionService:
             extra_costs=extra_costs,
         )
         credits = fee_credits + margin_credits
+        if call_details is not None:
+            call_details = {
+                **call_details,
+                "costs": {
+                    **call_details.get("costs", {}),
+                    "platformFeeCredits": float(fee_credits),
+                    "providerMarginCredits": float(margin_credits),
+                },
+            }
 
         # What the minutes cost at the provider. On a system key that is our cost and is
         # already priced into the margin credits; on the caller's own key it is what they
@@ -399,6 +409,7 @@ class VoiceSessionService:
             input_tokens=input_tokens,
             output_tokens=output_tokens,
             end_reason=reason,
+            call_details=call_details,
         )
 
         agent = await self._voice_agents.get_by_id(session.voice_agent_id)
@@ -620,6 +631,7 @@ async def close_voice_session(
     tts_cost_usd: Decimal = Decimal(0),
     tts_uses_system_key: bool = False,
     extra_costs: Sequence[tuple[Decimal, bool]] = (),
+    call_details: dict | None = None,
 ) -> None:
     async with _voice_session_service() as service:
         await service.close_session(
@@ -634,4 +646,5 @@ async def close_voice_session(
             tts_cost_usd=tts_cost_usd,
             tts_uses_system_key=tts_uses_system_key,
             extra_costs=extra_costs,
+            call_details=call_details,
         )

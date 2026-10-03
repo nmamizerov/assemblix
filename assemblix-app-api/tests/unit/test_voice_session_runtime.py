@@ -698,3 +698,62 @@ async def test_the_longest_silence_inside_a_cascade_reply_is_stored_on_its_timin
     # Assert
     assistant = [line for line in runtime.transcript if line["role"] == "assistant"]
     assert assistant[0]["timings"]["ttsGapMaxMs"] == 500
+
+
+async def test_each_turn_record_lands_on_its_own_reply_and_stays_out_of_the_final_hook() -> None:
+    """A cascade turn's LLM call and spend are stored on the reply that turn produced;
+    a turn whose brain failed without text keeps them on the user line it answered.
+    The final hook still sees plain transcript lines."""
+    # Arrange
+    first = {"response": "Здравствуйте", "outcome": "ok"}
+    failed = {"response": "", "outcome": "brain_failed", "error": "down"}
+    third = {"response": "Пока", "outcome": "ok"}
+    script = [
+        UserTranscript(text="привет", is_final=True),
+        AgentTranscript(text="Здравствуйте", is_final=True),
+        TurnEnded(llm_call=first, usage={"llmCostUsd": 0.1}),
+        UserTranscript(text="алло", is_final=True),
+        TurnEnded(llm_call=failed, usage={"llmCostUsd": 0.0}),
+        UserTranscript(text="до свидания", is_final=True),
+        AgentTranscript(text="Пока", is_final=True),
+        TurnEnded(llm_call=third, usage={"llmCostUsd": 0.3}),
+        SessionClosed(reason="done"),
+    ]
+    runs: list[dict] = []
+
+    async def runner(**kwargs: Any) -> None:
+        runs.append(kwargs)
+
+    runtime = VoiceSessionRuntime(
+        bridge=_FakeBridge(script),
+        client=_FakeClient([]),
+        instructions="i",
+        voice="",
+        language="ru",
+        params={},
+        max_session_sec=5,
+        dispatcher=TurnDispatcher(
+            voice_session_id=uuid4(),
+            turn_workflow_id=None,
+            final_workflow_id="22222222-2222-2222-2222-222222222222",
+            runner=runner,
+        ),
+    )
+
+    # Act
+    await runtime.run()
+
+    # Assert
+    lines = runtime.transcript
+    assert lines[1] == {
+        "role": "assistant",
+        "text": "Здравствуйте",
+        "llmCall": first,
+        "usage": {"llmCostUsd": 0.1},
+    }
+    assert lines[2]["llmCall"] == failed and lines[2]["role"] == "user"
+    assert lines[4]["llmCall"] == third and lines[4]["usage"] == {"llmCostUsd": 0.3}
+    assert "llmCall" not in lines[0] and "llmCall" not in lines[3]
+    hooked = runs[0]["input_data"]["voice"]["transcript"]
+    assert all("llmCall" not in line and "usage" not in line for line in hooked)
+    assert [line["text"] for line in hooked] == [line["text"] for line in lines]
