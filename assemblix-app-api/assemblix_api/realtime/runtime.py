@@ -26,6 +26,7 @@ from assemblix_api.external.voice.conversation.contract import (
     SessionClosed,
     SpeechStarted,
     TurnEnded,
+    TurnTimings,
     UserTranscript,
 )
 from assemblix_api.realtime.hooks import TurnDispatcher
@@ -88,6 +89,8 @@ class VoiceSessionRuntime:
         # "no active response found" — a real error event for a non-event.
         self._agent_speaking = False
         self._last_inbound_audio_at: float | None = None
+        self._pending_timings: TurnTimings | None = None
+        self._reply_timings: dict[str, int] | None = None
         self._transcript: list[dict] = []
         self._closed_reason: str | None = None
         self._turn_index = 0
@@ -249,12 +252,15 @@ class VoiceSessionRuntime:
                     self._agent_speaking = False
                     self._played_ms = 0
                 case TurnEnded():
+                    self._pending_timings = None
                     await self._client.end_of_utterance()
                     self._agent_speaking = False
                     self._played_ms = 0
                     self._input_tokens += event.input_tokens or 0
                     self._output_tokens += event.output_tokens or 0
                     self._speech_chars += event.speech_chars or 0
+                case TurnTimings():
+                    self._pending_timings = event
                 case BridgeError():
                     logger.warning(
                         "voice.session.bridge_error",
@@ -278,7 +284,25 @@ class VoiceSessionRuntime:
                     return
 
     async def _emit_timings(self) -> None:
-        """One honest end-to-end number: last inbound audio → first audio back."""
+        """Last inbound audio → first audio back; per stage when the bridge measured them."""
+        stages = self._pending_timings
+        if stages is not None:
+            self._pending_timings = None
+            self._last_inbound_audio_at = None
+            total = int((time.monotonic() - stages.speech_ended_at) * 1000)
+            timings = {
+                "eouMs": stages.eou_ms,
+                "sttFinalMs": stages.stt_final_ms,
+                "brainFirstTokenMs": stages.brain_first_token_ms,
+                "ttsFirstAudioMs": max(
+                    0, total - stages.eou_ms - stages.stt_final_ms - stages.brain_first_token_ms
+                ),
+                "totalMs": total,
+            }
+            self._reply_timings = timings
+            logger.info("voice.cascade.turn", **timings)
+            await self._client.send_json({"type": "turn.timings", **timings})
+            return
         if self._last_inbound_audio_at is None:
             return
         first_audio_ms = int((time.monotonic() - self._last_inbound_audio_at) * 1000)
@@ -287,7 +311,11 @@ class VoiceSessionRuntime:
 
     async def _on_transcript(self, role: str, text: str, is_final: bool) -> None:
         if is_final:
-            self._transcript.append({"role": role, "text": text})
+            line: dict = {"role": role, "text": text}
+            if role == "assistant" and self._reply_timings is not None:
+                line["timings"] = self._reply_timings
+                self._reply_timings = None
+            self._transcript.append(line)
             if role == "assistant":
                 self._last_agent_text = text
             elif self._dispatcher is not None:

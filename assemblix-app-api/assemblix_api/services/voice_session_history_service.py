@@ -20,6 +20,7 @@ from assemblix_api.dto.responses.voice_session import (
     VoiceSessionResponse,
     VoiceSessionTranscriptLine,
 )
+from assemblix_api.realtime.timings import summarize_timings
 
 
 class VoiceSessionHistoryService:
@@ -63,6 +64,7 @@ class VoiceSessionHistoryService:
             transcript=[VoiceSessionTranscriptLine(**line) for line in session.transcript],
             input_tokens=session.input_tokens,
             output_tokens=session.output_tokens,
+            timing_summary=summarize_timings(session.transcript),
             executions=[
                 VoiceSessionExecutionResponse(
                     id=execution.id,
