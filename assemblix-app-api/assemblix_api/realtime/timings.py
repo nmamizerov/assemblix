@@ -13,6 +13,8 @@ STAGES = (
     "ttsGapMaxMs",
     "ttsLeadingSilenceMs",
     "ttsFirstAudibleMs",
+    "llmOverlapMs",
+    "smartTurnAsks",
 )
 
 

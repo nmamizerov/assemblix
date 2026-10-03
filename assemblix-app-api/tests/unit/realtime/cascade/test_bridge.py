@@ -4,6 +4,7 @@ from decimal import Decimal
 from typing import Any
 
 import pytest
+from structlog.testing import capture_logs
 
 from assemblix_api.external.voice.conversation.contract import (
     AgentTranscript,
@@ -17,7 +18,13 @@ from assemblix_api.external.voice.stt_stream import SttResult, SttUnavailable
 from assemblix_api.realtime.cascade.brain import BrainUsage, OnDelta, PromptBrain, Turn
 from assemblix_api.realtime.cascade.bridge import CascadeBridge, heard_prefix
 from assemblix_api.realtime.cascade.setup import CascadeMeter
-from assemblix_api.realtime.cascade.turn import EndOfTurn, SpeechStart, TurnUpdate
+from assemblix_api.realtime.cascade.turn import (
+    EndOfTurn,
+    PauseCancelled,
+    PauseStart,
+    SpeechStart,
+    TurnUpdate,
+)
 from assemblix_api.schemas.execution import AgentExecutionResult
 
 
@@ -50,11 +57,16 @@ class _Stt:
 
 
 class _Detector:
-    """Each pushed chunk is a script key: b"S" start, b"E" end of turn, else plain audio."""
+    """Each pushed chunk is a script key: b"S" start, b"P" pause start, b"C" pause
+    cancelled, b"E" end of turn, else plain audio."""
 
     async def push(self, pcm: bytes) -> TurnUpdate:
         if pcm == b"S":
             return TurnUpdate(stt_audio=b"speech", signals=[SpeechStart()])
+        if pcm == b"P":
+            return TurnUpdate(stt_audio=b"pause", signals=[PauseStart()])
+        if pcm == b"C":
+            return TurnUpdate(stt_audio=b"more", signals=[PauseCancelled()])
         if pcm == b"E":
             return TurnUpdate(stt_audio=b"tail", signals=[EndOfTurn(eou_ms=224)])
         return TurnUpdate(stt_audio=pcm)
@@ -608,4 +620,157 @@ async def test_a_brain_failure_records_the_outcome_and_error() -> None:
     assert ended.llm_call["error"] == "provider down"
     assert ended.llm_call["ttftMs"] is None
     assert ended.llm_call["messages"] == [{"role": "user", "content": "алло"}]
+    await bridge.close()
+
+
+class _PacedBrain(_Brain):
+    """Waits ``delay`` before the first delta."""
+
+    def __init__(self, deltas: list[str], delay: float, gate: asyncio.Event | None = None) -> None:
+        super().__init__(deltas, gate)
+        self.delay = delay
+
+    async def reply(
+        self, *, history: Sequence[Turn], user_text: str, on_delta: OnDelta
+    ) -> BrainUsage:
+        await asyncio.sleep(self.delay)
+        return await super().reply(history=history, user_text=user_text, on_delta=on_delta)
+
+
+async def test_a_speculative_reply_is_held_until_the_end_of_turn_is_confirmed() -> None:
+    gate = asyncio.Event()
+    brain = _PacedBrain(["Здравствуйте", "!"], delay=0.05, gate=gate)
+    bridge, stt, _, seen = await _bridge(brain)
+    stt.finals = ["добрый день"]
+
+    await bridge.send_audio(b"S")
+    await bridge.send_audio(b"P")
+    await _settle()
+    assert [type(e).__name__ for e in seen] == ["SpeechStarted"]
+    assert brain.calls[0][1] == "добрый день"
+
+    await bridge.send_audio(b"E")
+    await asyncio.sleep(0)
+    gate.set()
+    await _settle()
+
+    assert [type(e).__name__ for e in seen] == [
+        "SpeechStarted",
+        "UserTranscript",
+        "TurnTimings",
+        "AgentTranscript",
+        "AgentTranscript",
+        "AgentTranscript",
+        "TurnEnded",
+    ]
+    assert seen[1] == UserTranscript(text="добрый день", is_final=True)
+    timings = seen[2]
+    assert isinstance(timings, TurnTimings)
+    assert timings.speculative and timings.eou_ms == 224
+    assert (timings.stt_final_ms, timings.brain_first_token_ms) == (0, 0)
+    assert timings.llm_overlap_ms >= 40
+    assert seen[3] == AgentTranscript(text="Здравствуйте", is_final=False)
+    assert seen[5] == AgentTranscript(text="Здравствуйте!", is_final=True)
+    assert stt.finalized == 1
+    await bridge.close()
+
+
+async def test_a_confirmation_after_the_reply_finished_emits_it_at_once() -> None:
+    brain = _Brain(["Здравствуйте", "!"])
+    bridge, stt, meter, seen = await _bridge(brain)
+    stt.finals = ["добрый день"]
+    await bridge.send_audio(b"S")
+    await bridge.send_audio(b"P")
+    await _settle()
+    assert [type(e).__name__ for e in seen] == ["SpeechStarted"]
+
+    await bridge.send_audio(b"E")
+    for _ in range(3):
+        await asyncio.sleep(0)
+
+    assert [type(e).__name__ for e in seen] == [
+        "SpeechStarted",
+        "UserTranscript",
+        "TurnTimings",
+        "AgentTranscript",
+        "AgentTranscript",
+        "TurnEnded",
+    ]
+    assert seen[3] == AgentTranscript(text="Здравствуйте!", is_final=False)
+    assert seen[4] == AgentTranscript(text="Здравствуйте!", is_final=True)
+    assert meter.brain_cost_usd == Decimal("0.001")
+    await bridge.close()
+
+
+async def test_resumed_speech_discards_the_speculative_reply_and_merges_the_text() -> None:
+    brain = _Brain(["Понял."])
+    bridge, stt, meter, seen = await _bridge(brain)
+    stt.finals = ["мне нужно", "лекарство от кашля"]
+    await bridge.send_audio(b"S")
+    await bridge.send_audio(b"P")
+    await _settle()
+
+    with capture_logs() as logs:
+        await bridge.send_audio(b"C")
+    await _settle()
+    assert [type(e).__name__ for e in seen] == ["SpeechStarted"]
+    [record] = [log for log in logs if log["event"] == "voice.cascade.brain_call"]
+    assert record["outcome"] == "speculative_discarded"
+    assert meter.brain_cost_usd == Decimal("0.001")
+
+    await bridge.send_audio(b"E")
+    await _settle()
+
+    assert [call[1] for call in brain.calls] == ["мне нужно", "мне нужно лекарство от кашля"]
+    finals = [e for e in seen if isinstance(e, UserTranscript) and e.is_final]
+    assert finals == [UserTranscript(text="мне нужно лекарство от кашля", is_final=True)]
+    [ended] = _turn_ends(seen)
+    assert ended.llm_call is not None and ended.llm_call["outcome"] == "ok"
+    assert meter.brain_cost_usd == Decimal("0.002")
+    await bridge.close()
+
+
+async def test_a_discarded_reply_still_streaming_is_cancelled_unseen() -> None:
+    gate = asyncio.Event()
+    brain = _Brain(["Конечно", ", давайте"], gate=gate)
+    bridge, stt, _, seen = await _bridge(brain)
+    stt.finals = ["есть сироп"]
+    await bridge.send_audio(b"S")
+    await bridge.send_audio(b"P")
+    await _settle()
+
+    await bridge.send_audio(b"C")
+    gate.set()
+    await _settle()
+
+    assert [type(e).__name__ for e in seen] == ["SpeechStarted"]
+    await bridge.close()
+
+
+async def test_a_late_final_of_a_discarded_speculation_does_not_leak() -> None:
+    class _LateStt(_Stt):
+        async def finalize(self) -> None:
+            # The discarded finalize answers while the next one is already waiting.
+            delay = {1: 0.1, 2: 0.15}.get(self.finalized + 1, 0.0)
+            self.finalized += 1
+            asyncio.get_running_loop().call_later(
+                delay, self.queue.put_nowait, SttResult(self.finals.pop(0), True)
+            )
+
+    stt = _LateStt()
+    stt.finals = ["мне нужно", "дальше", "ещё"]
+    brain = _Brain(["Ок"])
+    bridge, _, _, _ = await _bridge(brain, stt)
+
+    await bridge.send_audio(b"S")
+    await bridge.send_audio(b"P")
+    await asyncio.sleep(0.01)
+    await bridge.send_audio(b"C")
+    await bridge.send_audio(b"E")
+    await _settle()
+    await bridge.send_audio(b"S")
+    await bridge.send_audio(b"E")
+    await _settle()
+
+    assert [call[1] for call in brain.calls] == ["мне нужно дальше", "ещё"]
     await bridge.close()

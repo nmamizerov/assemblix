@@ -516,6 +516,37 @@ async def test_cascade_timings_are_closed_at_first_audio_and_stored_on_the_reply
     assert "timings" not in runtime.transcript[0]
 
 
+async def test_speculative_turn_details_are_stored_on_the_reply_timings() -> None:
+    script = [
+        UserTranscript(text="привет", is_final=True),
+        TurnTimings(
+            speech_ended_at=time.monotonic() - 0.5,
+            eou_ms=544,
+            stt_final_ms=0,
+            brain_first_token_ms=0,
+            smart_turn_prob=0.4219,
+            smart_turn_asks=3,
+            speculative=True,
+            llm_overlap_ms=310,
+        ),
+        AgentTranscript(text="Здравствуйте", is_final=False),
+        AudioDelta(pcm=b"\x00" * 640),
+        AgentTranscript(text="Здравствуйте", is_final=True),
+        TurnEnded(),
+        SessionClosed(reason="done"),
+    ]
+    client = _FakeClient([])
+    runtime = _runtime(_FakeBridge(script), client)
+
+    await runtime.run()
+
+    [line] = [line for line in runtime.transcript if line["role"] == "assistant"]
+    assert line["timings"]["smartTurnProb"] == 0.422
+    assert line["timings"]["smartTurnAsks"] == 3
+    assert line["timings"]["speculative"] is True
+    assert line["timings"]["llmOverlapMs"] == 310
+
+
 async def test_a_cascade_turn_reports_its_timings_once_despite_a_live_microphone() -> None:
     """The browser streams mic audio throughout the reply; later audio packets of a
     measured turn must not emit a second, inbound-audio based timing."""
