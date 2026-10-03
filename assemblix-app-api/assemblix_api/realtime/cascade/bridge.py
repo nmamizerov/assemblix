@@ -60,6 +60,9 @@ async def _cancel_and_wait(task: asyncio.Future) -> None:
 class CascadeBridge:
     input_sample_rate = 16000
     output_sample_rate = 16000
+    # A reply finishes long before the caller has heard it; interrupt() after
+    # TurnEnded still truncates it to what was heard.
+    accepts_late_interrupt = True
 
     def __init__(
         self,

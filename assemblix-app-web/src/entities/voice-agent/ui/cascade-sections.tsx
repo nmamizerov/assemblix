@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import { Input } from "@/shared/ui/input";
@@ -17,9 +17,11 @@ import {
 } from "@/entities/credential";
 import { useGetServerConfigQuery } from "@/entities/config";
 import {
-  useGetLLMProviderModelsQuery,
+  DynamicParamForm,
+  useGetLLMProviderSchemaQuery,
   useGetLLMProvidersQuery,
 } from "@/entities/llm-provider";
+import { brainParamSchema, voiceBrainDefaults } from "../lib/brain-params";
 import {
   applyBrainProviderChange,
   BRAIN_PROVIDERS,
@@ -142,11 +144,17 @@ export const CascadeBrainSection = ({
   const providers = allProviders.filter((provider) =>
     BRAIN_PROVIDERS.includes(provider.name)
   );
-  const { data: models = [], isLoading: isLoadingModels } =
-    useGetLLMProviderModelsQuery(
+  const { data: providerSchema, isLoading: isLoadingModels } =
+    useGetLLMProviderSchemaQuery(
       { providerName: brain.provider },
       { skip: !brain.provider }
     );
+  const models = useMemo(() => providerSchema?.models ?? [], [providerSchema]);
+  const paramSchema = useMemo(
+    () => brainParamSchema(providerSchema?.paramSchema ?? []),
+    [providerSchema]
+  );
+  const selectedModel = models.find((model) => model.id === brain.model);
   const credentialType = getCredentialTypeForProvider(brain.provider);
 
   const handleBrain = (patch: Partial<CascadeBrainConfig>) =>
@@ -154,6 +162,20 @@ export const CascadeBrainSection = ({
       ...draft,
       cascade: { ...draft.cascade, brain: { ...brain, ...patch } },
     });
+
+  // Params are model-specific, so a new model starts from the voice defaults.
+  const handleModel = (modelId: string) => {
+    if (modelId === brain.model) return;
+    const model = models.find((candidate) => candidate.id === modelId);
+    handleBrain({ model: modelId, params: voiceBrainDefaults(paramSchema, model) });
+  };
+
+  const handleParam = (name: string, value: unknown) => {
+    const params = { ...brain.params };
+    if (value === undefined) delete params[name];
+    else params[name] = value;
+    handleBrain({ params });
+  };
 
   return (
     <Section
@@ -188,7 +210,7 @@ export const CascadeBrainSection = ({
           <Label>{t("voiceAgents.fields.model")}</Label>
           <Select
             value={brain.model}
-            onValueChange={(model) => handleBrain({ model })}
+            onValueChange={handleModel}
             disabled={!brain.provider || isLoadingModels}
           >
             <SelectTrigger
@@ -243,6 +265,21 @@ export const CascadeBrainSection = ({
           </p>
           <FieldError error={errors.historyTurns} />
         </div>
+        {selectedModel && paramSchema.length > 0 && (
+          <div className="space-y-2 sm:col-span-2">
+            <DynamicParamForm
+              paramSchema={paramSchema}
+              model={selectedModel}
+              values={brain.params}
+              onChange={handleParam}
+              heading={t("voiceAgents.fields.brainParams")}
+              advancedToggleLabel={t("voiceAgents.fields.advancedBrainParams")}
+            />
+            <p className="text-xs text-muted-foreground">
+              {t("voiceAgents.fields.brainParamsCaption")}
+            </p>
+          </div>
+        )}
       </div>
     </Section>
   );
