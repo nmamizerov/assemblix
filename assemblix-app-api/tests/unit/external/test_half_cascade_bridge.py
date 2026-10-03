@@ -301,3 +301,30 @@ async def test_one_channel_is_opened_per_call_and_closed_with_it(
     assert len(opened) == 1
     assert received == [opened[0], opened[0]]
     assert opened[0].closed is True
+
+
+async def test_the_channel_is_closed_when_the_inner_connect_fails(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from assemblix_api.external.voice import speech_out as speech_out_module
+
+    class _Channel:
+        closes = 0
+
+        async def close(self) -> None:
+            self.closes += 1
+
+    channel = _Channel()
+    monkeypatch.setattr(speech_out_module, "open_channel", lambda _out: channel)
+
+    class _FailingInner(_FakeInner):
+        async def connect(self, **kwargs: Any) -> None:
+            raise RuntimeError("connect failed")
+
+    bridge = _bridge(_FailingInner([]))
+
+    with pytest.raises(RuntimeError, match="connect failed"):
+        await bridge.connect(instructions="", voice="", language="ru", params={})
+    await bridge.close()
+
+    assert channel.closes == 1

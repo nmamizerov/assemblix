@@ -77,13 +77,17 @@ class HalfCascadeBridge:
         text_output: bool = False,
     ) -> None:
         self._channel = speech_out_module.open_channel(self._speech_out)
-        await self._inner.connect(
-            instructions=instructions,
-            voice=voice,
-            language=language,
-            params=params,
-            text_output=True,
-        )
+        try:
+            await self._inner.connect(
+                instructions=instructions,
+                voice=voice,
+                language=language,
+                params=params,
+                text_output=True,
+            )
+        except BaseException:
+            await self._close_channel()
+            raise
 
     async def send_audio(self, pcm: bytes) -> None:
         await self._inner.send_audio(pcm)
@@ -187,6 +191,9 @@ class HalfCascadeBridge:
     async def close(self) -> None:
         await self._abort_speech()
         await self._inner.close()
+        await self._close_channel()
+
+    async def _close_channel(self) -> None:
         channel, self._channel = self._channel, None
         if channel is not None:
             with contextlib.suppress(Exception):
