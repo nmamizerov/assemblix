@@ -85,6 +85,7 @@ def _setup(avatar: Any) -> SimpleNamespace:
         cost_per_minute=0.0,
         uses_system_key=False,
         avatar=avatar,
+        cascade=None,
     )
 
 

@@ -10,7 +10,7 @@ are the only ones that ever hold one.
 
 from __future__ import annotations
 
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Sequence
 from contextlib import asynccontextmanager
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
@@ -41,6 +41,7 @@ from assemblix_api.database.repositories.organization_user_repository import (
 from assemblix_api.database.repositories.project_repository import ProjectRepository
 from assemblix_api.database.repositories.voice_agent_repository import VoiceAgentRepository
 from assemblix_api.database.repositories.voice_session_repository import VoiceSessionRepository
+from assemblix_api.enums import AgentProvider
 from assemblix_api.external.voice import speech_out
 from assemblix_api.external.voice.catalog.registry import (
     find_voice_model,
@@ -48,12 +49,17 @@ from assemblix_api.external.voice.catalog.registry import (
     supports_text_output,
 )
 from assemblix_api.external.voice.speech_out import SpeechOutput
+from assemblix_api.realtime.cascade.models import load_turn_models
+from assemblix_api.realtime.cascade.setup import CascadeSetup
 from assemblix_api.schemas.voice_agent import VoiceAgentConfig
 from assemblix_api.services.avatar_service import ResolvedAvatar, resolve_avatar
 from assemblix_api.services.credentials_service import CredentialsService
 from assemblix_api.services.knowledge_base_service import KnowledgeBaseService
 
 logger = structlog.get_logger(__name__)
+
+# Catalog ids that price each streaming STT provider.
+_STT_CATALOG_IDS = {"yandex": "yandex-stt-v3-stream"}
 
 # Credit columns are Numeric(20, 8); anything finer is noise the column cannot hold.
 _CREDITS_QUANTUM = Decimal("0.00000001")
@@ -116,6 +122,7 @@ class VoiceSessionSetup:
     uses_system_key: bool
     # The face of an avatar call, resolved with its key. None for a plain voice call.
     avatar: ResolvedAvatar | None = None
+    cascade: CascadeSetup | None = None
 
 
 class VoiceSessionService:
@@ -153,14 +160,6 @@ class VoiceSessionService:
             )
 
         config = VoiceAgentConfig(**agent.config)
-        if config.mode == "cascade":
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Cascade agents cannot take calls yet",
-            )
-        voice = config.voice
-        assert voice is not None  # guaranteed by VoiceAgentConfig for realtime
-
         # Resolved for its side effect: a project with no live organisation cannot
         # host a call, and failing here beats failing once audio is flowing.
         await self._organization_for_project(project_id)
@@ -170,6 +169,11 @@ class VoiceSessionService:
             knowledge = await self._knowledge_bases.get_combined_content(
                 [UUID(kb_id) for kb_id in config.knowledge_base_ids]
             )
+
+        if config.mode == "cascade":
+            return await self._build_cascade_setup(config, knowledge, project_id)
+        voice = config.voice
+        assert voice is not None  # guaranteed by VoiceAgentConfig for realtime
 
         api_key, uses_system_key = await self._credentials.get_voice_api_key_with_fallback(
             credentials_id=UUID(voice.credential_id) if voice.credential_id else None,
@@ -196,14 +200,6 @@ class VoiceSessionService:
                 config.tts, project_id=project_id, credentials=self._credentials
             )
 
-        avatar = (
-            await resolve_avatar(
-                config.avatar, project_id=project_id, credentials=self._credentials
-            )
-            if config.avatar is not None
-            else None
-        )
-
         catalog_entry = find_voice_model(voice.provider, voice.model)
 
         return VoiceSessionSetup(
@@ -220,7 +216,73 @@ class VoiceSessionService:
             final_workflow_id=config.final_workflow_id,
             cost_per_minute=(catalog_entry.cost_per_minute or 0.0) if catalog_entry else 0.0,
             uses_system_key=uses_system_key,
-            avatar=avatar,
+            avatar=await self._resolve_avatar(config, project_id),
+        )
+
+    async def _resolve_avatar(
+        self, config: VoiceAgentConfig, project_id: UUID
+    ) -> ResolvedAvatar | None:
+        if config.avatar is None:
+            return None
+        return await resolve_avatar(
+            config.avatar, project_id=project_id, credentials=self._credentials
+        )
+
+    async def _build_cascade_setup(
+        self, config: VoiceAgentConfig, knowledge: str, project_id: UUID
+    ) -> VoiceSessionSetup:
+        cascade, tts_config = config.cascade, config.tts
+        assert cascade is not None and tts_config is not None  # guaranteed by the schema
+        if not has_realtime_route(tts_config.provider, tts_config.model):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Voice model {tts_config.model} has no streaming route",
+            )
+        load_turn_models()
+        tts = await speech_out.resolve(
+            tts_config, project_id=project_id, credentials=self._credentials
+        )
+        stt_key, stt_system = await self._credentials.get_voice_api_key_with_fallback(
+            credentials_id=UUID(cascade.stt.credential_id) if cascade.stt.credential_id else None,
+            project_id=project_id,
+            voice_provider=cascade.stt.provider,
+        )
+        brain = cascade.brain
+        brain_key, brain_system = await self._credentials.get_api_key_with_fallback(
+            credentials_id=UUID(brain.credential_id) if brain.credential_id else None,
+            project_id=project_id,
+            provider=AgentProvider(brain.provider),
+        )
+        stt_entry = find_voice_model(cascade.stt.provider, _STT_CATALOG_IDS[cascade.stt.provider])
+        return VoiceSessionSetup(
+            instructions=self._build_instructions(config, knowledge),
+            voice="",
+            language=config.language,
+            params=config.params,
+            provider="cascade",
+            model=brain.model,
+            api_key="",
+            api_base=None,
+            tts=tts,
+            turn_workflow_id=config.turn_workflow_id,
+            final_workflow_id=config.final_workflow_id,
+            cost_per_minute=0.0,
+            uses_system_key=False,
+            avatar=await self._resolve_avatar(config, project_id),
+            cascade=CascadeSetup(
+                stt_provider=cascade.stt.provider,
+                stt_model=cascade.stt.model,
+                stt_api_key=stt_key,
+                stt_uses_system_key=stt_system,
+                stt_cost_per_minute=(stt_entry.cost_per_minute or 0.0) if stt_entry else 0.0,
+                turn=cascade.turn,
+                brain_provider=AgentProvider(brain.provider).value,
+                brain_model=brain.model,
+                brain_api_key=brain_key,
+                brain_uses_system_key=brain_system,
+                brain_params=brain.params,
+                history_turns=brain.history_turns,
+            ),
         )
 
     async def open_session(
@@ -283,6 +345,7 @@ class VoiceSessionService:
         uses_system_key: bool,
         tts_cost_usd: Decimal = Decimal(0),
         tts_uses_system_key: bool = False,
+        extra_costs: Sequence[tuple[Decimal, bool]] = (),
     ) -> None:
         """Write everything the call produced, and bill it, in one go."""
         session = await self._sessions.get_by_id(voice_session_id)
@@ -305,6 +368,7 @@ class VoiceSessionService:
             uses_system_key=uses_system_key,
             tts_cost_usd=tts_cost_usd,
             tts_uses_system_key=tts_uses_system_key,
+            extra_costs=extra_costs,
         )
         credits = fee_credits + margin_credits
 
@@ -317,6 +381,7 @@ class VoiceSessionService:
         for spend, on_system_key in (
             (minutes * Decimal(str(cost_per_minute)), uses_system_key),
             (tts_cost_usd, tts_uses_system_key),
+            *extra_costs,
         ):
             if on_system_key:
                 provider_cost_usd += spend
@@ -467,6 +532,7 @@ def compute_session_credits(
     uses_system_key: bool,
     tts_cost_usd: Decimal = Decimal(0),
     tts_uses_system_key: bool = False,
+    extra_costs: Sequence[tuple[Decimal, bool]] = (),
 ) -> tuple[Decimal, Decimal]:
     """Return (platform_fee_credits, provider_margin_credits) for a finished call.
 
@@ -482,6 +548,9 @@ def compute_session_credits(
         provider_usd += minutes * Decimal(str(cost_per_minute))
     if tts_uses_system_key:
         provider_usd += tts_cost_usd
+    for spend, on_system_key in extra_costs:
+        if on_system_key:
+            provider_usd += spend
     margin = credit_config.usd_to_credits(provider_usd, with_margin=True)
     return fee.quantize(_CREDITS_QUANTUM), margin.quantize(_CREDITS_QUANTUM)
 
@@ -550,6 +619,7 @@ async def close_voice_session(
     uses_system_key: bool,
     tts_cost_usd: Decimal = Decimal(0),
     tts_uses_system_key: bool = False,
+    extra_costs: Sequence[tuple[Decimal, bool]] = (),
 ) -> None:
     async with _voice_session_service() as service:
         await service.close_session(
@@ -563,4 +633,5 @@ async def close_voice_session(
             uses_system_key=uses_system_key,
             tts_cost_usd=tts_cost_usd,
             tts_uses_system_key=tts_uses_system_key,
+            extra_costs=extra_costs,
         )
