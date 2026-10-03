@@ -8,6 +8,7 @@ from typing import Any
 
 import pytest
 
+from assemblix_api.external.voice import speech_out
 from assemblix_api.external.voice.conversation.contract import (
     AgentTranscript,
     AudioDelta,
@@ -734,3 +735,39 @@ async def test_an_abort_cancelled_mid_way_still_closes_the_flushing_session() ->
     # Assert
     assert abort.cancelled()
     assert _FakeTTS.instances[0].aborted is True
+
+
+async def test_the_turn_record_survives_and_gains_the_tts_spend() -> None:
+    """The cascade's LLM call record passes through unchanged, and the turn's spend
+    gains what speaking the reply cost."""
+    # Arrange
+    record = {"model": "gpt-4.1-mini", "outcome": "ok", "messages": []}
+    inner = _FakeInner(
+        [
+            AgentTranscript(text="Добрый день", is_final=False),
+            AgentTranscript(text="Добрый день", is_final=True),
+            TurnEnded(
+                input_tokens=10,
+                output_tokens=3,
+                llm_call=record,
+                usage={"sttSeconds": 1.5, "llmCostUsd": 0.001},
+            ),
+            SessionClosed(reason="closed"),
+        ]
+    )
+    bridge = _bridge(inner)
+
+    # Act
+    await bridge.connect(instructions="i", voice="", language="ru", params={})
+    seen = [event async for event in bridge.events()]
+    await bridge.close()
+
+    # Assert
+    turn = next(e for e in seen if isinstance(e, TurnEnded))
+    chars = len("Добрый день")
+    assert turn.llm_call == record
+    assert turn.speech_chars == chars
+    assert turn.usage is not None
+    assert turn.usage["sttSeconds"] == 1.5 and turn.usage["llmCostUsd"] == 0.001
+    assert turn.usage["ttsChars"] == chars
+    assert turn.usage["ttsCostUsd"] == float(speech_out.cost_usd(_target(), chars))

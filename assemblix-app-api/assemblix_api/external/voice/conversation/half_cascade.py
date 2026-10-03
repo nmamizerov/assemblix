@@ -13,6 +13,7 @@ from __future__ import annotations
 import asyncio
 import contextlib
 from collections.abc import AsyncIterator, Awaitable, Callable
+from dataclasses import replace
 from functools import partial
 from typing import Any
 
@@ -167,12 +168,15 @@ class HalfCascadeBridge:
 
     async def _end_turn(self, event: TurnEnded) -> None:
         chars, self._turn_chars = self._turn_chars, 0
+        usage = event.usage
+        if usage is not None:
+            try:
+                tts_cost: float | None = float(speech_out_module.cost_usd(self._speech_out, chars))
+            except ValueError:
+                tts_cost = None
+            usage = {**usage, "ttsChars": chars, "ttsCostUsd": tts_cost}
         await self._queue.put(
-            TurnEnded(
-                input_tokens=event.input_tokens,
-                output_tokens=event.output_tokens,
-                speech_chars=chars or None,
-            )
+            replace(event, speech_chars=chars or None, usage=usage),
         )
 
     async def _in_order(self, step: Callable[[], Awaitable[None]]) -> None:

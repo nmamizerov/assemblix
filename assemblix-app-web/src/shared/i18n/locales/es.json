@@ -1588,6 +1588,43 @@
       "ttsFirstAudioMs": "TTS",
       "totalMs": "Total",
       "ttsGapMaxMs": "Pausa máx."
+    },
+    "llm": {
+      "title": "Llamada al LLM",
+      "model": "Modelo",
+      "effectiveModel": "Respondió",
+      "tokens": "Tokens",
+      "cached": "Entrada en caché",
+      "cost": "Coste",
+      "ttft": "Primer token",
+      "duration": "Duración",
+      "outcomeLabel": "Resultado",
+      "params": "Parámetros",
+      "messages_one": "{{count}} mensaje enviado",
+      "messages_other": "{{count}} mensajes enviados",
+      "systemRef": "Instrucciones del sistema: iguales en todos los turnos, se muestran sobre la transcripción",
+      "roleUser": "Usuario",
+      "roleAssistant": "Asistente",
+      "response": "Respuesta",
+      "instructions": "Instrucciones del sistema",
+      "historyTurns_one": "historial: {{count}} mensaje",
+      "historyTurns_other": "historial: {{count}} mensajes",
+      "chipStt": "STT",
+      "chipLlm": "LLM",
+      "chipTts": "TTS",
+      "sttEstimateHint": "Estimación: {{seconds}} s de audio en este turno. El STT se factura por flujo en bloques de 15 segundos.",
+      "ttsCharsHint": "{{chars}} caracteres sintetizados",
+      "seconds": "{{seconds}} s",
+      "chars": "{{chars}} car.",
+      "providersTotal": "Proveedores",
+      "platformFee": "Tarifa de la plataforma",
+      "marginCredits": "+ {{credits}} por claves del sistema",
+      "outcome": {
+        "ok": "Correcto",
+        "cancelled": "Interrumpido",
+        "brain_timeout": "Tiempo agotado",
+        "brain_failed": "Error"
+      }
     }
   }
 }

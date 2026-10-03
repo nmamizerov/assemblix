@@ -45,7 +45,7 @@ from assemblix_api.dto.responses.voice_session import (
 from assemblix_api.external.avatar.errors import AvatarError
 from assemblix_api.external.voice import speech_out
 from assemblix_api.external.voice.conversation import create_bridge
-from assemblix_api.realtime.cascade.setup import CascadeMeter, cascade_spend
+from assemblix_api.realtime.cascade.setup import CascadeMeter, call_details, cascade_spend
 from assemblix_api.realtime.hooks import TurnDispatcher
 from assemblix_api.realtime.livekit.channel import LiveKitChannel
 from assemblix_api.realtime.livekit.rooms import delete_room
@@ -345,6 +345,19 @@ async def stream_voice_session(websocket: WebSocket, token: str) -> None:
             tts_cost_usd=tts_cost_usd,
             tts_uses_system_key=setup.tts.uses_system_key if setup.tts else False,
             extra_costs=cascade_spend(setup.cascade, meter) if setup.cascade else (),
+            call_details=(
+                call_details(
+                    setup.cascade,
+                    meter,
+                    instructions=setup.instructions,
+                    tts_provider=setup.tts.provider if setup.tts else None,
+                    tts_model=setup.tts.model if setup.tts else None,
+                    tts_chars=runtime.speech_chars,
+                    tts_cost_usd=tts_cost_usd,
+                )
+                if setup.cascade
+                else None
+            ),
         )
         if close_reason is not None:
             with contextlib.suppress(Exception):

@@ -1588,6 +1588,43 @@
       "ttsFirstAudioMs": "TTS",
       "totalMs": "Total",
       "ttsGapMaxMs": "Max gap"
+    },
+    "llm": {
+      "title": "LLM call",
+      "model": "Model",
+      "effectiveModel": "Answered by",
+      "tokens": "Tokens",
+      "cached": "Cached input",
+      "cost": "Cost",
+      "ttft": "First token",
+      "duration": "Duration",
+      "outcomeLabel": "Outcome",
+      "params": "Parameters",
+      "messages_one": "{{count}} message sent",
+      "messages_other": "{{count}} messages sent",
+      "systemRef": "System instructions — the same for every turn, shown above the transcript",
+      "roleUser": "User",
+      "roleAssistant": "Assistant",
+      "response": "Response",
+      "instructions": "System instructions",
+      "historyTurns_one": "history: {{count}} message",
+      "historyTurns_other": "history: {{count}} messages",
+      "chipStt": "STT",
+      "chipLlm": "LLM",
+      "chipTts": "TTS",
+      "sttEstimateHint": "Estimate: {{seconds}} s of audio for this turn. STT is billed per stream in 15-second units.",
+      "ttsCharsHint": "{{chars}} characters synthesized",
+      "seconds": "{{seconds}} s",
+      "chars": "{{chars}} chars",
+      "providersTotal": "Providers",
+      "platformFee": "Platform fee",
+      "marginCredits": "+ {{credits}} usage on system keys",
+      "outcome": {
+        "ok": "OK",
+        "cancelled": "Interrupted",
+        "brain_timeout": "Timed out",
+        "brain_failed": "Failed"
+      }
     }
   }
 }

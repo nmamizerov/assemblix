@@ -213,6 +213,7 @@ class AgentRunner:
                 "effective_model": effective_model,
                 "input_tokens": token_usage.input_tokens,
                 "output_tokens": token_usage.output_tokens,
+                "cached_input_tokens": getattr(usage, "cache_read_tokens", 0) or 0,
             },
             messages=[],  # raw pydantic messages are not exposed (the contract is a list of dict)
             tool_executions=tool_executions,

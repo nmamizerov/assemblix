@@ -24,10 +24,20 @@ class BrainUsage:
     input_tokens: int = 0
     output_tokens: int = 0
     cost_usd: Decimal = Decimal(0)
+    cached_input_tokens: int = 0
+    effective_model: str | None = None
 
 
 class Brain(Protocol):
     async def prepare(self, *, instructions: str) -> None: ...
+
+    def describe(self) -> dict[str, Any]:
+        """Provider, model and params the brain calls the LLM with."""
+        ...
+
+    def conversation(self, history: Sequence[Turn], user_text: str) -> list[dict[str, str]]:
+        """The messages a reply to ``user_text`` sends, system instructions excluded."""
+        ...
 
     async def reply(
         self, *, history: Sequence[Turn], user_text: str, on_delta: OnDelta
@@ -62,18 +72,24 @@ class PromptBrain:
             self._provider, self._model_name, self._api_key, params=self._params
         )
 
+    def describe(self) -> dict[str, Any]:
+        return {"provider": self._provider, "model": self._model_name, "params": self._params}
+
+    def conversation(self, history: Sequence[Turn], user_text: str) -> list[dict[str, str]]:
+        recent = [turn for turn in history if turn.text][-self._history_turns :]
+        messages = [{"role": turn.role, "content": turn.text} for turn in recent]
+        messages.append({"role": "user", "content": user_text})
+        return messages
+
     async def reply(
         self, *, history: Sequence[Turn], user_text: str, on_delta: OnDelta
     ) -> BrainUsage:
-        recent = [turn for turn in history if turn.text][-self._history_turns :]
-        conversation = [{"role": turn.role, "content": turn.text} for turn in recent]
-        conversation.append({"role": "user", "content": user_text})
         result = await self._runner.run(
             model=self._model,
             provider=self._provider,
             model_name=self._model_name,
             instructions=self._instructions,
-            conversation=conversation,
+            conversation=self.conversation(history, user_text),
             on_delta=on_delta,
         )
         meta = result.metadata
@@ -81,4 +97,6 @@ class PromptBrain:
             input_tokens=int(meta.get("input_tokens") or 0),
             output_tokens=int(meta.get("output_tokens") or 0),
             cost_usd=Decimal(str(meta.get("cost") or 0)),
+            cached_input_tokens=int(meta.get("cached_input_tokens") or 0),
+            effective_model=meta.get("effective_model"),
         )

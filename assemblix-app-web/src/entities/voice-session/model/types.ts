@@ -32,10 +32,72 @@ export type VoiceTimingStage =
   | "totalMs"
   | "ttsGapMaxMs";
 
+export interface VoiceLlmMessage {
+  role: "user" | "assistant";
+  content: string;
+}
+
+export type VoiceLlmOutcome = "ok" | "cancelled" | "brain_timeout" | "brain_failed";
+
+/** One cascade brain call: what was sent to the LLM and what came back. */
+export interface VoiceLlmCall {
+  provider: string | null;
+  model: string | null;
+  effectiveModel: string | null;
+  params: Record<string, unknown>;
+  /** System instructions excluded — they are the same for every turn. */
+  messages: VoiceLlmMessage[];
+  response: string;
+  inputTokens: number;
+  outputTokens: number;
+  cachedInputTokens: number | null;
+  costUsd: number;
+  ttftMs: number | null;
+  durationMs: number | null;
+  outcome: VoiceLlmOutcome | string;
+  error: string | null;
+}
+
+/** What one cascade turn spent per stage. */
+export interface VoiceTurnUsage {
+  sttSeconds: number | null;
+  /** STT is billed per stream in 15 s units, so a single turn's share is an estimate. */
+  sttCostUsdEstimate: number | null;
+  llmCostUsd: number | null;
+  ttsChars: number | null;
+  ttsCostUsd: number | null;
+}
+
 export interface VoiceSessionTranscriptLine {
   role: "user" | "assistant";
   text: string;
   timings?: VoiceTurnTimings | null;
+  llmCall?: VoiceLlmCall | null;
+  usage?: VoiceTurnUsage | null;
+}
+
+export interface VoiceStageConfig {
+  provider: string | null;
+  model: string | null;
+}
+
+export interface VoiceStageCosts {
+  sttSeconds: number | null;
+  sttCostUsd: number | null;
+  llmCostUsd: number | null;
+  ttsChars: number | null;
+  ttsCostUsd: number | null;
+  platformFeeCredits: number | null;
+  providerMarginCredits: number | null;
+}
+
+/** What a cascade call ran with, stored once per call. */
+export interface VoiceCallDetails {
+  instructions: string;
+  stt: VoiceStageConfig | null;
+  brain: (VoiceStageConfig & { params: Record<string, unknown>; historyTurns: number | null }) | null;
+  tts: VoiceStageConfig | null;
+  costs: VoiceStageCosts | null;
 }
 
 /** One analysis-hook run started by the call. */
@@ -54,4 +116,5 @@ export interface VoiceSessionDetail extends VoiceSession {
   outputTokens: number;
   executions: VoiceSessionExecution[];
   timingSummary?: Partial<Record<VoiceTimingStage, { p50: number; p95: number }>> | null;
+  callDetails?: VoiceCallDetails | null;
 }

@@ -10,7 +10,7 @@ from __future__ import annotations
 
 from collections.abc import AsyncIterator
 from dataclasses import dataclass
-from typing import Protocol
+from typing import Any, Protocol
 
 
 @dataclass(frozen=True)
@@ -46,6 +46,10 @@ class TurnEnded:
     # Characters synthesized for this turn. ``None`` from a bridge that speaks with
     # the model's own voice — nothing was synthesized to count.
     speech_chars: int | None = None
+    # Debug record of the LLM call behind this turn, JSON-ready. Cascade only.
+    llm_call: dict[str, Any] | None = None
+    # Per-stage spend of this turn (STT seconds, LLM and TTS cost), JSON-ready. Cascade only.
+    usage: dict[str, Any] | None = None
 
 
 @dataclass(frozen=True)
