@@ -3,6 +3,8 @@ from collections.abc import AsyncIterator, Sequence
 from decimal import Decimal
 from typing import Any
 
+import pytest
+
 from assemblix_api.external.voice.conversation.contract import (
     AgentTranscript,
     BridgeError,
@@ -399,4 +401,51 @@ async def test_finalize_failure_falls_back_to_the_partial() -> None:
     await _settle()
 
     assert brain.calls[-1][1] == "алло"
+    await bridge.close()
+
+
+async def test_a_failed_connect_closes_the_stt_stream() -> None:
+    class _ClosingStt(_Stt):
+        closed = False
+
+        async def close(self) -> None:
+            self.closed = True
+
+    class _BrokenBrain(_Brain):
+        async def prepare(self, *, instructions: str) -> None:
+            raise RuntimeError("no prompt")
+
+    stt = _ClosingStt()
+    bridge = CascadeBridge(
+        stt=stt, detector=_Detector(), brain=_BrokenBrain([]), meter=CascadeMeter()
+    )
+
+    with pytest.raises(RuntimeError, match="no prompt"):
+        await bridge.connect(instructions="Роль.", voice="", language="ru", params={})
+
+    assert stt.closed is True
+
+
+async def test_a_barge_in_does_not_swallow_a_cancellation_of_the_caller() -> None:
+    class _StubbornBrain(_Brain):
+        async def reply(self, **_kw: Any) -> BrainUsage:
+            try:
+                await asyncio.Event().wait()
+            except asyncio.CancelledError:
+                await asyncio.sleep(0.05)
+                raise
+            return BrainUsage()
+
+    bridge, stt, _, _ = await _bridge(_StubbornBrain([]))
+    stt.finals = ["вопрос"]
+    await bridge.send_audio(b"S")
+    await bridge.send_audio(b"E")
+    await _settle()
+
+    barge_in = asyncio.create_task(bridge.send_audio(b"S"))
+    await asyncio.sleep(0.01)
+    barge_in.cancel()
+
+    with pytest.raises(asyncio.CancelledError):
+        await barge_in
     await bridge.close()

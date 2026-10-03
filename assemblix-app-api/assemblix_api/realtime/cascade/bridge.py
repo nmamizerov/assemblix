@@ -48,6 +48,15 @@ class _BrainTimeout(Exception):
     pass
 
 
+async def _cancel_and_wait(task: asyncio.Future) -> None:
+    """Cancel ``task`` and wait for it without absorbing a cancellation of the caller."""
+    if not task.done():
+        task.cancel()
+        await asyncio.wait({task})
+    if not task.cancelled():
+        task.exception()
+
+
 class CascadeBridge:
     input_sample_rate = 16000
     output_sample_rate = 16000
@@ -94,9 +103,18 @@ class CascadeBridge:
         params: dict,
         text_output: bool = False,
     ) -> None:
-        await asyncio.gather(
-            self._stt.open(language=language), self._brain.prepare(instructions=instructions)
-        )
+        opening = [
+            asyncio.ensure_future(self._stt.open(language=language)),
+            asyncio.ensure_future(self._brain.prepare(instructions=instructions)),
+        ]
+        try:
+            await asyncio.gather(*opening)
+        except BaseException:
+            for task in opening:
+                await _cancel_and_wait(task)
+            with contextlib.suppress(Exception):
+                await self._stt.close()
+            raise
         self._stt_pump = asyncio.create_task(self._pump_stt())
 
     async def send_audio(self, pcm: bytes) -> None:
@@ -133,10 +151,8 @@ class CascadeBridge:
 
     async def close(self) -> None:
         for task in (self._reply_task, self._stt_pump):
-            if task is not None and not task.done():
-                task.cancel()
-                with contextlib.suppress(asyncio.CancelledError, Exception):
-                    await task
+            if task is not None:
+                await _cancel_and_wait(task)
         try:
             await self._stt.close()
         finally:
@@ -151,9 +167,7 @@ class CascadeBridge:
             return
         self._barge_in_pending = True
         self._early_heard_ms = None
-        task.cancel()
-        with contextlib.suppress(asyncio.CancelledError):
-            await task
+        await _cancel_and_wait(task)
         if not self._reply_text:
             self._barge_in_pending = False
             return
