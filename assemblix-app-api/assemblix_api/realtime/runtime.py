@@ -70,6 +70,7 @@ class VoiceSessionRuntime:
         dispatcher: TurnDispatcher | None = None,
         prepare: Callable[[], Awaitable[None]] | None = None,
         on_stopped: Callable[[], Awaitable[None]] | None = None,
+        clock: Callable[[], float] = time.monotonic,
     ) -> None:
         self._bridge = bridge
         self._client = client
@@ -81,6 +82,7 @@ class VoiceSessionRuntime:
         self._dispatcher = dispatcher
         self._prepare = prepare
         self._on_stopped = on_stopped
+        self._clock = clock
 
         # Audio actually forwarded to the browser, in ms. On a barge-in the
         # provider needs to know how much of its answer was really heard.
@@ -88,6 +90,11 @@ class VoiceSessionRuntime:
         # Interrupting when the agent is silent makes the provider answer with
         # "no active response found" — a real error event for a non-event.
         self._agent_speaking = False
+        # Browser playback of the latest agent turn, by wall clock: TurnEnded arrives
+        # once the audio is sent, while the browser may still be playing it.
+        self._playback_started_at: float | None = None
+        self._playback_ms = 0
+        self._playback_open = False
         self._last_inbound_audio_at: float | None = None
         self._pending_timings: TurnTimings | None = None
         self._reply_timings: dict[str, int] | None = None
@@ -233,9 +240,15 @@ class VoiceSessionRuntime:
             match event:
                 case AudioDelta():
                     self._agent_speaking = True
-                    self._played_ms += len(event.pcm) // (
+                    chunk_ms = len(event.pcm) // (
                         _BYTES_PER_SAMPLE * self._bridge.output_sample_rate // 1000
                     )
+                    self._played_ms += chunk_ms
+                    if not self._playback_open:
+                        self._playback_open = True
+                        self._playback_started_at = self._clock()
+                        self._playback_ms = 0
+                    self._playback_ms += chunk_ms
                     await self._client.send_bytes(event.pcm)
                     await self._emit_timings()
                 case UserTranscript():
@@ -250,16 +263,25 @@ class VoiceSessionRuntime:
                     heard_ms = await self._client.interrupt_playback()
                     if heard_ms is not None:
                         await self._bridge.interrupt(audio_end_ms=heard_ms)
+                    elif self._late_interrupts():
+                        heard_ms = self._heard_ms()
+                        if heard_ms is not None and (
+                            self._agent_speaking or heard_ms < self._playback_ms
+                        ):
+                            await self._bridge.interrupt(audio_end_ms=heard_ms)
                     elif self._agent_speaking:
                         await self._bridge.interrupt(audio_end_ms=self._played_ms)
                     self._agent_speaking = False
                     self._played_ms = 0
+                    self._playback_open = False
+                    self._playback_started_at = None
                 case TurnEnded():
                     self._pending_timings = None
                     self._stage_timings_sent = False
                     await self._client.end_of_utterance()
                     self._agent_speaking = False
                     self._played_ms = 0
+                    self._playback_open = False
                     self._input_tokens += event.input_tokens or 0
                     self._output_tokens += event.output_tokens or 0
                     self._speech_chars += event.speech_chars or 0
@@ -286,6 +308,19 @@ class VoiceSessionRuntime:
                 case SessionClosed():
                     self._closed_reason = event.reason
                     return
+
+    def _late_interrupts(self) -> bool:
+        return self._client.media == "ws" and bool(
+            getattr(self._bridge, "accepts_late_interrupt", False)
+        )
+
+    def _heard_ms(self) -> int | None:
+        """How much of the latest turn the browser has played, assuming it started
+        at the first chunk and plays without stalls."""
+        if self._playback_started_at is None:
+            return None
+        elapsed_ms = round((self._clock() - self._playback_started_at) * 1000)
+        return min(self._playback_ms, elapsed_ms)
 
     async def _emit_timings(self) -> None:
         """Last inbound audio → first audio back; per stage when the bridge measured them."""

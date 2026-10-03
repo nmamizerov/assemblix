@@ -367,3 +367,203 @@ async def test_audio_from_an_aborted_session_is_not_forwarded() -> None:
     assert _FakeTTS.instances[0].aborted is True
     audio = [e.pcm for e in seen if isinstance(e, AudioDelta)]
     assert audio == [b"\x01\x02"]
+
+
+class _GatedInner(_FakeInner):
+    """Scripted like _FakeInner, but an asyncio.Event in the script is awaited."""
+
+    async def events(self) -> AsyncIterator[BridgeEvent]:
+        for item in self._script:
+            if isinstance(item, asyncio.Event):
+                await item.wait()
+                continue
+            yield item
+            await asyncio.sleep(0)
+
+
+class _SlowFlushTTS(_FakeTTS):
+    """Synthesis outlasts generation: the flush plays audio, then holds until released."""
+
+    def __init__(self, on_audio: Any, on_error: Any, release: asyncio.Event) -> None:
+        super().__init__(on_audio, on_error)
+        self.release = release
+        self.flush_done = False
+
+    async def flush_and_close(self) -> int:
+        await self.on_audio(b"\x01\x01", None)
+        await self.release.wait()
+        self.flush_done = True
+        return sum(len(part) for part in self.sent)
+
+
+def _slow_bridge(inner: _FakeInner, release: asyncio.Event) -> HalfCascadeBridge:
+    _FakeTTS.instances.clear()
+    return HalfCascadeBridge(
+        inner=inner,
+        speech_out=_target(),
+        output_sample_rate=16000,
+        open_stream=lambda _out, on_audio, on_error, **_kwargs: _SlowFlushTTS(
+            on_audio, on_error, release
+        ),
+    )
+
+
+async def test_a_barge_in_is_not_held_behind_the_previous_reply_still_synthesizing() -> None:
+    """The model finished long ago and synthesis is still running: the caller's
+    speech reaches the consumer at once, the synthesis is cut, and the finished
+    turn is still reported — final transcript first, then TurnEnded."""
+    # Arrange
+    caller_speaks = asyncio.Event()
+    inner = _GatedInner(
+        [
+            AgentTranscript(text="Добрый день", is_final=False),
+            AgentTranscript(text="Добрый день", is_final=True),
+            TurnEnded(output_tokens=5),
+            caller_speaks,
+            SpeechStarted(),
+            SessionClosed(reason="closed"),
+        ]
+    )
+    bridge = _slow_bridge(inner, release=asyncio.Event())
+
+    # Act
+    await bridge.connect(instructions="i", voice="", language="ru", params={})
+    seen: list[BridgeEvent] = []
+    flush_done_at_barge_in: bool | None = None
+    async for event in bridge.events():
+        seen.append(event)
+        if isinstance(event, AudioDelta):
+            caller_speaks.set()
+        if isinstance(event, SpeechStarted):
+            tts = _FakeTTS.instances[0]
+            assert isinstance(tts, _SlowFlushTTS)
+            flush_done_at_barge_in = tts.flush_done
+            await tts.on_audio(b"\xde\xad", None)
+    await bridge.close()
+
+    # Assert
+    assert flush_done_at_barge_in is False
+    assert _FakeTTS.instances[0].aborted is True
+    assert seen == [
+        AgentTranscript(text="Добрый день", is_final=False),
+        AudioDelta(pcm=b"\x01\x01"),
+        SpeechStarted(),
+        AgentTranscript(text="Добрый день", is_final=True),
+        TurnEnded(output_tokens=5, speech_chars=len("Добрый день")),
+        SessionClosed(reason="closed"),
+    ]
+
+
+async def test_without_a_barge_in_a_turn_ends_after_its_audio() -> None:
+    # Arrange
+    release = asyncio.Event()
+    inner = _FakeInner(
+        [
+            AgentTranscript(text="Слушаю", is_final=False),
+            AgentTranscript(text="Слушаю", is_final=True),
+            TurnEnded(),
+            SessionClosed(reason="closed"),
+        ]
+    )
+    bridge = _slow_bridge(inner, release)
+
+    # Act
+    await bridge.connect(instructions="i", voice="", language="ru", params={})
+    seen: list[BridgeEvent] = []
+    async for event in bridge.events():
+        seen.append(event)
+        if isinstance(event, AudioDelta):
+            release.set()
+    await bridge.close()
+
+    # Assert
+    assert _FakeTTS.instances[0].aborted is False
+    assert seen == [
+        AgentTranscript(text="Слушаю", is_final=False),
+        AudioDelta(pcm=b"\x01\x01"),
+        AgentTranscript(text="Слушаю", is_final=True),
+        TurnEnded(speech_chars=len("Слушаю")),
+        SessionClosed(reason="closed"),
+    ]
+
+
+class _ScriptedTTS(_FakeTTS):
+    """Speaks one second of 16 kHz audio when flushed."""
+
+    async def flush_and_close(self) -> int:
+        await self.on_audio(b"\x00\x00" * 16000, None)
+        return await super().flush_and_close()
+
+
+class _Browser:
+    media = "ws"
+
+    def __init__(self, turn_played: asyncio.Event) -> None:
+        self._turn_played = turn_played
+
+    async def send_json(self, data: dict) -> None: ...
+
+    async def send_bytes(self, data: bytes) -> None: ...
+
+    async def interrupt_playback(self) -> int | None:
+        return None
+
+    async def end_of_utterance(self) -> None:
+        self._turn_played.set()
+
+    async def __aiter__(self) -> AsyncIterator[Any]:
+        await asyncio.Event().wait()
+        yield b""
+
+
+async def _call_with_a_late_barge_in(*, late: bool) -> list[int]:
+    from assemblix_api.realtime.runtime import VoiceSessionRuntime
+
+    now = [100.0]
+    turn_played = asyncio.Event()
+
+    class _Inner(_GatedInner):
+        async def events(self) -> AsyncIterator[BridgeEvent]:
+            yield AgentTranscript(text="Чем могу помочь?", is_final=True)
+            yield TurnEnded()
+            await turn_played.wait()
+            now[0] += 0.25
+            yield SpeechStarted()
+            yield SessionClosed(reason="closed")
+
+    inner = _Inner([])
+    if late:
+        inner.accepts_late_interrupt = True  # type: ignore[attr-defined]
+    _FakeTTS.instances.clear()
+    bridge = HalfCascadeBridge(
+        inner=inner,
+        speech_out=_target(),
+        output_sample_rate=16000,
+        open_stream=lambda _out, on_audio, on_error, **_kwargs: _ScriptedTTS(on_audio, on_error),
+    )
+    runtime = VoiceSessionRuntime(
+        bridge=bridge,
+        client=_Browser(turn_played),
+        instructions="i",
+        voice="",
+        language="ru",
+        params={},
+        max_session_sec=5,
+        clock=lambda: now[0],
+    )
+
+    await runtime.run()
+    return inner.interrupts
+
+
+async def test_a_late_barge_in_reaches_a_brain_that_can_truncate_its_reply() -> None:
+    """End to end over the runtime: the reply was fully synthesized and the turn
+    ended, a quarter of a second into playback the caller speaks — the brain is
+    told what was heard so its history keeps only that."""
+    # Act
+    late_interrupts = await _call_with_a_late_barge_in(late=True)
+    speech_to_speech_interrupts = await _call_with_a_late_barge_in(late=False)
+
+    # Assert
+    assert late_interrupts == [250]
+    assert speech_to_speech_interrupts == []

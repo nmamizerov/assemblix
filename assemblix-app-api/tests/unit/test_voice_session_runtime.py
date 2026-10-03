@@ -554,3 +554,112 @@ async def test_a_cascade_turn_reports_its_timings_once_despite_a_live_microphone
     timings = [m for m in client.json_frames if m.get("type") == "turn.timings"]
     assert len(timings) == 1
     assert timings[0]["firstAudioMs"] == timings[0]["totalMs"]
+
+
+class _Clock:
+    def __init__(self) -> None:
+        self.now = 1000.0
+
+    def __call__(self) -> float:
+        return self.now
+
+
+class _ClockedBridge(_FakeBridge):
+    """A scripted bridge where a float in the script advances the clock, in seconds."""
+
+    def __init__(self, events: list[Any], clock: _Clock, *, late: bool) -> None:
+        super().__init__(events)
+        self._clock = clock
+        if late:
+            self.accepts_late_interrupt = True
+
+    def events(self) -> AsyncIterator[Any]:
+        async def _iter() -> AsyncIterator[Any]:
+            for event in self._events:
+                if isinstance(event, float):
+                    self._clock.now += event
+                else:
+                    yield event
+
+        return _iter()
+
+
+class _BrowserClient(_FakeClient):
+    """The plain WebSocket path: playback lives in the browser, so nothing is reported."""
+
+    async def __aiter__(self) -> AsyncIterator[Any]:
+        await asyncio.Event().wait()
+        yield b""
+
+
+_ONE_SECOND = AudioDelta(pcm=b"\x00\x00" * 24000)
+
+
+async def _barge_in(script: list[Any], *, late: bool) -> list[int]:
+    clock = _Clock()
+    bridge = _ClockedBridge([*script, SessionClosed(reason="done")], clock, late=late)
+    await _runtime(bridge, _BrowserClient([]), clock=clock).run()
+    return bridge.interrupts
+
+
+async def test_a_barge_in_after_turn_end_truncates_a_reply_still_playing() -> None:
+    """The reply was fully sent and the turn ended, but the browser is still playing
+    it: a bridge that accepts late interrupts is told how much was heard."""
+    # Arrange
+    script = [_ONE_SECOND, TurnEnded(), 0.4, SpeechStarted()]
+
+    # Act
+    interrupts = await _barge_in(script, late=True)
+
+    # Assert
+    assert interrupts == [400]
+
+
+async def test_speech_after_the_reply_finished_playing_interrupts_nothing() -> None:
+    # Arrange
+    script = [_ONE_SECOND, TurnEnded(), 1.5, SpeechStarted()]
+
+    # Act
+    interrupts = await _barge_in(script, late=True)
+
+    # Assert
+    assert interrupts == []
+
+
+async def test_a_barge_in_mid_turn_reports_wall_clock_playback_to_a_late_bridge() -> None:
+    """Audio forwarded is not audio heard: the browser buffers ahead of playback."""
+    # Arrange
+    script = [_ONE_SECOND, 0.3, SpeechStarted()]
+
+    # Act
+    interrupts = await _barge_in(script, late=True)
+
+    # Assert
+    assert interrupts == [300]
+
+
+async def test_playback_tracking_restarts_with_the_next_turn() -> None:
+    # Arrange — the first turn played out long ago; the second has just begun
+    script = [_ONE_SECOND, TurnEnded(), 5.0, _ONE_SECOND, TurnEnded(), 0.2, SpeechStarted()]
+
+    # Act
+    interrupts = await _barge_in(script, late=True)
+
+    # Assert
+    assert interrupts == [200]
+
+
+async def test_a_bridge_without_late_interrupts_behaves_as_before() -> None:
+    """Speech-to-speech providers keep today's contract: nothing after TurnEnded,
+    and the forwarded duration during a turn."""
+    # Arrange
+    after_turn = [_ONE_SECOND, TurnEnded(), 0.4, SpeechStarted()]
+    mid_turn = [_ONE_SECOND, 0.3, SpeechStarted()]
+
+    # Act
+    after_turn_interrupts = await _barge_in(after_turn, late=False)
+    mid_turn_interrupts = await _barge_in(mid_turn, late=False)
+
+    # Assert
+    assert after_turn_interrupts == []
+    assert mid_turn_interrupts == [1000]
