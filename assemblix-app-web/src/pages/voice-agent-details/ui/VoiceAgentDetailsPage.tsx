@@ -37,13 +37,13 @@ const draftFromVoiceAgent = (voiceAgent: VoiceAgent): VoiceAgentDraft => {
     systemPrompt,
     firstMessage: config.firstMessage ?? "",
     language: config.language,
-    provider: config.voice.provider,
-    model: config.voice.model,
-    voiceId: config.voice.voiceId ?? "",
+    provider: config.voice?.provider ?? "",
+    model: config.voice?.model ?? "",
+    voiceId: config.voice?.voiceId ?? "",
     knowledgeBaseIds: config.knowledgeBaseIds,
     turnWorkflowId: config.turnWorkflowId ?? "",
     finalWorkflowId: config.finalWorkflowId ?? "",
-    credentialId: config.voice.credentialId ?? null,
+    credentialId: config.voice?.credentialId ?? null,
     tts: config.tts ?? null,
     avatar: config.avatar ?? null,
     params: config.params,
@@ -140,6 +140,7 @@ const VoiceAgentEditor = ({ voiceAgent }: VoiceAgentEditorProps) => {
     draftFromVoiceAgent(voiceAgent)
   );
 
+  const isCascade = voiceAgent.config.mode === "cascade";
   const errors = validateDraft(draft).errors;
   const call = useVoiceCall(voiceAgent.id);
 
@@ -214,10 +215,12 @@ const VoiceAgentEditor = ({ voiceAgent }: VoiceAgentEditorProps) => {
             )}
             {t("voiceAgents.delete")}
           </Button>
-          <Button size="sm" onClick={handleSave} disabled={isSaving}>
-            {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            {t("voiceAgents.save")}
-          </Button>
+          {!isCascade && (
+            <Button size="sm" onClick={handleSave} disabled={isSaving}>
+              {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {t("voiceAgents.save")}
+            </Button>
+          )}
         </div>
       </header>
 
@@ -233,7 +236,13 @@ const VoiceAgentEditor = ({ voiceAgent }: VoiceAgentEditorProps) => {
           </TabsList>
 
           <TabsContent value="configuration" className="mt-6">
-            <VoiceAgentForm draft={draft} errors={errors} onChange={setDraft} />
+            {isCascade ? (
+              <p className="rounded-md border border-border p-4 text-sm text-muted-foreground">
+                {t("voiceAgents.cascadeNotice")}
+              </p>
+            ) : (
+              <VoiceAgentForm draft={draft} errors={errors} onChange={setDraft} />
+            )}
           </TabsContent>
 
           <TabsContent value="sessions" className="mt-6">

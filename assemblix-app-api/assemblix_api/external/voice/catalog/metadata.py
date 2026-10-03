@@ -23,8 +23,10 @@ class VoiceModelMetadata(DTOModel):
     id: str
     label: str
     description: str | None = None
-    capability: Literal["transcription", "speech", "realtime", "conversation"]
-    route: Literal["transcription", "completion", "speech", "realtime", "conversation"]
+    capability: Literal["transcription", "speech", "realtime", "conversation", "stt_stream"]
+    route: Literal[
+        "transcription", "completion", "speech", "realtime", "conversation", "stt_stream"
+    ]
     cost_per_minute: float | None = None
     cost_per_char: float | None = None
     # Conversation models only: whether the model can answer in text instead of

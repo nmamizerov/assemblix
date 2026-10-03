@@ -30,6 +30,22 @@
       "capability": "realtime",
       "route": "realtime",
       "cost_per_char": 0.0000075
+    },
+    {
+      "id": "yandex-tts-v3-chunk",
+      "label": "SpeechKit v3 (Realtime, economical)",
+      "description": "Yandex SpeechKit v3 realtime: first sentence at once, the rest packed into ~250-character requests to minimise billed units.",
+      "capability": "realtime",
+      "route": "realtime",
+      "cost_per_char": 0.0000075
+    },
+    {
+      "id": "yandex-stt-v3-stream",
+      "label": "SpeechKit v3 streaming recognition",
+      "description": "Yandex SpeechKit v3 streaming speech recognition for cascade voice agents.",
+      "capability": "stt_stream",
+      "route": "stt_stream",
+      "cost_per_minute": 0.0078
     }
   ]
 }

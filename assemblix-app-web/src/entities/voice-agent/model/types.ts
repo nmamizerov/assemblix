@@ -11,8 +11,10 @@ export interface VoiceAgentConfig {
   knowledgeBaseIds: string[];
   firstMessage: string | null;
   language: string;
-  voice: VoiceOutputConfig;
+  mode?: "realtime" | "cascade";
+  voice: VoiceOutputConfig | null;
   tts: VoiceOutputConfig | null;
+  cascade?: Record<string, unknown> | null;
   avatar: WorkflowAvatarConfig | null;
   params: Record<string, unknown>;
   turnWorkflowId: string | null;

@@ -153,6 +153,13 @@ class VoiceSessionService:
             )
 
         config = VoiceAgentConfig(**agent.config)
+        if config.mode == "cascade":
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Cascade agents cannot take calls yet",
+            )
+        voice = config.voice
+        assert voice is not None  # guaranteed by VoiceAgentConfig for realtime
 
         # Resolved for its side effect: a project with no live organisation cannot
         # host a call, and failing here beats failing once audio is flowing.
@@ -165,18 +172,18 @@ class VoiceSessionService:
             )
 
         api_key, uses_system_key = await self._credentials.get_voice_api_key_with_fallback(
-            credentials_id=UUID(config.voice.credential_id) if config.voice.credential_id else None,
+            credentials_id=UUID(voice.credential_id) if voice.credential_id else None,
             project_id=project_id,
-            voice_provider=config.voice.provider,
+            voice_provider=voice.provider,
         )
 
         tts = None
         if config.tts is not None:
-            if not supports_text_output(config.voice.provider, config.voice.model):
+            if not supports_text_output(voice.provider, voice.model):
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail=(
-                        f"Model {config.voice.model} cannot answer in text, "
+                        f"Model {voice.model} cannot answer in text, "
                         "so an external voice cannot speak for it"
                     ),
                 )
@@ -197,17 +204,17 @@ class VoiceSessionService:
             else None
         )
 
-        catalog_entry = find_voice_model(config.voice.provider, config.voice.model)
+        catalog_entry = find_voice_model(voice.provider, voice.model)
 
         return VoiceSessionSetup(
             instructions=self._build_instructions(config, knowledge),
-            voice=config.voice.voice_id or "",
+            voice=voice.voice_id or "",
             language=config.language,
             params=config.params,
-            provider=config.voice.provider,
-            model=config.voice.model,
+            provider=voice.provider,
+            model=voice.model,
             api_key=api_key,
-            api_base=resolve_conversation_base(config.voice.provider),
+            api_base=resolve_conversation_base(voice.provider),
             tts=tts,
             turn_workflow_id=config.turn_workflow_id,
             final_workflow_id=config.final_workflow_id,

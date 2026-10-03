@@ -1377,6 +1377,7 @@
     "errorNoText": "PDF contains no text (scanned document without OCR)"
   },
   "voiceAgents": {
+    "cascadeNotice": "This agent runs in cascade mode (speech recognition → brain → speech synthesis). It is configured through the API for now; the editor will support it soon.",
     "title": "Voice Agents",
     "subtitle": "Realtime conversational agents that answer calls with a speech-to-speech voice",
     "create": "Create Voice Agent",
