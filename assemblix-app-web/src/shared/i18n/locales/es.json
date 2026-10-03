@@ -1586,7 +1586,8 @@
       "sttFinalMs": "STT",
       "brainFirstTokenMs": "LLM",
       "ttsFirstAudioMs": "TTS",
-      "totalMs": "Total"
+      "totalMs": "Total",
+      "ttsGapMaxMs": "Pausa máx."
     }
   }
 }

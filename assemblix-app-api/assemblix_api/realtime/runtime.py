@@ -98,6 +98,10 @@ class VoiceSessionRuntime:
         self._last_inbound_audio_at: float | None = None
         self._pending_timings: TurnTimings | None = None
         self._reply_timings: dict[str, int] | None = None
+        # Where the browser's playback of this turn ends if the audio arrives no
+        # later; a chunk arriving after it means the caller heard silence.
+        self._play_end: float | None = None
+        self._gap_max_ms = 0
         # The mic streams continuously, so without this every later audio packet of a
         # measured turn would emit a second, inbound-audio based timing.
         self._stage_timings_sent = False
@@ -244,11 +248,15 @@ class VoiceSessionRuntime:
                         _BYTES_PER_SAMPLE * self._bridge.output_sample_rate // 1000
                     )
                     self._played_ms += chunk_ms
+                    now = self._clock()
                     if not self._playback_open:
                         self._playback_open = True
-                        self._playback_started_at = self._clock()
+                        self._playback_started_at = now
                         self._playback_ms = 0
+                        self._play_end = None
+                        self._gap_max_ms = 0
                     self._playback_ms += chunk_ms
+                    self._track_gap(now, chunk_ms)
                     await self._client.send_bytes(event.pcm)
                     await self._emit_timings()
                 case UserTranscript():
@@ -309,6 +317,12 @@ class VoiceSessionRuntime:
                     self._closed_reason = event.reason
                     return
 
+    def _track_gap(self, now: float, chunk_ms: int) -> None:
+        if self._play_end is not None and now > self._play_end:
+            self._gap_max_ms = max(self._gap_max_ms, round((now - self._play_end) * 1000))
+        start = now if self._play_end is None else max(self._play_end, now)
+        self._play_end = start + chunk_ms / 1000
+
     def _late_interrupts(self) -> bool:
         return self._client.media == "ws" and bool(
             getattr(self._bridge, "accepts_late_interrupt", False)
@@ -354,7 +368,7 @@ class VoiceSessionRuntime:
         if is_final:
             line: dict = {"role": role, "text": text}
             if role == "assistant" and self._reply_timings is not None:
-                line["timings"] = self._reply_timings
+                line["timings"] = {**self._reply_timings, "ttsGapMaxMs": self._gap_max_ms}
                 self._reply_timings = None
             self._transcript.append(line)
             if role == "assistant":

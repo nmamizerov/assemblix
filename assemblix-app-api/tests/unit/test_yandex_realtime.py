@@ -183,11 +183,12 @@ async def test_aclose_on_a_shared_channel_stops_the_synthesis_in_flight():
 
     await session.aclose()
     heard = len(received)
+    started = len(stub.calls)
     await session.send_text("Третье. ")
     await asyncio.sleep(0.05)
 
     assert session._worker is not None and session._worker.done()
-    assert stub.calls[0].cancelled is True
+    assert all(call.cancelled for call in stub.calls)
     assert len(received) == heard
-    assert len(stub.calls) == 1
+    assert len(stub.calls) == started
     assert channel.closed is False
