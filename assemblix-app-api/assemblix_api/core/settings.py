@@ -291,6 +291,11 @@ class Settings(BaseSettings):
     yandex_tts_v3_grpc_endpoint: str = os.getenv(
         "YANDEX_TTS_V3_GRPC_ENDPOINT", "tts.api.cloud.yandex.net:443"
     )
+    yandex_stt_v3_grpc_endpoint: str = os.getenv(
+        "YANDEX_STT_V3_GRPC_ENDPOINT", "stt.api.cloud.yandex.net:443"
+    )
+    # Silero VAD + Smart Turn ONNX files; `make turn-models` fills the default.
+    turn_models_dir: str = os.getenv("TURN_MODELS_DIR", "models/turn")
 
     @field_validator("voice_realtime_chunk_schedule", mode="before")
     @classmethod

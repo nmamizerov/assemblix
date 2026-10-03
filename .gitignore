@@ -58,3 +58,6 @@
 /assemblix-aitools/
 # Internal superpowers plans/specs — kept on disk, not tracked
 /internal-docs/superpowers/
+
+# Cascade turn-detection model weights (downloaded by `make turn-models`)
+/assemblix-app-api/models/
