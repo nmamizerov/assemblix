@@ -1593,7 +1593,9 @@
       "brainFirstTokenMs": "LLM",
       "ttsFirstAudioMs": "TTS",
       "totalMs": "Итого",
-      "ttsGapMaxMs": "Макс. пауза"
+      "ttsGapMaxMs": "Макс. пауза",
+      "ttsLeadingSilenceMs": "Тишина в начале",
+      "ttsFirstAudibleMs": "Слышимый первый звук"
     },
     "llm": {
       "title": "Вызов LLM",

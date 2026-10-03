@@ -21,4 +21,6 @@ export const TIMING_STAGES = [
   "ttsFirstAudioMs",
   "totalMs",
   "ttsGapMaxMs",
+  "ttsLeadingSilenceMs",
+  "ttsFirstAudibleMs",
 ] as const;
