@@ -5,6 +5,19 @@ All notable changes to this project are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.42](https://github.com/nmamizerov/assemblix/compare/v0.2.41...v0.2.42) (2026-10-03)
+
+
+### Features
+
+* **web:** show the longest audio gap per turn ([86ec6b5](https://github.com/nmamizerov/assemblix/commit/86ec6b567aaf3402bc55d0e0ca2301cd5e42325c))
+
+
+### Bug Fixes
+
+* **api:** synthesize Yandex TTS segments ahead to remove pauses inside replies ([c0bbbb0](https://github.com/nmamizerov/assemblix/commit/c0bbbb005cefbfbdb1c07fa8f47921261f3648b3))
+* remove pauses inside cascade voice replies (Yandex TTS prefetch) ([79389e3](https://github.com/nmamizerov/assemblix/commit/79389e399e5405e6bc5cd3001c4ed3f42123eae8))
+
 ## [0.2.41](https://github.com/nmamizerov/assemblix/compare/v0.2.40...v0.2.41) (2026-10-03)
 
 
