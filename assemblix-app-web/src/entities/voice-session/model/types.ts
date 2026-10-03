@@ -21,6 +21,10 @@ export interface VoiceTurnTimings {
   totalMs?: number;
   /** Longest silence between audio chunks inside the reply. */
   ttsGapMaxMs?: number;
+  /** Silence at the start of the reply audio, before speech is audible. */
+  ttsLeadingSilenceMs?: number;
+  /** When speech is actually heard: ttsFirstAudioMs + lead-in silence. */
+  ttsFirstAudibleMs?: number;
   firstAudioMs?: number;
 }
 
@@ -30,7 +34,9 @@ export type VoiceTimingStage =
   | "brainFirstTokenMs"
   | "ttsFirstAudioMs"
   | "totalMs"
-  | "ttsGapMaxMs";
+  | "ttsGapMaxMs"
+  | "ttsLeadingSilenceMs"
+  | "ttsFirstAudibleMs";
 
 export interface VoiceLlmMessage {
   role: "user" | "assistant";

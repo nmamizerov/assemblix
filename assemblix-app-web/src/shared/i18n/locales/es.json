@@ -1587,7 +1587,9 @@
       "brainFirstTokenMs": "LLM",
       "ttsFirstAudioMs": "TTS",
       "totalMs": "Total",
-      "ttsGapMaxMs": "Pausa máx."
+      "ttsGapMaxMs": "Pausa máx.",
+      "ttsLeadingSilenceMs": "Silencio inicial",
+      "ttsFirstAudibleMs": "Primer audio audible"
     },
     "llm": {
       "title": "Llamada al LLM",
