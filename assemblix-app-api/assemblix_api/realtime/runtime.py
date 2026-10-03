@@ -91,6 +91,9 @@ class VoiceSessionRuntime:
         self._last_inbound_audio_at: float | None = None
         self._pending_timings: TurnTimings | None = None
         self._reply_timings: dict[str, int] | None = None
+        # The mic streams continuously, so without this every later audio packet of a
+        # measured turn would emit a second, inbound-audio based timing.
+        self._stage_timings_sent = False
         self._transcript: list[dict] = []
         self._closed_reason: str | None = None
         self._turn_index = 0
@@ -253,6 +256,7 @@ class VoiceSessionRuntime:
                     self._played_ms = 0
                 case TurnEnded():
                     self._pending_timings = None
+                    self._stage_timings_sent = False
                     await self._client.end_of_utterance()
                     self._agent_speaking = False
                     self._played_ms = 0
@@ -289,6 +293,7 @@ class VoiceSessionRuntime:
         if stages is not None:
             self._pending_timings = None
             self._last_inbound_audio_at = None
+            self._stage_timings_sent = True
             total = int((time.monotonic() - stages.speech_ended_at) * 1000)
             timings = {
                 "eouMs": stages.eou_ms,
@@ -298,12 +303,13 @@ class VoiceSessionRuntime:
                     0, total - stages.eou_ms - stages.stt_final_ms - stages.brain_first_token_ms
                 ),
                 "totalMs": total,
+                "firstAudioMs": total,
             }
             self._reply_timings = timings
             logger.info("voice.cascade.turn", **timings)
             await self._client.send_json({"type": "turn.timings", **timings})
             return
-        if self._last_inbound_audio_at is None:
+        if self._stage_timings_sent or self._last_inbound_audio_at is None:
             return
         first_audio_ms = int((time.monotonic() - self._last_inbound_audio_at) * 1000)
         self._last_inbound_audio_at = None

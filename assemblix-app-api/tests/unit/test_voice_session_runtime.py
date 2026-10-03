@@ -507,3 +507,50 @@ async def test_cascade_timings_are_closed_at_first_audio_and_stored_on_the_reply
     assistant = [line for line in runtime.transcript if line["role"] == "assistant"]
     assert assistant[0]["timings"] == {k: v for k, v in event.items() if k != "type"}
     assert "timings" not in runtime.transcript[0]
+
+
+async def test_a_cascade_turn_reports_its_timings_once_despite_a_live_microphone() -> None:
+    """The browser streams mic audio throughout the reply; later audio packets of a
+    measured turn must not emit a second, inbound-audio based timing."""
+    first_audio_out = asyncio.Event()
+    mic_sent = asyncio.Event()
+
+    class _MicClient(_FakeClient):
+        async def send_bytes(self, data: bytes) -> None:
+            await super().send_bytes(data)
+            first_audio_out.set()
+
+        async def __aiter__(self) -> AsyncIterator[Any]:
+            await first_audio_out.wait()
+            yield b"mic-while-agent-speaks"
+            await asyncio.Event().wait()
+
+    class _MicBridge(_FakeBridge):
+        async def send_audio(self, pcm: bytes) -> None:
+            await super().send_audio(pcm)
+            mic_sent.set()
+
+        def events(self) -> AsyncIterator[Any]:
+            async def _iter() -> AsyncIterator[Any]:
+                yield TurnTimings(
+                    speech_ended_at=time.monotonic(),
+                    eou_ms=10,
+                    stt_final_ms=20,
+                    brain_first_token_ms=30,
+                )
+                yield AudioDelta(pcm=b"\x00" * 640)
+                await mic_sent.wait()
+                yield AudioDelta(pcm=b"\x00" * 640)
+                yield AgentTranscript(text="Здравствуйте", is_final=True)
+                yield TurnEnded()
+                yield SessionClosed(reason="done")
+
+            return _iter()
+
+    client = _MicClient([])
+
+    await _runtime(_MicBridge([]), client).run()
+
+    timings = [m for m in client.json_frames if m.get("type") == "turn.timings"]
+    assert len(timings) == 1
+    assert timings[0]["firstAudioMs"] == timings[0]["totalMs"]
