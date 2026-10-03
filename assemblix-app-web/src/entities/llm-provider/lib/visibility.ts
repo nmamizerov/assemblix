@@ -15,6 +15,10 @@ import type {
  * `/api/llm/providers/{name}/schema?model=...` on every change.
  */
 
+// Conditions name capabilities in snake_case; the wire carries them camelCased.
+const toCamelCase = (name: string) =>
+  name.replace(/_([a-z])/g, (_, char: string) => char.toUpperCase());
+
 const matchesCondition = (
   condition: ParamCondition | null | undefined,
   model: ModelMetadata,
@@ -26,7 +30,7 @@ const matchesCondition = (
 
   if (hasCapability) {
     const capMatch = (condition.capability ?? []).some((cap) =>
-      Boolean(model.capabilities[cap as keyof ModelCapabilities]),
+      Boolean(model.capabilities[toCamelCase(cap) as keyof ModelCapabilities]),
     );
     if (!capMatch) return false;
   }

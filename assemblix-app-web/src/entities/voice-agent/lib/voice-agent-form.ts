@@ -32,6 +32,8 @@ export const DEFAULT_MODEL = "gpt-realtime-2.1";
 export const BRAIN_PROVIDERS = ["openai", "gemini", "deepseek"];
 export const DEFAULT_BRAIN_PROVIDER = "gemini";
 export const DEFAULT_BRAIN_MODEL = "gemini-3.1-flash-lite";
+// What `voiceBrainDefaults` yields for the default brain model.
+export const DEFAULT_BRAIN_PARAMS = { thinking_level: "minimal", max_tokens: 300 };
 
 // Cheapest streaming synthesis route with a Russian voice.
 export const DEFAULT_CASCADE_TTS: VoiceOutputConfig = {
@@ -64,7 +66,7 @@ export const defaultCascade = (): VoiceAgentCascadeConfig => ({
     provider: DEFAULT_BRAIN_PROVIDER,
     model: DEFAULT_BRAIN_MODEL,
     credentialId: null,
-    params: {},
+    params: { ...DEFAULT_BRAIN_PARAMS },
     historyTurns: 40,
   },
 });
@@ -143,7 +145,12 @@ const cascadeFromConfig = (
     ...cascade,
     stt: { ...defaults.stt, ...cascade.stt },
     turn: { ...defaults.turn, ...cascade.turn },
-    brain: { ...defaults.brain, ...cascade.brain },
+    // Saved params stay as they were: voice defaults are for new brains only.
+    brain: {
+      ...defaults.brain,
+      ...cascade.brain,
+      params: cascade.brain?.params ?? {},
+    },
   };
 };
 
