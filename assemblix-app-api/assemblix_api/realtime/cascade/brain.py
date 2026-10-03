@@ -8,7 +8,11 @@ from decimal import Decimal
 from typing import Any, Literal, Protocol
 
 from assemblix_api.execution.agent_runner import AgentRunner
+from assemblix_api.external.llm.base import TokenUsage
 from assemblix_api.external.llm.litellm_model import build_litellm_model
+from assemblix_api.external.llm.pricing import compute_cost
+
+_CHARS_PER_TOKEN = 4
 
 OnDelta = Callable[[str], Awaitable[None]]
 
@@ -42,6 +46,10 @@ class Brain(Protocol):
     async def reply(
         self, *, history: Sequence[Turn], user_text: str, on_delta: OnDelta
     ) -> BrainUsage: ...
+
+    def estimate_usage(self, messages: list[dict[str, str]], response: str) -> BrainUsage:
+        """Approximate spend of a call cancelled before the provider reported usage."""
+        ...
 
 
 class PromptBrain:
@@ -99,4 +107,17 @@ class PromptBrain:
             cost_usd=Decimal(str(meta.get("cost") or 0)),
             cached_input_tokens=int(meta.get("cached_input_tokens") or 0),
             effective_model=meta.get("effective_model"),
+        )
+
+    def estimate_usage(self, messages: list[dict[str, str]], response: str) -> BrainUsage:
+        prompt_chars = len(self._instructions) + sum(len(m["content"]) for m in messages)
+        tokens = TokenUsage(
+            input_tokens=prompt_chars // _CHARS_PER_TOKEN,
+            output_tokens=len(response) // _CHARS_PER_TOKEN,
+        )
+        cost = compute_cost(self._provider, self._model_name, tokens)
+        return BrainUsage(
+            input_tokens=tokens.input_tokens,
+            output_tokens=tokens.output_tokens,
+            cost_usd=Decimal(str(cost)),
         )

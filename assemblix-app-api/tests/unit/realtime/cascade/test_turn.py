@@ -52,7 +52,8 @@ async def _feed(detector: TurnDetector, frames: list[bytes]) -> tuple[bytes, lis
         update = await detector.push(frame)
         audio += update.stt_audio
         signals += update.signals
-        while update.more:
+        while update.pending is not None:
+            await asyncio.wait({update.pending})
             update = await detector.push(b"")
             audio += update.stt_audio
             signals += update.signals
@@ -158,10 +159,14 @@ async def test_pause_start_is_signalled_before_smart_turn_answers() -> None:
     await _feed(detector, [SPEECH] * 5)
 
     update = await detector.push(SILENCE * 9)
-    assert update.signals == [PauseStart()] and update.more
+    assert update.signals == [PauseStart()] and update.pending is not None
     assert len(update.stt_audio) == FRAME * 7  # the frames after the ask stay buffered
+    # More audio while the ask is in flight is only buffered, never waited on.
+    later = await detector.push(SILENCE)
+    assert later.signals == [] and later.stt_audio == b"" and later.pending is update.pending
 
     gate.set()
+    await update.pending
     update = await detector.push(b"")
     assert update.signals == [EndOfTurn(eou_ms=224, smart_turn_prob=0.9, smart_turn_asks=1)]
     assert len(update.stt_audio) == 0
@@ -224,10 +229,39 @@ async def test_without_speculation_no_pause_signals_are_sent() -> None:
 
     updates = []
     for frame in [SPEECH] * 5 + [SILENCE] * 7 + [SPEECH] * 5 + [SILENCE] * 7:
-        updates.append(await detector.push(frame))
+        update = await detector.push(frame)
+        updates.append(update)
+        if update.pending is not None:
+            await update.pending
+    updates.append(await detector.push(b""))
 
-    assert not any(update.more for update in updates)
     assert [s for update in updates for s in update.signals] == [
         SpeechStart(),
         EndOfTurn(eou_ms=224, smart_turn_prob=0.9, smart_turn_asks=2),
     ]
+
+
+async def test_reask_cadence_spreads_asks_up_to_a_long_max_silence() -> None:
+    detector, completion = _detector([0.0], max_silence_ms=3200)
+
+    await _feed(detector, [SPEECH] * 5 + [SILENCE] * 101)
+
+    # (3200 - 200) / 10 = 300 ms apart: asks at 224, 544, ... 3104 ms.
+    assert len(completion.seen) == 10
+
+
+async def test_close_cancels_an_ask_in_flight() -> None:
+    gate = asyncio.Event()
+
+    async def completion(audio: np.ndarray) -> float:
+        await gate.wait()
+        return 0.9
+
+    detector = TurnDetector(vad=_ScriptedVad(), completion=completion, config=TurnConfig())
+    update = await detector.push(SPEECH * 5 + SILENCE * 7)
+    assert update.pending is not None
+
+    detector.close()
+    await asyncio.sleep(0)
+
+    assert update.pending.cancelled()

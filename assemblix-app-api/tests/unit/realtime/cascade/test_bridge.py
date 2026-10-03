@@ -71,6 +71,8 @@ class _Detector:
             return TurnUpdate(stt_audio=b"tail", signals=[EndOfTurn(eou_ms=224)])
         return TurnUpdate(stt_audio=pcm)
 
+    def close(self) -> None: ...
+
 
 class _Brain:
     def __init__(self, deltas: list[str], gate: asyncio.Event | None = None) -> None:
@@ -98,6 +100,9 @@ class _Brain:
             if index == 0 and self.gate is not None:
                 await self.gate.wait()
         return BrainUsage(input_tokens=10, output_tokens=2, cost_usd=Decimal("0.001"))
+
+    def estimate_usage(self, messages: list[dict[str, str]], response: str) -> BrainUsage:
+        return BrainUsage(input_tokens=5, output_tokens=len(response), cost_usd=Decimal("0.0005"))
 
 
 async def _bridge(
@@ -774,3 +779,89 @@ async def test_a_late_final_of_a_discarded_speculation_does_not_leak() -> None:
 
     assert [call[1] for call in brain.calls] == ["мне нужно дальше", "ещё"]
     await bridge.close()
+
+
+async def test_resumed_speech_survives_a_slow_final_after_a_discard() -> None:
+    class _SlowStt(_Stt):
+        async def finalize(self) -> None:
+            delay = {1: 0.05, 2: 0.3}.get(self.finalized + 1, 0.0)
+            self.finalized += 1
+            asyncio.get_running_loop().call_later(
+                delay, self.queue.put_nowait, SttResult(self.finals.pop(0), True)
+            )
+
+    stt = _SlowStt()
+    stt.finals = ["первое", "второе", "ещё"]
+    brain = _Brain(["Ок"])
+    bridge, _, _, _ = await _bridge(brain, stt)
+
+    await bridge.send_audio(b"S")
+    await bridge.send_audio(b"P")
+    await asyncio.sleep(0.01)
+    await bridge.send_audio(b"C")
+    await asyncio.sleep(0.1)  # the discarded finalize's final lands
+    stt.queue.put_nowait(SttResult("второе", False))
+    await asyncio.sleep(0.01)
+    await bridge.send_audio(b"E")  # its final arrives only after the timeout
+    await asyncio.sleep(0.4)
+    await bridge.send_audio(b"S")
+    await bridge.send_audio(b"E")
+    await _settle()
+
+    assert [call[1] for call in brain.calls] == ["первое второе", "ещё"]
+    await bridge.close()
+
+
+async def test_a_reply_discarded_mid_stream_is_metered_by_estimate() -> None:
+    gate = asyncio.Event()
+    brain = _Brain(["Конечно", ", давайте"], gate=gate)
+    bridge, stt, meter, _ = await _bridge(brain)
+    stt.finals = ["есть сироп"]
+    await bridge.send_audio(b"S")
+    await bridge.send_audio(b"P")
+    await _settle()
+
+    with capture_logs() as logs:
+        await bridge.send_audio(b"C")
+
+    [record] = [log for log in logs if log["event"] == "voice.cascade.brain_call"]
+    assert record["outcome"] == "speculative_discarded"
+    assert (record["input_tokens"], record["output_tokens"]) == (5, len("Конечно"))
+    assert meter.brain_cost_usd == Decimal("0.0005")
+    await bridge.close()
+
+
+async def test_speculation_stops_after_a_few_pauses_in_one_turn() -> None:
+    brain = _Brain(["Ок"])
+    bridge, stt, _, seen = await _bridge(brain)
+    stt.finals = ["а", "б", "в", "г", "д"]
+    await bridge.send_audio(b"S")
+    for _ in range(5):
+        await bridge.send_audio(b"P")
+        await _settle()
+        await bridge.send_audio(b"C")
+
+    await bridge.send_audio(b"E")
+    await _settle()
+
+    assert len(brain.calls) == 4  # three speculative, then the confirmed one
+    assert brain.calls[-1][1] == "а б в г"
+    assert UserTranscript(text="а б в г", is_final=True) in seen
+    await bridge.close()
+
+
+def test_prompt_brain_estimates_a_cancelled_call_from_its_text() -> None:
+    brain = PromptBrain(
+        provider="openai",
+        model="gpt-4.1-mini",
+        api_key="k",
+        params={},
+        history_turns=4,
+        runner=object(),
+        build_model=lambda *a, **kw: "MODEL",
+    )
+
+    usage = brain.estimate_usage([{"role": "user", "content": "x" * 400}], "y" * 40)
+
+    assert (usage.input_tokens, usage.output_tokens) == (100, 10)
+    assert usage.cost_usd > 0

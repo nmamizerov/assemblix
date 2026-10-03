@@ -12,16 +12,20 @@ from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field
 
 import numpy as np
+import structlog
 
 from assemblix_api.realtime.cascade.models import SAMPLE_RATE, VadModel
 from assemblix_api.schemas.voice_agent import TurnConfig
 
+logger = structlog.get_logger(__name__)
+
 _SPEECH_THRESHOLD = 0.5
 _ONSET_FRAMES = 2
 _WINDOW_SECONDS = 8
-# Smart Turn is re-asked during a long pause, demanding less certainty the longer it lasts.
+# Smart Turn is re-asked during a long pause, demanding less certainty the longer it
+# lasts; at most ~_ASKS_PER_PAUSE asks spread up to max silence, never closer than _REASK_MS.
 _REASK_MS = 150
-_MAX_ASKS_PER_PAUSE = 10
+_ASKS_PER_PAUSE = 10
 _THRESHOLD_FLOOR = 0.15
 
 Completion = Callable[[np.ndarray], Awaitable[float]]
@@ -56,8 +60,8 @@ Signal = SpeechStart | PauseStart | PauseCancelled | EndOfTurn
 class TurnUpdate:
     stt_audio: bytes = b""
     signals: list[Signal] = field(default_factory=list)
-    # A Smart Turn ask is pending behind a PauseStart: push(b"") again to settle it.
-    more: bool = False
+    # A Smart Turn ask in flight: await it, then push(b"") to process the audio behind it.
+    pending: asyncio.Future[float] | None = None
 
 
 class TurnDetector:
@@ -78,28 +82,34 @@ class TurnDetector:
         self._ask: asyncio.Future[float] | None = None
         self._ask_silence_ms = 0
         self._next_ask_ms = config.min_silence_ms
-        self._pause_asks = 0
+        self._reask_ms = max(
+            _REASK_MS, (config.max_silence_ms - config.min_silence_ms) // _ASKS_PER_PAUSE
+        )
         self._paused = False
         self._turn_asks = 0
         self._last_prob: float | None = None
 
     async def push(self, pcm: bytes) -> TurnUpdate:
+        """Never awaits inference: while a Smart Turn ask is in flight, audio is only
+        buffered and the update hands the ask back as ``pending``."""
         update = TurnUpdate()
         self._buffer += pcm
-        if self._ask is not None:
-            await self._settle_ask(update)
-        while len(self._buffer) >= self._frame_bytes:
+        while True:
+            if self._ask is not None:
+                if not self._ask.done():
+                    update.pending = self._ask
+                    return update
+                self._settle_ask(update)
+            if len(self._buffer) < self._frame_bytes:
+                return update
             frame = self._buffer[: self._frame_bytes]
             self._buffer = self._buffer[self._frame_bytes :]
-            paused = self._paused
             self._on_frame(frame, update)
-            if self._ask is None:
-                continue
-            if self._paused and not paused:
-                update.more = True
-                return update
-            await self._settle_ask(update)
-        return update
+
+    def close(self) -> None:
+        if self._ask is not None:
+            self._ask.cancel()
+            self._ask = None
 
     def _on_frame(self, frame: bytes, update: TurnUpdate) -> None:
         samples = np.frombuffer(frame, dtype=np.int16).astype(np.float32) / 32768.0
@@ -139,11 +149,7 @@ class TurnDetector:
         if self._silence_ms >= self._config.max_silence_ms:
             self._end(update)
             return
-        if (
-            self._config.smart_turn
-            and self._silence_ms >= self._next_ask_ms
-            and self._pause_asks < _MAX_ASKS_PER_PAUSE
-        ):
+        if self._config.smart_turn and self._silence_ms >= self._next_ask_ms:
             self._start_ask(update)
 
     def _start_ask(self, update: TurnUpdate) -> None:
@@ -154,16 +160,18 @@ class TurnDetector:
         speech = list(self._turn_audio)[: len(self._turn_audio) - pause_frames]
         audio = np.frombuffer(b"".join(speech), dtype=np.int16).astype(np.float32) / 32768.0
         self._ask_silence_ms = self._silence_ms
-        self._next_ask_ms = self._silence_ms + _REASK_MS
-        self._pause_asks += 1
+        self._next_ask_ms = self._silence_ms + self._reask_ms
         self._turn_asks += 1
         self._ask = asyncio.ensure_future(self._completion(audio))
 
-    async def _settle_ask(self, update: TurnUpdate) -> None:
+    def _settle_ask(self, update: TurnUpdate) -> None:
         ask, self._ask = self._ask, None
-        if ask is None:
+        if ask is None or ask.cancelled():
             return
-        probability = await ask
+        if (error := ask.exception()) is not None:
+            logger.warning("voice.cascade.smart_turn_failed", error=str(error))
+            return
+        probability = ask.result()
         self._last_prob = probability
         if probability >= self._threshold(self._ask_silence_ms):
             self._end(update)
@@ -182,7 +190,6 @@ class TurnDetector:
     def _reset_pause(self) -> None:
         self._silence_ms = 0
         self._next_ask_ms = self._config.min_silence_ms
-        self._pause_asks = 0
         self._paused = False
 
     def _end(self, update: TurnUpdate) -> None:

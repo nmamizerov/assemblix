@@ -37,10 +37,13 @@ from assemblix_api.realtime.cascade.turn import (
     PauseStart,
     SpeechStart,
     TurnDetector,
+    TurnUpdate,
 )
 
 logger = structlog.get_logger(__name__)
 
+# Pauses in one user turn that may start a speculative reply; later ones wait for EndOfTurn.
+_MAX_SPECULATIONS_PER_TURN = 3
 # Russian TTS speaks roughly 14 characters per second.
 _CHARS_PER_SECOND = 14.0
 
@@ -147,6 +150,9 @@ class CascadeBridge:
         # they must not answer a later finalize.
         self._orphan_finals = 0
         self._run: _TurnRun | None = None
+        self._speculations = 0
+        self._detector_lock = asyncio.Lock()
+        self._settle_task: asyncio.Task[None] | None = None
         self._stt_pump: asyncio.Task[None] | None = None
         # Audio sent to STT: in the open utterance, and in finished ones not yet answered.
         self._stt_bytes = 0
@@ -177,23 +183,32 @@ class CascadeBridge:
         self._stt_pump = asyncio.create_task(self._pump_stt())
 
     async def send_audio(self, pcm: bytes) -> None:
-        update = await self._detector.push(pcm)
-        while True:
-            if update.stt_audio:
-                self._stt_bytes += len(update.stt_audio)
-                await self._stt.send_audio(update.stt_audio)
-            for signal in update.signals:
-                if isinstance(signal, SpeechStart):
-                    await self._on_speech_start()
-                elif isinstance(signal, PauseStart):
-                    self._on_pause_start()
-                elif isinstance(signal, PauseCancelled):
-                    await self._discard_speculation()
-                elif isinstance(signal, EndOfTurn):
-                    self._on_end_of_turn(signal)
-            if not update.more:
-                return
-            update = await self._detector.push(b"")
+        async with self._detector_lock:
+            pending = await self._apply(await self._detector.push(pcm))
+        if pending is not None and (self._settle_task is None or self._settle_task.done()):
+            self._settle_task = asyncio.create_task(self._settle(pending))
+
+    async def _settle(self, pending: asyncio.Future[float] | None) -> None:
+        """Wait out Smart Turn asks off the audio path, then process the audio behind them."""
+        while pending is not None:
+            await asyncio.wait({pending})
+            async with self._detector_lock:
+                pending = await self._apply(await self._detector.push(b""))
+
+    async def _apply(self, update: TurnUpdate) -> asyncio.Future[float] | None:
+        if update.stt_audio:
+            self._stt_bytes += len(update.stt_audio)
+            await self._stt.send_audio(update.stt_audio)
+        for signal in update.signals:
+            if isinstance(signal, SpeechStart):
+                await self._on_speech_start()
+            elif isinstance(signal, PauseStart):
+                self._on_pause_start()
+            elif isinstance(signal, PauseCancelled):
+                await self._discard_speculation()
+            elif isinstance(signal, EndOfTurn):
+                self._on_end_of_turn(signal)
+        return update.pending
 
     async def interrupt(self, *, audio_end_ms: int) -> None:
         if self._interrupted_index is None:
@@ -218,9 +233,10 @@ class CascadeBridge:
                 return
 
     async def close(self) -> None:
-        for task in (self._reply_task, self._stt_pump):
+        for task in (self._settle_task, self._reply_task, self._stt_pump):
             if task is not None:
                 await _cancel_and_wait(task)
+        self._detector.close()
         try:
             await self._stt.close()
         finally:
@@ -229,6 +245,7 @@ class CascadeBridge:
 
     async def _on_speech_start(self) -> None:
         await self._discard_speculation()
+        self._speculations = 0
         self._stale_finals = 0
         self._orphan_finals = 0
         await self._queue.put(SpeechStarted())
@@ -238,9 +255,11 @@ class CascadeBridge:
         self._barge_in_pending = True
         self._early_heard_ms = None
         await _cancel_and_wait(task)
+        usage = self._run.usage if self._run is not None and self._run.usage else BrainUsage()
+        self._meter.brain_cost_usd += usage.cost_usd
         if not self._reply_text:
             self._barge_in_pending = False
-            self._close_call("", BrainUsage(), outcome="cancelled")
+            self._close_call("", usage, outcome="cancelled")
             return
         # Barge-in: until interrupt() says how much was heard, none of it counts.
         self._history.append(Turn("assistant", ""))
@@ -250,12 +269,15 @@ class CascadeBridge:
         if self._early_heard_ms is not None:
             self._apply_heard(self._early_heard_ms)
             self._early_heard_ms = None
-        record, usage = self._close_call(self._reply_text, BrainUsage(), outcome="cancelled")
+        record, turn_usage = self._close_call(self._reply_text, usage, outcome="cancelled")
         await self._queue.put(AgentTranscript(text=self._reply_text, is_final=True))
-        await self._queue.put(TurnEnded(llm_call=record, usage=usage))
+        await self._queue.put(TurnEnded(llm_call=record, usage=turn_usage))
         self._reply_text = ""
 
     def _on_pause_start(self) -> None:
+        if self._speculations >= _MAX_SPECULATIONS_PER_TURN:
+            return
+        self._speculations += 1
         self._unanswered_stt_bytes += self._stt_bytes
         self._stt_bytes = 0
         run = _TurnRun(speculative=True)
@@ -274,9 +296,17 @@ class CascadeBridge:
         if run.awaiting_final and not self._final_event.is_set():
             self._orphan_finals += 1
         if self._call is not None:
-            usage = run.usage or BrainUsage()
+            usage = run.usage
+            # Cancelled mid-stream the provider never reports usage, so price it from text.
+            if usage is None:
+                usage = self._brain.estimate_usage(self._call.messages, self._reply_text)
             self._meter.brain_cost_usd += usage.cost_usd
-            self._close_call(self._reply_text, usage, outcome="speculative_discarded")
+            self._close_call(
+                self._reply_text,
+                usage,
+                outcome="speculative_discarded",
+                estimated=run.usage is None,
+            )
         self._reply_text = ""
 
     def _on_end_of_turn(self, signal: EndOfTurn) -> None:
@@ -307,7 +337,7 @@ class CascadeBridge:
             logger.warning("voice.cascade.stt_finalize_failed", error=str(exc))
         run.awaiting_final = False
         run.stt_done_at = self._clock()
-        heard = (" ".join(self._finals) or self._partial).strip()
+        heard = " ".join(filter(None, [*self._finals, self._partial.strip()])).strip()
         self._finals.clear()
         self._partial = ""
         if heard:
@@ -442,7 +472,13 @@ class CascadeBridge:
         )
 
     def _close_call(
-        self, text: str, usage: BrainUsage, *, outcome: str, error: str | None = None
+        self,
+        text: str,
+        usage: BrainUsage,
+        *,
+        outcome: str,
+        error: str | None = None,
+        estimated: bool = False,
     ) -> tuple[dict[str, Any] | None, dict[str, Any] | None]:
         """Turn the call in flight into its debug record and per-turn spend, and log it."""
         call, self._call = self._call, None
@@ -467,6 +503,8 @@ class CascadeBridge:
             "outcome": outcome,
             "error": error,
         }
+        if estimated:
+            record["estimated"] = True
         stt_seconds = call.stt_bytes / (2 * self.input_sample_rate)
         stt_cost = Decimal(str(stt_seconds)) / Decimal(60) * Decimal(str(self._stt_cost_per_minute))
         turn_usage: dict[str, Any] = {
@@ -494,6 +532,8 @@ class CascadeBridge:
         try:
             async for result in self._stt.results():
                 if result.is_final:
+                    # A final supersedes the phrase's partial, stale or not.
+                    self._partial = ""
                     if self._stale_finals:
                         self._stale_finals -= 1
                         continue

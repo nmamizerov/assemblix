@@ -32,6 +32,8 @@ class TurnConfig(DTOModel):
     smart_turn_threshold: float = Field(default=0.5, gt=0, lt=1)
     preroll_ms: int = Field(default=300, ge=0, le=1000)
     # Start the reply during the pause, before end of turn is confirmed; shown only then.
+    # Each such pause also asks STT for a final (Eou). Smart Turn re-asks with a decaying
+    # threshold regardless of this flag.
     speculative: bool = True
 
     @model_validator(mode="after")
