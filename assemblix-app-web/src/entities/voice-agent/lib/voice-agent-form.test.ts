@@ -46,6 +46,7 @@ describe("voice agent form", () => {
       name: "Receptionist",
       description: null,
       config: {
+        mode: "realtime",
         instructions: [{ role: "system", content: "You are a clinic receptionist." }],
         knowledgeBaseIds: [],
         firstMessage: "Hello",
@@ -58,6 +59,7 @@ describe("voice agent form", () => {
           realtime: false,
         },
         tts: null,
+        cascade: null,
         avatar: null,
         params: {},
         turnWorkflowId: "wf-1",

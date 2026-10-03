@@ -29,14 +29,23 @@ import { selectCurrentProjectId } from "@/entities/organization";
 import { VoiceOutputPicker } from "@/entities/voice-model";
 import { AvatarOutputPicker } from "@/entities/avatar-model";
 import {
+  applyModeChange,
   applyProviderChange,
   LANGUAGE_OPTIONS,
   supportsCustomVoices,
 } from "../lib/voice-agent-form";
 import type { DraftValidation } from "../lib/voice-agent-form";
-import type { VoiceAgentDraft } from "../model/types";
+import type { VoiceAgentDraft, VoiceAgentMode } from "../model/types";
+import {
+  CascadeBrainSection,
+  CascadeRecognitionSection,
+  CascadeTurnSection,
+} from "./cascade-sections";
 import { ProviderMark } from "./provider-mark";
+import { FieldError, Section } from "./section";
 import { VoiceCombobox } from "./voice-combobox";
+
+const MODES: VoiceAgentMode[] = ["realtime", "cascade"];
 
 // Soft budget for the knowledge base text that gets inlined into the voice
 // agent's prompt. There is no backend-enforced cap — this only warns the
@@ -60,10 +69,11 @@ export const VoiceAgentForm = ({ draft, errors, onChange }: VoiceAgentFormProps)
   const { data: providers = [] } = useGetVoiceProvidersQuery({
     capability: "conversation",
   });
+  const isRealtime = draft.mode === "realtime";
   const { data: models = [], isLoading: isLoadingModels } =
     useGetVoiceProviderModelsQuery(
       { providerName: draft.provider, capability: "conversation" },
-      { skip: !draft.provider }
+      { skip: !draft.provider || !isRealtime }
     );
   const { data: knowledgeBases = [] } = useGetKnowledgeBasesQuery(
     { projectId: currentProjectId! },
@@ -75,7 +85,7 @@ export const VoiceAgentForm = ({ draft, errors, onChange }: VoiceAgentFormProps)
   );
   const { data: voices = [], isLoading: isLoadingVoices } = useGetSystemVoicesQuery(
     { providerName: draft.provider },
-    { skip: !draft.provider }
+    { skip: !draft.provider || !isRealtime }
   );
   const credentialType = getCredentialTypeForProvider(draft.provider);
   // Only a model that can answer in text can hand its reply to another provider
@@ -184,177 +194,231 @@ export const VoiceAgentForm = ({ draft, errors, onChange }: VoiceAgentFormProps)
         </div>
       </Section>
 
-      <Section title={t("voiceAgents.sections.voice")} hint={t("voiceAgents.sections.voiceHint")}>
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div className="space-y-2">
-            <Label>{t("voiceAgents.fields.provider")}</Label>
-            <Select value={draft.provider} onValueChange={handleProviderChange}>
-              <SelectTrigger aria-invalid={Boolean(errors.provider)} className="w-full">
-                <SelectValue placeholder={t("voiceAgents.fields.selectProvider")} />
-              </SelectTrigger>
-              <SelectContent>
-                {providers.map((provider) => (
-                  <SelectItem key={provider.name} value={provider.name}>
-                    <span className="flex items-center gap-2">
-                      <ProviderMark provider={provider.name} />
-                      {provider.label}
-                    </span>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            {errors.provider && (
-              <p className="text-xs text-destructive">{t(errors.provider)}</p>
-            )}
-          </div>
-          <div className="space-y-2">
-            <Label>{t("voiceAgents.fields.model")}</Label>
-            <Select
-              value={draft.model}
-              onValueChange={(value) => handleField("model", value)}
-              disabled={!draft.provider || isLoadingModels}
-            >
-              <SelectTrigger aria-invalid={Boolean(errors.model)} className="w-full">
-                <SelectValue
-                  placeholder={
-                    isLoadingModels
-                      ? t("voiceAgents.fields.loadingModels")
-                      : t("voiceAgents.fields.selectModel")
-                  }
-                />
-              </SelectTrigger>
-              <SelectContent>
-                {models.map((model) => (
-                  <SelectItem key={model.id} value={model.id}>
-                    <span className="flex w-full items-center justify-between gap-4">
-                      {model.label}
-                      {model.costPerMinute != null && (
-                        <span className="text-xs tabular-nums text-muted-foreground">
-                          {t("voiceAgents.fields.perMinute", {
-                            cost: model.costPerMinute.toFixed(2),
-                          })}
-                        </span>
-                      )}
-                    </span>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            {errors.model && (
-              <p className="text-xs text-destructive">{t(errors.model)}</p>
-            )}
-          </div>
-          {draft.tts === null && (
-          <div className="space-y-2">
-            <Label>{t("voiceAgents.fields.voiceId")}</Label>
-            {supportsCustomVoices(draft.provider) ? (
-              <>
-                <VoiceCombobox
-                  value={draft.voiceId}
-                  options={voices}
-                  disabled={!draft.provider || isLoadingVoices}
-                  placeholder={
-                    isLoadingVoices
-                      ? t("voiceAgents.fields.loadingVoices")
-                      : t("voiceAgents.fields.selectVoice")
-                  }
-                  onChange={(value) => handleField("voiceId", value)}
-                />
-                <p className="text-xs text-muted-foreground">
-                  {t("voiceAgents.fields.customVoiceCaption")}
-                </p>
-              </>
-            ) : (
-              <Select
-                value={draft.voiceId}
-                onValueChange={(value) => handleField("voiceId", value)}
-                disabled={!draft.provider || isLoadingVoices}
+      <Section title={t("voiceAgents.sections.mode")} hint={t("voiceAgents.sections.modeHint")}>
+        <div role="radiogroup" className="grid gap-3 sm:grid-cols-2">
+          {MODES.map((mode) => {
+            const isSelected = draft.mode === mode;
+            return (
+              <button
+                key={mode}
+                type="button"
+                role="radio"
+                aria-checked={isSelected}
+                onClick={() => onChange(applyModeChange(draft, mode))}
+                className={cn(
+                  "rounded-lg border px-4 py-3 text-left transition-colors",
+                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                  isSelected
+                    ? "border-primary bg-primary/5"
+                    : "border-border hover:bg-muted/40"
+                )}
               >
-                <SelectTrigger className="w-full">
-                  <SelectValue
-                    placeholder={
-                      isLoadingVoices
-                        ? t("voiceAgents.fields.loadingVoices")
-                        : t("voiceAgents.fields.selectVoice")
-                    }
-                  />
-                </SelectTrigger>
-                <SelectContent>
-                  {voices.map((voice) => (
-                    <SelectItem key={voice.id} value={voice.id}>
-                      {voice.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            )}
-          </div>
-          )}
-          <div className="space-y-2">
-            <Label>{t("voiceAgents.fields.language")}</Label>
-            <Select
-              value={draft.language}
-              onValueChange={(value) => handleField("language", value)}
-            >
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder={t("voiceAgents.fields.selectLanguage")} />
-              </SelectTrigger>
-              <SelectContent>
-                {LANGUAGE_OPTIONS.map((language) => (
-                  <SelectItem key={language.code} value={language.code}>
-                    {language.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          {credentialType && (
-            <div className="space-y-2 sm:col-span-2">
-              <Label>{t("voiceAgents.fields.credential")}</Label>
-              <CredentialSelect
-                selectedCredentialId={draft.credentialId ?? undefined}
-                onSelect={handleCredentialChange}
-                credentialType={credentialType}
-                placeholder={t("voiceAgents.fields.selectCredential")}
-              />
-              <p className="text-xs text-muted-foreground">
-                {t("voiceAgents.fields.credentialCaption")}
-              </p>
-            </div>
-          )}
+                <span className="block text-sm font-medium text-foreground">
+                  {t(`voiceAgents.modes.${mode}.title`)}
+                </span>
+                <span className="mt-1 block text-xs leading-relaxed text-muted-foreground">
+                  {t(`voiceAgents.modes.${mode}.description`)}
+                </span>
+              </button>
+            );
+          })}
         </div>
       </Section>
 
-      <Section
-        title={t("voiceAgents.sections.synthesis")}
-        hint={t("voiceAgents.sections.synthesisHint")}
-      >
-        <div className="space-y-3">
-          <div className="flex items-center justify-between gap-4">
-            <Label htmlFor="voice-agent-tts" className="font-normal">
-              {t("voiceAgents.fields.externalVoice")}
-            </Label>
-            <Switch
-              id="voice-agent-tts"
-              checked={draft.tts !== null}
-              disabled={!canUseExternalVoice}
-              onCheckedChange={handleTtsToggle}
-            />
-          </div>
-          {!canUseExternalVoice && (
-            <p className="text-xs text-muted-foreground">
-              {t("voiceAgents.fields.externalVoiceUnavailable")}
-            </p>
-          )}
-          {draft.tts !== null && (
+      {isRealtime ? (
+        <>
+          <Section title={t("voiceAgents.sections.voice")} hint={t("voiceAgents.sections.voiceHint")}>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Label>{t("voiceAgents.fields.provider")}</Label>
+                <Select value={draft.provider} onValueChange={handleProviderChange}>
+                  <SelectTrigger aria-invalid={Boolean(errors.provider)} className="w-full">
+                    <SelectValue placeholder={t("voiceAgents.fields.selectProvider")} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {providers.map((provider) => (
+                      <SelectItem key={provider.name} value={provider.name}>
+                        <span className="flex items-center gap-2">
+                          <ProviderMark provider={provider.name} />
+                          {provider.label}
+                        </span>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {errors.provider && (
+                  <p className="text-xs text-destructive">{t(errors.provider)}</p>
+                )}
+              </div>
+              <div className="space-y-2">
+                <Label>{t("voiceAgents.fields.model")}</Label>
+                <Select
+                  value={draft.model}
+                  onValueChange={(value) => handleField("model", value)}
+                  disabled={!draft.provider || isLoadingModels}
+                >
+                  <SelectTrigger aria-invalid={Boolean(errors.model)} className="w-full">
+                    <SelectValue
+                      placeholder={
+                        isLoadingModels
+                          ? t("voiceAgents.fields.loadingModels")
+                          : t("voiceAgents.fields.selectModel")
+                      }
+                    />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {models.map((model) => (
+                      <SelectItem key={model.id} value={model.id}>
+                        <span className="flex w-full items-center justify-between gap-4">
+                          {model.label}
+                          {model.costPerMinute != null && (
+                            <span className="text-xs tabular-nums text-muted-foreground">
+                              {t("voiceAgents.fields.perMinute", {
+                                cost: model.costPerMinute.toFixed(2),
+                              })}
+                            </span>
+                          )}
+                        </span>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {errors.model && (
+                  <p className="text-xs text-destructive">{t(errors.model)}</p>
+                )}
+              </div>
+              {draft.tts === null && (
+              <div className="space-y-2">
+                <Label>{t("voiceAgents.fields.voiceId")}</Label>
+                {supportsCustomVoices(draft.provider) ? (
+                  <>
+                    <VoiceCombobox
+                      value={draft.voiceId}
+                      options={voices}
+                      disabled={!draft.provider || isLoadingVoices}
+                      placeholder={
+                        isLoadingVoices
+                          ? t("voiceAgents.fields.loadingVoices")
+                          : t("voiceAgents.fields.selectVoice")
+                      }
+                      onChange={(value) => handleField("voiceId", value)}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      {t("voiceAgents.fields.customVoiceCaption")}
+                    </p>
+                  </>
+                ) : (
+                  <Select
+                    value={draft.voiceId}
+                    onValueChange={(value) => handleField("voiceId", value)}
+                    disabled={!draft.provider || isLoadingVoices}
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue
+                        placeholder={
+                          isLoadingVoices
+                            ? t("voiceAgents.fields.loadingVoices")
+                            : t("voiceAgents.fields.selectVoice")
+                        }
+                      />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {voices.map((voice) => (
+                        <SelectItem key={voice.id} value={voice.id}>
+                          {voice.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              </div>
+              )}
+              <div className="space-y-2">
+                <Label>{t("voiceAgents.fields.language")}</Label>
+                <Select
+                  value={draft.language}
+                  onValueChange={(value) => handleField("language", value)}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder={t("voiceAgents.fields.selectLanguage")} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {LANGUAGE_OPTIONS.map((language) => (
+                      <SelectItem key={language.code} value={language.code}>
+                        {language.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              {credentialType && (
+                <div className="space-y-2 sm:col-span-2">
+                  <Label>{t("voiceAgents.fields.credential")}</Label>
+                  <CredentialSelect
+                    selectedCredentialId={draft.credentialId ?? undefined}
+                    onSelect={handleCredentialChange}
+                    credentialType={credentialType}
+                    placeholder={t("voiceAgents.fields.selectCredential")}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    {t("voiceAgents.fields.credentialCaption")}
+                  </p>
+                </div>
+              )}
+            </div>
+          </Section>
+
+          <Section
+            title={t("voiceAgents.sections.synthesis")}
+            hint={t("voiceAgents.sections.synthesisHint")}
+          >
+            <div className="space-y-3">
+              <div className="flex items-center justify-between gap-4">
+                <Label htmlFor="voice-agent-tts" className="font-normal">
+                  {t("voiceAgents.fields.externalVoice")}
+                </Label>
+                <Switch
+                  id="voice-agent-tts"
+                  checked={draft.tts !== null}
+                  // Turning an external voice off must stay possible even when
+                  // the model cannot use one (e.g. kept from a cascade draft).
+                  disabled={!canUseExternalVoice && draft.tts === null}
+                  onCheckedChange={handleTtsToggle}
+                />
+              </div>
+              {!canUseExternalVoice && (
+                <p className="text-xs text-muted-foreground">
+                  {t("voiceAgents.fields.externalVoiceUnavailable")}
+                </p>
+              )}
+              {draft.tts !== null && (
+                <VoiceOutputPicker
+                  requireRealtime
+                  value={draft.tts}
+                  onChange={(voice) => handleField("tts", voice)}
+                />
+              )}
+            </div>
+          </Section>
+        </>
+      ) : (
+        <>
+          <CascadeRecognitionSection draft={draft} errors={errors} onChange={onChange} />
+          <CascadeBrainSection draft={draft} errors={errors} onChange={onChange} />
+          <Section
+            title={t("voiceAgents.sections.synthesis")}
+            hint={t("voiceAgents.sections.cascadeSynthesisHint")}
+          >
             <VoiceOutputPicker
               requireRealtime
-              value={draft.tts}
+              value={draft.tts ?? undefined}
               onChange={(voice) => handleField("tts", voice)}
             />
-          )}
-        </div>
-      </Section>
+            <FieldError error={errors.tts} />
+          </Section>
+          <CascadeTurnSection draft={draft} errors={errors} onChange={onChange} />
+        </>
+      )}
 
       <Section
         title={t("voiceAgents.sections.avatar")}
@@ -485,27 +549,3 @@ export const VoiceAgentForm = ({ draft, errors, onChange }: VoiceAgentFormProps)
     </div>
   );
 };
-
-interface SectionProps {
-  title: string;
-  hint: string;
-  children: React.ReactNode;
-}
-
-/**
- * Section label and its one-line purpose sit in a narrow rail beside the fields.
- * Two effects: the eye gets a stable left edge to scan, and inputs stop
- * stretching to the full width of the page, which is what made this read as a
- * settings dump rather than a considered form.
- */
-const Section = ({ title, hint, children }: SectionProps) => (
-  <section className="grid gap-x-10 gap-y-4 py-8 first:pt-0 last:pb-0 lg:grid-cols-[13rem_minmax(0,1fr)]">
-    <div className="lg:pt-1">
-      <h2 className="text-sm font-medium tracking-tight text-foreground">{title}</h2>
-      <p className="mt-1 max-w-[24ch] text-xs leading-relaxed text-muted-foreground">
-        {hint}
-      </p>
-    </div>
-    <div className="max-w-2xl space-y-4">{children}</div>
-  </section>
-);
