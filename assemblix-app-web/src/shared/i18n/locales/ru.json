@@ -1469,6 +1469,8 @@
       "maxSilenceMs": "Макс. пауза, мс",
       "smartTurn": "Умное определение конца реплики",
       "smartTurnCaption": "Модель оценивает, закончена ли фраза, — агент отвечает быстрее и не перебивает собеседника.",
+      "speculative": "Начинать ответ во время паузы",
+      "speculativeCaption": "Ответ готовится, пока собеседник молчит, и звучит только после конца реплики — быстрее, но иногда LLM-вызов уходит впустую.",
       "smartTurnThreshold": "Порог умного определения",
       "prerollMs": "Предзахват, мс"
     },
@@ -1585,7 +1587,12 @@
       "loadError": "Не удалось загрузить звонок",
       "latency": "Задержки",
       "stage": "Этап",
-      "ms": "{{ms}} мс"
+      "ms": "{{ms}} мс",
+      "smartTurn_one": "Smart Turn {{prob}} · {{count}} запрос",
+      "smartTurn_few": "Smart Turn {{prob}} · {{count}} запроса",
+      "smartTurn_many": "Smart Turn {{prob}} · {{count}} запросов",
+      "smartTurn_other": "Smart Turn {{prob}} · {{count}} запроса",
+      "speculative": "Спекулятивно"
     },
     "stages": {
       "eouMs": "Конец реплики",
@@ -1595,7 +1602,8 @@
       "totalMs": "Итого",
       "ttsGapMaxMs": "Макс. пауза",
       "ttsLeadingSilenceMs": "Тишина в начале",
-      "ttsFirstAudibleMs": "Слышимый первый звук"
+      "ttsFirstAudibleMs": "Слышимый первый звук",
+      "llmOverlapMs": "LLM в паузе"
     },
     "llm": {
       "title": "Вызов LLM",
@@ -1635,7 +1643,8 @@
         "ok": "Успешно",
         "cancelled": "Перебит",
         "brain_timeout": "Таймаут",
-        "brain_failed": "Ошибка"
+        "brain_failed": "Ошибка",
+        "speculative_discarded": "Отброшен (собеседник продолжил)"
       }
     }
   }

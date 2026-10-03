@@ -1463,6 +1463,8 @@
       "maxSilenceMs": "Max silence, ms",
       "smartTurn": "Smart turn detection",
       "smartTurnCaption": "A model judges whether the phrase is complete, so the agent replies sooner without cutting the caller off.",
+      "speculative": "Start replying during pauses",
+      "speculativeCaption": "The reply is prepared while the caller pauses and is spoken only once the turn is over — faster answers, at the cost of occasional discarded LLM calls.",
       "smartTurnThreshold": "Smart turn threshold",
       "prerollMs": "Pre-roll, ms"
     },
@@ -1579,7 +1581,10 @@
       "loadError": "Failed to load the call",
       "latency": "Latency",
       "stage": "Stage",
-      "ms": "{{ms}} ms"
+      "ms": "{{ms}} ms",
+      "smartTurn_one": "Smart Turn {{prob}} · {{count}} ask",
+      "smartTurn_other": "Smart Turn {{prob}} · {{count}} asks",
+      "speculative": "Speculative"
     },
     "stages": {
       "eouMs": "End of turn",
@@ -1589,7 +1594,8 @@
       "totalMs": "Total",
       "ttsGapMaxMs": "Max gap",
       "ttsLeadingSilenceMs": "Lead-in silence",
-      "ttsFirstAudibleMs": "Audible first audio"
+      "ttsFirstAudibleMs": "Audible first audio",
+      "llmOverlapMs": "LLM in pause"
     },
     "llm": {
       "title": "LLM call",
@@ -1625,7 +1631,8 @@
         "ok": "OK",
         "cancelled": "Interrupted",
         "brain_timeout": "Timed out",
-        "brain_failed": "Failed"
+        "brain_failed": "Failed",
+        "speculative_discarded": "Discarded (caller went on)"
       }
     }
   }

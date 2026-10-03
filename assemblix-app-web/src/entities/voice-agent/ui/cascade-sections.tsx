@@ -387,6 +387,21 @@ export const CascadeTurnSection = ({
             <FieldError error={errors.smartTurnThreshold} />
           </div>
           {numberField("prerollMs", "voiceAgents.fields.prerollMs")}
+          <div className="space-y-2 sm:col-span-2">
+            <div className="flex items-center justify-between gap-4">
+              <Label htmlFor="voice-agent-speculative" className="font-normal">
+                {t("voiceAgents.fields.speculative")}
+              </Label>
+              <Switch
+                id="voice-agent-speculative"
+                checked={turn.speculative}
+                onCheckedChange={(speculative) => handleTurn({ speculative })}
+              />
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {t("voiceAgents.fields.speculativeCaption")}
+            </p>
+          </div>
         </div>
       )}
     </Section>
