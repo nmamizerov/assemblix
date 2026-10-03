@@ -16,7 +16,7 @@
       "type": "agent",
       "config": {
         "name": "Категоризация вопроса",
-        "model": "gpt-4.1-nano",
+        "model": "gpt-4.1-mini",
         "tools": null,
         "provider": "openai",
         "tool_choice": "auto",
@@ -95,7 +95,7 @@
       "type": "agent",
       "config": {
         "name": "Обработка позитивного ответа",
-        "model": "gpt-4.1-nano",
+        "model": "gpt-4.1-mini",
         "tools": null,
         "provider": "openai",
         "tool_choice": "auto",
@@ -119,7 +119,7 @@
       "type": "agent",
       "config": {
         "name": "Обработка негативного овтета",
-        "model": "gpt-4.1-nano",
+        "model": "gpt-4.1-mini",
         "tools": null,
         "provider": "openai",
         "tool_choice": "auto",
@@ -143,7 +143,7 @@
       "type": "agent",
       "config": {
         "name": "Обработка остальных овтетов",
-        "model": "gpt-4.1-nano",
+        "model": "gpt-4.1-mini",
         "tools": null,
         "provider": "openai",
         "tool_choice": "auto",
