@@ -5,6 +5,25 @@ All notable changes to this project are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.41](https://github.com/nmamizerov/assemblix/compare/v0.2.40...v0.2.41) (2026-10-03)
+
+
+### Features
+
+* **llm:** refresh OpenAI and Gemini model catalogs to the October 2026 lineup ([19c6d6f](https://github.com/nmamizerov/assemblix/commit/19c6d6fb9d6937623e7af378874b9be0c923cd3b))
+* **llm:** refresh OpenAI and Gemini model catalogs to the October 2026 lineup ([edb246d](https://github.com/nmamizerov/assemblix/commit/edb246dbc28cb39c4aa65e7056a3377ef20e8749))
+* spoken-style default prompt and late barge-in for cascade voice agents ([8adca3b](https://github.com/nmamizerov/assemblix/commit/8adca3bdab3cfcb570b6e171010ca4098c84dd16))
+* **web:** pre-fill voice agents with a spoken-style system prompt ([30444a4](https://github.com/nmamizerov/assemblix/commit/30444a431a308bedfc01611a8cc501e9ccf17bff))
+* **web:** surface the cascade brain's reasoning controls ([00b690e](https://github.com/nmamizerov/assemblix/commit/00b690eb4c076866aa18184ed9aac4bf47f8702e))
+* **web:** tune the cascade brain's generation settings ([f0a285b](https://github.com/nmamizerov/assemblix/commit/f0a285b5424f2ff7549ab0a50517c19181023f30))
+
+
+### Bug Fixes
+
+* **api:** harden half-cascade aborts ([81ba7c8](https://github.com/nmamizerov/assemblix/commit/81ba7c84a492f0b4e21d3cd50d7ed8e55844ee42))
+* **api:** let callers interrupt a finished cascade reply ([baf5503](https://github.com/nmamizerov/assemblix/commit/baf5503701a764f78323c77c4479b3f21d7dcc1f))
+* **llm:** restore gpt-4.1-nano catalog entry and guard against duplicate ids ([99f90af](https://github.com/nmamizerov/assemblix/commit/99f90af0d3ca5f14f720edb70b7b5d62c5b45122))
+
 ## [0.2.40](https://github.com/nmamizerov/assemblix/compare/v0.2.39...v0.2.40) (2026-10-03)
 
 
