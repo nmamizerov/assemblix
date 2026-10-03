@@ -12,11 +12,13 @@ export const formatDuration = (seconds: number): string => {
 export const formatCredits = (credits: number): string =>
   credits === 0 ? "0" : credits.toFixed(credits < 0.01 ? 5 : 2);
 
-// Pipeline order of a cascade turn; i18n keys live under voiceSessions.stages.
+// Pipeline order of a cascade turn, then the longest silence inside the reply;
+// i18n keys live under voiceSessions.stages.
 export const TIMING_STAGES = [
   "eouMs",
   "sttFinalMs",
   "brainFirstTokenMs",
   "ttsFirstAudioMs",
   "totalMs",
+  "ttsGapMaxMs",
 ] as const;

@@ -1592,7 +1592,8 @@
       "sttFinalMs": "STT",
       "brainFirstTokenMs": "LLM",
       "ttsFirstAudioMs": "TTS",
-      "totalMs": "Итого"
+      "totalMs": "Итого",
+      "ttsGapMaxMs": "Макс. пауза"
     }
   }
 }

@@ -19,6 +19,8 @@ export interface VoiceTurnTimings {
   brainFirstTokenMs?: number;
   ttsFirstAudioMs?: number;
   totalMs?: number;
+  /** Longest silence between audio chunks inside the reply. */
+  ttsGapMaxMs?: number;
   firstAudioMs?: number;
 }
 
@@ -27,7 +29,8 @@ export type VoiceTimingStage =
   | "sttFinalMs"
   | "brainFirstTokenMs"
   | "ttsFirstAudioMs"
-  | "totalMs";
+  | "totalMs"
+  | "ttsGapMaxMs";
 
 export interface VoiceSessionTranscriptLine {
   role: "user" | "assistant";
