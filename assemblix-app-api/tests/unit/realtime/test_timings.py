@@ -17,3 +17,18 @@ def test_nearest_rank_percentiles_per_stage() -> None:
         "eouMs": {"p50": 200, "p95": 200},
         "totalMs": {"p50": 1000, "p95": 1900},
     }
+
+
+def test_summary_includes_the_longest_audio_gap() -> None:
+    # Arrange
+    transcript = [
+        {"role": "assistant", "text": "y", "timings": {"totalMs": 900, "ttsGapMaxMs": gap}}
+        for gap in (0, 300, 1800)
+    ]
+
+    # Act
+    summary = summarize_timings(transcript)
+
+    # Assert
+    assert summary is not None
+    assert summary["ttsGapMaxMs"] == {"p50": 300, "p95": 1800}

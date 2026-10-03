@@ -505,7 +505,10 @@ async def test_cascade_timings_are_closed_at_first_audio_and_stored_on_the_reply
     assert event["totalMs"] >= 900
     assert event["ttsFirstAudioMs"] == event["totalMs"] - 224 - 80 - 350
     assistant = [line for line in runtime.transcript if line["role"] == "assistant"]
-    assert assistant[0]["timings"] == {k: v for k, v in event.items() if k != "type"}
+    assert assistant[0]["timings"] == {
+        **{k: v for k, v in event.items() if k != "type"},
+        "ttsGapMaxMs": 0,
+    }
     assert "timings" not in runtime.transcript[0]
 
 
@@ -663,3 +666,35 @@ async def test_a_bridge_without_late_interrupts_behaves_as_before() -> None:
     # Assert
     assert after_turn_interrupts == []
     assert mid_turn_interrupts == [1000]
+
+
+async def test_the_longest_silence_inside_a_cascade_reply_is_stored_on_its_timings() -> None:
+    """Audio arriving after the forwarded audio would have finished playing is a gap
+    the caller heard; the longest one per turn lands on the reply's timings."""
+    # Arrange
+    clock = _Clock()
+    script = [
+        UserTranscript(text="привет", is_final=True),
+        TurnTimings(
+            speech_ended_at=time.monotonic(), eou_ms=1, stt_final_ms=1, brain_first_token_ms=1
+        ),
+        _ONE_SECOND,
+        1.2,  # the first second plays out, then 0.2 s of silence
+        _ONE_SECOND,
+        0.1,  # still covered by buffered audio
+        _ONE_SECOND,
+        2.4,  # 1.9 s of buffered audio left, then 0.5 s of silence
+        _ONE_SECOND,
+        AgentTranscript(text="Здравствуйте", is_final=True),
+        TurnEnded(),
+        SessionClosed(reason="done"),
+    ]
+    bridge = _ClockedBridge(script, clock, late=False)
+    runtime = _runtime(bridge, _BrowserClient([]), clock=clock)
+
+    # Act
+    await runtime.run()
+
+    # Assert
+    assistant = [line for line in runtime.transcript if line["role"] == "assistant"]
+    assert assistant[0]["timings"]["ttsGapMaxMs"] == 500

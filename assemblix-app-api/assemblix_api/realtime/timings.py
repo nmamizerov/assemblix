@@ -4,7 +4,14 @@ from __future__ import annotations
 
 import math
 
-STAGES = ("eouMs", "sttFinalMs", "brainFirstTokenMs", "ttsFirstAudioMs", "totalMs")
+STAGES = (
+    "eouMs",
+    "sttFinalMs",
+    "brainFirstTokenMs",
+    "ttsFirstAudioMs",
+    "totalMs",
+    "ttsGapMaxMs",
+)
 
 
 def _nearest_rank(values: list[int], percentile: int) -> int:
