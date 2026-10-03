@@ -32,3 +32,20 @@ def test_summary_includes_the_longest_audio_gap() -> None:
     # Assert
     assert summary is not None
     assert summary["ttsGapMaxMs"] == {"p50": 300, "p95": 1800}
+
+
+def test_summary_includes_leading_silence_and_audible_first_audio() -> None:
+    transcript = [
+        {
+            "role": "assistant",
+            "text": "y",
+            "timings": {"ttsLeadingSilenceMs": lead, "ttsFirstAudibleMs": 200 + lead},
+        }
+        for lead in (0, 300, 600)
+    ]
+
+    summary = summarize_timings(transcript)
+
+    assert summary is not None
+    assert summary["ttsLeadingSilenceMs"] == {"p50": 300, "p95": 600}
+    assert summary["ttsFirstAudibleMs"] == {"p50": 500, "p95": 800}

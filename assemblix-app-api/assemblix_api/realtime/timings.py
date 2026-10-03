@@ -11,6 +11,8 @@ STAGES = (
     "ttsFirstAudioMs",
     "totalMs",
     "ttsGapMaxMs",
+    "ttsLeadingSilenceMs",
+    "ttsFirstAudibleMs",
 )
 
 

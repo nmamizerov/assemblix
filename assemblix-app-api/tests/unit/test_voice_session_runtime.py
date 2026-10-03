@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import asyncio
+import math
+import struct
 import time
 from collections.abc import AsyncIterator
 from typing import Any
@@ -508,6 +510,8 @@ async def test_cascade_timings_are_closed_at_first_audio_and_stored_on_the_reply
     assert assistant[0]["timings"] == {
         **{k: v for k, v in event.items() if k != "type"},
         "ttsGapMaxMs": 0,
+        "ttsLeadingSilenceMs": 10,
+        "ttsFirstAudibleMs": event["ttsFirstAudioMs"] + 10,
     }
     assert "timings" not in runtime.transcript[0]
 
@@ -757,3 +761,70 @@ async def test_each_turn_record_lands_on_its_own_reply_and_stays_out_of_the_fina
     hooked = runs[0]["input_data"]["voice"]["transcript"]
     assert all("llmCall" not in line and "usage" not in line for line in hooked)
     assert [line["text"] for line in hooked] == [line["text"] for line in lines]
+
+
+_RATE = 24000
+
+
+def _pcm(ms: int, *, tone: bool) -> bytes:
+    samples = _RATE * ms // 1000
+    if not tone:
+        return b"\x00\x00" * samples
+    values = [int(10000 * math.sin(2 * math.pi * 1000 * i / _RATE)) for i in range(samples)]
+    return struct.pack(f"<{samples}h", *values)
+
+
+async def _lead_silence_of(chunks: list[bytes], *, cascade: bool = True) -> dict | None:
+    script: list[Any] = [UserTranscript(text="привет", is_final=True)]
+    if cascade:
+        script.append(
+            TurnTimings(
+                speech_ended_at=time.monotonic(), eou_ms=1, stt_final_ms=1, brain_first_token_ms=1
+            )
+        )
+    script += [AudioDelta(pcm=chunk) for chunk in chunks]
+    script += [AgentTranscript(text="ok", is_final=True), TurnEnded(), SessionClosed(reason="d")]
+    runtime = _runtime(_FakeBridge(script), _FakeClient([]))
+
+    await runtime.run()
+
+    return next(line for line in runtime.transcript if line["role"] == "assistant").get("timings")
+
+
+async def test_leading_silence_is_measured_before_the_first_speech_frame() -> None:
+    timings = await _lead_silence_of([_pcm(400, tone=False), _pcm(200, tone=True)])
+
+    assert timings is not None
+    assert abs(timings["ttsLeadingSilenceMs"] - 400) <= 10
+    assert (
+        timings["ttsFirstAudibleMs"] == timings["ttsFirstAudioMs"] + timings["ttsLeadingSilenceMs"]
+    )
+
+
+async def test_leading_silence_spans_chunks() -> None:
+    chunks = [_pcm(300, tone=False), _pcm(255, tone=False), _pcm(100, tone=True)]
+
+    timings = await _lead_silence_of(chunks)
+
+    assert timings is not None
+    assert abs(timings["ttsLeadingSilenceMs"] - 555) <= 10
+
+
+async def test_immediate_speech_has_no_leading_silence() -> None:
+    timings = await _lead_silence_of([_pcm(200, tone=True)])
+
+    assert timings is not None
+    assert timings["ttsLeadingSilenceMs"] == 0
+
+
+async def test_all_silent_audio_reports_the_analysis_cap() -> None:
+    timings = await _lead_silence_of([_pcm(2000, tone=False), _pcm(2000, tone=False)])
+
+    assert timings is not None
+    assert timings["ttsLeadingSilenceMs"] == 3000
+
+
+async def test_a_bridge_without_stage_timings_records_no_leading_silence() -> None:
+    timings = await _lead_silence_of([_pcm(400, tone=False), _pcm(200, tone=True)], cascade=False)
+
+    assert timings is None

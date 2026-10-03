@@ -30,6 +30,7 @@ from assemblix_api.external.voice.conversation.contract import (
     UserTranscript,
 )
 from assemblix_api.realtime.hooks import TurnDispatcher
+from assemblix_api.realtime.leading_silence import LeadingSilenceMeter
 
 logger = structlog.get_logger(__name__)
 
@@ -104,6 +105,8 @@ class VoiceSessionRuntime:
         # later; a chunk arriving after it means the caller heard silence.
         self._play_end: float | None = None
         self._gap_max_ms = 0
+        self._lead_meter: LeadingSilenceMeter | None = None
+        self._lead_ms: int | None = None
         # The mic streams continuously, so without this every later audio packet of a
         # measured turn would emit a second, inbound-audio based timing.
         self._stage_timings_sent = False
@@ -256,6 +259,10 @@ class VoiceSessionRuntime:
                     )
                     self._played_ms += chunk_ms
                     now = self._clock()
+                    if self._pending_timings is not None:
+                        self._lead_meter = LeadingSilenceMeter(self._bridge.output_sample_rate)
+                        self._lead_ms = None
+                    self._measure_lead_silence(event.pcm)
                     if not self._playback_open:
                         self._playback_open = True
                         self._playback_started_at = now
@@ -290,10 +297,12 @@ class VoiceSessionRuntime:
                     self._played_ms = 0
                     self._playback_open = False
                     self._playback_started_at = None
+                    self._lead_meter = None
                 case TurnEnded():
                     self._pending_timings = None
                     self._stage_timings_sent = False
                     await self._client.end_of_utterance()
+                    self._finish_lead_silence()
                     self._agent_speaking = False
                     self._played_ms = 0
                     self._playback_open = False
@@ -324,6 +333,39 @@ class VoiceSessionRuntime:
                 case SessionClosed():
                     self._closed_reason = event.reason
                     return
+
+    def _measure_lead_silence(self, pcm: bytes) -> None:
+        meter = self._lead_meter
+        if meter is None:
+            return
+        meter.feed(pcm)
+        if meter.result_ms is not None:
+            self._finish_lead_silence()
+
+    def _finish_lead_silence(self) -> None:
+        meter = self._lead_meter
+        if meter is None:
+            return
+        self._lead_meter = None
+        self._lead_ms = meter.result_ms if meter.result_ms is not None else meter.silence_ms
+        logger.info("voice.cascade.tts_leading_silence", ttsLeadingSilenceMs=self._lead_ms)
+        line = next(
+            (
+                line
+                for line in reversed(self._transcript[self._turn_start :])
+                if line["role"] == "assistant" and "timings" in line
+            ),
+            None,
+        )
+        if line is not None:
+            self._add_lead_silence(line["timings"])
+
+    def _add_lead_silence(self, timings: dict) -> None:
+        if self._lead_ms is None or "ttsLeadingSilenceMs" in timings:
+            return
+        timings["ttsLeadingSilenceMs"] = self._lead_ms
+        if isinstance(timings.get("ttsFirstAudioMs"), int):
+            timings["ttsFirstAudibleMs"] = timings["ttsFirstAudioMs"] + self._lead_ms
 
     def _attach_turn_record(self, event: TurnEnded) -> None:
         """Put the turn's LLM call and spend on its reply — or, if the brain produced
@@ -394,6 +436,7 @@ class VoiceSessionRuntime:
             line: dict = {"role": role, "text": text}
             if role == "assistant" and self._reply_timings is not None:
                 line["timings"] = {**self._reply_timings, "ttsGapMaxMs": self._gap_max_ms}
+                self._add_lead_silence(line["timings"])
                 self._reply_timings = None
             self._transcript.append(line)
             if role == "assistant":
