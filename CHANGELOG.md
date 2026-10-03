@@ -5,6 +5,15 @@ All notable changes to this project are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.43](https://github.com/nmamizerov/assemblix/compare/v0.2.42...v0.2.43) (2026-10-03)
+
+
+### Features
+
+* **api:** record each cascade LLM call and per-stage costs ([36dd3d1](https://github.com/nmamizerov/assemblix/commit/36dd3d1a1afa97cd3283fc26b82e24e1138c047f))
+* inspect cascade LLM calls and per-stage costs in voice sessions ([f9fcf5a](https://github.com/nmamizerov/assemblix/commit/f9fcf5a557ff090c22d15b21db73e4b2544d102e))
+* **web:** inspect LLM calls and stage costs in voice sessions ([87f1fcf](https://github.com/nmamizerov/assemblix/commit/87f1fcfcbbf1a1c5ce7981213efdd4479b1050a4))
+
 ## [0.2.42](https://github.com/nmamizerov/assemblix/compare/v0.2.41...v0.2.42) (2026-10-03)
 
 
