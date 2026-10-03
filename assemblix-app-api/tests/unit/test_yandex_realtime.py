@@ -4,6 +4,8 @@ Uses an injected fake gRPC stub (no network): feed two sentences, assert both ar
 synthesized whole and their PCM is forwarded to ``on_audio`` in order.
 """
 
+import asyncio
+
 import pytest
 from yandex.cloud.ai.tts.v3 import tts_pb2
 
@@ -121,4 +123,71 @@ async def test_shared_channel_is_not_closed_by_the_session():
     await session.open()
     await session.flush_and_close()
 
+    assert channel.closed is False
+
+
+class _SlowCall:
+    """An in-flight synthesis that keeps producing audio until cancelled."""
+
+    def __init__(self, started):
+        self._started = started
+        self.cancelled = False
+
+    def cancel(self):
+        self.cancelled = True
+
+    async def __aiter__(self):
+        for _ in range(100):
+            self._started.set()
+            await asyncio.sleep(0.01)
+            yield tts_pb2.UtteranceSynthesisResponse(audio_chunk=tts_pb2.AudioChunk(data=b"\x01"))
+
+
+class _SlowStub:
+    def __init__(self):
+        self.started = asyncio.Event()
+        self.calls: list[_SlowCall] = []
+
+    def UtteranceSynthesis(self, request, metadata=None):
+        call = _SlowCall(self.started)
+        self.calls.append(call)
+        return call
+
+
+@pytest.mark.asyncio
+async def test_aclose_on_a_shared_channel_stops_the_synthesis_in_flight():
+    received: list[bytes] = []
+
+    async def on_audio(pcm, _alignment):
+        received.append(pcm)
+
+    class _Channel:
+        closed = False
+
+        async def close(self):
+            self.closed = True
+
+    channel = _Channel()
+    stub = _SlowStub()
+    session = YandexRealtimeSession(
+        credential="b1folder:AQVN-key",
+        voice_id="alena",
+        model="yandex-tts-v3",
+        on_audio=on_audio,
+        stub=stub,
+        channel=channel,
+    )
+    await session.open()
+    await session.send_text("Первое. Второе. ")
+    await stub.started.wait()
+
+    await session.aclose()
+    heard = len(received)
+    await session.send_text("Третье. ")
+    await asyncio.sleep(0.05)
+
+    assert session._worker is not None and session._worker.done()
+    assert stub.calls[0].cancelled is True
+    assert len(received) == heard
+    assert len(stub.calls) == 1
     assert channel.closed is False

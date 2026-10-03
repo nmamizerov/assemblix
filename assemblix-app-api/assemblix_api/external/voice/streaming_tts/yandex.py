@@ -83,6 +83,8 @@ class YandexRealtimeSession:
         self._buffer = ""
         self._chars_sent = 0
         self._failed = False
+        self._closed = False
+        self._call: Any = None
 
     async def _fail(self, event: str, exc: BaseException) -> None:
         """Audio is best-effort here, but a caller that owns a live call has to hear
@@ -119,7 +121,7 @@ class YandexRealtimeSession:
         self._worker = asyncio.create_task(worker())
 
     async def send_text(self, text: str) -> None:
-        if self._failed or not text:
+        if self._failed or self._closed or not text:
             return
         self._chars_sent += len(text)
         if self._mode == "stream":
@@ -163,6 +165,15 @@ class YandexRealtimeSession:
         return self._chars_sent
 
     async def aclose(self) -> None:
+        self._closed = True
+        # A shared channel is not closed below, so an in-flight RPC must be stopped here.
+        if self._call is not None:
+            with contextlib.suppress(Exception):
+                self._call.cancel()
+        worker = self._worker
+        if worker is not None and not worker.done() and worker is not asyncio.current_task():
+            worker.cancel()
+            await asyncio.wait({worker})
         if self._channel is not None:
             with contextlib.suppress(Exception):
                 await self._channel.close()
@@ -200,10 +211,14 @@ class YandexRealtimeSession:
             hints=[tts_pb2.Hints(voice=self._voice_id)],
             output_audio_spec=_audio_spec(tts_pb2),
         )
-        async for response in self._stub.UtteranceSynthesis(request, metadata=self._metadata):
-            data = response.audio_chunk.data
-            if data:
-                await self._on_audio(data, None)
+        self._call = self._stub.UtteranceSynthesis(request, metadata=self._metadata)
+        try:
+            async for response in self._call:
+                data = response.audio_chunk.data
+                if data:
+                    await self._on_audio(data, None)
+        finally:
+            self._call = None
 
     # -- stream mode (StreamSynthesis, bidirectional) -----------------------------
 
@@ -211,7 +226,7 @@ class YandexRealtimeSession:
         from yandex.cloud.ai.tts.v3 import tts_pb2
 
         try:
-            responses = self._stub.StreamSynthesis(
+            responses = self._call = self._stub.StreamSynthesis(
                 self._stream_requests(tts_pb2), metadata=self._metadata
             )
             async for response in responses:

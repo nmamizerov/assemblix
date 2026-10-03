@@ -66,6 +66,8 @@ class HalfCascadeBridge:
         # accumulates from the first — so the only safe reading is "the reply so
         # far", and only its unspoken tail may be spoken.
         self._spoken = ""
+        # Bumped on every abort; audio from a session opened under an older value is dropped.
+        self._speech_epoch = 0
 
     async def connect(
         self,
@@ -150,9 +152,15 @@ class HalfCascadeBridge:
         if not text and not event.is_final:
             return
         if self._session is None:
+            epoch = self._speech_epoch
+
+            async def on_audio(pcm: bytes, alignment: AlignmentData | None) -> None:
+                if epoch == self._speech_epoch:
+                    await self._on_audio(pcm, alignment)
+
             self._session = self._open_stream(
                 self._speech_out,
-                on_audio=self._on_audio,
+                on_audio=on_audio,
                 on_error=self._on_error,
                 channel=self._channel,
             )
@@ -175,6 +183,7 @@ class HalfCascadeBridge:
         return tail
 
     async def _abort_speech(self) -> None:
+        self._speech_epoch += 1
         if self._session is None:
             return
         session, self._session = self._session, None

@@ -328,3 +328,42 @@ async def test_the_channel_is_closed_when_the_inner_connect_fails(
     await bridge.close()
 
     assert channel.closes == 1
+
+
+async def test_audio_from_an_aborted_session_is_not_forwarded() -> None:
+    """A provider that keeps calling back after a barge-in aborted its session must
+    not reach the caller, while the next turn's audio still does."""
+    # Arrange
+    inner = _FakeInner(
+        [
+            AgentTranscript(text="Длинный ", is_final=False),
+            SpeechStarted(),
+            TurnEnded(),
+            AgentTranscript(text="Слушаю", is_final=False),
+            AgentTranscript(text="Слушаю", is_final=True),
+            TurnEnded(),
+            SessionClosed(reason="closed"),
+        ]
+    )
+    bridge = _bridge(inner)
+
+    # Act
+    await bridge.connect(instructions="i", voice="", language="ru", params={})
+    seen: list[BridgeEvent] = []
+    async for event in bridge.events():
+        seen.append(event)
+        if isinstance(event, SpeechStarted):
+            await bridge.interrupt(audio_end_ms=100)
+            await _FakeTTS.instances[0].on_audio(b"\xde\xad", None)
+        if (
+            isinstance(event, AgentTranscript)
+            and not event.is_final
+            and len(_FakeTTS.instances) == 2
+        ):
+            await _FakeTTS.instances[1].on_audio(b"\x01\x02", None)
+    await bridge.close()
+
+    # Assert
+    assert _FakeTTS.instances[0].aborted is True
+    audio = [e.pcm for e in seen if isinstance(e, AudioDelta)]
+    assert audio == [b"\x01\x02"]
