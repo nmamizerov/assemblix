@@ -10,7 +10,7 @@ does.
 from __future__ import annotations
 
 from decimal import Decimal
-from typing import Protocol
+from typing import Any, Protocol
 from uuid import UUID
 
 from assemblix_api.external.voice.pricing import compute_tts_cost
@@ -79,8 +79,24 @@ async def resolve(
     )
 
 
+def open_channel(out: SpeechOutput) -> Any | None:
+    """One transport for every turn of a call, for providers that have one."""
+    if out.provider != "yandex":
+        return None
+    import grpc
+
+    from assemblix_api.core.settings import get_settings
+
+    endpoint = get_settings().yandex_tts_v3_grpc_endpoint
+    return grpc.aio.secure_channel(endpoint, grpc.ssl_channel_credentials())
+
+
 def open_stream(
-    out: SpeechOutput, *, on_audio: OnAudio, on_error: OnError | None = None
+    out: SpeechOutput,
+    *,
+    on_audio: OnAudio,
+    on_error: OnError | None = None,
+    channel: Any = None,
 ) -> RealtimeSession:
     """Build (not yet open) the streaming session for this target."""
     return create_realtime_session(
@@ -90,6 +106,7 @@ def open_stream(
         model=out.model,
         on_audio=on_audio,
         on_error=on_error,
+        channel=channel,
     )
 
 

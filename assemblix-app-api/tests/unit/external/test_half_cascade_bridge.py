@@ -6,6 +6,8 @@ import asyncio
 from collections.abc import AsyncIterator
 from typing import Any
 
+import pytest
+
 from assemblix_api.external.voice.conversation.contract import (
     AgentTranscript,
     AudioDelta,
@@ -93,7 +95,7 @@ def _bridge(inner: _FakeInner) -> HalfCascadeBridge:
         inner=inner,
         speech_out=_target(),
         output_sample_rate=16000,
-        open_stream=lambda _out, on_audio, on_error: _FakeTTS(on_audio, on_error),
+        open_stream=lambda _out, on_audio, on_error, **_kwargs: _FakeTTS(on_audio, on_error),
     )
 
 
@@ -248,3 +250,54 @@ async def test_only_the_unspoken_remainder_of_a_reply_is_sent_to_the_provider() 
 
     # Assert
     assert spoken == ["Здравствуйте", "Здравствуйте"]
+
+
+async def test_one_channel_is_opened_per_call_and_closed_with_it(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from assemblix_api.external.voice import speech_out as speech_out_module
+
+    opened: list[Any] = []
+
+    class _Channel:
+        closed = False
+
+        async def close(self) -> None:
+            self.closed = True
+
+    def fake_open_channel(_out: object) -> _Channel:
+        channel = _Channel()
+        opened.append(channel)
+        return channel
+
+    monkeypatch.setattr(speech_out_module, "open_channel", fake_open_channel)
+    received: list[object] = []
+
+    def open_stream(_out: object, *, on_audio: Any, on_error: Any, channel: object) -> _FakeTTS:
+        received.append(channel)
+        return _FakeTTS(on_audio, on_error)
+
+    script: list[BridgeEvent] = [
+        AgentTranscript(text="Раз.", is_final=False),
+        AgentTranscript(text="Раз.", is_final=True),
+        TurnEnded(),
+        AgentTranscript(text="Два.", is_final=False),
+        AgentTranscript(text="Два.", is_final=True),
+        TurnEnded(),
+        SessionClosed(reason="done"),
+    ]
+    bridge = HalfCascadeBridge(
+        inner=_FakeInner(script),
+        speech_out=_target(),
+        output_sample_rate=16000,
+        open_stream=open_stream,
+    )
+
+    await bridge.connect(instructions="", voice="", language="ru", params={})
+    async for _event in bridge.events():
+        pass
+    await bridge.close()
+
+    assert len(opened) == 1
+    assert received == [opened[0], opened[0]]
+    assert opened[0].closed is True

@@ -66,3 +66,59 @@ async def test_yandex_realtime_utterance_happy_flow():
     assert req.hints[0].voice == "alena"
     assert ("authorization", "Api-Key AQVN-key") in meta
     assert ("x-folder-id", "b1folder") in meta
+
+
+@pytest.mark.asyncio
+async def test_chunk_mode_sends_first_sentence_then_packs_the_rest():
+    async def on_audio(_pcm, _alignment):
+        return None
+
+    stub = _FakeStub()
+    session = YandexRealtimeSession(
+        credential="b1folder:AQVN-key",
+        voice_id="alena",
+        model="yandex-tts-v3-chunk",
+        on_audio=on_audio,
+        mode="chunk",
+        stub=stub,
+    )
+    long_sentence = "Это довольно длинное предложение для проверки упаковки текста. "
+
+    await session.open()
+    await session.send_text("Здравствуйте! ")
+    for _ in range(5):
+        await session.send_text(long_sentence)
+    await session.send_text("Хвост")
+    await session.flush_and_close()
+
+    texts = [req.text for req, _ in stub.calls]
+    assert texts[0] == "Здравствуйте!"
+    assert all(len(t) <= 250 for t in texts[1:-1])
+    assert texts[-1].endswith("Хвост")
+    assert len(texts) < 7  # packed, not one request per sentence
+
+
+@pytest.mark.asyncio
+async def test_shared_channel_is_not_closed_by_the_session():
+    class _Channel:
+        closed = False
+
+        async def close(self):
+            self.closed = True
+
+    async def on_audio(_pcm, _alignment):
+        return None
+
+    channel = _Channel()
+    session = YandexRealtimeSession(
+        credential="b1folder:AQVN-key",
+        voice_id="alena",
+        model="yandex-tts-v3",
+        on_audio=on_audio,
+        stub=_FakeStub(),
+        channel=channel,
+    )
+    await session.open()
+    await session.flush_and_close()
+
+    assert channel.closed is False

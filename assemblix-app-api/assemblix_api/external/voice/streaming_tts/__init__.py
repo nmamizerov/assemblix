@@ -11,7 +11,7 @@ so the existing model picker doubles as the mode switch — no extra config fiel
 
 from __future__ import annotations
 
-from typing import Protocol
+from typing import Any, Protocol
 
 from assemblix_api.core.settings import get_settings
 from assemblix_api.external.voice.streaming_tts.elevenlabs import (
@@ -55,6 +55,7 @@ def output_sample_rate(provider: str) -> int:
 _YANDEX_MODEL_MODE: dict[str, Mode] = {
     "yandex-tts-v3": "utterance",
     "yandex-tts-v3-stream": "stream",
+    "yandex-tts-v3-chunk": "chunk",
 }
 
 
@@ -66,6 +67,7 @@ def create_realtime_session(
     model: str,
     on_audio: OnAudio,
     on_error: OnError | None = None,
+    channel: Any = None,
 ) -> RealtimeSession:
     """Build the realtime TTS session for ``provider``.
 
@@ -84,5 +86,6 @@ def create_realtime_session(
             on_audio=on_audio,
             mode=_YANDEX_MODEL_MODE.get(model, "utterance"),
             on_error=on_error,
+            channel=channel,
         )
     raise NotImplementedError(f"No realtime route for provider {provider!r}")

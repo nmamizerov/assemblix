@@ -13,6 +13,7 @@ from __future__ import annotations
 import asyncio
 import contextlib
 from collections.abc import AsyncIterator, Callable
+from typing import Any
 
 import structlog
 
@@ -52,6 +53,7 @@ class HalfCascadeBridge:
         self._open_stream = open_stream or speech_out_module.open_stream
         self._queue: asyncio.Queue[BridgeEvent] = asyncio.Queue()
         self._session: RealtimeSession | None = None
+        self._channel: Any = None
         # Turns are counted so a cancelled one can be named. Text the model had
         # already committed to arrives after the cancellation; without this it would
         # open a fresh session and the agent would speak after being interrupted.
@@ -74,6 +76,7 @@ class HalfCascadeBridge:
         params: dict,
         text_output: bool = False,
     ) -> None:
+        self._channel = speech_out_module.open_channel(self._speech_out)
         await self._inner.connect(
             instructions=instructions,
             voice=voice,
@@ -144,7 +147,10 @@ class HalfCascadeBridge:
             return
         if self._session is None:
             self._session = self._open_stream(
-                self._speech_out, on_audio=self._on_audio, on_error=self._on_error
+                self._speech_out,
+                on_audio=self._on_audio,
+                on_error=self._on_error,
+                channel=self._channel,
             )
             await self._session.open()
         if text:
@@ -181,3 +187,7 @@ class HalfCascadeBridge:
     async def close(self) -> None:
         await self._abort_speech()
         await self._inner.close()
+        channel, self._channel = self._channel, None
+        if channel is not None:
+            with contextlib.suppress(Exception):
+                await channel.close()
