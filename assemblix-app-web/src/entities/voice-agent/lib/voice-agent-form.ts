@@ -1,14 +1,72 @@
-import type { CreateVoiceAgentRequest, VoiceAgentDraft } from "../model/types";
+import type { VoiceOutputConfig } from "@/entities/voice-model";
+import type {
+  CreateVoiceAgentRequest,
+  VoiceAgent,
+  VoiceAgentCascadeConfig,
+  VoiceAgentConfig,
+  VoiceAgentDraft,
+  VoiceAgentMode,
+} from "../model/types";
+
+export type DraftErrorField =
+  | keyof VoiceAgentDraft
+  | "brainModel"
+  | "historyTurns"
+  | "minSilenceMs"
+  | "maxSilenceMs"
+  | "smartTurnThreshold"
+  | "prerollMs";
 
 export interface DraftValidation {
   isValid: boolean;
-  errors: Partial<Record<keyof VoiceAgentDraft, string>>;
+  errors: Partial<Record<DraftErrorField, string>>;
 }
 
 // The backend rejects a config whose provider/model pair has no conversation
 // route, so a fresh draft must already carry a usable one.
 export const DEFAULT_PROVIDER = "openai";
 export const DEFAULT_MODEL = "gpt-realtime-2.1";
+
+// Brain providers the cascade accepts (backend `AgentProvider`).
+export const BRAIN_PROVIDERS = ["openai", "gemini", "deepseek"];
+export const DEFAULT_BRAIN_PROVIDER = "gemini";
+export const DEFAULT_BRAIN_MODEL = "gemini-3.1-flash-lite";
+
+// Cheapest streaming synthesis route with a Russian voice.
+export const DEFAULT_CASCADE_TTS: VoiceOutputConfig = {
+  provider: "yandex",
+  model: "yandex-tts-v3-chunk",
+  voiceId: "alena",
+  credentialId: null,
+  realtime: true,
+};
+
+// Mirrors the backend TurnConfig / PromptBrainConfig bounds.
+export const CASCADE_LIMITS = {
+  minSilenceMs: { min: 64, max: 2000 },
+  maxSilenceMs: { min: 200, max: 5000 },
+  prerollMs: { min: 0, max: 1000 },
+  historyTurns: { min: 2, max: 400 },
+} as const;
+
+export const defaultCascade = (): VoiceAgentCascadeConfig => ({
+  stt: { provider: "yandex", model: "general", credentialId: null },
+  turn: {
+    minSilenceMs: 200,
+    maxSilenceMs: 1500,
+    smartTurn: true,
+    smartTurnThreshold: 0.5,
+    prerollMs: 300,
+  },
+  brain: {
+    type: "prompt",
+    provider: DEFAULT_BRAIN_PROVIDER,
+    model: DEFAULT_BRAIN_MODEL,
+    credentialId: null,
+    params: {},
+    historyTurns: 40,
+  },
+});
 
 // Only OpenAI exposes custom voices: an id created through its /v1/audio/voices
 // endpoint is accepted wherever a built-in voice name is. Those ids live in the
@@ -41,6 +99,7 @@ export const LANGUAGE_OPTIONS: { code: string; label: string }[] = [
 export const emptyDraft = (): VoiceAgentDraft => ({
   name: "",
   description: "",
+  mode: "realtime",
   systemPrompt: "",
   firstMessage: "",
   language: "ru",
@@ -54,7 +113,91 @@ export const emptyDraft = (): VoiceAgentDraft => ({
   tts: null,
   avatar: null,
   params: {},
+  cascade: defaultCascade(),
+  extraConfig: {},
+  ttsBeforeCascade: null,
 });
+
+const KNOWN_CONFIG_KEYS = new Set([
+  "instructions",
+  "knowledgeBaseIds",
+  "firstMessage",
+  "language",
+  "mode",
+  "voice",
+  "tts",
+  "cascade",
+  "avatar",
+  "params",
+  "turnWorkflowId",
+  "finalWorkflowId",
+]);
+
+const cascadeFromConfig = (
+  cascade: VoiceAgentConfig["cascade"]
+): VoiceAgentCascadeConfig => {
+  const defaults = defaultCascade();
+  if (!cascade) return defaults;
+  return {
+    ...cascade,
+    stt: { ...defaults.stt, ...cascade.stt },
+    turn: { ...defaults.turn, ...cascade.turn },
+    brain: { ...defaults.brain, ...cascade.brain },
+  };
+};
+
+export const draftFromVoiceAgent = (voiceAgent: VoiceAgent): VoiceAgentDraft => {
+  const { config } = voiceAgent;
+  const systemPrompt =
+    config.instructions.find((instruction) => instruction.role === "system")
+      ?.content ?? "";
+  const extraConfig = Object.fromEntries(
+    Object.entries(config).filter(([key]) => !KNOWN_CONFIG_KEYS.has(key))
+  );
+
+  return {
+    ...emptyDraft(),
+    name: voiceAgent.name,
+    description: voiceAgent.description ?? "",
+    mode: config.mode ?? "realtime",
+    systemPrompt,
+    firstMessage: config.firstMessage ?? "",
+    language: config.language,
+    provider: config.voice?.provider ?? "",
+    model: config.voice?.model ?? "",
+    voiceId: config.voice?.voiceId ?? "",
+    knowledgeBaseIds: config.knowledgeBaseIds,
+    turnWorkflowId: config.turnWorkflowId ?? "",
+    finalWorkflowId: config.finalWorkflowId ?? "",
+    credentialId: config.voice?.credentialId ?? null,
+    tts: config.tts ?? null,
+    avatar: config.avatar ?? null,
+    params: config.params,
+    cascade: cascadeFromConfig(config.cascade),
+    extraConfig,
+  };
+};
+
+/** What the agent runs on, for headers and list cards. */
+export const describeVoiceAgentModel = (
+  config: Pick<VoiceAgentConfig, "mode" | "voice" | "cascade">
+): { mode: VoiceAgentMode; provider: string; model: string } => {
+  if (config.mode === "cascade" && config.cascade) {
+    return {
+      mode: "cascade",
+      provider: config.cascade.brain.provider,
+      model: config.cascade.brain.model,
+    };
+  }
+  return {
+    mode: "realtime",
+    provider: config.voice?.provider ?? "",
+    model: config.voice?.model ?? "",
+  };
+};
+
+const inRange = (value: number, { min, max }: { min: number; max: number }) =>
+  Number.isFinite(value) && value >= min && value <= max;
 
 // Values are i18n keys, not copy — the component resolves them via t().
 export const validateDraft = (draft: VoiceAgentDraft): DraftValidation => {
@@ -62,8 +205,41 @@ export const validateDraft = (draft: VoiceAgentDraft): DraftValidation => {
 
   if (!draft.name.trim()) errors.name = "voiceAgents.errors.nameRequired";
   if (!draft.systemPrompt.trim()) errors.systemPrompt = "voiceAgents.errors.promptRequired";
-  if (!draft.provider) errors.provider = "voiceAgents.errors.providerRequired";
-  if (!draft.model) errors.model = "voiceAgents.errors.modelRequired";
+  if (draft.mode === "realtime") {
+    if (!draft.provider) errors.provider = "voiceAgents.errors.providerRequired";
+    if (!draft.model) errors.model = "voiceAgents.errors.modelRequired";
+  } else {
+    const { brain, turn } = draft.cascade;
+    if (!draft.tts?.provider || !draft.tts.model) {
+      errors.tts = "voiceAgents.errors.ttsRequired";
+    }
+    if (!brain.provider || !brain.model) {
+      errors.brainModel = "voiceAgents.errors.brainModelRequired";
+    }
+    if (!Number.isInteger(brain.historyTurns) || !inRange(brain.historyTurns, CASCADE_LIMITS.historyTurns)) {
+      errors.historyTurns = "voiceAgents.errors.historyTurnsRange";
+    }
+    if (!inRange(turn.minSilenceMs, CASCADE_LIMITS.minSilenceMs)) {
+      errors.minSilenceMs = "voiceAgents.errors.minSilenceRange";
+    }
+    if (!inRange(turn.maxSilenceMs, CASCADE_LIMITS.maxSilenceMs)) {
+      errors.maxSilenceMs = "voiceAgents.errors.maxSilenceRange";
+    } else if (turn.maxSilenceMs < turn.minSilenceMs) {
+      errors.maxSilenceMs = "voiceAgents.errors.maxSilenceBelowMin";
+    }
+    // The threshold is unused (and its field disabled) without smart turn.
+    if (
+      turn.smartTurn &&
+      (!Number.isFinite(turn.smartTurnThreshold) ||
+      turn.smartTurnThreshold <= 0 ||
+        turn.smartTurnThreshold >= 1)
+    ) {
+      errors.smartTurnThreshold = "voiceAgents.errors.smartTurnThresholdRange";
+    }
+    if (!inRange(turn.prerollMs, CASCADE_LIMITS.prerollMs)) {
+      errors.prerollMs = "voiceAgents.errors.prerollRange";
+    }
+  }
 
   // An enabled-but-incomplete avatar would otherwise only fail on save with a
   // backend 400 — catch it here alongside the other required fields.
@@ -91,6 +267,57 @@ export const applyProviderChange = (
   return { ...draft, provider, model: "", voiceId: "", credentialId: null };
 };
 
+// A streaming voice can speak a cascade; a batch-only one cannot.
+const isStreamingTts = (tts: VoiceOutputConfig | null): boolean =>
+  Boolean(tts && tts.realtime === true && tts.provider && tts.model);
+
+/**
+ * `canUseExternalVoice` says whether the realtime model can answer in text.
+ * Leaving cascade restores the realtime voice the draft had before, unless the
+ * user changed the cascade voice and the realtime model can still use it.
+ */
+export const applyModeChange = (
+  draft: VoiceAgentDraft,
+  mode: VoiceAgentMode,
+  canUseExternalVoice = false
+): VoiceAgentDraft => {
+  if (mode === draft.mode) return draft;
+
+  if (mode === "cascade") {
+    const tts = isStreamingTts(draft.tts) ? draft.tts : { ...DEFAULT_CASCADE_TTS };
+    return {
+      ...draft,
+      mode,
+      tts,
+      ttsBeforeCascade: { previous: draft.tts, applied: tts },
+    };
+  }
+
+  const stash = draft.ttsBeforeCascade;
+  const isUntouched = stash !== null && draft.tts === stash.applied;
+  let tts: VoiceOutputConfig | null;
+  if (canUseExternalVoice && !isUntouched) tts = draft.tts;
+  else if (stash) tts = stash.previous;
+  else tts = canUseExternalVoice ? draft.tts : null;
+  return { ...draft, mode, tts, ttsBeforeCascade: null };
+};
+
+export const applyBrainProviderChange = (
+  draft: VoiceAgentDraft,
+  provider: string
+): VoiceAgentDraft => {
+  const { brain } = draft.cascade;
+  if (provider === brain.provider) return draft;
+  // Model ids, credentials and tunables are all provider-specific.
+  return {
+    ...draft,
+    cascade: {
+      ...draft.cascade,
+      brain: { ...brain, provider, model: "", credentialId: null, params: {} },
+    },
+  };
+};
+
 export const toCreateRequest = (
   draft: VoiceAgentDraft,
   projectId: string
@@ -99,18 +326,24 @@ export const toCreateRequest = (
   name: draft.name,
   description: draft.description || null,
   config: {
+    ...draft.extraConfig,
+    mode: draft.mode,
     instructions: [{ role: "system", content: draft.systemPrompt }],
     knowledgeBaseIds: draft.knowledgeBaseIds,
     firstMessage: draft.firstMessage || null,
     language: draft.language,
-    voice: {
-      provider: draft.provider,
-      model: draft.model,
-      voiceId: draft.voiceId || null,
-      credentialId: draft.credentialId,
-      realtime: false,
-    },
+    voice:
+      draft.mode === "cascade"
+        ? null
+        : {
+            provider: draft.provider,
+            model: draft.model,
+            voiceId: draft.voiceId || null,
+            credentialId: draft.credentialId,
+            realtime: false,
+          },
     tts: draft.tts,
+    cascade: draft.mode === "cascade" ? draft.cascade : null,
     avatar: draft.avatar,
     params: draft.params,
     turnWorkflowId: draft.turnWorkflowId || null,

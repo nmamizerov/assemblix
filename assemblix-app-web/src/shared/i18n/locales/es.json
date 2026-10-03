@@ -1377,7 +1377,6 @@
     "errorNoText": "El PDF no contiene texto (documento escaneado sin OCR)"
   },
   "voiceAgents": {
-    "cascadeNotice": "Este agente funciona en modo cascada (reconocimiento de voz → cerebro → síntesis de voz). Por ahora se configura a través de la API; el editor lo admitirá pronto.",
     "title": "Agentes de voz",
     "subtitle": "Agentes conversacionales en tiempo real que atienden llamadas con voz speech-to-speech",
     "create": "Crear agente de voz",
@@ -1409,7 +1408,16 @@
       "synthesis": "Síntesis de voz",
       "synthesisHint": "Quién pronuncia las respuestas: el propio modelo en tiempo real o un proveedor dedicado.",
       "avatar": "Avatar",
-      "avatarHint": "Un rostro que sincroniza los labios con la voz del agente. Requiere LiveKit en el servidor."
+      "avatarHint": "Un rostro que sincroniza los labios con la voz del agente. Requiere LiveKit en el servidor.",
+      "mode": "Modo",
+      "modeHint": "Cómo el agente escucha, piensa y habla.",
+      "recognition": "Reconocimiento",
+      "recognitionHint": "Convierte la voz de quien llama en texto.",
+      "brain": "Cerebro",
+      "brainHint": "El modelo de lenguaje que redacta cada respuesta.",
+      "cascadeSynthesisHint": "Pronuncia las respuestas del cerebro. Solo se ofrecen modelos de streaming.",
+      "turn": "Fin de turno",
+      "turnHint": "Cuándo el agente decide que quien llama terminó de hablar."
     },
     "fields": {
       "name": "Nombre",
@@ -1442,7 +1450,18 @@
       "customVoiceCaption": "Elige una voz integrada o pega el id de una voz personalizada (voice_…) creada en tu cuenta de OpenAI.",
       "externalVoice": "Voz externa",
       "externalVoiceUnavailable": "Este modelo siempre responde con su propio audio, por lo que una voz externa no puede hablar por él.",
-      "avatarEnabled": "Mostrar un avatar"
+      "avatarEnabled": "Mostrar un avatar",
+      "sttProvider": "Proveedor",
+      "yandexSpeechKit": "Yandex SpeechKit",
+      "historyTurns": "Tamaño del historial",
+      "historyTurnsCaption": "Mensajes que se conservan literalmente en el contexto del cerebro (2–400).",
+      "advancedTurn": "Ajustes avanzados",
+      "minSilenceMs": "Silencio mín., ms",
+      "maxSilenceMs": "Silencio máx., ms",
+      "smartTurn": "Detección inteligente de turno",
+      "smartTurnCaption": "Un modelo evalúa si la frase está completa, para que el agente responda antes sin interrumpir.",
+      "smartTurnThreshold": "Umbral de detección inteligente",
+      "prerollMs": "Pre-roll, ms"
     },
     "testCall": {
       "title": "Llamada de prueba",
@@ -1477,7 +1496,26 @@
       "providerRequired": "El proveedor es obligatorio",
       "modelRequired": "El modelo es obligatorio",
       "avatarIncomplete": "Termina de configurar el avatar (proveedor, modelo, clave de API y avatar) o desactívalo",
-      "formInvalid": "Corrige los campos marcados antes de guardar"
+      "formInvalid": "Corrige los campos marcados antes de guardar",
+      "ttsRequired": "Un agente en cascada necesita un proveedor y un modelo de síntesis de voz",
+      "brainModelRequired": "Selecciona el proveedor y el modelo del cerebro",
+      "historyTurnsRange": "Introduce un número entero de 2 a 400",
+      "minSilenceRange": "Introduce un valor de 64 a 2000 ms",
+      "maxSilenceRange": "Introduce un valor de 200 a 5000 ms",
+      "maxSilenceBelowMin": "El silencio máximo no puede ser menor que el mínimo",
+      "smartTurnThresholdRange": "Introduce un valor estrictamente entre 0 y 1",
+      "prerollRange": "Introduce un valor de 0 a 1000 ms"
+    },
+    "modes": {
+      "realtime": {
+        "title": "Modelo en tiempo real",
+        "description": "Un único modelo voz a voz escucha y responde. Mínima latencia, mínimos ajustes."
+      },
+      "cascade": {
+        "title": "Cascada",
+        "short": "Cascada",
+        "description": "Reconocimiento → cualquier LLM → síntesis de voz. Eliges cada parte; suele ser más barato."
+      }
     }
   },
   "schemaBuilder": {
@@ -1535,7 +1573,17 @@
       "tokens": "{{input}} entrada / {{output}} salida tokens",
       "you": "Llamante",
       "agent": "Agente",
-      "loadError": "No se pudo cargar la llamada"
+      "loadError": "No se pudo cargar la llamada",
+      "latency": "Latencia",
+      "stage": "Etapa",
+      "ms": "{{ms}} ms"
+    },
+    "stages": {
+      "eouMs": "Fin de turno",
+      "sttFinalMs": "STT",
+      "brainFirstTokenMs": "LLM",
+      "ttsFirstAudioMs": "TTS",
+      "totalMs": "Total"
     }
   }
 }
