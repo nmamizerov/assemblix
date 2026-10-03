@@ -260,3 +260,143 @@ def test_heard_prefix_cuts_on_a_word_boundary() -> None:
     assert heard_prefix(text, 600) == "Конечно,"
     assert heard_prefix(text, 400) == ""  # not even the first word was heard
     assert heard_prefix(text, 60_000) == text
+
+
+async def test_late_stt_final_does_not_leak_into_the_next_turn() -> None:
+    class _LateStt(_Stt):
+        async def finalize(self) -> None:
+            self.finalized += 1
+            if self.finalized == 1:
+                asyncio.get_running_loop().call_later(
+                    0.3, self.queue.put_nowait, SttResult("мне нужно", True)
+                )
+            else:
+                self.queue.put_nowait(SttResult("дальше", True))
+
+    stt = _LateStt()
+    brain = _Brain(["Ок"])
+    bridge, _, _, _ = await _bridge(brain, stt)
+    stt.queue.put_nowait(SttResult("мне", False))
+
+    await bridge.send_audio(b"S")
+    await bridge.send_audio(b"E")
+    await asyncio.sleep(0.5)
+    await bridge.send_audio(b"S")
+    await bridge.send_audio(b"E")
+    await _settle()
+
+    assert [call[1] for call in brain.calls] == ["мне", "дальше"]
+    await bridge.close()
+
+
+async def test_interrupt_during_barge_in_teardown_is_not_lost() -> None:
+    gate = asyncio.Event()
+    release = asyncio.Event()
+    long_reply = "Конечно, у нас есть несколько вариантов от кашля, давайте я расскажу подробнее"
+
+    class _SlowTeardownBrain(_Brain):
+        async def reply(
+            self, *, history: Sequence[Turn], user_text: str, on_delta: OnDelta
+        ) -> BrainUsage:
+            self.calls.append((list(history), user_text))
+            await on_delta(long_reply)
+            try:
+                await gate.wait()
+            finally:
+                await release.wait()
+            return BrainUsage()
+
+    brain = _SlowTeardownBrain([])
+    bridge, stt, _, _ = await _bridge(brain)
+    stt.finals = ["есть сироп?", "стоп"]
+
+    await bridge.send_audio(b"S")
+    await bridge.send_audio(b"E")
+    await _settle()
+    barge = asyncio.create_task(bridge.send_audio(b"S"))
+    await asyncio.sleep(0.05)
+    await bridge.interrupt(audio_end_ms=1000)
+    release.set()
+    await barge
+    await bridge.send_audio(b"E")
+    await _settle()
+
+    heard = brain.calls[-1][0][1].text
+    assert long_reply.startswith(heard) and 0 < len(heard) < len(long_reply)
+    await bridge.close()
+
+
+async def test_interrupt_after_the_brain_finished_truncates_history() -> None:
+    long_reply = "Конечно, у нас есть несколько вариантов от кашля, давайте я расскажу подробнее"
+    brain = _Brain([long_reply])
+    bridge, stt, _, _ = await _bridge(brain)
+    stt.finals = ["есть сироп?", "стоп"]
+
+    await bridge.send_audio(b"S")
+    await bridge.send_audio(b"E")
+    await _settle()
+    await bridge.interrupt(audio_end_ms=1000)
+    await bridge.send_audio(b"S")
+    await bridge.send_audio(b"E")
+    await _settle()
+
+    heard = brain.calls[-1][0][1].text
+    assert long_reply.startswith(heard) and 0 < len(heard) < len(long_reply)
+    await bridge.close()
+
+
+async def test_empty_delta_does_not_commit_the_user_turn() -> None:
+    brain = _Brain(["", "Привет"])
+    bridge, stt, _, seen = await _bridge(brain)
+    stt.finals = ["алло"]
+
+    await bridge.send_audio(b"S")
+    await bridge.send_audio(b"E")
+    await _settle()
+
+    assert [type(e).__name__ for e in seen][:3] == [
+        "SpeechStarted",
+        "UserTranscript",
+        "TurnTimings",
+    ]
+    assert AgentTranscript(text="Привет", is_final=False) in seen
+    assert AgentTranscript(text="", is_final=False) not in seen
+    await bridge.close()
+
+
+async def test_stt_unexpected_error_is_fatal_and_close_still_finishes() -> None:
+    class _FailingClose(_Stt):
+        async def close(self) -> None:
+            raise RuntimeError("close failed")
+
+    stt = _FailingClose()
+    bridge, _, meter, seen = await _bridge(_Brain([]), stt)
+    stt.queue.put_nowait(RuntimeError("boom"))
+    await _settle()
+
+    assert any(isinstance(e, BridgeError) and e.code == "stt_failed" and e.is_fatal for e in seen)
+    try:
+        await bridge.close()
+    except RuntimeError:
+        pass
+    assert meter.stt_seconds == 30.0
+    await _settle()
+    assert type(seen[-1]).__name__ == "SessionClosed"
+
+
+async def test_finalize_failure_falls_back_to_the_partial() -> None:
+    class _BadFinalize(_Stt):
+        async def finalize(self) -> None:
+            raise RuntimeError("stream gone")
+
+    stt = _BadFinalize()
+    brain = _Brain(["Ок"])
+    bridge, _, _, _ = await _bridge(brain, stt)
+    stt.queue.put_nowait(SttResult("алло", False))
+
+    await bridge.send_audio(b"S")
+    await bridge.send_audio(b"E")
+    await _settle()
+
+    assert brain.calls[-1][1] == "алло"
+    await bridge.close()

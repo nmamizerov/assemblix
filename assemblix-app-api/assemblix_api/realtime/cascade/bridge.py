@@ -80,6 +80,9 @@ class CascadeBridge:
         self._reply_text = ""
         self._interrupted_index: int | None = None
         self._interrupted_text = ""
+        self._barge_in_pending = False
+        self._early_heard_ms: int | None = None
+        self._stale_finals = 0
         self._stt_pump: asyncio.Task[None] | None = None
 
     async def connect(
@@ -108,6 +111,13 @@ class CascadeBridge:
 
     async def interrupt(self, *, audio_end_ms: int) -> None:
         if self._interrupted_index is None:
+            if self._barge_in_pending:
+                self._early_heard_ms = audio_end_ms
+            return
+        self._apply_heard(audio_end_ms)
+
+    def _apply_heard(self, audio_end_ms: int) -> None:
+        if self._interrupted_index is None:
             return
         self._history[self._interrupted_index] = Turn(
             "assistant", heard_prefix(self._interrupted_text, audio_end_ms)
@@ -127,24 +137,34 @@ class CascadeBridge:
                 task.cancel()
                 with contextlib.suppress(asyncio.CancelledError, Exception):
                     await task
-        await self._stt.close()
-        self._meter.stt_seconds = self._stt.billed_seconds
-        await self._queue.put(SessionClosed(reason="closed"))
+        try:
+            await self._stt.close()
+        finally:
+            self._meter.stt_seconds = self._stt.billed_seconds
+            await self._queue.put(SessionClosed(reason="closed"))
 
     async def _on_speech_start(self) -> None:
+        self._stale_finals = 0
         await self._queue.put(SpeechStarted())
         task = self._reply_task
         if task is None or task.done():
             return
+        self._barge_in_pending = True
+        self._early_heard_ms = None
         task.cancel()
         with contextlib.suppress(asyncio.CancelledError):
             await task
         if not self._reply_text:
+            self._barge_in_pending = False
             return
         # Barge-in: until interrupt() says how much was heard, none of it counts.
         self._history.append(Turn("assistant", ""))
         self._interrupted_index = len(self._history) - 1
         self._interrupted_text = self._reply_text
+        self._barge_in_pending = False
+        if self._early_heard_ms is not None:
+            self._apply_heard(self._early_heard_ms)
+            self._early_heard_ms = None
         await self._queue.put(AgentTranscript(text=self._reply_text, is_final=True))
         await self._queue.put(TurnEnded())
         self._reply_text = ""
@@ -155,9 +175,13 @@ class CascadeBridge:
 
     async def _finish_turn(self, eou_ms: int, decided_at: float) -> None:
         self._final_event.clear()
-        await self._stt.finalize()
-        with contextlib.suppress(TimeoutError):
+        try:
+            await self._stt.finalize()
             await asyncio.wait_for(self._final_event.wait(), self._stt_final_timeout)
+        except TimeoutError:
+            self._stale_finals += 1
+        except Exception as exc:  # noqa: BLE001 — continue with the partial text.
+            logger.warning("voice.cascade.stt_finalize_failed", error=str(exc))
         stt_final_ms = int((self._clock() - decided_at) * 1000)
         heard = (" ".join(self._finals) or self._partial).strip()
         self._finals.clear()
@@ -181,6 +205,8 @@ class CascadeBridge:
         first_token = asyncio.Event()
 
         async def on_delta(text: str) -> None:
+            if not text:
+                return
             if not first_token.is_set():
                 first_token.set()
                 await self._commit_user(user_text)
@@ -246,6 +272,8 @@ class CascadeBridge:
         self._meter.brain_cost_usd += usage.cost_usd
         if text:
             self._history.append(Turn("assistant", text))
+            self._interrupted_index = len(self._history) - 1
+            self._interrupted_text = text
             await self._queue.put(AgentTranscript(text=text, is_final=True))
         await self._queue.put(
             TurnEnded(input_tokens=usage.input_tokens, output_tokens=usage.output_tokens)
@@ -255,6 +283,9 @@ class CascadeBridge:
         try:
             async for result in self._stt.results():
                 if result.is_final:
+                    if self._stale_finals:
+                        self._stale_finals -= 1
+                        continue
                     if result.text.strip():
                         self._finals.append(result.text.strip())
                     self._final_event.set()
@@ -267,6 +298,8 @@ class CascadeBridge:
             await self._queue.put(
                 BridgeError(code="stt_unavailable", message=str(exc), is_fatal=True)
             )
+        except Exception as exc:  # noqa: BLE001 — a dead pump must end the call loudly.
+            await self._queue.put(BridgeError(code="stt_failed", message=str(exc), is_fatal=True))
 
 
 def build_cascade_bridge(setup: CascadeSetup, meter: CascadeMeter) -> CascadeBridge:
