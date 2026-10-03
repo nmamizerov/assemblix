@@ -5,6 +5,20 @@ All notable changes to this project are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.40](https://github.com/nmamizerov/assemblix/compare/v0.2.39...v0.2.40) (2026-10-03)
+
+
+### Features
+
+* **web:** edit cascade voice agents and show turn latency in the UI ([a847d86](https://github.com/nmamizerov/assemblix/commit/a847d864c4c63270ef7b87f27175a867e1b3dd29))
+* **web:** edit cascade voice agents in the UI ([72801d8](https://github.com/nmamizerov/assemblix/commit/72801d896e50e1b3a1c49540805b868553b39801))
+* **web:** show cascade turn timings in calls ([cfb001b](https://github.com/nmamizerov/assemblix/commit/cfb001b4964e2fbaed31e2252e7df2c4d95ef183))
+
+
+### Bug Fixes
+
+* **web:** keep voice settings valid when switching voice agent mode ([a161aef](https://github.com/nmamizerov/assemblix/commit/a161aefd3d5d417492bd85ca7b1b4a88e77fc657))
+
 ## [0.2.39](https://github.com/nmamizerov/assemblix/compare/v0.2.38...v0.2.39) (2026-10-03)
 
 
