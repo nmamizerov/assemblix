@@ -226,12 +226,19 @@ class HalfCascadeBridge:
                 on_error=on_error,
                 channel=self._channel,
             )
-            await self._session.open()
+            session = self._session
+            await session.open()
+            # An interrupt() may have aborted the session while it was opening.
+            if self._session is not session:
+                return
+        session = self._session
         if text:
-            await self._session.send_text(text)
             self._session_chars += len(text)
+            await session.send_text(text)
+            if self._session is not session:
+                return
         if event.is_final:
-            session, self._session = self._session, None
+            self._session = None
             self._spoken = ""
             self._start_flush(session)
 
@@ -271,19 +278,20 @@ class HalfCascadeBridge:
     async def _abort_speech(self) -> None:
         self._speech_epoch += 1
         flushing, self._flushing = self._flushing, None
-        if flushing is not None:
-            flushed_session, flush = flushing
-            # Cancelled before the socket closes, so the provider's reader stops
-            # quietly instead of reporting a dead connection.
-            flush.cancel()
-            await asyncio.wait({flush})
-            with contextlib.suppress(Exception):
-                await flushed_session.aclose()
-        if self._session is None:
-            return
         session, self._session = self._session, None
-        with contextlib.suppress(Exception):
-            await session.aclose()
+        if session is not None:
+            self._turn_chars += self._session_chars
+        try:
+            if flushing is not None:
+                # Cancelled before the socket closes, so the provider's reader stops
+                # quietly instead of reporting a dead connection.
+                flushing[1].cancel()
+                await asyncio.wait({flushing[1]})
+        finally:
+            for to_close in (flushing[0] if flushing else None, session):
+                if to_close is not None:
+                    with contextlib.suppress(Exception):
+                        await to_close.aclose()
 
     async def _on_audio(self, pcm: bytes, alignment: AlignmentData | None) -> None:
         await self._queue.put(AudioDelta(pcm=pcm))

@@ -177,6 +177,8 @@ async def test_barge_in_silences_the_turn_and_a_dead_provider_ends_the_call() ->
     assert aborted.aborted is True
     assert inner.interrupts == [400]
     assert second.sent == ["Слушаю"]
+    # What reached the provider before the barge-in was still billed.
+    assert next(e for e in seen if isinstance(e, TurnEnded)).speech_chars == len("Длинный ")
     assert len(_FakeTTS.instances) == 2
     error = next(e for e in seen if isinstance(e, BridgeError))
     assert error.is_fatal is True
@@ -567,3 +569,168 @@ async def test_a_late_barge_in_reaches_a_brain_that_can_truncate_its_reply() -> 
     # Assert
     assert late_interrupts == [250]
     assert speech_to_speech_interrupts == []
+
+
+class _TaggedTTS(_FakeTTS):
+    """Each session plays audio tagged with its index; flushing holds until released."""
+
+    def __init__(self, on_audio: Any, on_error: Any, release: asyncio.Event) -> None:
+        self.tag = bytes([len(_FakeTTS.instances)])
+        super().__init__(on_audio, on_error)
+        self.release = release
+
+    async def send_text(self, text: str) -> None:
+        await super().send_text(text)
+        await self.on_audio(self.tag, None)
+
+    async def flush_and_close(self) -> int:
+        await self.release.wait()
+        return await super().flush_and_close()
+
+
+async def test_the_next_reply_is_spoken_only_after_the_previous_turn_is_reported() -> None:
+    """A new reply arriving while the previous one is still synthesizing waits for
+    it: the earlier turn's final transcript and TurnEnded precede any new audio."""
+    # Arrange
+    release = asyncio.Event()
+    inner = _FakeInner(
+        [
+            AgentTranscript(text="Раз.", is_final=False),
+            AgentTranscript(text="Раз.", is_final=True),
+            TurnEnded(),
+            AgentTranscript(text="Два.", is_final=False),
+            AgentTranscript(text="Два.", is_final=True),
+            TurnEnded(),
+            SessionClosed(reason="closed"),
+        ]
+    )
+    _FakeTTS.instances.clear()
+    bridge = HalfCascadeBridge(
+        inner=inner,
+        speech_out=_target(),
+        output_sample_rate=16000,
+        open_stream=lambda _out, on_audio, on_error, **_kwargs: _TaggedTTS(
+            on_audio, on_error, release
+        ),
+    )
+
+    # Act
+    await bridge.connect(instructions="i", voice="", language="ru", params={})
+    seen: list[BridgeEvent] = []
+    sessions_while_flushing: int | None = None
+    async for event in bridge.events():
+        seen.append(event)
+        if event == AudioDelta(pcm=b"\x00"):
+            for _ in range(10):
+                await asyncio.sleep(0)
+            sessions_while_flushing = len(_FakeTTS.instances)
+            release.set()
+    await bridge.close()
+
+    # Assert
+    assert sessions_while_flushing == 1
+    assert seen == [
+        AudioDelta(pcm=b"\x00"),
+        AgentTranscript(text="Раз.", is_final=False),
+        AgentTranscript(text="Раз.", is_final=True),
+        TurnEnded(speech_chars=4),
+        AudioDelta(pcm=b"\x01"),
+        AgentTranscript(text="Два.", is_final=False),
+        AgentTranscript(text="Два.", is_final=True),
+        TurnEnded(speech_chars=4),
+        SessionClosed(reason="closed"),
+    ]
+
+
+async def test_an_interrupt_while_the_session_opens_does_not_kill_the_bridge() -> None:
+    """A barge-in that aborts a session still connecting leaves the bridge serving
+    events; nothing is said into the aborted session."""
+    # Arrange
+    opening = asyncio.Event()
+    may_open = asyncio.Event()
+
+    class _SlowOpenTTS(_FakeTTS):
+        async def open(self) -> None:
+            opening.set()
+            await may_open.wait()
+            await super().open()
+
+    inner = _FakeInner(
+        [
+            AgentTranscript(text="Добрый день", is_final=False),
+            TurnEnded(),
+            SessionClosed(reason="closed"),
+        ]
+    )
+    _FakeTTS.instances.clear()
+    bridge = HalfCascadeBridge(
+        inner=inner,
+        speech_out=_target(),
+        output_sample_rate=16000,
+        open_stream=lambda _out, on_audio, on_error, **_kwargs: _SlowOpenTTS(on_audio, on_error),
+    )
+    await bridge.connect(instructions="i", voice="", language="ru", params={})
+
+    async def consume() -> list[BridgeEvent]:
+        return [event async for event in bridge.events()]
+
+    # Act
+    consumer = asyncio.create_task(consume())
+    await opening.wait()
+    await bridge.interrupt(audio_end_ms=0)
+    may_open.set()
+    seen = await asyncio.wait_for(consumer, timeout=1)
+    await bridge.close()
+
+    # Assert
+    assert _FakeTTS.instances[0].aborted is True
+    assert _FakeTTS.instances[0].sent == []
+    assert seen[-1] == SessionClosed(reason="closed")
+
+
+async def test_an_abort_cancelled_mid_way_still_closes_the_flushing_session() -> None:
+    """A hang-up landing while a barge-in waits for the flush to stop must not leak
+    the provider connection."""
+    # Arrange
+    stop_slowly = asyncio.Event()
+
+    class _StubbornTTS(_FakeTTS):
+        async def flush_and_close(self) -> int:
+            try:
+                await asyncio.Event().wait()
+            except asyncio.CancelledError:
+                await stop_slowly.wait()
+                raise
+            return 0
+
+    inner = _GatedInner(
+        [
+            AgentTranscript(text="Добрый день", is_final=True),
+            asyncio.Event(),
+        ]
+    )
+    _FakeTTS.instances.clear()
+    bridge = HalfCascadeBridge(
+        inner=inner,
+        speech_out=_target(),
+        output_sample_rate=16000,
+        open_stream=lambda _out, on_audio, on_error, **_kwargs: _StubbornTTS(on_audio, on_error),
+    )
+    await bridge.connect(instructions="i", voice="", language="ru", params={})
+    consumer = asyncio.create_task(anext(bridge.events()))
+    while not _FakeTTS.instances or bridge._flushing is None:
+        await asyncio.sleep(0)
+
+    # Act
+    abort = asyncio.create_task(bridge.interrupt(audio_end_ms=0))
+    await asyncio.sleep(0)
+    abort.cancel()
+    stop_slowly.set()
+    await asyncio.wait({abort})
+    consumer.cancel()
+    await asyncio.wait({consumer})
+    await bridge.close()
+
+    # Assert
+    assert abort.cancelled()
+    assert _FakeTTS.instances[0].aborted is True
