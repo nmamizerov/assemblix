@@ -211,6 +211,8 @@ class AgentRunner:
                 "cost": cost,
                 "tool_calls_count": len(tool_executions),
                 "effective_model": effective_model,
+                "input_tokens": token_usage.input_tokens,
+                "output_tokens": token_usage.output_tokens,
             },
             messages=[],  # raw pydantic messages are not exposed (the contract is a list of dict)
             tool_executions=tool_executions,
