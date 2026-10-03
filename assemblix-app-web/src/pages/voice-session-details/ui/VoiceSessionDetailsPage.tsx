@@ -3,9 +3,13 @@ import { useNavigate, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 
 import {
+  CallInstructions,
   formatCredits,
   formatDuration,
+  LlmCallPanel,
+  StageCostBreakdown,
   TimingSummary,
+  TurnCostChips,
   TurnTimings,
   useGetVoiceSessionQuery,
 } from "@/entities/voice-session";
@@ -110,6 +114,9 @@ export const VoiceSessionDetailsPage = () => {
             </span>
           </div>
         </div>
+        {session.callDetails?.costs && (
+          <StageCostBreakdown details={session.callDetails} />
+        )}
       </header>
 
       <div className="grid items-start gap-8 xl:grid-cols-[minmax(0,1fr)_340px]">
@@ -117,6 +124,7 @@ export const VoiceSessionDetailsPage = () => {
           <h2 className="text-sm font-medium">
             {t("voiceSessions.detail.transcript")}
           </h2>
+          {session.callDetails && <CallInstructions details={session.callDetails} />}
           {session.transcript.length === 0 ? (
             <p className="rounded-lg border border-dashed border-border px-4 py-10 text-center text-sm text-muted-foreground">
               {t("voiceSessions.detail.emptyTranscript")}
@@ -137,6 +145,8 @@ export const VoiceSessionDetailsPage = () => {
                   {line.role === "assistant" && line.timings && (
                     <TurnTimings timings={line.timings} className="mt-2" />
                   )}
+                  {line.usage && <TurnCostChips usage={line.usage} className="mt-2" />}
+                  {line.llmCall && <LlmCallPanel call={line.llmCall} className="mt-2" />}
                 </li>
               ))}
             </ol>

@@ -1594,6 +1594,47 @@
       "ttsFirstAudioMs": "TTS",
       "totalMs": "Итого",
       "ttsGapMaxMs": "Макс. пауза"
+    },
+    "llm": {
+      "title": "Вызов LLM",
+      "model": "Модель",
+      "effectiveModel": "Ответила",
+      "tokens": "Токены",
+      "cached": "Кэш входа",
+      "cost": "Стоимость",
+      "ttft": "Первый токен",
+      "duration": "Длительность",
+      "outcomeLabel": "Результат",
+      "params": "Параметры",
+      "messages_one": "Отправлено {{count}} сообщение",
+      "messages_few": "Отправлено {{count}} сообщения",
+      "messages_many": "Отправлено {{count}} сообщений",
+      "messages_other": "Отправлено {{count}} сообщения",
+      "systemRef": "Системные инструкции — одинаковы для всех реплик, показаны над транскриптом",
+      "roleUser": "Пользователь",
+      "roleAssistant": "Ассистент",
+      "response": "Ответ",
+      "instructions": "Системные инструкции",
+      "historyTurns_one": "история: {{count}} сообщение",
+      "historyTurns_few": "история: {{count}} сообщения",
+      "historyTurns_many": "история: {{count}} сообщений",
+      "historyTurns_other": "история: {{count}} сообщения",
+      "chipStt": "STT",
+      "chipLlm": "LLM",
+      "chipTts": "TTS",
+      "sttEstimateHint": "Оценка: {{seconds}} с аудио за эту реплику. STT тарифицируется на поток блоками по 15 секунд.",
+      "ttsCharsHint": "Синтезировано символов: {{chars}}",
+      "seconds": "{{seconds}} с",
+      "chars": "{{chars}} симв.",
+      "providersTotal": "Провайдеры",
+      "platformFee": "Комиссия платформы",
+      "marginCredits": "+ {{credits}} за системные ключи",
+      "outcome": {
+        "ok": "Успешно",
+        "cancelled": "Перебит",
+        "brain_timeout": "Таймаут",
+        "brain_failed": "Ошибка"
+      }
     }
   }
 }
