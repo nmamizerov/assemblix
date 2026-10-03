@@ -60,6 +60,7 @@ export const defaultCascade = (): VoiceAgentCascadeConfig => ({
     smartTurn: true,
     smartTurnThreshold: 0.5,
     prerollMs: 300,
+    speculative: true,
   },
   brain: {
     type: "prompt",
