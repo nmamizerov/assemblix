@@ -5,6 +5,13 @@ All notable changes to this project are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.44](https://github.com/nmamizerov/assemblix/compare/v0.2.43...v0.2.44) (2026-10-03)
+
+
+### Features
+
+* measure lead-in silence of cascade voice replies ([d39f776](https://github.com/nmamizerov/assemblix/commit/d39f7761dc595badc24eb80da3fda156aa22f8cc))
+
 ## [0.2.43](https://github.com/nmamizerov/assemblix/compare/v0.2.42...v0.2.43) (2026-10-03)
 
 
