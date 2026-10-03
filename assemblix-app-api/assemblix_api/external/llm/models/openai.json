@@ -419,7 +419,7 @@
       }
     },
     {
-      "id": "gpt-4.1-mini",
+      "id": "gpt-4.1-nano",
       "label": "GPT-4.1 Nano (deprecated)",
       "description": "Deprecated: shuts down 2026-10-23. Use GPT-5.6 Luna.",
       "contextWindow": 1047576,
