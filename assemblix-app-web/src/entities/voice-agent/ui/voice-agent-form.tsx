@@ -73,7 +73,8 @@ export const VoiceAgentForm = ({ draft, errors, onChange }: VoiceAgentFormProps)
   const { data: models = [], isLoading: isLoadingModels } =
     useGetVoiceProviderModelsQuery(
       { providerName: draft.provider, capability: "conversation" },
-      { skip: !draft.provider || !isRealtime }
+      // Also needed in cascade mode: switching back checks the realtime model.
+      { skip: !draft.provider }
     );
   const { data: knowledgeBases = [] } = useGetKnowledgeBasesQuery(
     { projectId: currentProjectId! },
@@ -204,7 +205,9 @@ export const VoiceAgentForm = ({ draft, errors, onChange }: VoiceAgentFormProps)
                 type="button"
                 role="radio"
                 aria-checked={isSelected}
-                onClick={() => onChange(applyModeChange(draft, mode))}
+                onClick={() =>
+                  onChange(applyModeChange(draft, mode, canUseExternalVoice))
+                }
                 className={cn(
                   "rounded-lg border px-4 py-3 text-left transition-colors",
                   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",

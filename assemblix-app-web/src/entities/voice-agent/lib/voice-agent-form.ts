@@ -115,6 +115,7 @@ export const emptyDraft = (): VoiceAgentDraft => ({
   params: {},
   cascade: defaultCascade(),
   extraConfig: {},
+  ttsBeforeCascade: null,
 });
 
 const KNOWN_CONFIG_KEYS = new Set([
@@ -226,10 +227,12 @@ export const validateDraft = (draft: VoiceAgentDraft): DraftValidation => {
     } else if (turn.maxSilenceMs < turn.minSilenceMs) {
       errors.maxSilenceMs = "voiceAgents.errors.maxSilenceBelowMin";
     }
+    // The threshold is unused (and its field disabled) without smart turn.
     if (
-      !Number.isFinite(turn.smartTurnThreshold) ||
+      turn.smartTurn &&
+      (!Number.isFinite(turn.smartTurnThreshold) ||
       turn.smartTurnThreshold <= 0 ||
-      turn.smartTurnThreshold >= 1
+        turn.smartTurnThreshold >= 1)
     ) {
       errors.smartTurnThreshold = "voiceAgents.errors.smartTurnThresholdRange";
     }
@@ -264,16 +267,39 @@ export const applyProviderChange = (
   return { ...draft, provider, model: "", voiceId: "", credentialId: null };
 };
 
+// A streaming voice can speak a cascade; a batch-only one cannot.
+const isStreamingTts = (tts: VoiceOutputConfig | null): boolean =>
+  Boolean(tts && tts.realtime === true && tts.provider && tts.model);
+
+/**
+ * `canUseExternalVoice` says whether the realtime model can answer in text.
+ * Leaving cascade restores the realtime voice the draft had before, unless the
+ * user changed the cascade voice and the realtime model can still use it.
+ */
 export const applyModeChange = (
   draft: VoiceAgentDraft,
-  mode: VoiceAgentMode
+  mode: VoiceAgentMode,
+  canUseExternalVoice = false
 ): VoiceAgentDraft => {
   if (mode === draft.mode) return draft;
-  // A cascade cannot speak without synthesis, so it starts with a working voice.
-  if (mode === "cascade" && draft.tts === null) {
-    return { ...draft, mode, tts: { ...DEFAULT_CASCADE_TTS } };
+
+  if (mode === "cascade") {
+    const tts = isStreamingTts(draft.tts) ? draft.tts : { ...DEFAULT_CASCADE_TTS };
+    return {
+      ...draft,
+      mode,
+      tts,
+      ttsBeforeCascade: { previous: draft.tts, applied: tts },
+    };
   }
-  return { ...draft, mode };
+
+  const stash = draft.ttsBeforeCascade;
+  const isUntouched = stash !== null && draft.tts === stash.applied;
+  let tts: VoiceOutputConfig | null;
+  if (canUseExternalVoice && !isUntouched) tts = draft.tts;
+  else if (stash) tts = stash.previous;
+  else tts = canUseExternalVoice ? draft.tts : null;
+  return { ...draft, mode, tts, ttsBeforeCascade: null };
 };
 
 export const applyBrainProviderChange = (

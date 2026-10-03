@@ -112,4 +112,10 @@ export interface VoiceAgentDraft {
   cascade: VoiceAgentCascadeConfig;
   // Top-level config keys this UI does not know about.
   extraConfig: Record<string, unknown>;
+  // Set on a realtime → cascade switch so switching back can restore the
+  // realtime voice; never sent to the API.
+  ttsBeforeCascade: {
+    previous: VoiceOutputConfig | null;
+    applied: VoiceOutputConfig | null;
+  } | null;
 }
