@@ -220,6 +220,16 @@ async def stream_voice_session(websocket: WebSocket, token: str) -> None:
         setup = await load_voice_session_setup(
             voice_agent_id=scope.voice_agent_id, project_id=scope.project_id
         )
+        meter = CascadeMeter()
+        bridge = create_bridge(
+            provider=setup.provider,
+            api_key=setup.api_key,
+            model=setup.model,
+            api_base=setup.api_base,
+            speech_out=setup.tts,
+            cascade=setup.cascade,
+            meter=meter,
+        )
     except HTTPException as exc:
         await websocket.send_json({"type": "session.closed", "reason": exc.detail})
         await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
@@ -246,16 +256,6 @@ async def stream_voice_session(websocket: WebSocket, token: str) -> None:
 
     mismatch = avatar_call_mismatch(scope.room, setup.avatar)
     avatar_call = scope.room is not None and setup.avatar is not None
-    meter = CascadeMeter()
-    bridge = create_bridge(
-        provider=setup.provider,
-        api_key=setup.api_key,
-        model=setup.model,
-        api_base=setup.api_base,
-        speech_out=setup.tts,
-        cascade=setup.cascade,
-        meter=meter,
-    )
     ws_channel = _WebSocketChannel(websocket)
     client: Any = LiveKitChannel(ws_channel) if avatar_call else ws_channel
     media: Any = None
