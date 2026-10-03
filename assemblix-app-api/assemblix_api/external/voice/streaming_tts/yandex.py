@@ -36,7 +36,7 @@ logger = structlog.get_logger(__name__)
 OnAudio = Callable[[bytes, AlignmentData | None], Awaitable[None]]
 OnError = Callable[[str], Awaitable[None]]
 
-Mode = Literal["utterance", "stream"]
+Mode = Literal["utterance", "stream", "chunk"]
 
 # anam passthrough is pcm_s16le / 16000 / mono — request exactly that from SpeechKit.
 YANDEX_SAMPLE_RATE = 16000
@@ -44,6 +44,8 @@ YANDEX_SAMPLE_RATE = 16000
 # A "complete" chunk ends on sentence-final punctuation or a newline; the trailing
 # incomplete fragment stays buffered until more text (or flush) closes it.
 _SENTENCE = re.compile(r"[^.!?…\n]*[.!?…\n]+", re.S)
+
+_CHUNK_CHARS = 250
 
 # Sentinel that tells a worker loop no more text is coming.
 _DONE = object()
@@ -60,6 +62,7 @@ class YandexRealtimeSession:
         mode: Mode = "utterance",
         stub: Any = None,
         on_error: OnError | None = None,
+        channel: Any = None,
     ):
         # ``credential`` is the combined "<folderId>:<apiKey>" form; split at open().
         self._credential = credential
@@ -69,13 +72,19 @@ class YandexRealtimeSession:
         self._on_error = on_error
         self._mode: Mode = mode
         self._stub = stub  # injectable for tests; a real aio stub is built in open()
+        # A channel owned by the caller outlives this session; only our own is closed.
+        self._shared_channel = channel
         self._channel: Any = None
+        self._first_sent = False
+        self._pending = ""
         self._metadata: list[tuple[str, str]] = []
         self._queue: asyncio.Queue[Any] = asyncio.Queue()
         self._worker: asyncio.Task | None = None
         self._buffer = ""
         self._chars_sent = 0
         self._failed = False
+        self._closed = False
+        self._call: Any = None
 
     async def _fail(self, event: str, exc: BaseException) -> None:
         """Audio is best-effort here, but a caller that owns a live call has to hear
@@ -95,31 +104,55 @@ class YandexRealtimeSession:
             ("x-folder-id", folder_id),
         ]
         if self._stub is None:
-            import grpc
             from yandex.cloud.ai.tts.v3 import tts_service_pb2_grpc
 
-            endpoint = get_settings().yandex_tts_v3_grpc_endpoint
-            self._channel = grpc.aio.secure_channel(endpoint, grpc.ssl_channel_credentials())
-            self._stub = tts_service_pb2_grpc.SynthesizerStub(self._channel)
+            channel = self._shared_channel
+            if channel is None:
+                import grpc
 
-        worker = self._utterance_worker if self._mode == "utterance" else self._stream_worker
+                endpoint = get_settings().yandex_tts_v3_grpc_endpoint
+                channel = self._channel = grpc.aio.secure_channel(
+                    endpoint, grpc.ssl_channel_credentials()
+                )
+            self._stub = tts_service_pb2_grpc.SynthesizerStub(channel)
+
+        stream = self._mode == "stream"
+        worker = self._stream_worker if stream else self._utterance_worker
         self._worker = asyncio.create_task(worker())
 
     async def send_text(self, text: str) -> None:
-        if self._failed or not text:
+        if self._failed or self._closed or not text:
             return
         self._chars_sent += len(text)
-        if self._mode == "utterance":
-            self._buffer += text
-            for sentence in self._drain_sentences():
-                await self._queue.put(sentence)
-        else:
+        if self._mode == "stream":
             await self._queue.put(text)
+            return
+        self._buffer += text
+        for sentence in self._drain_sentences():
+            if self._mode == "utterance":
+                await self._queue.put(sentence)
+            elif not self._first_sent:
+                self._first_sent = True
+                await self._queue.put(sentence)
+            else:
+                await self._pack(sentence)
+
+    async def _pack(self, sentence: str) -> None:
+        candidate = f"{self._pending} {sentence}".strip()
+        if self._pending and len(candidate) > _CHUNK_CHARS:
+            await self._queue.put(self._pending)
+            self._pending = sentence
+        else:
+            self._pending = candidate
+        if len(self._pending) >= _CHUNK_CHARS:
+            await self._queue.put(self._pending)
+            self._pending = ""
 
     async def flush_and_close(self) -> int:
-        if self._mode == "utterance" and not self._failed:
-            tail = self._buffer.strip()
+        if self._mode != "stream" and not self._failed:
+            tail = f"{self._pending} {self._buffer.strip()}".strip()
             self._buffer = ""
+            self._pending = ""
             if tail:
                 await self._queue.put(tail)
         await self._queue.put(_DONE)
@@ -132,6 +165,15 @@ class YandexRealtimeSession:
         return self._chars_sent
 
     async def aclose(self) -> None:
+        self._closed = True
+        # A shared channel is not closed below, so an in-flight RPC must be stopped here.
+        if self._call is not None:
+            with contextlib.suppress(Exception):
+                self._call.cancel()
+        worker = self._worker
+        if worker is not None and not worker.done() and worker is not asyncio.current_task():
+            worker.cancel()
+            await asyncio.wait({worker})
         if self._channel is not None:
             with contextlib.suppress(Exception):
                 await self._channel.close()
@@ -169,10 +211,14 @@ class YandexRealtimeSession:
             hints=[tts_pb2.Hints(voice=self._voice_id)],
             output_audio_spec=_audio_spec(tts_pb2),
         )
-        async for response in self._stub.UtteranceSynthesis(request, metadata=self._metadata):
-            data = response.audio_chunk.data
-            if data:
-                await self._on_audio(data, None)
+        self._call = self._stub.UtteranceSynthesis(request, metadata=self._metadata)
+        try:
+            async for response in self._call:
+                data = response.audio_chunk.data
+                if data:
+                    await self._on_audio(data, None)
+        finally:
+            self._call = None
 
     # -- stream mode (StreamSynthesis, bidirectional) -----------------------------
 
@@ -180,7 +226,7 @@ class YandexRealtimeSession:
         from yandex.cloud.ai.tts.v3 import tts_pb2
 
         try:
-            responses = self._stub.StreamSynthesis(
+            responses = self._call = self._stub.StreamSynthesis(
                 self._stream_requests(tts_pb2), metadata=self._metadata
             )
             async for response in responses:

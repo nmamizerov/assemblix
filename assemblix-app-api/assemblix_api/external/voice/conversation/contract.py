@@ -49,6 +49,20 @@ class TurnEnded:
 
 
 @dataclass(frozen=True)
+class TurnTimings:
+    """Stage durations of one cascade turn, sent before its first reply text.
+
+    ``speech_ended_at`` is a ``time.monotonic()`` mark; the runtime closes the
+    measurement at the turn's first audio packet.
+    """
+
+    speech_ended_at: float
+    eou_ms: int
+    stt_final_ms: int
+    brain_first_token_ms: int
+
+
+@dataclass(frozen=True)
 class BridgeError:
     code: str | None
     message: str
@@ -68,6 +82,7 @@ BridgeEvent = (
     | AgentTranscript
     | SpeechStarted
     | TurnEnded
+    | TurnTimings
     | BridgeError
     | SessionClosed
 )

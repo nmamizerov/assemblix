@@ -32,13 +32,13 @@ class VoiceAgentService:
     @staticmethod
     def _assert_conversation_model(config: VoiceAgentConfig) -> None:
         """The catalog is runtime data, so this cannot live in the Pydantic schema."""
-        if not has_conversation_route(config.voice.provider, config.voice.model):
+        voice = config.voice
+        if config.mode == "cascade" or voice is None:
+            return
+        if not has_conversation_route(voice.provider, voice.model):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=(
-                    f"{config.voice.provider}/{config.voice.model} is not a conversation "
-                    "(speech-to-speech) model"
-                ),
+                detail=f"{voice.provider}/{voice.model} is not a conversation (speech-to-speech) model",
             )
 
     @staticmethod

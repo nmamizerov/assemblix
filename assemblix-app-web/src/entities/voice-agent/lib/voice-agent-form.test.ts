@@ -80,7 +80,7 @@ describe("voice agent form", () => {
     const request = toCreateRequest(draft, "proj-1");
 
     // Assert — a load → save round trip is lossless
-    expect(request.config.voice.credentialId).toBe("cred-1");
+    expect(request.config.voice?.credentialId).toBe("cred-1");
     expect(request.config.params).toEqual({ vadSilenceMs: 500 });
   });
 

@@ -6,6 +6,8 @@ import asyncio
 from collections.abc import AsyncIterator
 from typing import Any
 
+import pytest
+
 from assemblix_api.external.voice.conversation.contract import (
     AgentTranscript,
     AudioDelta,
@@ -93,7 +95,7 @@ def _bridge(inner: _FakeInner) -> HalfCascadeBridge:
         inner=inner,
         speech_out=_target(),
         output_sample_rate=16000,
-        open_stream=lambda _out, on_audio, on_error: _FakeTTS(on_audio, on_error),
+        open_stream=lambda _out, on_audio, on_error, **_kwargs: _FakeTTS(on_audio, on_error),
     )
 
 
@@ -248,3 +250,120 @@ async def test_only_the_unspoken_remainder_of_a_reply_is_sent_to_the_provider() 
 
     # Assert
     assert spoken == ["Здравствуйте", "Здравствуйте"]
+
+
+async def test_one_channel_is_opened_per_call_and_closed_with_it(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from assemblix_api.external.voice import speech_out as speech_out_module
+
+    opened: list[Any] = []
+
+    class _Channel:
+        closed = False
+
+        async def close(self) -> None:
+            self.closed = True
+
+    def fake_open_channel(_out: object) -> _Channel:
+        channel = _Channel()
+        opened.append(channel)
+        return channel
+
+    monkeypatch.setattr(speech_out_module, "open_channel", fake_open_channel)
+    received: list[object] = []
+
+    def open_stream(_out: object, *, on_audio: Any, on_error: Any, channel: object) -> _FakeTTS:
+        received.append(channel)
+        return _FakeTTS(on_audio, on_error)
+
+    script: list[BridgeEvent] = [
+        AgentTranscript(text="Раз.", is_final=False),
+        AgentTranscript(text="Раз.", is_final=True),
+        TurnEnded(),
+        AgentTranscript(text="Два.", is_final=False),
+        AgentTranscript(text="Два.", is_final=True),
+        TurnEnded(),
+        SessionClosed(reason="done"),
+    ]
+    bridge = HalfCascadeBridge(
+        inner=_FakeInner(script),
+        speech_out=_target(),
+        output_sample_rate=16000,
+        open_stream=open_stream,
+    )
+
+    await bridge.connect(instructions="", voice="", language="ru", params={})
+    async for _event in bridge.events():
+        pass
+    await bridge.close()
+
+    assert len(opened) == 1
+    assert received == [opened[0], opened[0]]
+    assert opened[0].closed is True
+
+
+async def test_the_channel_is_closed_when_the_inner_connect_fails(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from assemblix_api.external.voice import speech_out as speech_out_module
+
+    class _Channel:
+        closes = 0
+
+        async def close(self) -> None:
+            self.closes += 1
+
+    channel = _Channel()
+    monkeypatch.setattr(speech_out_module, "open_channel", lambda _out: channel)
+
+    class _FailingInner(_FakeInner):
+        async def connect(self, **kwargs: Any) -> None:
+            raise RuntimeError("connect failed")
+
+    bridge = _bridge(_FailingInner([]))
+
+    with pytest.raises(RuntimeError, match="connect failed"):
+        await bridge.connect(instructions="", voice="", language="ru", params={})
+    await bridge.close()
+
+    assert channel.closes == 1
+
+
+async def test_audio_from_an_aborted_session_is_not_forwarded() -> None:
+    """A provider that keeps calling back after a barge-in aborted its session must
+    not reach the caller, while the next turn's audio still does."""
+    # Arrange
+    inner = _FakeInner(
+        [
+            AgentTranscript(text="Длинный ", is_final=False),
+            SpeechStarted(),
+            TurnEnded(),
+            AgentTranscript(text="Слушаю", is_final=False),
+            AgentTranscript(text="Слушаю", is_final=True),
+            TurnEnded(),
+            SessionClosed(reason="closed"),
+        ]
+    )
+    bridge = _bridge(inner)
+
+    # Act
+    await bridge.connect(instructions="i", voice="", language="ru", params={})
+    seen: list[BridgeEvent] = []
+    async for event in bridge.events():
+        seen.append(event)
+        if isinstance(event, SpeechStarted):
+            await bridge.interrupt(audio_end_ms=100)
+            await _FakeTTS.instances[0].on_audio(b"\xde\xad", None)
+        if (
+            isinstance(event, AgentTranscript)
+            and not event.is_final
+            and len(_FakeTTS.instances) == 2
+        ):
+            await _FakeTTS.instances[1].on_audio(b"\x01\x02", None)
+    await bridge.close()
+
+    # Assert
+    assert _FakeTTS.instances[0].aborted is True
+    audio = [e.pcm for e in seen if isinstance(e, AudioDelta)]
+    assert audio == [b"\x01\x02"]

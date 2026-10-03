@@ -52,6 +52,9 @@ class VoiceSessionResponse(DTOModel):
 class VoiceSessionTranscriptLine(DTOModel):
     role: str = Field(description="user | assistant")
     text: str = Field(description="What was said")
+    timings: dict[str, int] | None = Field(
+        default=None, description="Cascade stage durations (ms) of the turn this reply ended"
+    )
 
 
 class VoiceSessionExecutionResponse(DTOModel):
@@ -74,4 +77,7 @@ class VoiceSessionDetailResponse(VoiceSessionResponse):
     output_tokens: int = Field(description="Provider output tokens, for invoice reconciliation")
     executions: list[VoiceSessionExecutionResponse] = Field(
         description="Analysis-hook runs linked to this call"
+    )
+    timing_summary: dict[str, dict[str, int]] | None = Field(
+        default=None, description="p50/p95 per cascade stage (ms); null for realtime calls"
     )

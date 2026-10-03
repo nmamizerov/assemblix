@@ -1377,6 +1377,7 @@
     "errorNoText": "El PDF no contiene texto (documento escaneado sin OCR)"
   },
   "voiceAgents": {
+    "cascadeNotice": "Este agente funciona en modo cascada (reconocimiento de voz → cerebro → síntesis de voz). Por ahora se configura a través de la API; el editor lo admitirá pronto.",
     "title": "Agentes de voz",
     "subtitle": "Agentes conversacionales en tiempo real que atienden llamadas con voz speech-to-speech",
     "create": "Crear agente de voz",

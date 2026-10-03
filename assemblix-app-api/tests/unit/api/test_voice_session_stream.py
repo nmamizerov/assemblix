@@ -85,6 +85,7 @@ def _setup(avatar: Any) -> SimpleNamespace:
         cost_per_minute=0.0,
         uses_system_key=False,
         avatar=avatar,
+        cascade=None,
     )
 
 
@@ -205,3 +206,28 @@ def test_a_finished_avatar_call_closes_its_media_once(harness: SimpleNamespace) 
     assert media.closes == 1
     assert harness.closed_sessions[0]["end_reason"] == "completed"
     assert harness.closed_sessions[0]["tts_cost_usd"] == Decimal(0)
+
+
+def test_a_bridge_that_cannot_be_built_never_opens_a_session(
+    harness: SimpleNamespace, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # Arrange
+    opened: list[dict] = []
+
+    async def open_session(**kwargs: Any) -> Any:
+        opened.append(kwargs)
+        return uuid4()
+
+    def broken_bridge(**kwargs: Any) -> Any:
+        raise RuntimeError("turn models missing")
+
+    monkeypatch.setattr(voice_sessions, "open_voice_session", open_session)
+    monkeypatch.setattr(voice_sessions, "create_bridge", broken_bridge)
+
+    # Act
+    frames = _call(room=None)
+
+    # Assert
+    assert _closed_reasons(frames) == ["setup_failed"]
+    assert opened == []
+    assert harness.closed_sessions == []

@@ -1,5 +1,5 @@
 .DEFAULT_GOAL := help
-.PHONY: help dev worker test test-cov test-external lint format typecheck security check
+.PHONY: help turn-models dev worker test test-cov test-external lint format typecheck security check
 
 # Ephemeral secrets for test runs (unit tests never hit the app's fail-fast
 # startup, but token/encryption helpers need non-empty values). Generated at
@@ -26,6 +26,9 @@ test-cov: ## Run the base suite with coverage (enforces fail_under)
 
 test-external: ## Run real-provider tests only (requires real API keys in env)
 	uv run pytest -m external
+
+turn-models: ## Download the cascade turn-detection models into models/turn
+	python scripts/fetch_turn_models.py models/turn
 
 lint: ## Lint with ruff
 	uv run ruff check assemblix_api/ tests/

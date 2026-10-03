@@ -45,6 +45,7 @@ from assemblix_api.dto.responses.voice_session import (
 from assemblix_api.external.avatar.errors import AvatarError
 from assemblix_api.external.voice import speech_out
 from assemblix_api.external.voice.conversation import create_bridge
+from assemblix_api.realtime.cascade.setup import CascadeMeter, cascade_spend
 from assemblix_api.realtime.hooks import TurnDispatcher
 from assemblix_api.realtime.livekit.channel import LiveKitChannel
 from assemblix_api.realtime.livekit.rooms import delete_room
@@ -219,6 +220,16 @@ async def stream_voice_session(websocket: WebSocket, token: str) -> None:
         setup = await load_voice_session_setup(
             voice_agent_id=scope.voice_agent_id, project_id=scope.project_id
         )
+        meter = CascadeMeter()
+        bridge = create_bridge(
+            provider=setup.provider,
+            api_key=setup.api_key,
+            model=setup.model,
+            api_base=setup.api_base,
+            speech_out=setup.tts,
+            cascade=setup.cascade,
+            meter=meter,
+        )
     except HTTPException as exc:
         await websocket.send_json({"type": "session.closed", "reason": exc.detail})
         await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
@@ -245,13 +256,6 @@ async def stream_voice_session(websocket: WebSocket, token: str) -> None:
 
     mismatch = avatar_call_mismatch(scope.room, setup.avatar)
     avatar_call = scope.room is not None and setup.avatar is not None
-    bridge = create_bridge(
-        provider=setup.provider,
-        api_key=setup.api_key,
-        model=setup.model,
-        api_base=setup.api_base,
-        speech_out=setup.tts,
-    )
     ws_channel = _WebSocketChannel(websocket)
     client: Any = LiveKitChannel(ws_channel) if avatar_call else ws_channel
     media: Any = None
@@ -340,6 +344,7 @@ async def stream_voice_session(websocket: WebSocket, token: str) -> None:
             uses_system_key=setup.uses_system_key,
             tts_cost_usd=tts_cost_usd,
             tts_uses_system_key=setup.tts.uses_system_key if setup.tts else False,
+            extra_costs=cascade_spend(setup.cascade, meter) if setup.cascade else (),
         )
         if close_reason is not None:
             with contextlib.suppress(Exception):

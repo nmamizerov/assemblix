@@ -13,6 +13,7 @@ from __future__ import annotations
 import asyncio
 import contextlib
 from collections.abc import AsyncIterator, Callable
+from typing import Any
 
 import structlog
 
@@ -52,6 +53,7 @@ class HalfCascadeBridge:
         self._open_stream = open_stream or speech_out_module.open_stream
         self._queue: asyncio.Queue[BridgeEvent] = asyncio.Queue()
         self._session: RealtimeSession | None = None
+        self._channel: Any = None
         # Turns are counted so a cancelled one can be named. Text the model had
         # already committed to arrives after the cancellation; without this it would
         # open a fresh session and the agent would speak after being interrupted.
@@ -64,6 +66,8 @@ class HalfCascadeBridge:
         # accumulates from the first — so the only safe reading is "the reply so
         # far", and only its unspoken tail may be spoken.
         self._spoken = ""
+        # Bumped on every abort; audio from a session opened under an older value is dropped.
+        self._speech_epoch = 0
 
     async def connect(
         self,
@@ -74,13 +78,18 @@ class HalfCascadeBridge:
         params: dict,
         text_output: bool = False,
     ) -> None:
-        await self._inner.connect(
-            instructions=instructions,
-            voice=voice,
-            language=language,
-            params=params,
-            text_output=True,
-        )
+        self._channel = speech_out_module.open_channel(self._speech_out)
+        try:
+            await self._inner.connect(
+                instructions=instructions,
+                voice=voice,
+                language=language,
+                params=params,
+                text_output=True,
+            )
+        except BaseException:
+            await self._close_channel()
+            raise
 
     async def send_audio(self, pcm: bytes) -> None:
         await self._inner.send_audio(pcm)
@@ -143,8 +152,17 @@ class HalfCascadeBridge:
         if not text and not event.is_final:
             return
         if self._session is None:
+            epoch = self._speech_epoch
+
+            async def on_audio(pcm: bytes, alignment: AlignmentData | None) -> None:
+                if epoch == self._speech_epoch:
+                    await self._on_audio(pcm, alignment)
+
             self._session = self._open_stream(
-                self._speech_out, on_audio=self._on_audio, on_error=self._on_error
+                self._speech_out,
+                on_audio=on_audio,
+                on_error=self._on_error,
+                channel=self._channel,
             )
             await self._session.open()
         if text:
@@ -165,6 +183,7 @@ class HalfCascadeBridge:
         return tail
 
     async def _abort_speech(self) -> None:
+        self._speech_epoch += 1
         if self._session is None:
             return
         session, self._session = self._session, None
@@ -181,3 +200,10 @@ class HalfCascadeBridge:
     async def close(self) -> None:
         await self._abort_speech()
         await self._inner.close()
+        await self._close_channel()
+
+    async def _close_channel(self) -> None:
+        channel, self._channel = self._channel, None
+        if channel is not None:
+            with contextlib.suppress(Exception):
+                await channel.close()
