@@ -1,0 +1,12 @@
+{
+  "models": [
+    {
+      "id": "t-one-stream",
+      "label": "T-one streaming recognition",
+      "description": "Self-hosted T-one (T-Bank) streaming Russian speech recognition for cascade voice agents.",
+      "capability": "stt_stream",
+      "route": "stt_stream",
+      "cost_per_minute": 0
+    }
+  ]
+}

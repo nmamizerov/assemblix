@@ -294,6 +294,8 @@ class Settings(BaseSettings):
     yandex_stt_v3_grpc_endpoint: str = os.getenv(
         "YANDEX_STT_V3_GRPC_ENDPOINT", "stt.api.cloud.yandex.net:443"
     )
+    # Self-hosted T-one streaming recognition (ws://host:8080/api/ws). Empty hides it.
+    tone_stt_url: str = os.getenv("TONE_STT_URL", "")
     # Silero VAD + Smart Turn ONNX files; `make turn-models` fills the default.
     turn_models_dir: str = os.getenv("TURN_MODELS_DIR", "models/turn")
 

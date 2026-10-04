@@ -249,3 +249,29 @@ async def test_voice_agent_is_scoped_to_its_project(
     )
     assert own.status_code == 200
     assert own.json() == []
+
+
+async def test_a_tone_agent_needs_the_server_to_run_tone(
+    client, auth_user, auth_headers, monkeypatch
+) -> None:
+    from assemblix_api.core.settings import get_settings
+
+    config = _config(
+        mode="cascade",
+        voice=None,
+        tts={"provider": "yandex", "model": "yandex-tts-v3-chunk", "voiceId": "alena"},
+        cascade={
+            "stt": {"provider": "tone"},
+            "brain": {"type": "prompt", "provider": "gemini", "model": "gemini-2.5-flash-lite"},
+        },
+    )
+    body = {"projectId": str(auth_user.project_id), "name": "T", "config": config}
+
+    monkeypatch.setattr(get_settings(), "tone_stt_url", "")
+    rejected = await client.post("/api/voice-agents/", json=body, headers=auth_headers)
+    monkeypatch.setattr(get_settings(), "tone_stt_url", "ws://stt-tone:8080/api/ws")
+    created = await client.post("/api/voice-agents/", json=body, headers=auth_headers)
+
+    assert rejected.status_code == 400
+    assert "TONE_STT_URL" in rejected.json()["detail"]
+    assert created.status_code == 201, created.text

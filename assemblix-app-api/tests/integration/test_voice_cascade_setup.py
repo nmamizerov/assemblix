@@ -2,10 +2,12 @@
 
 from __future__ import annotations
 
+from copy import deepcopy
 from decimal import Decimal
 from typing import Any
 
 import pytest
+from fastapi import HTTPException
 
 from assemblix_api.core.settings import get_settings
 from assemblix_api.database.repositories.voice_agent_repository import VoiceAgentRepository
@@ -89,6 +91,58 @@ async def test_missing_turn_models_fail_setup(
         await voice_session_service.build_setup(
             voice_agent_id=agent.id, project_id=auth_user.project_id
         )
+
+
+def _tone_config() -> dict[str, Any]:
+    config = deepcopy(_CASCADE_CONFIG)
+    config["cascade"]["stt"] = {"provider": "tone"}
+    return config
+
+
+async def test_tone_setup_needs_no_key_and_costs_nothing(
+    db_session: Any,
+    auth_user: Any,
+    voice_session_service: VoiceSessionService,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _system_keys(monkeypatch)
+    monkeypatch.setattr(get_settings(), "tone_stt_url", "ws://stt-tone:8080/api/ws")
+    monkeypatch.setattr(
+        "assemblix_api.services.voice_session_service.load_turn_models", lambda: object()
+    )
+    agent = await VoiceAgentRepository(db_session).create(
+        project_id=auth_user.project_id, name="Аптека", config=_tone_config()
+    )
+
+    setup = await voice_session_service.build_setup(
+        voice_agent_id=agent.id, project_id=auth_user.project_id
+    )
+
+    assert setup.cascade is not None
+    assert setup.cascade.stt_provider == "tone"
+    assert setup.cascade.stt_api_key == ""
+    assert setup.cascade.stt_uses_system_key is False
+    assert setup.cascade.stt_cost_per_minute == 0.0
+
+
+async def test_tone_setup_is_rejected_without_a_url(
+    db_session: Any,
+    auth_user: Any,
+    voice_session_service: VoiceSessionService,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _system_keys(monkeypatch)
+    monkeypatch.setattr(get_settings(), "tone_stt_url", "")
+    agent = await VoiceAgentRepository(db_session).create(
+        project_id=auth_user.project_id, name="Аптека", config=_tone_config()
+    )
+
+    with pytest.raises(HTTPException) as exc:
+        await voice_session_service.build_setup(
+            voice_agent_id=agent.id, project_id=auth_user.project_id
+        )
+    assert exc.value.status_code == 400
+    assert "TONE_STT_URL" in exc.value.detail
 
 
 def test_cascade_spend_enters_the_margin_only_on_system_keys() -> None:

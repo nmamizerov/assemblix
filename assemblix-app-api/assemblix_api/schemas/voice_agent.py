@@ -19,8 +19,8 @@ from assemblix_api.schemas.node import AgentInstruction, VoiceOutputConfig, Work
 
 
 class SttConfig(DTOModel):
-    provider: Literal["yandex"]
-    # Yandex recognition model name, not a catalog id.
+    provider: Literal["yandex", "tone"]
+    # Yandex recognition model name, not a catalog id. T-one ignores it and the credential.
     model: str = "general"
     credential_id: str | None = None
 

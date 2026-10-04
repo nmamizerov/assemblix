@@ -20,6 +20,15 @@ from assemblix_api.external.voice.catalog import has_conversation_route
 from assemblix_api.schemas.voice_agent import VoiceAgentConfig
 
 
+def assert_stt_available(provider: str) -> None:
+    """Self-hosted recognition exists only where the deployment runs it."""
+    if provider == "tone" and not get_settings().tone_stt_url:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="T-one recognition is not configured on this server: set TONE_STT_URL",
+        )
+
+
 class VoiceAgentService:
     def __init__(
         self,
@@ -92,6 +101,8 @@ class VoiceAgentService:
     ) -> VoiceAgent:
         self._assert_conversation_model(data.config)
         self._assert_avatar(data.config)
+        if data.config.cascade is not None:
+            assert_stt_available(data.config.cascade.stt.provider)
         await self._assert_hook_workflows_in_project(project_id, data.config)
         return await self._repository.create(
             project_id=project_id,
@@ -129,6 +140,8 @@ class VoiceAgentService:
         if data.config is not None:
             self._assert_conversation_model(data.config)
             self._assert_avatar(data.config)
+            if data.config.cascade is not None:
+                assert_stt_available(data.config.cascade.stt.provider)
             await self._assert_hook_workflows_in_project(agent.project_id, data.config)
             update_fields["config"] = data.config.model_dump()
         if data.is_active is not None:

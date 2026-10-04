@@ -166,3 +166,17 @@ async def test_system_voices_404_for_other_provider(client, auth_headers) -> Non
     resp = await client.get("/api/voice/providers/deepseek/system-voices", headers=auth_headers)
     # Assert
     assert resp.status_code == 404
+
+
+async def test_tone_is_listed_for_stt_stream_only_when_configured(
+    client, auth_headers, monkeypatch
+) -> None:
+    """T-one is self-hosted: it shows up only on deployments that set TONE_STT_URL."""
+    url = "/api/voice/providers?capability=stt_stream"
+    monkeypatch.setattr(get_settings(), "tone_stt_url", "")
+    hidden = await client.get(url, headers=auth_headers)
+    monkeypatch.setattr(get_settings(), "tone_stt_url", "ws://stt-tone:8080/api/ws")
+    shown = await client.get(url, headers=auth_headers)
+
+    assert [p["name"] for p in hidden.json()] == ["yandex"]
+    assert [p["name"] for p in shown.json()] == ["yandex", "tone"]

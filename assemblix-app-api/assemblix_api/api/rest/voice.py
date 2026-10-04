@@ -28,6 +28,7 @@ from assemblix_api.dependencies import (
 from assemblix_api.dto.responses.voice import VoiceListItem, VoiceProviderListItem
 from assemblix_api.external.voice.catalog import (
     VOICE_PROVIDER_LABELS,
+    is_voice_provider_enabled,
     list_voice_models,
     list_voice_providers,
 )
@@ -66,7 +67,7 @@ async def list_provider_models(
     current_user: User = Depends(get_current_user),
 ) -> list[VoiceModelMetadata]:
     """List a provider's voice models filtered by capability (default transcription)."""
-    if provider_name not in VOICE_PROVIDER_LABELS:
+    if not is_voice_provider_enabled(provider_name):
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Voice provider {provider_name!r} is not registered",
