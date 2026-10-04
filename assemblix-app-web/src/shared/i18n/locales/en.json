@@ -1453,6 +1453,8 @@
       "avatarEnabled": "Show an avatar",
       "sttProvider": "Provider",
       "yandexSpeechKit": "Yandex SpeechKit",
+      "toneSelfHosted": "T-one (self-hosted)",
+      "toneCaption": "Runs on this server: no API key and no per-minute cost. Recognises Russian only.",
       "historyTurns": "History size",
       "historyTurnsCaption": "Messages kept verbatim in the brain's context (2–400).",
       "brainParams": "Generation settings",

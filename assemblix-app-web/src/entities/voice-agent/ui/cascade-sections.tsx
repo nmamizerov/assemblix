@@ -16,6 +16,7 @@ import {
   getCredentialTypeForProvider,
 } from "@/entities/credential";
 import { useGetServerConfigQuery } from "@/entities/config";
+import { useGetVoiceProvidersQuery } from "@/entities/voice-model";
 import {
   DynamicParamForm,
   useGetLLMProviderSchemaQuery,
@@ -60,6 +61,12 @@ export const CascadeRecognitionSection = ({
   const hasSystemKey = useHasSystemKey();
   const { stt } = draft.cascade;
   const credentialType = getCredentialTypeForProvider(stt.provider);
+  const { data: sttProviders = [] } = useGetVoiceProvidersQuery({
+    capability: "stt_stream",
+  });
+  // T-one runs only where the server hosts it; a saved choice stays visible.
+  const showTone =
+    stt.provider === "tone" || sttProviders.some((p) => p.name === "tone");
 
   const handleStt = (patch: Partial<CascadeSttConfig>) =>
     onChange({
@@ -78,7 +85,10 @@ export const CascadeRecognitionSection = ({
           <Select
             value={stt.provider}
             onValueChange={(provider) =>
-              handleStt({ provider: provider as CascadeSttConfig["provider"] })
+              handleStt({
+                provider: provider as CascadeSttConfig["provider"],
+                credentialId: null,
+              })
             }
           >
             <SelectTrigger className="w-full">
@@ -91,8 +101,18 @@ export const CascadeRecognitionSection = ({
                   {t("voiceAgents.fields.yandexSpeechKit")}
                 </span>
               </SelectItem>
+              {showTone && (
+                <SelectItem value="tone">
+                  {t("voiceAgents.fields.toneSelfHosted")}
+                </SelectItem>
+              )}
             </SelectContent>
           </Select>
+          {stt.provider === "tone" && (
+            <p className="text-xs text-muted-foreground">
+              {t("voiceAgents.fields.toneCaption")}
+            </p>
+          )}
         </div>
         <div className="space-y-2">
           <Label>{t("voiceAgents.fields.language")}</Label>
