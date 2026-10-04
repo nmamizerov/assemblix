@@ -145,6 +145,15 @@ reach: a public `wss://` URL with a valid certificate, plus ports 7881/tcp and
 Raise the host's UDP buffers for production:
 `sysctl -w net.core.rmem_max=5000000 net.core.wmem_max=5000000`.
 
+### Self-hosted speech recognition (optional)
+
+Cascade voice agents can recognise Russian speech with [T-one](https://github.com/voicekit-team/T-one)
+running next to the app instead of Yandex SpeechKit — no API key, no per-minute cost.
+Enable it with `COMPOSE_PROFILES=stt-tone` (`docker-compose.app.yml` always runs it);
+the API finds it at `TONE_STT_URL` (`ws://stt-tone:8080/api/ws` by default). The image
+is ~4.5 GB with the model inside; give it at least 4 CPU cores and 8 GB RAM. Every call
+shares one model on that container, so for many simultaneous calls run more instances.
+
 ### `make` shortcuts
 
 The root `Makefile` wraps the common commands:
@@ -165,7 +174,7 @@ The full `.env` has many knobs, but these are the ones that matter for a first s
 | --- | --- | --- |
 | `JWT_SECRET_KEY` | *(required)* | JWT signing key, **min 32 chars**. Backend fails fast without it. |
 | `ENCRYPTION_KEY` | *(required)* | Fernet key for encrypting stored credentials. Fails fast without it. |
-| `COMPOSE_PROFILES` | *(empty)* | Empty = core only; `queue` = Redis + worker; `queue,scale` = + PgBouncer. |
+| `COMPOSE_PROFILES` | *(empty)* | Empty = core only; `queue` = Redis + worker; `queue,scale` = + PgBouncer; add `avatar` / `stt-tone` for LiveKit / T-one. |
 | `API_PORT` / `WEB_PORT` | `8000` / `8080` | Host ports for the API and web app. |
 | `POSTGRES_PASSWORD` | `assemblix` | **Change for any non-local deployment.** |
 | `DATABASE_URL` | `…@localhost:5412/assemblix` | HOST value; compose overrides it to the `postgres` host. Set this yourself for `docker-compose.app.yml`. |
