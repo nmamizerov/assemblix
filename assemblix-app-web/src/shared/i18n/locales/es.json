@@ -1453,6 +1453,8 @@
       "avatarEnabled": "Mostrar un avatar",
       "sttProvider": "Proveedor",
       "yandexSpeechKit": "Yandex SpeechKit",
+      "toneSelfHosted": "T-one (autoalojado)",
+      "toneCaption": "Se ejecuta en este servidor: sin clave de API ni coste por minuto. Solo reconoce ruso.",
       "historyTurns": "Tamaño del historial",
       "historyTurnsCaption": "Mensajes que se conservan literalmente en el contexto del cerebro (2–400).",
       "brainParams": "Ajustes de generación",

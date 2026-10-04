@@ -10,7 +10,7 @@ export type VoiceAgentMode = "realtime" | "cascade";
 
 // Each cascade block keeps unknown keys so a load → save round trip is lossless.
 export interface CascadeSttConfig {
-  provider: "yandex";
+  provider: "yandex" | "tone";
   model: string;
   credentialId: string | null;
   [key: string]: unknown;

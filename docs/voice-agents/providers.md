@@ -49,6 +49,16 @@ reach the Live API, so there is nothing to paste here.
 This is why the voice field behaves differently between the two: for OpenAI you can type
 as well as choose, for Gemini you choose from the list.
 
+## Speech recognition in cascade agents
+
+A cascade agent hears the caller through a separate recognition service:
+
+- **Yandex SpeechKit** — cloud, several languages, billed per minute.
+- **T-one (self-hosted)** — runs on your own server, Russian only, no API key and no
+  per-minute cost. It appears in the list only when the server runs it (see
+  self-hosting). It is built for 8 kHz telephone audio, so the caller's microphone is
+  downsampled to that before recognition.
+
 ## Your own API key
 
 By default a call uses the Assemblix system key. Select a credential in the **Voice**

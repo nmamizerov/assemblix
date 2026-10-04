@@ -55,11 +55,12 @@ from assemblix_api.schemas.voice_agent import VoiceAgentConfig
 from assemblix_api.services.avatar_service import ResolvedAvatar, resolve_avatar
 from assemblix_api.services.credentials_service import CredentialsService
 from assemblix_api.services.knowledge_base_service import KnowledgeBaseService
+from assemblix_api.services.voice_agent_service import assert_stt_available
 
 logger = structlog.get_logger(__name__)
 
 # Catalog ids that price each streaming STT provider.
-_STT_CATALOG_IDS = {"yandex": "yandex-stt-v3-stream"}
+_STT_CATALOG_IDS = {"yandex": "yandex-stt-v3-stream", "tone": "t-one-stream"}
 
 # Credit columns are Numeric(20, 8); anything finer is noise the column cannot hold.
 _CREDITS_QUANTUM = Decimal("0.00000001")
@@ -238,15 +239,20 @@ class VoiceSessionService:
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=f"Voice model {tts_config.model} has no streaming route",
             )
+        assert_stt_available(cascade.stt.provider)
         load_turn_models()
         tts = await speech_out.resolve(
             tts_config, project_id=project_id, credentials=self._credentials
         )
-        stt_key, stt_system = await self._credentials.get_voice_api_key_with_fallback(
-            credentials_id=UUID(cascade.stt.credential_id) if cascade.stt.credential_id else None,
-            project_id=project_id,
-            voice_provider=cascade.stt.provider,
-        )
+        stt_key, stt_system = "", False
+        if cascade.stt.provider != "tone":
+            stt_key, stt_system = await self._credentials.get_voice_api_key_with_fallback(
+                credentials_id=(
+                    UUID(cascade.stt.credential_id) if cascade.stt.credential_id else None
+                ),
+                project_id=project_id,
+                voice_provider=cascade.stt.provider,
+            )
         brain = cascade.brain
         brain_key, brain_system = await self._credentials.get_api_key_with_fallback(
             credentials_id=UUID(brain.credential_id) if brain.credential_id else None,

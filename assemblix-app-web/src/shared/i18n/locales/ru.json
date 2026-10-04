@@ -1459,6 +1459,8 @@
       "avatarEnabled": "Показывать аватар",
       "sttProvider": "Провайдер",
       "yandexSpeechKit": "Yandex SpeechKit",
+      "toneSelfHosted": "T-one (на своём сервере)",
+      "toneCaption": "Работает на этом сервере: без API-ключа и без поминутной оплаты. Распознаёт только русский.",
       "historyTurns": "Размер истории",
       "historyTurnsCaption": "Сколько сообщений хранится в контексте мозга дословно (2–400).",
       "brainParams": "Параметры генерации",

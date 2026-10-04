@@ -407,6 +407,7 @@ class CascadeBridge:
 
 
 def build_cascade_bridge(setup: CascadeSetup, meter: CascadeMeter) -> CascadeBridge:
+    from assemblix_api.external.voice.stt_stream.tone import ToneSttStream
     from assemblix_api.external.voice.stt_stream.yandex import YandexSttStream
     from assemblix_api.realtime.cascade.brain import PromptBrain
     from assemblix_api.realtime.cascade.models import load_turn_models
@@ -417,8 +418,13 @@ def build_cascade_bridge(setup: CascadeSetup, meter: CascadeMeter) -> CascadeBri
     async def completion(audio: np.ndarray) -> float:
         return await asyncio.to_thread(smart_turn.completion_probability, audio)
 
+    stt: SttStream
+    if setup.stt_provider == "tone":
+        stt = ToneSttStream()
+    else:
+        stt = YandexSttStream(credential=setup.stt_api_key, model=setup.stt_model)
     return CascadeBridge(
-        stt=YandexSttStream(credential=setup.stt_api_key, model=setup.stt_model),
+        stt=stt,
         detector=TurnDetector(vad=models.new_vad(), completion=completion, config=setup.turn),
         brain=PromptBrain(
             provider=setup.brain_provider,

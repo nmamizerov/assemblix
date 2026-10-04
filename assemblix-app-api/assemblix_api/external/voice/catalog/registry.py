@@ -12,6 +12,7 @@ import json
 from functools import cache
 from pathlib import Path
 
+from assemblix_api.core.settings import get_settings
 from assemblix_api.external.voice.catalog.metadata import VoiceModelMetadata
 
 _VOICE_MODELS_DIR = Path(__file__).parent / "models"
@@ -23,7 +24,17 @@ VOICE_PROVIDER_LABELS: dict[str, str] = {
     "elevenlabs": "ElevenLabs",
     "yandex": "Yandex SpeechKit",
     "gemini": "Gemini",
+    "tone": "T-one (self-hosted)",
 }
+
+
+def is_voice_provider_enabled(provider: str) -> bool:
+    """Registered, and — for self-hosted providers — configured on this deployment."""
+    if provider not in VOICE_PROVIDER_LABELS:
+        return False
+    if provider == "tone":
+        return bool(get_settings().tone_stt_url)
+    return True
 
 
 @cache
@@ -38,14 +49,14 @@ def _provider_models(provider: str) -> tuple[VoiceModelMetadata, ...]:
 
 def find_voice_model(provider: str, model: str) -> VoiceModelMetadata | None:
     """Return the registry entry for ``(provider, model)`` or ``None``."""
-    if provider not in VOICE_PROVIDER_LABELS:
+    if not is_voice_provider_enabled(provider):
         return None
     return next((m for m in _provider_models(provider) if m.id == model), None)
 
 
 def list_voice_models(provider: str, capability: str = "transcription") -> list[VoiceModelMetadata]:
     """Models of a provider filtered by ``capability`` (empty if unregistered)."""
-    if provider not in VOICE_PROVIDER_LABELS:
+    if not is_voice_provider_enabled(provider):
         return []
     return [m for m in _provider_models(provider) if m.capability == capability]
 
@@ -57,14 +68,14 @@ def list_voice_providers(capability: str = "transcription") -> list[str]:
 
 def has_realtime_route(provider: str, model: str) -> bool:
     """True when ``(provider, model)`` is registered as a realtime (WS-streaming) voice model."""
-    if provider not in VOICE_PROVIDER_LABELS:
+    if not is_voice_provider_enabled(provider):
         return False
     return any(m.id == model and m.capability == "realtime" for m in _provider_models(provider))
 
 
 def has_conversation_route(provider: str, model: str) -> bool:
     """True when ``(provider, model)`` is registered as a speech-to-speech model."""
-    if provider not in VOICE_PROVIDER_LABELS:
+    if not is_voice_provider_enabled(provider):
         return False
     return any(m.id == model and m.capability == "conversation" for m in _provider_models(provider))
 

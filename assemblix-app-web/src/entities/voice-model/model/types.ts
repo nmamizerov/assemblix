@@ -4,14 +4,25 @@ export interface VoiceProviderListItem {
   modelsCount: number;
 }
 
-export type VoiceCapability = "transcription" | "speech" | "realtime" | "conversation";
+export type VoiceCapability =
+  | "transcription"
+  | "speech"
+  | "realtime"
+  | "conversation"
+  | "stt_stream";
 
 export interface VoiceModelMetadata {
   id: string;
   label: string;
   description?: string | null;
   capability: VoiceCapability;
-  route: "transcription" | "completion" | "speech" | "conversation" | "realtime";
+  route:
+    | "transcription"
+    | "completion"
+    | "speech"
+    | "conversation"
+    | "realtime"
+    | "stt_stream";
   costPerMinute?: number | null;
   // Conversation models only: whether the model can answer in text instead of
   // audio, which is what an external voice needs in order to speak for it.

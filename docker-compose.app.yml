@@ -14,6 +14,8 @@
 #     (e.g. SYSTEM_OPENAI_API_KEY, CORS_ALLOWED_ORIGINS, HOST_URL) as extra
 #     `NAME: ${NAME}` lines under `api.environment` and set them in the platform.
 #   - The api applies Alembic migrations on startup (RUN_MIGRATIONS=true).
+#   - `stt-tone` runs T-one speech recognition for cascade voice agents (internal
+#     only; `api` reaches it via TONE_STT_URL and does not wait for it).
 #   - No Redis / worker: executions run in-process ("regular" mode). To scale out
 #     later, add redis + an `arq` worker and set EXECUTION_QUEUE_ENABLED=true.
 #
@@ -45,6 +47,8 @@ services:
       LIVEKIT_API_KEY: ${LIVEKIT_API_KEY:-}
       LIVEKIT_API_SECRET: ${LIVEKIT_API_SECRET:-}
       AVATAR_JOIN_TIMEOUT_SECONDS: ${AVATAR_JOIN_TIMEOUT_SECONDS:-20}
+      # --- Optional: T-one recognition for cascade voice agents (the stt-tone service) ---
+      TONE_STT_URL: ${TONE_STT_URL:-ws://stt-tone:8080/api/ws}
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://localhost:8000/health').status==200 else 1)"]
       interval: 15s
@@ -70,6 +74,22 @@ services:
     depends_on:
       - api
       - docs
+    restart: unless-stopped
+
+  # Self-hosted Russian streaming speech recognition (T-one by T-Bank, Apache-2.0)
+  # for cascade voice agents. Weights are baked into the image. CPU-only: give it
+  # >= 4 cores and 8 GB RAM; all calls share one in-process model, so heavy
+  # concurrency needs more replicas behind TONE_STT_URL.
+  stt-tone:
+    image: tinkoffcreditsystems/t-one:0.1.0
+    expose:
+      - "8080"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8080/')"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 60s
     restart: unless-stopped
 
   # Documentation site (MkDocs Material), built from repo-root docs/ + mkdocs.yml
