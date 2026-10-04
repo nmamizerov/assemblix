@@ -7,7 +7,8 @@
 #   postgres + redis + api (fastapi dev) + web (vite HMR) + worker (arq --watch)
 #
 # Source is bind-mounted, so edits on the host reload inside the containers.
-# Every service runs by default (no profiles). Want just one service?
+# Every service runs by default, except T-one speech recognition
+# (`--profile stt-tone`). Want just one service?
 #   docker compose -f docker-compose.dev.yml up postgres
 #
 # Config comes from the single root `.env`. DATABASE_URL / REDIS_URL are
@@ -55,6 +56,8 @@ services:
     environment:
       # The dev api applies migrations on start (no separate migrate service).
       RUN_MIGRATIONS: "true"
+      # Needs `--profile stt-tone`; an explicit empty TONE_STT_URL= in .env hides T-one.
+      TONE_STT_URL: ${TONE_STT_URL-ws://stt-tone:8080/api/ws}
     volumes:
       # Bind-mount source for hot reload; keep the container-built venv.
       - ./assemblix-app-api:/app
@@ -109,6 +112,23 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+
+  # Self-hosted Russian streaming speech recognition (T-one by T-Bank, Apache-2.0)
+  # for cascade voice agents. Weights are baked into the image. CPU-only: give it
+  # >= 4 cores and 8 GB RAM; all calls share one in-process model, so heavy
+  # concurrency needs more replicas behind TONE_STT_URL.
+  stt-tone:
+    image: tinkoffcreditsystems/t-one:0.1.0
+    profiles: ["stt-tone"]
+    expose:
+      - "8080"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8080/')"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 60s
+    restart: unless-stopped
 
 volumes:
   assemblix-dev-pgdata:

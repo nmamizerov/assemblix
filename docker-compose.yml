@@ -10,7 +10,8 @@
 #   REDIS_URL=redis://redis:6379/0
 #   EXECUTION_QUEUE_ENABLED=true
 #
-# (or pass `--profile queue` on the command line). Core services have no
+# (or pass `--profile queue` on the command line). Other opt-in profiles:
+# `scale` (PgBouncer), `avatar` (LiveKit), `stt-tone` (T-one speech recognition). Core services have no
 # profile, so they always start; redis/worker sit behind the `queue` profile.
 #
 # All config comes from the single root `.env`. DATABASE_URL is overridden here
@@ -76,6 +77,8 @@ services:
     env_file: .env
     environment:
       <<: *api-env
+      # Needs the `stt-tone` profile; an explicit empty TONE_STT_URL= in .env hides T-one.
+      TONE_STT_URL: ${TONE_STT_URL-ws://stt-tone:8080/api/ws}
     ports:
       - "${API_PORT:-8000}:8000"
     depends_on:
@@ -207,6 +210,24 @@ services:
       - "7882:7882/udp"
     volumes:
       - ./deploy/livekit.yaml:/etc/livekit.yaml:ro
+    restart: unless-stopped
+
+  # --- Speech recognition tier (opt-in via `COMPOSE_PROFILES=stt-tone`) ---------
+  # Self-hosted Russian streaming speech recognition (T-one by T-Bank, Apache-2.0)
+  # for cascade voice agents. Weights are baked into the image. CPU-only: give it
+  # >= 4 cores and 8 GB RAM; all calls share one in-process model, so heavy
+  # concurrency needs more replicas behind TONE_STT_URL.
+  stt-tone:
+    image: tinkoffcreditsystems/t-one:0.1.0
+    profiles: ["stt-tone"]
+    expose:
+      - "8080"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8080/')"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 60s
     restart: unless-stopped
 
 volumes:
