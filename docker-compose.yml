@@ -77,8 +77,8 @@ services:
     env_file: .env
     environment:
       <<: *api-env
-      # Needs the `stt-tone` profile; an explicit empty TONE_STT_URL= in .env hides T-one.
-      TONE_STT_URL: ${TONE_STT_URL-ws://stt-tone:8080/api/ws}
+      # T-one is opt-in: COMPOSE_PROFILES with stt-tone AND TONE_STT_URL=ws://stt-tone:8080/api/ws.
+      TONE_STT_URL: ${TONE_STT_URL:-}
     ports:
       - "${API_PORT:-8000}:8000"
     depends_on:

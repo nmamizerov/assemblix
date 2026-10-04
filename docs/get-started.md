@@ -149,8 +149,8 @@ Raise the host's UDP buffers for production:
 
 Cascade voice agents can recognise Russian speech with [T-one](https://github.com/voicekit-team/T-one)
 running next to the app instead of Yandex SpeechKit — no API key, no per-minute cost.
-Enable it with `COMPOSE_PROFILES=stt-tone` (`docker-compose.app.yml` always runs it);
-the API finds it at `TONE_STT_URL` (`ws://stt-tone:8080/api/ws` by default). The image
+Enable it with `COMPOSE_PROFILES=stt-tone` **and** `TONE_STT_URL=ws://stt-tone:8080/api/ws`
+(`docker-compose.app.yml` always runs it with that URL by default). The image
 is ~4.5 GB with the model inside; give it at least 4 CPU cores and 8 GB RAM. Every call
 shares one model on that container, so for many simultaneous calls run more instances.
 
