@@ -407,7 +407,7 @@ class WorkflowExecutor:
         if chat_session_id and not is_new_session:
             chat_history = await self._chat_message_service.get_chat_history(
                 chat_session_id=chat_session_id,
-                limit=20,
+                limit=60,
             )
 
         # New session with a greeting: the phrase is already in the DB, but for the

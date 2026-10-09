@@ -43,7 +43,7 @@ class ChatMessageService(BaseService[ChatMessage, ChatMessageRepository]):
         self,
         chat_session_id: UUID,
         *,
-        limit: int = 20,
+        limit: int = 60,
     ) -> list[dict]:
         """
         Get chat history in OpenAI message format.
