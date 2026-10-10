@@ -5,6 +5,16 @@ All notable changes to this project are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.45](https://github.com/nmamizerov/assemblix/compare/v0.2.44...v0.2.45) (2026-10-10)
+
+
+### Bug Fixes
+
+* **agent:** close history ending with a model turn with a user turn ([543ab51](https://github.com/nmamizerov/assemblix/commit/543ab51573bbec113cd7d7cb63c70e4902cafd7a))
+* **agent:** close history ending with a model turn with a user turn ([a62af56](https://github.com/nmamizerov/assemblix/commit/a62af56c85a971369aad5fc3e364d0c15b2844db))
+* **agent:** raise chat history limit from 20 to 60 messages ([50e00db](https://github.com/nmamizerov/assemblix/commit/50e00dbd8d678921a6206436343763246fa9f39b))
+* **agent:** raise chat history limit from 20 to 60 messages ([118bd41](https://github.com/nmamizerov/assemblix/commit/118bd413315664831516ad0c7964b2da1022073b))
+
 ## [0.2.44](https://github.com/nmamizerov/assemblix/compare/v0.2.43...v0.2.44) (2026-10-03)
 
 
