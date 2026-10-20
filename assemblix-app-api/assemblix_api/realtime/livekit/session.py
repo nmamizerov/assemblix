@@ -11,6 +11,7 @@ from typing import Any
 import structlog
 
 from assemblix_api.core.settings import get_settings
+from assemblix_api.external.avatar.base import AvatarOutput, VendorSession
 from assemblix_api.external.avatar.errors import AvatarUnavailable
 from assemblix_api.external.avatar.livekit_join import start_vendor_session
 from assemblix_api.realtime.livekit.avatar_output import AvatarAudioOutput
@@ -39,9 +40,10 @@ _TEARDOWN_TIMEOUT_SECONDS = 5.0
 @dataclass
 class AvatarMedia:
     room_name: str
-    output: AvatarAudioOutput
+    output: AvatarOutput
     _room: Any
     _mic_track: Any
+    _stop: Callable[[], Awaitable[None]] | None = None
 
     async def mic(self, sample_rate: int) -> AsyncIterator[bytes]:
         from livekit import rtc
@@ -54,10 +56,21 @@ class AvatarMedia:
             await stream.aclose()
 
     async def close(self) -> None:
+        await _stop_vendor(self._stop)
         with contextlib.suppress(Exception):
             async with asyncio.timeout(_TEARDOWN_TIMEOUT_SECONDS):
                 await self._room.disconnect()
         await delete_room(self.room_name)
+
+
+async def _stop_vendor(stop: Callable[[], Awaitable[None]] | None) -> None:
+    if stop is None:
+        return
+    try:
+        async with asyncio.timeout(_TEARDOWN_TIMEOUT_SECONDS):
+            await stop()
+    except Exception as exc:  # noqa: BLE001 — teardown must reach the room deletion.
+        logger.warning("avatar.vendor_stop_failed", error=str(exc))
 
 
 def _published(room: Any, identity: str, kind: int) -> Any | None:
@@ -89,11 +102,12 @@ async def open_avatar_media(
     room_name: str,
     avatar: ResolvedAvatar,
     timeout: float,
-    start_vendor: Callable[..., Awaitable[str]] = start_vendor_session,
+    start_vendor: Callable[..., Awaitable[VendorSession]] = start_vendor_session,
     room_factory: Callable[[], Any] | None = None,
 ) -> AvatarMedia:
     settings = get_settings()
     room = (room_factory or _new_room)()
+    vendor: VendorSession | None = None
     try:
         # One budget for the whole join: a LiveKit server that never answers the
         # connect must fail as fast as an avatar that never shows up.
@@ -102,7 +116,6 @@ async def open_avatar_media(
                 ws_url(settings.livekit_url),
                 participant_token(room_name, AGENT_IDENTITY, ttl_seconds=60, agent=True),
             )
-            output = AvatarAudioOutput(room.local_participant, destination=AVATAR_IDENTITY)
 
             def make_avatar_token(extra: dict[str, str]) -> str:
                 return participant_token(
@@ -113,7 +126,7 @@ async def open_avatar_media(
                     attributes={PUBLISH_ON_BEHALF: AGENT_IDENTITY, **extra},
                 )
 
-            session_id = await start_vendor(
+            vendor = await start_vendor(
                 provider=avatar.provider,
                 api_key=avatar.api_key,
                 avatar_id=avatar.avatar_id,
@@ -122,13 +135,22 @@ async def open_avatar_media(
                 room_name=room_name,
                 make_livekit_token=make_avatar_token,
             )
-            logger.info("avatar.vendor_started", room=room_name, vendor_session_id=session_id)
+            logger.info(
+                "avatar.vendor_started", room=room_name, vendor_session_id=vendor.session_id
+            )
+            output: AvatarOutput = vendor.output or AvatarAudioOutput(
+                room.local_participant, destination=AVATAR_IDENTITY
+            )
             mic_track = await _wait_for_both_sides(room)
     except BaseException as exc:
+        if vendor is not None:
+            await _stop_vendor(vendor.stop)
         with contextlib.suppress(Exception):
             await room.disconnect()
         await delete_room(room_name)
         if isinstance(exc, TimeoutError):
             raise AvatarUnavailable("The avatar or the caller did not join in time") from exc
         raise
-    return AvatarMedia(room_name=room_name, output=output, _room=room, _mic_track=mic_track)
+    return AvatarMedia(
+        room_name=room_name, output=output, _room=room, _mic_track=mic_track, _stop=vendor.stop
+    )
