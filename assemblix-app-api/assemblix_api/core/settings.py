@@ -254,6 +254,19 @@ class Settings(BaseSettings):
     # the base URL to route through a proxy/gateway.
     anam_api_base_url: str = os.getenv("ANAM_API_BASE_URL", "https://api.anam.ai")
 
+    # bitHuman (avatar output, cloud mode). BYO-key only, like anam.
+    bithuman_api_base_url: str = os.getenv("BITHUMAN_API_BASE_URL", "https://api.bithuman.ai")
+    bithuman_runtime_url: str = os.getenv(
+        "BITHUMAN_RUNTIME_URL", "https://auth.api.bithuman.ai/v1/runtime-tokens/request"
+    )
+
+    # LiveAvatar (HeyGen, LITE mode). BYO-key only. Sandbox sessions are free (~1 min,
+    # one stock avatar) — for development only.
+    liveavatar_api_base_url: str = os.getenv(
+        "LIVEAVATAR_API_BASE_URL", "https://api.liveavatar.com"
+    )
+    liveavatar_sandbox: bool = os.getenv("LIVEAVATAR_SANDBOX", "false").lower() == "true"
+
     # LiveKit: the media plane for voice-agent avatar calls. All four must be set.
     # LIVEKIT_URL is what the API itself dials (may be an in-network http:// URL);
     # LIVEKIT_PUBLIC_URL is handed to browsers and to avatar vendors.

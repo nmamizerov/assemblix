@@ -4,6 +4,8 @@ import GeminiIcon from "../assets/google.svg";
 import DeepSeekIcon from "../assets/deepseek.svg";
 import ElevenLabsIcon from "../assets/elevenlabs.svg";
 import AnamIcon from "../assets/anam.svg";
+import BithumanIcon from "../assets/bithuman.svg";
+import LiveAvatarIcon from "../assets/liveavatar.svg";
 import YandexIcon from "../assets/yandex.svg";
 
 export interface CredentialTypeConfigItem {
@@ -46,6 +48,18 @@ export const CREDENTIAL_TYPE_CONFIG: Record<
     label: "Anam Token",
     icon: AnamIcon,
     color: "text-sky-600",
+  },
+  [CredentialType.BITHUMAN_TOKEN]: {
+    type: CredentialType.BITHUMAN_TOKEN,
+    label: "bitHuman API Secret",
+    icon: BithumanIcon,
+    color: "text-zinc-900",
+  },
+  [CredentialType.LIVEAVATAR_TOKEN]: {
+    type: CredentialType.LIVEAVATAR_TOKEN,
+    label: "LiveAvatar API Key",
+    icon: LiveAvatarIcon,
+    color: "text-violet-600",
   },
   [CredentialType.YANDEX_SPEECHKIT_TOKEN]: {
     type: CredentialType.YANDEX_SPEECHKIT_TOKEN,

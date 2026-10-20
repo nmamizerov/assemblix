@@ -82,3 +82,17 @@ async def test_no_avatar_needs_no_livekit(client, auth_user, auth_headers) -> No
     response = await _create(client, auth_user, auth_headers, _config())
     assert response.status_code == 201, response.text
     assert response.json()["config"]["avatar"] is None
+
+
+async def test_voice_agent_accepts_liveavatar_avatar(
+    client, auth_user, auth_headers, livekit_on
+) -> None:
+    # Arrange
+    avatar = {**_AVATAR, "provider": "liveavatar", "avatarModel": "lite"}
+
+    # Act
+    response = await _create(client, auth_user, auth_headers, _config(avatar=avatar))
+
+    # Assert
+    assert response.status_code == 201, response.text
+    assert response.json()["config"]["avatar"]["provider"] == "liveavatar"

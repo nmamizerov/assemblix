@@ -21,13 +21,17 @@ export const avatarModelApi = baseApi.injectEndpoints({
         { type: "AvatarModels", id: `models:${providerName}` },
       ],
     }),
-    getCredentialAvatars: build.query<AvatarListItem[], { credentialId: string }>({
-      query: ({ credentialId }) => ({
+    getCredentialAvatars: build.query<
+      AvatarListItem[],
+      { credentialId: string; model?: string }
+    >({
+      query: ({ credentialId, model }) => ({
         url: `/avatar/credentials/${credentialId}/avatars`,
         method: "GET",
+        params: model ? { model } : undefined,
       }),
-      providesTags: (_r, _e, { credentialId }) => [
-        { type: "AvatarModels", id: `avatars:${credentialId}` },
+      providesTags: (_r, _e, { credentialId, model }) => [
+        { type: "AvatarModels", id: `avatars:${credentialId}:${model ?? ""}` },
       ],
     }),
     getAvatarCredentialVoices: build.query<

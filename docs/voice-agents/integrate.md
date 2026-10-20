@@ -220,6 +220,41 @@ Interrupting the avatar is most reliable with OpenAI realtime voices; with Gemin
 Live the avatar can only be interrupted while the model is still generating its
 reply.
 
+### bitHuman avatars
+
+Besides Anam, a voice agent can use a [bitHuman](https://www.bithuman.ai) avatar. It
+runs in bitHuman's cloud and joins the call exactly like Anam's, so nothing above
+changes for your client.
+
+1. Create an API secret at <https://www.bithuman.ai/developer/api-keys> and add it to
+   the project as a **bitHuman API Secret** credential.
+2. Create an agent in the bitHuman console. Only your account's own agents are
+   listed, and the free plan can't create agents, so you need a paid plan or
+   purchased credits.
+3. In the voice agent, pick **bitHuman**, the credential, a model, then an agent. Only
+   agents that have the chosen model generated are listed.
+
+bitHuman bills per talking minute and caps concurrent sessions per plan; a call over
+the cap ends with `avatar_busy`. bitHuman avatars are available in voice agents only,
+not in workflow avatars, and self-hosted (local) bitHuman rendering is not supported.
+
+### LiveAvatar avatars
+
+A voice agent can also use a [LiveAvatar](https://www.liveavatar.com) (HeyGen) avatar.
+It runs in LiveAvatar's LITE mode: LiveAvatar renders the face, and the agent's own
+voice drives it. It joins the call like the other avatars, so nothing above changes
+for your client.
+
+1. Create an API key at <https://app.liveavatar.com/developers> and add it to the
+   project as a **LiveAvatar API Key** credential.
+2. In the voice agent, pick **LiveAvatar**, the credential, the **LITE** model, then an
+   avatar. Your own avatars are listed first, then LiveAvatar's stock avatars.
+
+LiveAvatar caps the length of one session by plan (Free 2 minutes, Essential 20,
+Business 60). A call that runs longer ends with `avatar_unavailable`. The free plan
+also allows only one session at a time. LiveAvatar avatars are available in voice
+agents only, not in workflow avatars.
+
 ## Reading the call back
 
 Every call is recorded, whoever placed it:

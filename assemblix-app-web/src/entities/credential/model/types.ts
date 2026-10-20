@@ -4,6 +4,8 @@ export enum CredentialType {
   DEEPSEEK_TOKEN = "deepseek_token",
   ELEVENLABS_TOKEN = "elevenlabs_token",
   ANAM_TOKEN = "anam_token",
+  BITHUMAN_TOKEN = "bithuman_token",
+  LIVEAVATAR_TOKEN = "liveavatar_token",
   YANDEX_SPEECHKIT_TOKEN = "yandex_speechkit_token",
 }
 

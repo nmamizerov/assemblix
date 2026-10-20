@@ -18,6 +18,7 @@ from typing import Any, Protocol
 
 import structlog
 
+from assemblix_api.external.avatar.errors import AvatarError
 from assemblix_api.external.voice.conversation.contract import (
     AgentTranscript,
     AudioDelta,
@@ -209,7 +210,11 @@ class VoiceSessionRuntime:
                 with contextlib.suppress(asyncio.CancelledError):
                     await task
             for task in done:
-                task.result()
+                try:
+                    task.result()
+                except AvatarError as exc:
+                    self._closed_reason = exc.reason
+                    raise
         finally:
             await self._bridge.close()
             if self._on_stopped is not None:

@@ -17,6 +17,9 @@ class AvatarProviderListItem(DTOModel):
     models_count: int = Field(
         description="Number of avatar models the provider exposes.",
     )
+    supports_workflow: bool = Field(
+        description="Whether the provider can drive a workflow avatar (voice agents support all).",
+    )
 
 
 class AvatarListItem(DTOModel):

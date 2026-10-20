@@ -484,6 +484,26 @@ async def test_on_stopped_failure_does_not_cost_the_final_hook() -> None:
     assert order == ["final_hook"]
 
 
+async def test_avatar_error_from_output_ends_the_call() -> None:
+    # Arrange
+    from assemblix_api.external.avatar.errors import AvatarUnavailable
+
+    class _DeadAvatarClient(_PlaybackClient):
+        async def send_bytes(self, data: bytes) -> None:
+            raise AvatarUnavailable("LiveAvatar ended the session")
+
+    bridge = _FakeBridge([AudioDelta(pcm=b"\x00\x00" * 240), SessionClosed(reason="completed")])
+    client = _DeadAvatarClient([], heard_ms=None)
+
+    # Act
+    with pytest.raises(AvatarUnavailable):
+        await _runtime(bridge, client).run()
+
+    # Assert
+    assert bridge.closed
+    assert client.json_frames[-1] == {"type": "session.closed", "reason": "avatar_unavailable"}
+
+
 async def test_cascade_timings_are_closed_at_first_audio_and_stored_on_the_reply() -> None:
     ended = time.monotonic() - 0.9
     script = [
