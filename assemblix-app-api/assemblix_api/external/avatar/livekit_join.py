@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from collections.abc import Callable
 
-from assemblix_api.external.avatar import anam, bithuman
+from assemblix_api.external.avatar import anam, bithuman, liveavatar
 from assemblix_api.external.avatar.base import VendorSession
 from assemblix_api.external.avatar.errors import AvatarUnavailable
 
@@ -43,4 +43,12 @@ async def start_vendor_session(
             make_livekit_token=make_livekit_token,
         )
         return VendorSession("")
+    if provider == "liveavatar":
+        return await liveavatar.start_livekit_session(
+            api_key=api_key,
+            avatar_id=avatar_id,
+            livekit_url=livekit_url,
+            room_name=room_name,
+            make_livekit_token=make_livekit_token,
+        )
     raise AvatarUnavailable(f"Avatar provider {provider!r} cannot join LiveKit rooms")
