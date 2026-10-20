@@ -31,6 +31,7 @@ logger = structlog.get_logger(__name__)
 # LiveKit plugin uses 600 ms. Tune against video_starvation warnings.
 FIRST_CHUNK_MS = 600
 
+_CLOSE_TIMEOUT_SECONDS = 1.0
 _BYTES_PER_MS = AVATAR_SAMPLE_RATE * BYTES_PER_SAMPLE // 1000
 
 
@@ -122,7 +123,8 @@ class LiveAvatarSocketOutput:
             task.cancel()
         await asyncio.gather(*self._tasks, return_exceptions=True)
         with contextlib.suppress(Exception):
-            await self._ws.close()
+            async with asyncio.timeout(_CLOSE_TIMEOUT_SECONDS):
+                await self._ws.close()
 
     def _next_chunk_bytes(self) -> int:
         return self._chunk_bytes if self._chunks_sent else self._first_chunk_bytes

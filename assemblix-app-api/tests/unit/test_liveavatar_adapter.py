@@ -1,6 +1,7 @@
 """LiveAvatar LITE: session token, start, socket, stop, error mapping, listing."""
 
 import asyncio
+import contextlib
 import json
 from typing import Any
 
@@ -284,3 +285,53 @@ async def test_dispatch_routes_liveavatar(monkeypatch) -> None:
     assert isinstance(session.output, LiveAvatarSocketOutput)
     assert session.stop is not None
     await session.stop()
+
+
+class _HangingCloseSocket(_Socket):
+    async def close(self) -> None:
+        await asyncio.sleep(3600)
+
+
+async def test_stop_posts_even_when_the_socket_close_hangs(monkeypatch) -> None:
+    # Arrange
+    calls: list[httpx.Request] = []
+    _mock(monkeypatch, _session_handler(calls), socket=_HangingCloseSocket())
+    session = await liveavatar.start_livekit_session(make_livekit_token=_token, **_ARGS)
+    assert session.stop is not None
+
+    # Act
+    with contextlib.suppress(TimeoutError):
+        await asyncio.wait_for(session.stop(), timeout=0.5)
+
+    # Assert
+    assert calls[-1].url.path == "/v1/sessions/stop"
+
+
+async def test_join_cleanup_stops_the_session_despite_repeated_cancellation(monkeypatch) -> None:
+    # Arrange
+    calls: list[httpx.Request] = []
+    stop_posted = asyncio.Event()
+    inner = _session_handler(calls)
+
+    async def handler(request: httpx.Request) -> httpx.Response:
+        if request.url.path.endswith("/stop"):
+            await asyncio.sleep(0.05)
+            stop_posted.set()
+        return await inner(request)
+
+    silent = _Socket()
+    silent.incoming = asyncio.Queue()  # never reports "connected"
+    _mock(monkeypatch, handler, socket=silent)
+    task = asyncio.create_task(liveavatar.start_livekit_session(make_livekit_token=_token, **_ARGS))
+    for _ in range(20):
+        await asyncio.sleep(0)
+
+    # Act
+    task.cancel()
+    await asyncio.sleep(0.01)
+    task.cancel()
+    with contextlib.suppress(asyncio.CancelledError):
+        await task
+
+    # Assert
+    await asyncio.wait_for(stop_posted.wait(), timeout=1)

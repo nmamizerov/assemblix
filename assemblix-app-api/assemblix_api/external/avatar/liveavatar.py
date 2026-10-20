@@ -7,7 +7,7 @@ A session bills until it is stopped, so every started session gets a stop.
 
 from __future__ import annotations
 
-import contextlib
+import asyncio
 from collections.abc import Callable
 from typing import Any
 
@@ -25,6 +25,8 @@ logger = structlog.get_logger(__name__)
 
 _TIMEOUT = httpx.Timeout(30.0, connect=10.0)
 _PAGE_SIZE = 100
+# /stop is what ends billing, so it goes first and gets its own budget.
+_STOP_TIMEOUT_SECONDS = 5.0
 
 
 def _client() -> httpx.AsyncClient:
@@ -83,7 +85,7 @@ def _raise_for_session(resp: httpx.Response, action: str) -> None:
 
 async def _stop(session_id: str, session_token: str, reason: str) -> None:
     try:
-        async with _client() as client:
+        async with asyncio.timeout(_STOP_TIMEOUT_SECONDS), _client() as client:
             resp = await client.post(
                 f"{_base_url()}/v1/sessions/stop",
                 headers={"Authorization": f"Bearer {session_token}"},
@@ -91,7 +93,7 @@ async def _stop(session_id: str, session_token: str, reason: str) -> None:
             )
         if not resp.is_success:
             logger.warning("liveavatar.stop_failed", session_id=session_id, error=_describe(resp))
-    except httpx.HTTPError as exc:
+    except (httpx.HTTPError, TimeoutError) as exc:
         logger.warning("liveavatar.stop_failed", session_id=session_id, error=str(exc))
 
 
@@ -142,9 +144,8 @@ async def start_livekit_session(
         output = LiveAvatarSocketOutput(ws)
         await output.wait_connected()
     except BaseException as exc:
-        if output is not None:
-            await output.aclose()
-        await _stop(session_id, session_token, "SERVER_ERROR")
+        # Shielded: a second cancellation of the join must not skip the stop.
+        await asyncio.shield(_end(session_id, session_token, output, "SERVER_ERROR"))
         if isinstance(exc, httpx.HTTPError | OSError):
             raise AvatarUnavailable(f"liveavatar session start failed: {exc}") from exc
         raise
@@ -152,8 +153,14 @@ async def start_livekit_session(
     socket_output = output
 
     async def stop() -> None:
-        with contextlib.suppress(Exception):
-            await socket_output.aclose()
-        await _stop(session_id, session_token, "USER_DISCONNECTED")
+        await _end(session_id, session_token, socket_output, "USER_DISCONNECTED")
 
     return VendorSession(session_id=session_id, output=socket_output, stop=stop)
+
+
+async def _end(
+    session_id: str, session_token: str, output: LiveAvatarSocketOutput | None, reason: str
+) -> None:
+    await _stop(session_id, session_token, reason)
+    if output is not None:
+        await output.aclose()
