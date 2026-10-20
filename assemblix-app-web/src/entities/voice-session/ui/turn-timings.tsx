@@ -13,7 +13,9 @@ interface TurnTimingsProps {
 /** One cascade turn's stage breakdown on a single line; renders nothing without stages. */
 export const TurnTimings = ({ timings, className }: TurnTimingsProps) => {
   const { t } = useTranslation();
-  const stages = TIMING_STAGES.filter((stage) => timings[stage] != null);
+  const stages = TIMING_STAGES.filter(
+    (stage) => timings[stage] != null && (stage !== "llmOverlapMs" || timings.speculative)
+  );
   if (stages.length === 0) return null;
 
   return (
@@ -29,6 +31,15 @@ export const TurnTimings = ({ timings, className }: TurnTimingsProps) => {
           {t("voiceSessions.detail.ms", { ms: timings[stage] })}
         </span>
       ))}
+      {timings.smartTurnAsks != null && timings.smartTurnAsks > 0 && (
+        <span>
+          {t("voiceSessions.detail.smartTurn", {
+            prob: timings.smartTurnProb?.toFixed(2) ?? "—",
+            count: timings.smartTurnAsks,
+          })}
+        </span>
+      )}
+      {timings.speculative && <span>{t("voiceSessions.detail.speculative")}</span>}
     </p>
   );
 };

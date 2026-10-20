@@ -26,6 +26,13 @@ export interface VoiceTurnTimings {
   /** When speech is actually heard: ttsFirstAudioMs + lead-in silence. */
   ttsFirstAudibleMs?: number;
   firstAudioMs?: number;
+  /** Smart Turn's last completion probability before the turn ended. */
+  smartTurnProb?: number;
+  smartTurnAsks?: number;
+  /** The reply started during the pause; STT and LLM are then the waits left after it. */
+  speculative?: boolean;
+  /** LLM time hidden inside the pause by a speculative reply. */
+  llmOverlapMs?: number;
 }
 
 export type VoiceTimingStage =
@@ -36,14 +43,20 @@ export type VoiceTimingStage =
   | "totalMs"
   | "ttsGapMaxMs"
   | "ttsLeadingSilenceMs"
-  | "ttsFirstAudibleMs";
+  | "ttsFirstAudibleMs"
+  | "llmOverlapMs";
 
 export interface VoiceLlmMessage {
   role: "user" | "assistant";
   content: string;
 }
 
-export type VoiceLlmOutcome = "ok" | "cancelled" | "brain_timeout" | "brain_failed";
+export type VoiceLlmOutcome =
+  | "ok"
+  | "cancelled"
+  | "brain_timeout"
+  | "brain_failed"
+  | "speculative_discarded";
 
 /** One cascade brain call: what was sent to the LLM and what came back. */
 export interface VoiceLlmCall {

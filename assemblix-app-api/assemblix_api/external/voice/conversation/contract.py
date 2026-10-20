@@ -64,6 +64,11 @@ class TurnTimings:
     eou_ms: int
     stt_final_ms: int
     brain_first_token_ms: int
+    smart_turn_prob: float | None = None
+    smart_turn_asks: int = 0
+    # The reply started during the pause, before end of turn was confirmed.
+    speculative: bool = False
+    llm_overlap_ms: int = 0
 
 
 @dataclass(frozen=True)

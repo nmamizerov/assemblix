@@ -49,3 +49,21 @@ def test_summary_includes_leading_silence_and_audible_first_audio() -> None:
     assert summary is not None
     assert summary["ttsLeadingSilenceMs"] == {"p50": 300, "p95": 600}
     assert summary["ttsFirstAudibleMs"] == {"p50": 500, "p95": 800}
+
+
+def test_summary_includes_hidden_llm_time_and_smart_turn_asks() -> None:
+    transcript = [
+        {
+            "role": "assistant",
+            "text": "y",
+            "timings": {"llmOverlapMs": overlap, "smartTurnAsks": 1, "speculative": True},
+        }
+        for overlap in (0, 200, 400)
+    ]
+
+    summary = summarize_timings(transcript)
+
+    assert summary is not None
+    assert summary["llmOverlapMs"] == {"p50": 200, "p95": 400}
+    assert summary["smartTurnAsks"] == {"p50": 1, "p95": 1}
+    assert "speculative" not in summary

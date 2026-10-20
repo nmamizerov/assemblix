@@ -22,6 +22,7 @@ export interface CascadeTurnConfig {
   smartTurn: boolean;
   smartTurnThreshold: number;
   prerollMs: number;
+  speculative: boolean;
   [key: string]: unknown;
 }
 

@@ -1463,6 +1463,8 @@
       "maxSilenceMs": "Silencio máx., ms",
       "smartTurn": "Detección inteligente de turno",
       "smartTurnCaption": "Un modelo evalúa si la frase está completa, para que el agente responda antes sin interrumpir.",
+      "speculative": "Empezar a responder durante las pausas",
+      "speculativeCaption": "La respuesta se prepara mientras el interlocutor hace una pausa y solo se reproduce al terminar el turno: respuestas más rápidas, a costa de alguna llamada al LLM descartada.",
       "smartTurnThreshold": "Umbral de detección inteligente",
       "prerollMs": "Pre-roll, ms"
     },
@@ -1579,7 +1581,10 @@
       "loadError": "No se pudo cargar la llamada",
       "latency": "Latencia",
       "stage": "Etapa",
-      "ms": "{{ms}} ms"
+      "ms": "{{ms}} ms",
+      "smartTurn_one": "Smart Turn {{prob}} · {{count}} consulta",
+      "smartTurn_other": "Smart Turn {{prob}} · {{count}} consultas",
+      "speculative": "Especulativa"
     },
     "stages": {
       "eouMs": "Fin de turno",
@@ -1589,7 +1594,8 @@
       "totalMs": "Total",
       "ttsGapMaxMs": "Pausa máx.",
       "ttsLeadingSilenceMs": "Silencio inicial",
-      "ttsFirstAudibleMs": "Primer audio audible"
+      "ttsFirstAudibleMs": "Primer audio audible",
+      "llmOverlapMs": "LLM en pausa"
     },
     "llm": {
       "title": "Llamada al LLM",
@@ -1625,7 +1631,8 @@
         "ok": "Correcto",
         "cancelled": "Interrumpido",
         "brain_timeout": "Tiempo agotado",
-        "brain_failed": "Error"
+        "brain_failed": "Error",
+        "speculative_discarded": "Descartada (el interlocutor siguió)"
       }
     }
   }

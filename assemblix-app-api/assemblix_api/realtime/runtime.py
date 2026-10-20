@@ -14,7 +14,7 @@ import asyncio
 import contextlib
 import time
 from collections.abc import AsyncIterator, Awaitable, Callable
-from typing import Protocol
+from typing import Any, Protocol
 
 import structlog
 
@@ -100,7 +100,7 @@ class VoiceSessionRuntime:
         self._playback_open = False
         self._last_inbound_audio_at: float | None = None
         self._pending_timings: TurnTimings | None = None
-        self._reply_timings: dict[str, int] | None = None
+        self._reply_timings: dict[str, Any] | None = None
         # Where the browser's playback of this turn ends if the audio arrives no
         # later; a chunk arriving after it means the caller heard silence.
         self._play_end: float | None = None
@@ -411,7 +411,7 @@ class VoiceSessionRuntime:
             self._last_inbound_audio_at = None
             self._stage_timings_sent = True
             total = int((time.monotonic() - stages.speech_ended_at) * 1000)
-            timings = {
+            timings: dict[str, Any] = {
                 "eouMs": stages.eou_ms,
                 "sttFinalMs": stages.stt_final_ms,
                 "brainFirstTokenMs": stages.brain_first_token_ms,
@@ -420,7 +420,12 @@ class VoiceSessionRuntime:
                 ),
                 "totalMs": total,
                 "firstAudioMs": total,
+                "smartTurnAsks": stages.smart_turn_asks,
+                "speculative": stages.speculative,
+                "llmOverlapMs": stages.llm_overlap_ms,
             }
+            if stages.smart_turn_prob is not None:
+                timings["smartTurnProb"] = round(stages.smart_turn_prob, 3)
             self._reply_timings = timings
             logger.info("voice.cascade.turn", **timings)
             await self._client.send_json({"type": "turn.timings", **timings})

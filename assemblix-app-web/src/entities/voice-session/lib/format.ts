@@ -18,6 +18,7 @@ export const TIMING_STAGES = [
   "eouMs",
   "sttFinalMs",
   "brainFirstTokenMs",
+  "llmOverlapMs",
   "ttsFirstAudioMs",
   "totalMs",
   "ttsGapMaxMs",
