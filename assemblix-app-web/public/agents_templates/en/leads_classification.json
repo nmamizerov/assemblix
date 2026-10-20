@@ -16,7 +16,7 @@
       "type": "agent",
       "config": {
         "name": "Evaluate User Response",
-        "model": "gpt-4.1-nano",
+        "model": "gpt-4.1-mini",
         "tools": null,
         "provider": "openai",
         "tool_choice": "auto",
@@ -122,7 +122,7 @@
       "type": "agent",
       "config": {
         "name": "Generate New Question",
-        "model": "gpt-4.1-nano",
+        "model": "gpt-4.1-mini",
         "tools": null,
         "provider": "openai",
         "tool_choice": "auto",

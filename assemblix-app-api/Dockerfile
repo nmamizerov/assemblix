@@ -15,6 +15,9 @@ ENV UV_COMPILE_BYTECODE=1 \
     PATH="/app/.venv/bin:$PATH" \
     PYTHONUNBUFFERED=1
 WORKDIR /app
+COPY scripts/fetch_turn_models.py /tmp/fetch_turn_models.py
+RUN python /tmp/fetch_turn_models.py /opt/turn-models && rm /tmp/fetch_turn_models.py
+ENV TURN_MODELS_DIR=/opt/turn-models
 
 # Entrypoint optionally applies DB migrations (RUN_MIGRATIONS=true) before exec.
 COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh

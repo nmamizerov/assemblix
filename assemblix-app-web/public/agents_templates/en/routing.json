@@ -16,7 +16,7 @@
       "type": "agent",
       "config": {
         "name": "Categorize Request",
-        "model": "gpt-4.1-nano",
+        "model": "gpt-4.1-mini",
         "tools": null,
         "provider": "openai",
         "tool_choice": "auto",
@@ -95,7 +95,7 @@
       "type": "agent",
       "config": {
         "name": "Handle Positive Response",
-        "model": "gpt-4.1-nano",
+        "model": "gpt-4.1-mini",
         "tools": null,
         "provider": "openai",
         "tool_choice": "auto",
@@ -119,7 +119,7 @@
       "type": "agent",
       "config": {
         "name": "Handle Negative Response",
-        "model": "gpt-4.1-nano",
+        "model": "gpt-4.1-mini",
         "tools": null,
         "provider": "openai",
         "tool_choice": "auto",
@@ -143,7 +143,7 @@
       "type": "agent",
       "config": {
         "name": "Handle Other Responses",
-        "model": "gpt-4.1-nano",
+        "model": "gpt-4.1-mini",
         "tools": null,
         "provider": "openai",
         "tool_choice": "auto",

@@ -39,14 +39,18 @@ from assemblix_api.schemas.execution import AgentExecutionResult
 
 logger = structlog.get_logger(__name__)
 
+# Newer Gemini models reject requests that end with a model turn (400 INVALID_ARGUMENT),
+# so a history ending with an assistant reply gets a closing user turn.
+CONTINUATION_PROMPT = "Respond according to the instructions above."
+
 
 def to_pydantic_messages(conversation: list[dict]) -> tuple[list[ModelMessage], str]:
     """Split the OpenAI history into (message_history, user_prompt) for Pydantic AI.
 
     The last message is the current user turn (placed there by the preparation phase),
     so it becomes the prompt, and everything before it is the history. If for some
-    reason the last message is not a user one, the prompt stays empty and the message
-    goes into the history — without raising. There are no system messages here
+    reason the last message is not a user one, the message goes into the history and,
+    if it is an assistant reply, the prompt becomes CONTINUATION_PROMPT. There are no system messages here
     (instructions are passed via the separate Agent.instructions argument).
     """
     history: list[ModelMessage] = []
@@ -62,6 +66,9 @@ def to_pydantic_messages(conversation: list[dict]) -> tuple[list[ModelMessage], 
             history.append(ModelRequest(parts=[UserPromptPart(content=content)]))
         elif role == "assistant":
             history.append(ModelResponse(parts=[TextPart(content=content)]))
+
+    if not prompt and history and isinstance(history[-1], ModelResponse):
+        prompt = CONTINUATION_PROMPT
 
     return history, prompt
 
@@ -211,6 +218,9 @@ class AgentRunner:
                 "cost": cost,
                 "tool_calls_count": len(tool_executions),
                 "effective_model": effective_model,
+                "input_tokens": token_usage.input_tokens,
+                "output_tokens": token_usage.output_tokens,
+                "cached_input_tokens": getattr(usage, "cache_read_tokens", 0) or 0,
             },
             messages=[],  # raw pydantic messages are not exposed (the contract is a list of dict)
             tool_executions=tool_executions,

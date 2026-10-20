@@ -3,6 +3,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Mic, Square } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
+import { TurnTimings } from "@/entities/voice-session";
 import { cn } from "@/shared/lib/utils";
 
 import type { useVoiceCall } from "../lib/use-voice-call";
@@ -19,8 +20,18 @@ const LATENCY_FAIR_MS = 1500;
 
 export const VoiceCallStage = ({ call }: VoiceCallStageProps) => {
   const { t } = useTranslation();
-  const { status, transcript, interim, firstAudioMs, error, levels, isAvatar, hasVideo, videoRef } =
-    call;
+  const {
+    status,
+    transcript,
+    interim,
+    firstAudioMs,
+    lastTurnTimings,
+    error,
+    levels,
+    isAvatar,
+    hasVideo,
+    videoRef,
+  } = call;
   const isLive = status === "live";
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -136,6 +147,9 @@ export const VoiceCallStage = ({ call }: VoiceCallStageProps) => {
             </span>
           ) : null}
         </div>
+        {!error && lastTurnTimings && (
+          <TurnTimings timings={lastTurnTimings} className="mt-1 justify-center px-2 text-center" />
+        )}
       </div>
 
       <div

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Room, RoomEvent, Track } from "livekit-client";
 
+import type { VoiceTurnTimings } from "@/entities/voice-session";
 import { usePcmPlayer } from "@/shared/lib/use-pcm-player";
 
 import { useCreateVoiceSessionMutation } from "../api/voice-agent.api";
@@ -56,6 +57,8 @@ interface UseVoiceCallResult {
   interim: TranscriptLine | null;
   /** Last measured time from the caller's last audio frame to the agent's first. */
   firstAudioMs: number | null;
+  /** Stage breakdown of the last turn; cascade calls only. */
+  lastTurnTimings: VoiceTurnTimings | null;
   error: string | null;
   levels: React.RefObject<CallLevels>;
   start: () => Promise<void>;
@@ -83,6 +86,7 @@ export const useVoiceCall = (voiceAgentId: string): UseVoiceCallResult => {
   const [transcript, setTranscript] = useState<TranscriptLine[]>([]);
   const [interim, setInterim] = useState<TranscriptLine | null>(null);
   const [firstAudioMs, setFirstAudioMs] = useState<number | null>(null);
+  const [lastTurnTimings, setLastTurnTimings] = useState<VoiceTurnTimings | null>(null);
   const [error, setError] = useState<string | null>(null);
   const levels = useRef<CallLevels>({ user: 0, agent: 0 });
   const [isAvatar, setIsAvatar] = useState(false);
@@ -184,7 +188,8 @@ export const useVoiceCall = (voiceAgentId: string): UseVoiceCallResult => {
           levels.current.agent = 0;
           break;
         case "turn.timings":
-          setFirstAudioMs(Number(frame.firstAudioMs));
+          if (frame.firstAudioMs != null) setFirstAudioMs(Number(frame.firstAudioMs));
+          if (frame.totalMs != null) setLastTurnTimings(frame as VoiceTurnTimings);
           break;
         case "error":
           // Providers emit recoverable errors during normal operation. Only a
@@ -210,6 +215,7 @@ export const useVoiceCall = (voiceAgentId: string): UseVoiceCallResult => {
     setTranscript([]);
     setInterim(null);
     setFirstAudioMs(null);
+    setLastTurnTimings(null);
 
     // Ask for the microphone first, while the click gesture is still fresh, and
     // before a token is minted that a denied prompt would waste.
@@ -323,6 +329,7 @@ export const useVoiceCall = (voiceAgentId: string): UseVoiceCallResult => {
     transcript,
     interim,
     firstAudioMs,
+    lastTurnTimings,
     error,
     levels,
     start,

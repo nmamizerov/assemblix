@@ -5,6 +5,115 @@ All notable changes to this project are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.45](https://github.com/nmamizerov/assemblix/compare/v0.2.44...v0.2.45) (2026-10-20)
+
+
+### Features
+
+* **api:** re-ask Smart Turn with a decaying threshold and signal pauses ([fee4a73](https://github.com/nmamizerov/assemblix/commit/fee4a73b107dfbb35b535ddafdbd27c872567041))
+* **api:** start cascade replies speculatively during pauses ([5c44809](https://github.com/nmamizerov/assemblix/commit/5c44809bfe49d49c7deb02cf38b1cf4787980a0f))
+* speculative replies and decaying Smart Turn for faster cascade turn-taking ([ff3b87b](https://github.com/nmamizerov/assemblix/commit/ff3b87b8681e98078980b9d365c0baf7e030bf84))
+* **web:** show speculative turn-taking details and add its toggle ([01c5ff8](https://github.com/nmamizerov/assemblix/commit/01c5ff84358199c602e005f7c0714b68c49abeb9))
+
+
+### Bug Fixes
+
+* **agent:** close history ending with a model turn with a user turn ([543ab51](https://github.com/nmamizerov/assemblix/commit/543ab51573bbec113cd7d7cb63c70e4902cafd7a))
+* **agent:** close history ending with a model turn with a user turn ([a62af56](https://github.com/nmamizerov/assemblix/commit/a62af56c85a971369aad5fc3e364d0c15b2844db))
+* **agent:** raise chat history limit from 20 to 60 messages ([50e00db](https://github.com/nmamizerov/assemblix/commit/50e00dbd8d678921a6206436343763246fa9f39b))
+* **agent:** raise chat history limit from 20 to 60 messages ([118bd41](https://github.com/nmamizerov/assemblix/commit/118bd413315664831516ad0c7964b2da1022073b))
+* **api:** harden speculative cascade turn-taking ([29b3f29](https://github.com/nmamizerov/assemblix/commit/29b3f2901578fb727cb2a422e1a90edfb0e6644d))
+* **api:** name the stalled stage when an avatar join times out ([6f5c6ae](https://github.com/nmamizerov/assemblix/commit/6f5c6aed17dae87912cae46b08d9cb92d7ff1f24))
+* **api:** name the stalled stage when an avatar join times out ([e5524e8](https://github.com/nmamizerov/assemblix/commit/e5524e82564fec27e69364a5dcc8afa144a27d10))
+
+## [0.2.44](https://github.com/nmamizerov/assemblix/compare/v0.2.43...v0.2.44) (2026-10-03)
+
+
+### Features
+
+* measure lead-in silence of cascade voice replies ([d39f776](https://github.com/nmamizerov/assemblix/commit/d39f7761dc595badc24eb80da3fda156aa22f8cc))
+
+## [0.2.43](https://github.com/nmamizerov/assemblix/compare/v0.2.42...v0.2.43) (2026-10-03)
+
+
+### Features
+
+* **api:** record each cascade LLM call and per-stage costs ([36dd3d1](https://github.com/nmamizerov/assemblix/commit/36dd3d1a1afa97cd3283fc26b82e24e1138c047f))
+* inspect cascade LLM calls and per-stage costs in voice sessions ([f9fcf5a](https://github.com/nmamizerov/assemblix/commit/f9fcf5a557ff090c22d15b21db73e4b2544d102e))
+* **web:** inspect LLM calls and stage costs in voice sessions ([87f1fcf](https://github.com/nmamizerov/assemblix/commit/87f1fcfcbbf1a1c5ce7981213efdd4479b1050a4))
+
+## [0.2.42](https://github.com/nmamizerov/assemblix/compare/v0.2.41...v0.2.42) (2026-10-03)
+
+
+### Features
+
+* **web:** show the longest audio gap per turn ([86ec6b5](https://github.com/nmamizerov/assemblix/commit/86ec6b567aaf3402bc55d0e0ca2301cd5e42325c))
+
+
+### Bug Fixes
+
+* **api:** synthesize Yandex TTS segments ahead to remove pauses inside replies ([c0bbbb0](https://github.com/nmamizerov/assemblix/commit/c0bbbb005cefbfbdb1c07fa8f47921261f3648b3))
+* remove pauses inside cascade voice replies (Yandex TTS prefetch) ([79389e3](https://github.com/nmamizerov/assemblix/commit/79389e399e5405e6bc5cd3001c4ed3f42123eae8))
+
+## [0.2.41](https://github.com/nmamizerov/assemblix/compare/v0.2.40...v0.2.41) (2026-10-03)
+
+
+### Features
+
+* **llm:** refresh OpenAI and Gemini model catalogs to the October 2026 lineup ([19c6d6f](https://github.com/nmamizerov/assemblix/commit/19c6d6fb9d6937623e7af378874b9be0c923cd3b))
+* **llm:** refresh OpenAI and Gemini model catalogs to the October 2026 lineup ([edb246d](https://github.com/nmamizerov/assemblix/commit/edb246dbc28cb39c4aa65e7056a3377ef20e8749))
+* spoken-style default prompt and late barge-in for cascade voice agents ([8adca3b](https://github.com/nmamizerov/assemblix/commit/8adca3bdab3cfcb570b6e171010ca4098c84dd16))
+* **web:** pre-fill voice agents with a spoken-style system prompt ([30444a4](https://github.com/nmamizerov/assemblix/commit/30444a431a308bedfc01611a8cc501e9ccf17bff))
+* **web:** surface the cascade brain's reasoning controls ([00b690e](https://github.com/nmamizerov/assemblix/commit/00b690eb4c076866aa18184ed9aac4bf47f8702e))
+* **web:** tune the cascade brain's generation settings ([f0a285b](https://github.com/nmamizerov/assemblix/commit/f0a285b5424f2ff7549ab0a50517c19181023f30))
+
+
+### Bug Fixes
+
+* **api:** harden half-cascade aborts ([81ba7c8](https://github.com/nmamizerov/assemblix/commit/81ba7c84a492f0b4e21d3cd50d7ed8e55844ee42))
+* **api:** let callers interrupt a finished cascade reply ([baf5503](https://github.com/nmamizerov/assemblix/commit/baf5503701a764f78323c77c4479b3f21d7dcc1f))
+* **llm:** restore gpt-4.1-nano catalog entry and guard against duplicate ids ([99f90af](https://github.com/nmamizerov/assemblix/commit/99f90af0d3ca5f14f720edb70b7b5d62c5b45122))
+
+## [0.2.40](https://github.com/nmamizerov/assemblix/compare/v0.2.39...v0.2.40) (2026-10-03)
+
+
+### Features
+
+* **web:** edit cascade voice agents and show turn latency in the UI ([a847d86](https://github.com/nmamizerov/assemblix/commit/a847d864c4c63270ef7b87f27175a867e1b3dd29))
+* **web:** edit cascade voice agents in the UI ([72801d8](https://github.com/nmamizerov/assemblix/commit/72801d896e50e1b3a1c49540805b868553b39801))
+* **web:** show cascade turn timings in calls ([cfb001b](https://github.com/nmamizerov/assemblix/commit/cfb001b4964e2fbaed31e2252e7df2c4d95ef183))
+
+
+### Bug Fixes
+
+* **web:** keep voice settings valid when switching voice agent mode ([a161aef](https://github.com/nmamizerov/assemblix/commit/a161aefd3d5d417492bd85ca7b1b4a88e77fc657))
+
+## [0.2.39](https://github.com/nmamizerov/assemblix/compare/v0.2.38...v0.2.39) (2026-10-03)
+
+
+### Features
+
+* **api:** add cascade mode to the voice agent config ([53459b3](https://github.com/nmamizerov/assemblix/commit/53459b3659e7b5c7fbb58cbf4bd886eeb1693562))
+* **api:** add cascade turn detector (VAD gating + Smart Turn) ([7bbdccd](https://github.com/nmamizerov/assemblix/commit/7bbdccd11db1767dcf6cbf7d6a95a05f8683ddf8))
+* **api:** add Silero VAD and Smart Turn v3 models for cascade turn detection ([de86c56](https://github.com/nmamizerov/assemblix/commit/de86c56f376434df2b5d4dd1027b4a3415312193))
+* **api:** add the cascade conversation bridge ([90c7ab4](https://github.com/nmamizerov/assemblix/commit/90c7ab41123d6880d7964756d03a82387fb2e588))
+* **api:** add the prompt brain for cascade voice agents ([7b8a59d](https://github.com/nmamizerov/assemblix/commit/7b8a59d710fa75e0d20848b64539c9f02721e335))
+* **api:** add Yandex SpeechKit v3 streaming recognition adapter ([3afd065](https://github.com/nmamizerov/assemblix/commit/3afd0657f3ad7bf915b0fdd7a4c48c9593c251f1))
+* **api:** cascade mode for voice agents (STT → turn detection → LLM → TTS) ([b592460](https://github.com/nmamizerov/assemblix/commit/b5924609178c712e00a9d2923782a24856ab62e3))
+* **api:** make cascade voice agents callable ([ff31c91](https://github.com/nmamizerov/assemblix/commit/ff31c91807f8f219a942e23d7b4f6508f78a2f40))
+* **api:** record per-stage turn timings for cascade voice calls ([50270c6](https://github.com/nmamizerov/assemblix/commit/50270c66e0351391a04f4d3f1b386dbaee8d7fdf))
+* **api:** share one Yandex TTS channel per call and add economical chunk mode ([1988399](https://github.com/nmamizerov/assemblix/commit/1988399f69bf9a62d4adb4707ac0346cf82955f8))
+
+
+### Bug Fixes
+
+* **api:** build the voice bridge before opening the session row ([1c6e325](https://github.com/nmamizerov/assemblix/commit/1c6e3258523fac3c26b1e93248ea00d45c84d166))
+* **api:** close the shared TTS channel when the inner bridge fails to connect ([35db1e9](https://github.com/nmamizerov/assemblix/commit/35db1e960d63db43419bc7bcf467705a6c303ab7))
+* **api:** close the STT stream on a failed cascade connect and keep caller cancellation ([20b9a1f](https://github.com/nmamizerov/assemblix/commit/20b9a1f1bf6387e79ab1d9ed8dc1675461fb283a))
+* **api:** harden cascade bridge turn and interrupt handling ([471edd1](https://github.com/nmamizerov/assemblix/commit/471edd1d7c9d9f2aa94086d7a2f42595ae8c84f2))
+* **api:** report cascade turn timings once, with firstAudioMs ([e4e1cf5](https://github.com/nmamizerov/assemblix/commit/e4e1cf5510f854bf4579c1975ecd28c618a057e1))
+* **api:** stop Yandex TTS synthesis on barge-in with a shared channel ([6c635b5](https://github.com/nmamizerov/assemblix/commit/6c635b50494ca3425b9b54bbf1e16d042436c6ce))
+
 ## [0.2.38](https://github.com/nmamizerov/assemblix/compare/v0.2.37...v0.2.38) (2026-09-25)
 
 

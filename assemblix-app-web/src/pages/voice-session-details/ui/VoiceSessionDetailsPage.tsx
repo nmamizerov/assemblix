@@ -3,8 +3,14 @@ import { useNavigate, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 
 import {
+  CallInstructions,
   formatCredits,
   formatDuration,
+  LlmCallPanel,
+  StageCostBreakdown,
+  TimingSummary,
+  TurnCostChips,
+  TurnTimings,
   useGetVoiceSessionQuery,
 } from "@/entities/voice-session";
 import type { VoiceSessionExecution } from "@/entities/voice-session";
@@ -108,6 +114,9 @@ export const VoiceSessionDetailsPage = () => {
             </span>
           </div>
         </div>
+        {session.callDetails?.costs && (
+          <StageCostBreakdown details={session.callDetails} />
+        )}
       </header>
 
       <div className="grid items-start gap-8 xl:grid-cols-[minmax(0,1fr)_340px]">
@@ -115,6 +124,7 @@ export const VoiceSessionDetailsPage = () => {
           <h2 className="text-sm font-medium">
             {t("voiceSessions.detail.transcript")}
           </h2>
+          {session.callDetails && <CallInstructions details={session.callDetails} />}
           {session.transcript.length === 0 ? (
             <p className="rounded-lg border border-dashed border-border px-4 py-10 text-center text-sm text-muted-foreground">
               {t("voiceSessions.detail.emptyTranscript")}
@@ -132,45 +142,63 @@ export const VoiceSessionDetailsPage = () => {
                       : t("voiceSessions.detail.agent")}
                   </p>
                   <p className="mt-1 whitespace-pre-wrap text-sm">{line.text}</p>
+                  {line.role === "assistant" && line.timings && (
+                    <TurnTimings timings={line.timings} className="mt-2" />
+                  )}
+                  {line.usage && <TurnCostChips usage={line.usage} className="mt-2" />}
+                  {line.llmCall && <LlmCallPanel call={line.llmCall} className="mt-2" />}
                 </li>
               ))}
             </ol>
           )}
         </section>
 
-        <section className="space-y-3">
-          <h2 className="text-sm font-medium">
-            {t("voiceSessions.detail.executions")}
-          </h2>
-          {session.executions.length === 0 ? (
-            <p className="rounded-lg border border-dashed border-border px-4 py-8 text-center text-sm text-muted-foreground">
-              {t("voiceSessions.detail.noExecutions")}
-            </p>
-          ) : (
-            <ul className="space-y-2">
-              {session.executions.map((execution) => (
-                <li key={execution.id}>
-                  <button
-                    type="button"
-                    onClick={() => openExecution(execution)}
-                    className="w-full rounded-lg border border-border px-4 py-3 text-left transition-colors hover:bg-muted/40"
-                  >
-                    <p className="text-sm font-medium">{execution.status}</p>
-                    <p className="mt-1 text-xs text-muted-foreground tabular-nums">
-                      {execution.startedAt
-                        ? new Date(execution.startedAt).toLocaleTimeString()
-                        : "—"}
-                      {" · "}
-                      {formatCredits(execution.totalCredits)}
-                      {(execution.ownKeyCostUsd ?? 0) > 0 &&
-                        ` · ${formatUsd(execution.ownKeyCostUsd ?? 0)}`}
-                    </p>
-                  </button>
-                </li>
-              ))}
-            </ul>
+        <div className="space-y-8">
+          {session.timingSummary && Object.keys(session.timingSummary).length > 0 && (
+            <section className="space-y-3">
+              <h2 className="text-sm font-medium">
+                {t("voiceSessions.detail.latency")}
+              </h2>
+              <div className="rounded-lg border border-border px-4 py-2">
+                <TimingSummary summary={session.timingSummary} />
+              </div>
+            </section>
           )}
-        </section>
+
+          <section className="space-y-3">
+            <h2 className="text-sm font-medium">
+              {t("voiceSessions.detail.executions")}
+            </h2>
+            {session.executions.length === 0 ? (
+              <p className="rounded-lg border border-dashed border-border px-4 py-8 text-center text-sm text-muted-foreground">
+                {t("voiceSessions.detail.noExecutions")}
+              </p>
+            ) : (
+              <ul className="space-y-2">
+                {session.executions.map((execution) => (
+                  <li key={execution.id}>
+                    <button
+                      type="button"
+                      onClick={() => openExecution(execution)}
+                      className="w-full rounded-lg border border-border px-4 py-3 text-left transition-colors hover:bg-muted/40"
+                    >
+                      <p className="text-sm font-medium">{execution.status}</p>
+                      <p className="mt-1 text-xs text-muted-foreground tabular-nums">
+                        {execution.startedAt
+                          ? new Date(execution.startedAt).toLocaleTimeString()
+                          : "—"}
+                        {" · "}
+                        {formatCredits(execution.totalCredits)}
+                        {(execution.ownKeyCostUsd ?? 0) > 0 &&
+                          ` · ${formatUsd(execution.ownKeyCostUsd ?? 0)}`}
+                      </p>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+        </div>
       </div>
     </div>
   );

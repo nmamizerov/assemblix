@@ -3,6 +3,9 @@
 from __future__ import annotations
 
 import asyncio
+import math
+import struct
+import time
 from collections.abc import AsyncIterator
 from typing import Any
 from uuid import uuid4
@@ -15,6 +18,7 @@ from assemblix_api.external.voice.conversation.contract import (
     SessionClosed,
     SpeechStarted,
     TurnEnded,
+    TurnTimings,
     UserTranscript,
 )
 from assemblix_api.realtime.hooks import TurnDispatcher
@@ -498,3 +502,380 @@ async def test_avatar_error_from_output_ends_the_call() -> None:
     # Assert
     assert bridge.closed
     assert client.json_frames[-1] == {"type": "session.closed", "reason": "avatar_unavailable"}
+
+
+async def test_cascade_timings_are_closed_at_first_audio_and_stored_on_the_reply() -> None:
+    ended = time.monotonic() - 0.9
+    script = [
+        UserTranscript(text="привет", is_final=True),
+        TurnTimings(speech_ended_at=ended, eou_ms=224, stt_final_ms=80, brain_first_token_ms=350),
+        AgentTranscript(text="Здравствуйте", is_final=False),
+        AudioDelta(pcm=b"\x00" * 640),
+        AgentTranscript(text="Здравствуйте", is_final=True),
+        TurnEnded(),
+        SessionClosed(reason="done"),
+    ]
+    client = _FakeClient([])
+    runtime = _runtime(_FakeBridge(script), client)
+
+    await runtime.run()
+
+    timings = [m for m in client.json_frames if m.get("type") == "turn.timings"]
+    assert len(timings) == 1
+    event = timings[0]
+    assert event["eouMs"] == 224 and event["sttFinalMs"] == 80 and event["brainFirstTokenMs"] == 350
+    assert event["totalMs"] >= 900
+    assert event["ttsFirstAudioMs"] == event["totalMs"] - 224 - 80 - 350
+    assistant = [line for line in runtime.transcript if line["role"] == "assistant"]
+    assert assistant[0]["timings"] == {
+        **{k: v for k, v in event.items() if k != "type"},
+        "ttsGapMaxMs": 0,
+        "ttsLeadingSilenceMs": 10,
+        "ttsFirstAudibleMs": event["ttsFirstAudioMs"] + 10,
+    }
+    assert "timings" not in runtime.transcript[0]
+
+
+async def test_speculative_turn_details_are_stored_on_the_reply_timings() -> None:
+    script = [
+        UserTranscript(text="привет", is_final=True),
+        TurnTimings(
+            speech_ended_at=time.monotonic() - 0.5,
+            eou_ms=544,
+            stt_final_ms=0,
+            brain_first_token_ms=0,
+            smart_turn_prob=0.4219,
+            smart_turn_asks=3,
+            speculative=True,
+            llm_overlap_ms=310,
+        ),
+        AgentTranscript(text="Здравствуйте", is_final=False),
+        AudioDelta(pcm=b"\x00" * 640),
+        AgentTranscript(text="Здравствуйте", is_final=True),
+        TurnEnded(),
+        SessionClosed(reason="done"),
+    ]
+    client = _FakeClient([])
+    runtime = _runtime(_FakeBridge(script), client)
+
+    await runtime.run()
+
+    [line] = [line for line in runtime.transcript if line["role"] == "assistant"]
+    assert line["timings"]["smartTurnProb"] == 0.422
+    assert line["timings"]["smartTurnAsks"] == 3
+    assert line["timings"]["speculative"] is True
+    assert line["timings"]["llmOverlapMs"] == 310
+
+
+async def test_a_cascade_turn_reports_its_timings_once_despite_a_live_microphone() -> None:
+    """The browser streams mic audio throughout the reply; later audio packets of a
+    measured turn must not emit a second, inbound-audio based timing."""
+    first_audio_out = asyncio.Event()
+    mic_sent = asyncio.Event()
+
+    class _MicClient(_FakeClient):
+        async def send_bytes(self, data: bytes) -> None:
+            await super().send_bytes(data)
+            first_audio_out.set()
+
+        async def __aiter__(self) -> AsyncIterator[Any]:
+            await first_audio_out.wait()
+            yield b"mic-while-agent-speaks"
+            await asyncio.Event().wait()
+
+    class _MicBridge(_FakeBridge):
+        async def send_audio(self, pcm: bytes) -> None:
+            await super().send_audio(pcm)
+            mic_sent.set()
+
+        def events(self) -> AsyncIterator[Any]:
+            async def _iter() -> AsyncIterator[Any]:
+                yield TurnTimings(
+                    speech_ended_at=time.monotonic(),
+                    eou_ms=10,
+                    stt_final_ms=20,
+                    brain_first_token_ms=30,
+                )
+                yield AudioDelta(pcm=b"\x00" * 640)
+                await mic_sent.wait()
+                yield AudioDelta(pcm=b"\x00" * 640)
+                yield AgentTranscript(text="Здравствуйте", is_final=True)
+                yield TurnEnded()
+                yield SessionClosed(reason="done")
+
+            return _iter()
+
+    client = _MicClient([])
+
+    await _runtime(_MicBridge([]), client).run()
+
+    timings = [m for m in client.json_frames if m.get("type") == "turn.timings"]
+    assert len(timings) == 1
+    assert timings[0]["firstAudioMs"] == timings[0]["totalMs"]
+
+
+class _Clock:
+    def __init__(self) -> None:
+        self.now = 1000.0
+
+    def __call__(self) -> float:
+        return self.now
+
+
+class _ClockedBridge(_FakeBridge):
+    """A scripted bridge where a float in the script advances the clock, in seconds."""
+
+    def __init__(self, events: list[Any], clock: _Clock, *, late: bool) -> None:
+        super().__init__(events)
+        self._clock = clock
+        if late:
+            self.accepts_late_interrupt = True
+
+    def events(self) -> AsyncIterator[Any]:
+        async def _iter() -> AsyncIterator[Any]:
+            for event in self._events:
+                if isinstance(event, float):
+                    self._clock.now += event
+                else:
+                    yield event
+
+        return _iter()
+
+
+class _BrowserClient(_FakeClient):
+    """The plain WebSocket path: playback lives in the browser, so nothing is reported."""
+
+    async def __aiter__(self) -> AsyncIterator[Any]:
+        await asyncio.Event().wait()
+        yield b""
+
+
+_ONE_SECOND = AudioDelta(pcm=b"\x00\x00" * 24000)
+
+
+async def _barge_in(script: list[Any], *, late: bool) -> list[int]:
+    clock = _Clock()
+    bridge = _ClockedBridge([*script, SessionClosed(reason="done")], clock, late=late)
+    await _runtime(bridge, _BrowserClient([]), clock=clock).run()
+    return bridge.interrupts
+
+
+async def test_a_barge_in_after_turn_end_truncates_a_reply_still_playing() -> None:
+    """The reply was fully sent and the turn ended, but the browser is still playing
+    it: a bridge that accepts late interrupts is told how much was heard."""
+    # Arrange
+    script = [_ONE_SECOND, TurnEnded(), 0.4, SpeechStarted()]
+
+    # Act
+    interrupts = await _barge_in(script, late=True)
+
+    # Assert
+    assert interrupts == [400]
+
+
+async def test_speech_after_the_reply_finished_playing_interrupts_nothing() -> None:
+    # Arrange
+    script = [_ONE_SECOND, TurnEnded(), 1.5, SpeechStarted()]
+
+    # Act
+    interrupts = await _barge_in(script, late=True)
+
+    # Assert
+    assert interrupts == []
+
+
+async def test_a_barge_in_mid_turn_reports_wall_clock_playback_to_a_late_bridge() -> None:
+    """Audio forwarded is not audio heard: the browser buffers ahead of playback."""
+    # Arrange
+    script = [_ONE_SECOND, 0.3, SpeechStarted()]
+
+    # Act
+    interrupts = await _barge_in(script, late=True)
+
+    # Assert
+    assert interrupts == [300]
+
+
+async def test_playback_tracking_restarts_with_the_next_turn() -> None:
+    # Arrange — the first turn played out long ago; the second has just begun
+    script = [_ONE_SECOND, TurnEnded(), 5.0, _ONE_SECOND, TurnEnded(), 0.2, SpeechStarted()]
+
+    # Act
+    interrupts = await _barge_in(script, late=True)
+
+    # Assert
+    assert interrupts == [200]
+
+
+async def test_a_bridge_without_late_interrupts_behaves_as_before() -> None:
+    """Speech-to-speech providers keep today's contract: nothing after TurnEnded,
+    and the forwarded duration during a turn."""
+    # Arrange
+    after_turn = [_ONE_SECOND, TurnEnded(), 0.4, SpeechStarted()]
+    mid_turn = [_ONE_SECOND, 0.3, SpeechStarted()]
+
+    # Act
+    after_turn_interrupts = await _barge_in(after_turn, late=False)
+    mid_turn_interrupts = await _barge_in(mid_turn, late=False)
+
+    # Assert
+    assert after_turn_interrupts == []
+    assert mid_turn_interrupts == [1000]
+
+
+async def test_the_longest_silence_inside_a_cascade_reply_is_stored_on_its_timings() -> None:
+    """Audio arriving after the forwarded audio would have finished playing is a gap
+    the caller heard; the longest one per turn lands on the reply's timings."""
+    # Arrange
+    clock = _Clock()
+    script = [
+        UserTranscript(text="привет", is_final=True),
+        TurnTimings(
+            speech_ended_at=time.monotonic(), eou_ms=1, stt_final_ms=1, brain_first_token_ms=1
+        ),
+        _ONE_SECOND,
+        1.2,  # the first second plays out, then 0.2 s of silence
+        _ONE_SECOND,
+        0.1,  # still covered by buffered audio
+        _ONE_SECOND,
+        2.4,  # 1.9 s of buffered audio left, then 0.5 s of silence
+        _ONE_SECOND,
+        AgentTranscript(text="Здравствуйте", is_final=True),
+        TurnEnded(),
+        SessionClosed(reason="done"),
+    ]
+    bridge = _ClockedBridge(script, clock, late=False)
+    runtime = _runtime(bridge, _BrowserClient([]), clock=clock)
+
+    # Act
+    await runtime.run()
+
+    # Assert
+    assistant = [line for line in runtime.transcript if line["role"] == "assistant"]
+    assert assistant[0]["timings"]["ttsGapMaxMs"] == 500
+
+
+async def test_each_turn_record_lands_on_its_own_reply_and_stays_out_of_the_final_hook() -> None:
+    """A cascade turn's LLM call and spend are stored on the reply that turn produced;
+    a turn whose brain failed without text keeps them on the user line it answered.
+    The final hook still sees plain transcript lines."""
+    # Arrange
+    first = {"response": "Здравствуйте", "outcome": "ok"}
+    failed = {"response": "", "outcome": "brain_failed", "error": "down"}
+    third = {"response": "Пока", "outcome": "ok"}
+    script = [
+        UserTranscript(text="привет", is_final=True),
+        AgentTranscript(text="Здравствуйте", is_final=True),
+        TurnEnded(llm_call=first, usage={"llmCostUsd": 0.1}),
+        UserTranscript(text="алло", is_final=True),
+        TurnEnded(llm_call=failed, usage={"llmCostUsd": 0.0}),
+        UserTranscript(text="до свидания", is_final=True),
+        AgentTranscript(text="Пока", is_final=True),
+        TurnEnded(llm_call=third, usage={"llmCostUsd": 0.3}),
+        SessionClosed(reason="done"),
+    ]
+    runs: list[dict] = []
+
+    async def runner(**kwargs: Any) -> None:
+        runs.append(kwargs)
+
+    runtime = VoiceSessionRuntime(
+        bridge=_FakeBridge(script),
+        client=_FakeClient([]),
+        instructions="i",
+        voice="",
+        language="ru",
+        params={},
+        max_session_sec=5,
+        dispatcher=TurnDispatcher(
+            voice_session_id=uuid4(),
+            turn_workflow_id=None,
+            final_workflow_id="22222222-2222-2222-2222-222222222222",
+            runner=runner,
+        ),
+    )
+
+    # Act
+    await runtime.run()
+
+    # Assert
+    lines = runtime.transcript
+    assert lines[1] == {
+        "role": "assistant",
+        "text": "Здравствуйте",
+        "llmCall": first,
+        "usage": {"llmCostUsd": 0.1},
+    }
+    assert lines[2]["llmCall"] == failed and lines[2]["role"] == "user"
+    assert lines[4]["llmCall"] == third and lines[4]["usage"] == {"llmCostUsd": 0.3}
+    assert "llmCall" not in lines[0] and "llmCall" not in lines[3]
+    hooked = runs[0]["input_data"]["voice"]["transcript"]
+    assert all("llmCall" not in line and "usage" not in line for line in hooked)
+    assert [line["text"] for line in hooked] == [line["text"] for line in lines]
+
+
+_RATE = 24000
+
+
+def _pcm(ms: int, *, tone: bool) -> bytes:
+    samples = _RATE * ms // 1000
+    if not tone:
+        return b"\x00\x00" * samples
+    values = [int(10000 * math.sin(2 * math.pi * 1000 * i / _RATE)) for i in range(samples)]
+    return struct.pack(f"<{samples}h", *values)
+
+
+async def _lead_silence_of(chunks: list[bytes], *, cascade: bool = True) -> dict | None:
+    script: list[Any] = [UserTranscript(text="привет", is_final=True)]
+    if cascade:
+        script.append(
+            TurnTimings(
+                speech_ended_at=time.monotonic(), eou_ms=1, stt_final_ms=1, brain_first_token_ms=1
+            )
+        )
+    script += [AudioDelta(pcm=chunk) for chunk in chunks]
+    script += [AgentTranscript(text="ok", is_final=True), TurnEnded(), SessionClosed(reason="d")]
+    runtime = _runtime(_FakeBridge(script), _FakeClient([]))
+
+    await runtime.run()
+
+    return next(line for line in runtime.transcript if line["role"] == "assistant").get("timings")
+
+
+async def test_leading_silence_is_measured_before_the_first_speech_frame() -> None:
+    timings = await _lead_silence_of([_pcm(400, tone=False), _pcm(200, tone=True)])
+
+    assert timings is not None
+    assert abs(timings["ttsLeadingSilenceMs"] - 400) <= 10
+    assert (
+        timings["ttsFirstAudibleMs"] == timings["ttsFirstAudioMs"] + timings["ttsLeadingSilenceMs"]
+    )
+
+
+async def test_leading_silence_spans_chunks() -> None:
+    chunks = [_pcm(300, tone=False), _pcm(255, tone=False), _pcm(100, tone=True)]
+
+    timings = await _lead_silence_of(chunks)
+
+    assert timings is not None
+    assert abs(timings["ttsLeadingSilenceMs"] - 555) <= 10
+
+
+async def test_immediate_speech_has_no_leading_silence() -> None:
+    timings = await _lead_silence_of([_pcm(200, tone=True)])
+
+    assert timings is not None
+    assert timings["ttsLeadingSilenceMs"] == 0
+
+
+async def test_all_silent_audio_reports_the_analysis_cap() -> None:
+    timings = await _lead_silence_of([_pcm(2000, tone=False), _pcm(2000, tone=False)])
+
+    assert timings is not None
+    assert timings["ttsLeadingSilenceMs"] == 3000
+
+
+async def test_a_bridge_without_stage_timings_records_no_leading_silence() -> None:
+    timings = await _lead_silence_of([_pcm(400, tone=False), _pcm(200, tone=True)], cascade=False)
+
+    assert timings is None

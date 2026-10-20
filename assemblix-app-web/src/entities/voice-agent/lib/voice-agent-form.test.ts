@@ -17,7 +17,7 @@ describe("voice agent form", () => {
     // Assert — only the fields a user must supply are missing; the seeded
     // provider/model pair is one the backend accepts as a conversation route
     expect(validateDraft(draft).isValid).toBe(false);
-    expect(validateDraft(draft).errors.systemPrompt).toBeDefined();
+    expect(validateDraft(draft).errors.systemPrompt).toBeUndefined();
     expect(validateDraft(draft).errors.name).toBeDefined();
     expect(validateDraft(draft).errors.provider).toBeUndefined();
     expect(validateDraft(draft).errors.model).toBeUndefined();
@@ -46,6 +46,7 @@ describe("voice agent form", () => {
       name: "Receptionist",
       description: null,
       config: {
+        mode: "realtime",
         instructions: [{ role: "system", content: "You are a clinic receptionist." }],
         knowledgeBaseIds: [],
         firstMessage: "Hello",
@@ -58,6 +59,7 @@ describe("voice agent form", () => {
           realtime: false,
         },
         tts: null,
+        cascade: null,
         avatar: null,
         params: {},
         turnWorkflowId: "wf-1",
@@ -80,7 +82,7 @@ describe("voice agent form", () => {
     const request = toCreateRequest(draft, "proj-1");
 
     // Assert — a load → save round trip is lossless
-    expect(request.config.voice.credentialId).toBe("cred-1");
+    expect(request.config.voice?.credentialId).toBe("cred-1");
     expect(request.config.params).toEqual({ vadSilenceMs: 500 });
   });
 

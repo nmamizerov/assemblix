@@ -76,7 +76,7 @@ const getDefaultNodeConfig = (type: NodeType): Record<string, unknown> => {
       return {
         name: i18n.t("workflow.nodeDefaults.agentName"),
         provider: "openai",
-        model: "gpt-4.1-nano",
+        model: "gpt-4.1-mini",
         credentialId: "",
         instructions: [{ role: "user", content: "" }],
       };

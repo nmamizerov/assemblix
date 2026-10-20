@@ -14,7 +14,7 @@ import asyncio
 import contextlib
 import time
 from collections.abc import AsyncIterator, Awaitable, Callable
-from typing import Protocol
+from typing import Any, Protocol
 
 import structlog
 
@@ -27,13 +27,17 @@ from assemblix_api.external.voice.conversation.contract import (
     SessionClosed,
     SpeechStarted,
     TurnEnded,
+    TurnTimings,
     UserTranscript,
 )
 from assemblix_api.realtime.hooks import TurnDispatcher
+from assemblix_api.realtime.leading_silence import LeadingSilenceMeter
 
 logger = structlog.get_logger(__name__)
 
 _BYTES_PER_SAMPLE = 2
+# Per-turn debug data on transcript lines; kept out of what the final hook sees.
+_DEBUG_KEYS = ("llmCall", "usage")
 
 
 class ClientChannel(Protocol):
@@ -70,6 +74,7 @@ class VoiceSessionRuntime:
         dispatcher: TurnDispatcher | None = None,
         prepare: Callable[[], Awaitable[None]] | None = None,
         on_stopped: Callable[[], Awaitable[None]] | None = None,
+        clock: Callable[[], float] = time.monotonic,
     ) -> None:
         self._bridge = bridge
         self._client = client
@@ -81,6 +86,7 @@ class VoiceSessionRuntime:
         self._dispatcher = dispatcher
         self._prepare = prepare
         self._on_stopped = on_stopped
+        self._clock = clock
 
         # Audio actually forwarded to the browser, in ms. On a barge-in the
         # provider needs to know how much of its answer was really heard.
@@ -88,8 +94,26 @@ class VoiceSessionRuntime:
         # Interrupting when the agent is silent makes the provider answer with
         # "no active response found" — a real error event for a non-event.
         self._agent_speaking = False
+        # Browser playback of the latest agent turn, by wall clock: TurnEnded arrives
+        # once the audio is sent, while the browser may still be playing it.
+        self._playback_started_at: float | None = None
+        self._playback_ms = 0
+        self._playback_open = False
         self._last_inbound_audio_at: float | None = None
+        self._pending_timings: TurnTimings | None = None
+        self._reply_timings: dict[str, Any] | None = None
+        # Where the browser's playback of this turn ends if the audio arrives no
+        # later; a chunk arriving after it means the caller heard silence.
+        self._play_end: float | None = None
+        self._gap_max_ms = 0
+        self._lead_meter: LeadingSilenceMeter | None = None
+        self._lead_ms: int | None = None
+        # The mic streams continuously, so without this every later audio packet of a
+        # measured turn would emit a second, inbound-audio based timing.
+        self._stage_timings_sent = False
         self._transcript: list[dict] = []
+        # Where the current turn's lines start; a cascade TurnEnded annotates one of them.
+        self._turn_start = 0
         self._closed_reason: str | None = None
         self._turn_index = 0
         # The agent's last finished reply — context the per-turn hook needs, since
@@ -212,7 +236,10 @@ class VoiceSessionRuntime:
                 # whole point of the final workflow is that it sees the finished
                 # transcript.
                 await self._dispatcher.dispatch_final(
-                    transcript=self._transcript,
+                    transcript=[
+                        {k: v for k, v in line.items() if k not in _DEBUG_KEYS}
+                        for line in self._transcript
+                    ],
                     duration_sec=self.duration_sec,
                     end_reason=reason,
                 )
@@ -232,9 +259,23 @@ class VoiceSessionRuntime:
             match event:
                 case AudioDelta():
                     self._agent_speaking = True
-                    self._played_ms += len(event.pcm) // (
+                    chunk_ms = len(event.pcm) // (
                         _BYTES_PER_SAMPLE * self._bridge.output_sample_rate // 1000
                     )
+                    self._played_ms += chunk_ms
+                    now = self._clock()
+                    if self._pending_timings is not None:
+                        self._lead_meter = LeadingSilenceMeter(self._bridge.output_sample_rate)
+                        self._lead_ms = None
+                    self._measure_lead_silence(event.pcm)
+                    if not self._playback_open:
+                        self._playback_open = True
+                        self._playback_started_at = now
+                        self._playback_ms = 0
+                        self._play_end = None
+                        self._gap_max_ms = 0
+                    self._playback_ms += chunk_ms
+                    self._track_gap(now, chunk_ms)
                     await self._client.send_bytes(event.pcm)
                     await self._emit_timings()
                 case UserTranscript():
@@ -249,17 +290,33 @@ class VoiceSessionRuntime:
                     heard_ms = await self._client.interrupt_playback()
                     if heard_ms is not None:
                         await self._bridge.interrupt(audio_end_ms=heard_ms)
+                    elif self._late_interrupts():
+                        heard_ms = self._heard_ms()
+                        if heard_ms is not None and (
+                            self._agent_speaking or heard_ms < self._playback_ms
+                        ):
+                            await self._bridge.interrupt(audio_end_ms=heard_ms)
                     elif self._agent_speaking:
                         await self._bridge.interrupt(audio_end_ms=self._played_ms)
                     self._agent_speaking = False
                     self._played_ms = 0
+                    self._playback_open = False
+                    self._playback_started_at = None
+                    self._lead_meter = None
                 case TurnEnded():
+                    self._pending_timings = None
+                    self._stage_timings_sent = False
                     await self._client.end_of_utterance()
+                    self._finish_lead_silence()
                     self._agent_speaking = False
                     self._played_ms = 0
+                    self._playback_open = False
                     self._input_tokens += event.input_tokens or 0
                     self._output_tokens += event.output_tokens or 0
                     self._speech_chars += event.speech_chars or 0
+                    self._attach_turn_record(event)
+                case TurnTimings():
+                    self._pending_timings = event
                 case BridgeError():
                     logger.warning(
                         "voice.session.bridge_error",
@@ -282,9 +339,103 @@ class VoiceSessionRuntime:
                     self._closed_reason = event.reason
                     return
 
+    def _measure_lead_silence(self, pcm: bytes) -> None:
+        meter = self._lead_meter
+        if meter is None:
+            return
+        meter.feed(pcm)
+        if meter.result_ms is not None:
+            self._finish_lead_silence()
+
+    def _finish_lead_silence(self) -> None:
+        meter = self._lead_meter
+        if meter is None:
+            return
+        self._lead_meter = None
+        self._lead_ms = meter.result_ms if meter.result_ms is not None else meter.silence_ms
+        logger.info("voice.cascade.tts_leading_silence", ttsLeadingSilenceMs=self._lead_ms)
+        line = next(
+            (
+                line
+                for line in reversed(self._transcript[self._turn_start :])
+                if line["role"] == "assistant" and "timings" in line
+            ),
+            None,
+        )
+        if line is not None:
+            self._add_lead_silence(line["timings"])
+
+    def _add_lead_silence(self, timings: dict) -> None:
+        if self._lead_ms is None or "ttsLeadingSilenceMs" in timings:
+            return
+        timings["ttsLeadingSilenceMs"] = self._lead_ms
+        if isinstance(timings.get("ttsFirstAudioMs"), int):
+            timings["ttsFirstAudibleMs"] = timings["ttsFirstAudioMs"] + self._lead_ms
+
+    def _attach_turn_record(self, event: TurnEnded) -> None:
+        """Put the turn's LLM call and spend on its reply — or, if the brain produced
+        none, on the user line it answered."""
+        lines = self._transcript[self._turn_start :]
+        self._turn_start = len(self._transcript)
+        if event.llm_call is None and event.usage is None:
+            return
+        target = next((line for line in reversed(lines) if line["role"] == "assistant"), None)
+        if target is None:
+            target = next((line for line in reversed(lines) if line["role"] == "user"), None)
+        if target is None:
+            return
+        if event.llm_call is not None:
+            target["llmCall"] = event.llm_call
+        if event.usage is not None:
+            target["usage"] = event.usage
+
+    def _track_gap(self, now: float, chunk_ms: int) -> None:
+        if self._play_end is not None and now > self._play_end:
+            self._gap_max_ms = max(self._gap_max_ms, round((now - self._play_end) * 1000))
+        start = now if self._play_end is None else max(self._play_end, now)
+        self._play_end = start + chunk_ms / 1000
+
+    def _late_interrupts(self) -> bool:
+        return self._client.media == "ws" and bool(
+            getattr(self._bridge, "accepts_late_interrupt", False)
+        )
+
+    def _heard_ms(self) -> int | None:
+        """How much of the latest turn the browser has played, assuming it started
+        at the first chunk and plays without stalls."""
+        if self._playback_started_at is None:
+            return None
+        elapsed_ms = round((self._clock() - self._playback_started_at) * 1000)
+        return min(self._playback_ms, elapsed_ms)
+
     async def _emit_timings(self) -> None:
-        """One honest end-to-end number: last inbound audio → first audio back."""
-        if self._last_inbound_audio_at is None:
+        """Last inbound audio → first audio back; per stage when the bridge measured them."""
+        stages = self._pending_timings
+        if stages is not None:
+            self._pending_timings = None
+            self._last_inbound_audio_at = None
+            self._stage_timings_sent = True
+            total = int((time.monotonic() - stages.speech_ended_at) * 1000)
+            timings: dict[str, Any] = {
+                "eouMs": stages.eou_ms,
+                "sttFinalMs": stages.stt_final_ms,
+                "brainFirstTokenMs": stages.brain_first_token_ms,
+                "ttsFirstAudioMs": max(
+                    0, total - stages.eou_ms - stages.stt_final_ms - stages.brain_first_token_ms
+                ),
+                "totalMs": total,
+                "firstAudioMs": total,
+                "smartTurnAsks": stages.smart_turn_asks,
+                "speculative": stages.speculative,
+                "llmOverlapMs": stages.llm_overlap_ms,
+            }
+            if stages.smart_turn_prob is not None:
+                timings["smartTurnProb"] = round(stages.smart_turn_prob, 3)
+            self._reply_timings = timings
+            logger.info("voice.cascade.turn", **timings)
+            await self._client.send_json({"type": "turn.timings", **timings})
+            return
+        if self._stage_timings_sent or self._last_inbound_audio_at is None:
             return
         first_audio_ms = int((time.monotonic() - self._last_inbound_audio_at) * 1000)
         self._last_inbound_audio_at = None
@@ -292,7 +443,12 @@ class VoiceSessionRuntime:
 
     async def _on_transcript(self, role: str, text: str, is_final: bool) -> None:
         if is_final:
-            self._transcript.append({"role": role, "text": text})
+            line: dict = {"role": role, "text": text}
+            if role == "assistant" and self._reply_timings is not None:
+                line["timings"] = {**self._reply_timings, "ttsGapMaxMs": self._gap_max_ms}
+                self._add_lead_silence(line["timings"])
+                self._reply_timings = None
+            self._transcript.append(line)
             if role == "assistant":
                 self._last_agent_text = text
             elif self._dispatcher is not None:

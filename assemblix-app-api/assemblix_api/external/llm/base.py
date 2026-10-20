@@ -74,6 +74,27 @@ class ModelCapabilities(DTOModel):
             "gpt-5.4 family, gpt-5.5); rejected by gpt-5.1 and earlier."
         ),
     )
+    reasoning_effort_none: bool = Field(
+        default=False,
+        description=(
+            "Whether the model accepts `reasoning_effort='none'` (OpenAI gpt-5.1+, "
+            "except gpt-6-astra and gpt-6.1-sol)."
+        ),
+    )
+    reasoning_effort_max: bool = Field(
+        default=False,
+        description=(
+            "Whether the model accepts `reasoning_effort='max'` "
+            "(OpenAI gpt-5.6 and gpt-6 families)."
+        ),
+    )
+    thinking_level_minimal: bool = Field(
+        default=False,
+        description=(
+            "Whether a Gemini 3+ model accepts `thinking_level='minimal'`; "
+            "Pro variants and gemini-3.7/3.8-flash reject it."
+        ),
+    )
     accepts_audio: bool = Field(
         default=False,
         description="Model accepts audio input parts natively (skip STT).",

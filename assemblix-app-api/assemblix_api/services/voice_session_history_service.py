@@ -15,11 +15,13 @@ from assemblix_api.database.models.voice_session import VoiceSession
 from assemblix_api.database.repositories.execution_repository import ExecutionRepository
 from assemblix_api.database.repositories.voice_session_repository import VoiceSessionRepository
 from assemblix_api.dto.responses.voice_session import (
+    VoiceSessionCallDetails,
     VoiceSessionDetailResponse,
     VoiceSessionExecutionResponse,
     VoiceSessionResponse,
     VoiceSessionTranscriptLine,
 )
+from assemblix_api.realtime.timings import summarize_timings
 
 
 class VoiceSessionHistoryService:
@@ -63,6 +65,10 @@ class VoiceSessionHistoryService:
             transcript=[VoiceSessionTranscriptLine(**line) for line in session.transcript],
             input_tokens=session.input_tokens,
             output_tokens=session.output_tokens,
+            timing_summary=summarize_timings(session.transcript),
+            call_details=(
+                VoiceSessionCallDetails(**session.call_details) if session.call_details else None
+            ),
             executions=[
                 VoiceSessionExecutionResponse(
                     id=execution.id,

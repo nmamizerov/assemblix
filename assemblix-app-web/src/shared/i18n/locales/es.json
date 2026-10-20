@@ -1408,7 +1408,16 @@
       "synthesis": "Síntesis de voz",
       "synthesisHint": "Quién pronuncia las respuestas: el propio modelo en tiempo real o un proveedor dedicado.",
       "avatar": "Avatar",
-      "avatarHint": "Un rostro que sincroniza los labios con la voz del agente. Requiere LiveKit en el servidor."
+      "avatarHint": "Un rostro que sincroniza los labios con la voz del agente. Requiere LiveKit en el servidor.",
+      "mode": "Modo",
+      "modeHint": "Cómo el agente escucha, piensa y habla.",
+      "recognition": "Reconocimiento",
+      "recognitionHint": "Convierte la voz de quien llama en texto.",
+      "brain": "Cerebro",
+      "brainHint": "El modelo de lenguaje que redacta cada respuesta.",
+      "cascadeSynthesisHint": "Pronuncia las respuestas del cerebro. Solo se ofrecen modelos de streaming.",
+      "turn": "Fin de turno",
+      "turnHint": "Cuándo el agente decide que quien llama terminó de hablar."
     },
     "fields": {
       "name": "Nombre",
@@ -1441,7 +1450,23 @@
       "customVoiceCaption": "Elige una voz integrada o pega el id de una voz personalizada (voice_…) creada en tu cuenta de OpenAI.",
       "externalVoice": "Voz externa",
       "externalVoiceUnavailable": "Este modelo siempre responde con su propio audio, por lo que una voz externa no puede hablar por él.",
-      "avatarEnabled": "Mostrar un avatar"
+      "avatarEnabled": "Mostrar un avatar",
+      "sttProvider": "Proveedor",
+      "yandexSpeechKit": "Yandex SpeechKit",
+      "historyTurns": "Tamaño del historial",
+      "historyTurnsCaption": "Mensajes que se conservan literalmente en el contexto del cerebro (2–400).",
+      "brainParams": "Ajustes de generación",
+      "advancedBrainParams": "Más ajustes",
+      "brainParamsCaption": "Menos razonamiento y un límite de tokens más bajo hacen que el agente empiece a responder antes.",
+      "advancedTurn": "Ajustes avanzados",
+      "minSilenceMs": "Silencio mín., ms",
+      "maxSilenceMs": "Silencio máx., ms",
+      "smartTurn": "Detección inteligente de turno",
+      "smartTurnCaption": "Un modelo evalúa si la frase está completa, para que el agente responda antes sin interrumpir.",
+      "speculative": "Empezar a responder durante las pausas",
+      "speculativeCaption": "La respuesta se prepara mientras el interlocutor hace una pausa y solo se reproduce al terminar el turno: respuestas más rápidas, a costa de alguna llamada al LLM descartada.",
+      "smartTurnThreshold": "Umbral de detección inteligente",
+      "prerollMs": "Pre-roll, ms"
     },
     "testCall": {
       "title": "Llamada de prueba",
@@ -1476,7 +1501,26 @@
       "providerRequired": "El proveedor es obligatorio",
       "modelRequired": "El modelo es obligatorio",
       "avatarIncomplete": "Termina de configurar el avatar (proveedor, modelo, clave de API y avatar) o desactívalo",
-      "formInvalid": "Corrige los campos marcados antes de guardar"
+      "formInvalid": "Corrige los campos marcados antes de guardar",
+      "ttsRequired": "Un agente en cascada necesita un proveedor y un modelo de síntesis de voz",
+      "brainModelRequired": "Selecciona el proveedor y el modelo del cerebro",
+      "historyTurnsRange": "Introduce un número entero de 2 a 400",
+      "minSilenceRange": "Introduce un valor de 64 a 2000 ms",
+      "maxSilenceRange": "Introduce un valor de 200 a 5000 ms",
+      "maxSilenceBelowMin": "El silencio máximo no puede ser menor que el mínimo",
+      "smartTurnThresholdRange": "Introduce un valor estrictamente entre 0 y 1",
+      "prerollRange": "Introduce un valor de 0 a 1000 ms"
+    },
+    "modes": {
+      "realtime": {
+        "title": "Modelo en tiempo real",
+        "description": "Un único modelo voz a voz escucha y responde. Mínima latencia, mínimos ajustes."
+      },
+      "cascade": {
+        "title": "Cascada",
+        "short": "Cascada",
+        "description": "Reconocimiento → cualquier LLM → síntesis de voz. Eliges cada parte; suele ser más barato."
+      }
     }
   },
   "schemaBuilder": {
@@ -1534,7 +1578,62 @@
       "tokens": "{{input}} entrada / {{output}} salida tokens",
       "you": "Llamante",
       "agent": "Agente",
-      "loadError": "No se pudo cargar la llamada"
+      "loadError": "No se pudo cargar la llamada",
+      "latency": "Latencia",
+      "stage": "Etapa",
+      "ms": "{{ms}} ms",
+      "smartTurn_one": "Smart Turn {{prob}} · {{count}} consulta",
+      "smartTurn_other": "Smart Turn {{prob}} · {{count}} consultas",
+      "speculative": "Especulativa"
+    },
+    "stages": {
+      "eouMs": "Fin de turno",
+      "sttFinalMs": "STT",
+      "brainFirstTokenMs": "LLM",
+      "ttsFirstAudioMs": "TTS",
+      "totalMs": "Total",
+      "ttsGapMaxMs": "Pausa máx.",
+      "ttsLeadingSilenceMs": "Silencio inicial",
+      "ttsFirstAudibleMs": "Primer audio audible",
+      "llmOverlapMs": "LLM en pausa"
+    },
+    "llm": {
+      "title": "Llamada al LLM",
+      "model": "Modelo",
+      "effectiveModel": "Respondió",
+      "tokens": "Tokens",
+      "cached": "Entrada en caché",
+      "cost": "Coste",
+      "ttft": "Primer token",
+      "duration": "Duración",
+      "outcomeLabel": "Resultado",
+      "params": "Parámetros",
+      "messages_one": "{{count}} mensaje enviado",
+      "messages_other": "{{count}} mensajes enviados",
+      "systemRef": "Instrucciones del sistema: iguales en todos los turnos, se muestran sobre la transcripción",
+      "roleUser": "Usuario",
+      "roleAssistant": "Asistente",
+      "response": "Respuesta",
+      "instructions": "Instrucciones del sistema",
+      "historyTurns_one": "historial: {{count}} mensaje",
+      "historyTurns_other": "historial: {{count}} mensajes",
+      "chipStt": "STT",
+      "chipLlm": "LLM",
+      "chipTts": "TTS",
+      "sttEstimateHint": "Estimación: {{seconds}} s de audio en este turno. El STT se factura por flujo en bloques de 15 segundos.",
+      "ttsCharsHint": "{{chars}} caracteres sintetizados",
+      "seconds": "{{seconds}} s",
+      "chars": "{{chars}} car.",
+      "providersTotal": "Proveedores",
+      "platformFee": "Tarifa de la plataforma",
+      "marginCredits": "+ {{credits}} por claves del sistema",
+      "outcome": {
+        "ok": "Correcto",
+        "cancelled": "Interrumpido",
+        "brain_timeout": "Tiempo agotado",
+        "brain_failed": "Error",
+        "speculative_discarded": "Descartada (el interlocutor siguió)"
+      }
     }
   }
 }

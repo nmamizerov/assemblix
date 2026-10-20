@@ -1,7 +1,7 @@
 """add bithuman_token credential type
 
 Revision ID: b1f7a9c3d2e4
-Revises: c7e00bf49a76
+Revises: c60809265e07
 Create Date: 2026-09-26 12:00:00.000000
 
 """
@@ -11,7 +11,7 @@ from alembic import op
 
 # revision identifiers, used by Alembic.
 revision = "b1f7a9c3d2e4"
-down_revision = "c7e00bf49a76"
+down_revision = "c60809265e07"
 branch_labels = None
 depends_on = None
 

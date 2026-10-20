@@ -83,6 +83,15 @@ def _published(room: Any, identity: str, kind: int) -> Any | None:
     return None
 
 
+def _missing_sides(room: Any) -> str:
+    missing = []
+    if _published(room, AVATAR_IDENTITY, KIND_VIDEO) is None:
+        missing.append("avatar video")
+    if _published(room, USER_IDENTITY, KIND_AUDIO) is None:
+        missing.append("caller mic")
+    return ", ".join(missing)
+
+
 async def _wait_for_both_sides(room: Any) -> Any:
     while True:
         mic = _published(room, USER_IDENTITY, KIND_AUDIO)
@@ -108,6 +117,7 @@ async def open_avatar_media(
     settings = get_settings()
     room = (room_factory or _new_room)()
     vendor: VendorSession | None = None
+    stage = "livekit connect"
     try:
         # One budget for the whole join: a LiveKit server that never answers the
         # connect must fail as fast as an avatar that never shows up.
@@ -126,6 +136,7 @@ async def open_avatar_media(
                     attributes={PUBLISH_ON_BEHALF: AGENT_IDENTITY, **extra},
                 )
 
+            stage = "vendor start"
             vendor = await start_vendor(
                 provider=avatar.provider,
                 api_key=avatar.api_key,
@@ -141,15 +152,20 @@ async def open_avatar_media(
             output: AvatarOutput = vendor.output or AvatarAudioOutput(
                 room.local_participant, destination=AVATAR_IDENTITY
             )
+            stage = "waiting"
             mic_track = await _wait_for_both_sides(room)
     except BaseException as exc:
+        if stage == "waiting":
+            stage = f"waiting for {_missing_sides(room)}"
         if vendor is not None:
             await _stop_vendor(vendor.stop)
         with contextlib.suppress(Exception):
             await room.disconnect()
         await delete_room(room_name)
         if isinstance(exc, TimeoutError):
-            raise AvatarUnavailable("The avatar or the caller did not join in time") from exc
+            raise AvatarUnavailable(
+                f"The avatar or the caller did not join in time (stuck at: {stage})"
+            ) from exc
         raise
     return AvatarMedia(
         room_name=room_name, output=output, _room=room, _mic_track=mic_track, _stop=vendor.stop

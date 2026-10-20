@@ -5,7 +5,9 @@ import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 
 import {
+  describeVoiceAgentModel,
   emptyDraft,
+  ProviderMark,
   toCreateRequest,
   useCreateVoiceAgentMutation,
   useGetVoiceAgentsQuery,
@@ -99,25 +101,38 @@ export const VoiceAgentsPage = () => {
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {voiceAgents.map((voiceAgent) => (
-            <Link
-              key={voiceAgent.id}
-              to={`/projects/${projectId}/voice-agents/${voiceAgent.id}`}
-              className="group flex items-start gap-4 rounded-lg border border-border bg-card p-6 transition-all duration-200 hover:border-primary/50 hover:shadow-md"
-            >
-              <div className="rounded-md bg-primary/10 p-2 transition-colors group-hover:bg-primary/20">
-                <Mic className="h-5 w-5 text-primary" />
-              </div>
-              <div className="min-w-0 flex-1">
-                <h3 className="mb-1 truncate font-semibold text-card-foreground">
-                  {voiceAgent.name}
-                </h3>
-                <p className="line-clamp-2 text-sm text-muted-foreground">
-                  {voiceAgent.description || t("voiceAgents.noDescription")}
-                </p>
-              </div>
-            </Link>
-          ))}
+          {voiceAgents.map((voiceAgent) => {
+            const summary = describeVoiceAgentModel(voiceAgent.config);
+            return (
+              <Link
+                key={voiceAgent.id}
+                to={`/projects/${projectId}/voice-agents/${voiceAgent.id}`}
+                className="group flex items-start gap-4 rounded-lg border border-border bg-card p-6 transition-all duration-200 hover:border-primary/50 hover:shadow-md"
+              >
+                <div className="rounded-md bg-primary/10 p-2 transition-colors group-hover:bg-primary/20">
+                  <Mic className="h-5 w-5 text-primary" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <h3 className="mb-1 truncate font-semibold text-card-foreground">
+                    {voiceAgent.name}
+                  </h3>
+                  <p className="line-clamp-2 text-sm text-muted-foreground">
+                    {voiceAgent.description || t("voiceAgents.noDescription")}
+                  </p>
+                  {summary.model && (
+                    <p className="mt-3 flex items-center gap-1.5 truncate text-xs text-muted-foreground">
+                      <ProviderMark provider={summary.provider} className="h-3.5 w-3.5" />
+                      <span className="truncate tabular-nums">
+                        {summary.mode === "cascade"
+                          ? `${t("voiceAgents.modes.cascade.short")} · ${summary.model}`
+                          : summary.model}
+                      </span>
+                    </p>
+                  )}
+                </div>
+              </Link>
+            );
+          })}
         </div>
       )}
     </div>

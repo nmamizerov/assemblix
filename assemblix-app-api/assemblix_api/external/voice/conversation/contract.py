@@ -10,7 +10,7 @@ from __future__ import annotations
 
 from collections.abc import AsyncIterator
 from dataclasses import dataclass
-from typing import Protocol
+from typing import Any, Protocol
 
 
 @dataclass(frozen=True)
@@ -46,6 +46,29 @@ class TurnEnded:
     # Characters synthesized for this turn. ``None`` from a bridge that speaks with
     # the model's own voice — nothing was synthesized to count.
     speech_chars: int | None = None
+    # Debug record of the LLM call behind this turn, JSON-ready. Cascade only.
+    llm_call: dict[str, Any] | None = None
+    # Per-stage spend of this turn (STT seconds, LLM and TTS cost), JSON-ready. Cascade only.
+    usage: dict[str, Any] | None = None
+
+
+@dataclass(frozen=True)
+class TurnTimings:
+    """Stage durations of one cascade turn, sent before its first reply text.
+
+    ``speech_ended_at`` is a ``time.monotonic()`` mark; the runtime closes the
+    measurement at the turn's first audio packet.
+    """
+
+    speech_ended_at: float
+    eou_ms: int
+    stt_final_ms: int
+    brain_first_token_ms: int
+    smart_turn_prob: float | None = None
+    smart_turn_asks: int = 0
+    # The reply started during the pause, before end of turn was confirmed.
+    speculative: bool = False
+    llm_overlap_ms: int = 0
 
 
 @dataclass(frozen=True)
@@ -68,6 +91,7 @@ BridgeEvent = (
     | AgentTranscript
     | SpeechStarted
     | TurnEnded
+    | TurnTimings
     | BridgeError
     | SessionClosed
 )

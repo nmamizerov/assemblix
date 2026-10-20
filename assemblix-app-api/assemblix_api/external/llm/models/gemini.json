@@ -72,7 +72,12 @@
       "options": [
         {
           "label": "Minimal",
-          "value": "minimal"
+          "value": "minimal",
+          "show": {
+            "capability": [
+              "thinking_level_minimal"
+            ]
+          }
         },
         {
           "label": "Low",
@@ -93,53 +98,80 @@
           "gen3"
         ]
       },
-      "description": "Reasoning depth on Gemini 3+. Pro variants reject `minimal` (use low/medium/high). Flash variants default to `minimal`."
+      "description": "Reasoning depth on Gemini 3+. `minimal` is offered only where the model accepts it (not on Pro or 3.7/3.8 Flash)."
     }
   ],
   "models": [
     {
+      "id": "gemini-3.8-flash",
+      "label": "Gemini 3.8 Flash",
+      "contextWindow": 1048576,
+      "maxOutputTokens": 65536,
+      "inputCostPerMillion": 0.75,
+      "outputCostPerMillion": 3.75,
+      "capabilities": {
+        "gen3": true,
+        "acceptsAudio": true
+      }
+    },
+    {
+      "id": "gemini-3.7-flash",
+      "label": "Gemini 3.7 Flash",
+      "contextWindow": 1048576,
+      "maxOutputTokens": 65536,
+      "inputCostPerMillion": 0.75,
+      "outputCostPerMillion": 3.75,
+      "capabilities": {
+        "gen3": true,
+        "acceptsAudio": true
+      }
+    },
+    {
+      "id": "gemini-3.6-flash",
+      "label": "Gemini 3.6 Flash",
+      "contextWindow": 1048576,
+      "maxOutputTokens": 65536,
+      "inputCostPerMillion": 0.75,
+      "outputCostPerMillion": 3.75,
+      "capabilities": {
+        "gen3": true,
+        "thinking_level_minimal": true,
+        "acceptsAudio": true
+      }
+    },
+    {
       "id": "gemini-3.5-flash",
       "label": "Gemini 3.5 Flash",
-      "contextWindow": 1000000,
+      "contextWindow": 1048576,
       "maxOutputTokens": 65536,
       "inputCostPerMillion": 1.5,
       "outputCostPerMillion": 9.0,
       "capabilities": {
         "gen3": true,
+        "thinking_level_minimal": true,
+        "acceptsAudio": true
+      }
+    },
+    {
+      "id": "gemini-3.5-flash-lite",
+      "label": "Gemini 3.5 Flash Lite",
+      "contextWindow": 1048576,
+      "maxOutputTokens": 65536,
+      "inputCostPerMillion": 0.3,
+      "outputCostPerMillion": 2.5,
+      "capabilities": {
+        "gen3": true,
+        "thinking_level_minimal": true,
         "acceptsAudio": true
       }
     },
     {
       "id": "gemini-3.1-pro-preview",
       "label": "Gemini 3.1 Pro",
-      "contextWindow": 2000000,
+      "contextWindow": 1048576,
       "maxOutputTokens": 65536,
-      "inputCostPerMillion": 2.5,
-      "outputCostPerMillion": 15.0,
-      "capabilities": {
-        "gen3": true,
-        "acceptsAudio": true
-      }
-    },
-    {
-      "id": "gemini-3.1-flash-lite",
-      "label": "Gemini 3.1 Flash Lite",
-      "contextWindow": 1000000,
-      "maxOutputTokens": 65536,
-      "inputCostPerMillion": 0.1,
-      "outputCostPerMillion": 0.4,
-      "capabilities": {
-        "gen3": true,
-        "acceptsAudio": true
-      }
-    },
-    {
-      "id": "gemini-3-pro-preview",
-      "label": "Gemini 3 Pro",
-      "contextWindow": 2000000,
-      "maxOutputTokens": 65536,
-      "inputCostPerMillion": 2.5,
-      "outputCostPerMillion": 15.0,
+      "inputCostPerMillion": 2.0,
+      "outputCostPerMillion": 12.0,
       "capabilities": {
         "gen3": true,
         "acceptsAudio": true
@@ -148,19 +180,21 @@
     {
       "id": "gemini-3-flash-preview",
       "label": "Gemini 3 Flash",
-      "contextWindow": 1000000,
+      "contextWindow": 1048576,
       "maxOutputTokens": 65536,
-      "inputCostPerMillion": 0.3,
-      "outputCostPerMillion": 1.2,
+      "inputCostPerMillion": 0.5,
+      "outputCostPerMillion": 3.0,
       "capabilities": {
         "gen3": true,
+        "thinking_level_minimal": true,
         "acceptsAudio": true
       }
     },
     {
       "id": "gemini-2.5-pro",
       "label": "Gemini 2.5 Pro",
-      "contextWindow": 2000000,
+      "description": "Google limits 2.5 access to existing users; prefer Gemini 3.5+ for new projects.",
+      "contextWindow": 1048576,
       "maxOutputTokens": 65536,
       "inputCostPerMillion": 1.25,
       "outputCostPerMillion": 10.0,
@@ -171,11 +205,26 @@
     {
       "id": "gemini-2.5-flash",
       "label": "Gemini 2.5 Flash",
-      "contextWindow": 1000000,
+      "description": "Google limits 2.5 access to existing users; prefer Gemini 3.5+ for new projects.",
+      "contextWindow": 1048576,
       "maxOutputTokens": 65536,
       "inputCostPerMillion": 0.3,
-      "outputCostPerMillion": 1.2,
+      "outputCostPerMillion": 2.5,
       "capabilities": {
+        "acceptsAudio": true
+      }
+    },
+    {
+      "id": "gemini-3.1-flash-lite",
+      "label": "Gemini 3.1 Flash Lite (deprecated)",
+      "description": "Deprecated: shuts down 2027-05-07. Use Gemini 3.5 Flash Lite.",
+      "contextWindow": 1048576,
+      "maxOutputTokens": 65536,
+      "inputCostPerMillion": 0.25,
+      "outputCostPerMillion": 1.5,
+      "capabilities": {
+        "gen3": true,
+        "thinking_level_minimal": true,
         "acceptsAudio": true
       }
     }

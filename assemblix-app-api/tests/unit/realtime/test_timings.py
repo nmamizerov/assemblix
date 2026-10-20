@@ -1,0 +1,69 @@
+from assemblix_api.realtime.timings import summarize_timings
+
+
+def test_summary_is_none_without_timed_turns() -> None:
+    assert summarize_timings([{"role": "user", "text": "a"}]) is None
+
+
+def test_nearest_rank_percentiles_per_stage() -> None:
+    transcript = [{"role": "user", "text": "x"}] + [
+        {"role": "assistant", "text": "y", "timings": {"totalMs": total, "eouMs": 200}}
+        for total in range(100, 2100, 100)  # 20 turns: 100..2000
+    ]
+
+    summary = summarize_timings(transcript)
+
+    assert summary == {
+        "eouMs": {"p50": 200, "p95": 200},
+        "totalMs": {"p50": 1000, "p95": 1900},
+    }
+
+
+def test_summary_includes_the_longest_audio_gap() -> None:
+    # Arrange
+    transcript = [
+        {"role": "assistant", "text": "y", "timings": {"totalMs": 900, "ttsGapMaxMs": gap}}
+        for gap in (0, 300, 1800)
+    ]
+
+    # Act
+    summary = summarize_timings(transcript)
+
+    # Assert
+    assert summary is not None
+    assert summary["ttsGapMaxMs"] == {"p50": 300, "p95": 1800}
+
+
+def test_summary_includes_leading_silence_and_audible_first_audio() -> None:
+    transcript = [
+        {
+            "role": "assistant",
+            "text": "y",
+            "timings": {"ttsLeadingSilenceMs": lead, "ttsFirstAudibleMs": 200 + lead},
+        }
+        for lead in (0, 300, 600)
+    ]
+
+    summary = summarize_timings(transcript)
+
+    assert summary is not None
+    assert summary["ttsLeadingSilenceMs"] == {"p50": 300, "p95": 600}
+    assert summary["ttsFirstAudibleMs"] == {"p50": 500, "p95": 800}
+
+
+def test_summary_includes_hidden_llm_time_and_smart_turn_asks() -> None:
+    transcript = [
+        {
+            "role": "assistant",
+            "text": "y",
+            "timings": {"llmOverlapMs": overlap, "smartTurnAsks": 1, "speculative": True},
+        }
+        for overlap in (0, 200, 400)
+    ]
+
+    summary = summarize_timings(transcript)
+
+    assert summary is not None
+    assert summary["llmOverlapMs"] == {"p50": 200, "p95": 400}
+    assert summary["smartTurnAsks"] == {"p50": 1, "p95": 1}
+    assert "speculative" not in summary

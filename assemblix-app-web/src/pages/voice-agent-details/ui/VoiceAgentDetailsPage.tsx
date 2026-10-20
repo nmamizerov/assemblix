@@ -5,7 +5,8 @@ import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 
 import {
-  emptyDraft,
+  describeVoiceAgentModel,
+  draftFromVoiceAgent,
   toCreateRequest,
   useDeleteVoiceAgentMutation,
   useGetVoiceAgentQuery,
@@ -23,32 +24,6 @@ import {
 } from "@/entities/voice-session";
 import { Button } from "@/shared/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/ui/tabs";
-
-const draftFromVoiceAgent = (voiceAgent: VoiceAgent): VoiceAgentDraft => {
-  const { config } = voiceAgent;
-  const systemPrompt =
-    config.instructions.find((instruction) => instruction.role === "system")
-      ?.content ?? "";
-
-  return {
-    ...emptyDraft(),
-    name: voiceAgent.name,
-    description: voiceAgent.description ?? "",
-    systemPrompt,
-    firstMessage: config.firstMessage ?? "",
-    language: config.language,
-    provider: config.voice.provider,
-    model: config.voice.model,
-    voiceId: config.voice.voiceId ?? "",
-    knowledgeBaseIds: config.knowledgeBaseIds,
-    turnWorkflowId: config.turnWorkflowId ?? "",
-    finalWorkflowId: config.finalWorkflowId ?? "",
-    credentialId: config.voice.credentialId ?? null,
-    tts: config.tts ?? null,
-    avatar: config.avatar ?? null,
-    params: config.params,
-  };
-};
 
 export const VoiceAgentDetailsPage = () => {
   const { t } = useTranslation();
@@ -141,6 +116,13 @@ const VoiceAgentEditor = ({ voiceAgent }: VoiceAgentEditorProps) => {
   );
 
   const errors = validateDraft(draft).errors;
+  const isCascade = draft.mode === "cascade";
+  const summary = describeVoiceAgentModel({
+    mode: draft.mode,
+    voice: { provider: draft.provider, model: draft.model },
+    cascade: draft.cascade,
+  });
+  const voiceName = isCascade ? draft.tts?.voiceId : draft.voiceId;
   const call = useVoiceCall(voiceAgent.id);
 
   const handleSave = async () => {
@@ -184,14 +166,20 @@ const VoiceAgentEditor = ({ voiceAgent }: VoiceAgentEditorProps) => {
           <h1 className="mt-1 truncate text-3xl font-semibold tracking-tight text-foreground">
             {voiceAgent.name}
           </h1>
-          {draft.model && (
+          {summary.model && (
             <div className="mt-2 flex items-center gap-2 text-xs text-muted-foreground">
-              <ProviderMark provider={draft.provider} className="h-3.5 w-3.5" />
-              <span className="tabular-nums">{draft.model}</span>
-              {draft.voiceId && (
+              {isCascade && (
+                <>
+                  <span>{t("voiceAgents.modes.cascade.short")}</span>
+                  <span aria-hidden>·</span>
+                </>
+              )}
+              <ProviderMark provider={summary.provider} className="h-3.5 w-3.5" />
+              <span className="tabular-nums">{summary.model}</span>
+              {voiceName && (
                 <>
                   <span aria-hidden>·</span>
-                  <span>{draft.voiceId}</span>
+                  <span>{voiceName}</span>
                 </>
               )}
               <span aria-hidden>·</span>

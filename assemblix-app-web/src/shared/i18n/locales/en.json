@@ -1408,7 +1408,16 @@
       "synthesis": "Speech synthesis",
       "synthesisHint": "Who speaks the replies: the realtime model itself, or a dedicated provider.",
       "avatar": "Avatar",
-      "avatarHint": "A face that lip-syncs to the agent's voice. Needs LiveKit on the server."
+      "avatarHint": "A face that lip-syncs to the agent's voice. Needs LiveKit on the server.",
+      "mode": "Mode",
+      "modeHint": "How the agent hears, thinks and speaks.",
+      "recognition": "Recognition",
+      "recognitionHint": "Turns the caller's speech into text.",
+      "brain": "Brain",
+      "brainHint": "The language model that writes each reply.",
+      "cascadeSynthesisHint": "Speaks the brain's replies. Only streaming models are offered.",
+      "turn": "End of turn",
+      "turnHint": "When the agent decides the caller has finished speaking."
     },
     "fields": {
       "name": "Name",
@@ -1441,7 +1450,23 @@
       "customVoiceCaption": "Pick a built-in voice, or paste a custom voice id (voice_…) created in your OpenAI account.",
       "externalVoice": "External voice",
       "externalVoiceUnavailable": "This model always answers with its own audio, so an external voice cannot speak for it.",
-      "avatarEnabled": "Show an avatar"
+      "avatarEnabled": "Show an avatar",
+      "sttProvider": "Provider",
+      "yandexSpeechKit": "Yandex SpeechKit",
+      "historyTurns": "History size",
+      "historyTurnsCaption": "Messages kept verbatim in the brain's context (2–400).",
+      "brainParams": "Generation settings",
+      "advancedBrainParams": "More settings",
+      "brainParamsCaption": "Less thinking and a lower token limit make the agent start answering sooner.",
+      "advancedTurn": "Advanced settings",
+      "minSilenceMs": "Min silence, ms",
+      "maxSilenceMs": "Max silence, ms",
+      "smartTurn": "Smart turn detection",
+      "smartTurnCaption": "A model judges whether the phrase is complete, so the agent replies sooner without cutting the caller off.",
+      "speculative": "Start replying during pauses",
+      "speculativeCaption": "The reply is prepared while the caller pauses and is spoken only once the turn is over — faster answers, at the cost of occasional discarded LLM calls.",
+      "smartTurnThreshold": "Smart turn threshold",
+      "prerollMs": "Pre-roll, ms"
     },
     "testCall": {
       "title": "Test call",
@@ -1476,7 +1501,26 @@
       "providerRequired": "Provider is required",
       "modelRequired": "Model is required",
       "avatarIncomplete": "Finish configuring the avatar (provider, model, API key and avatar) or turn it off",
-      "formInvalid": "Fix the highlighted fields before saving"
+      "formInvalid": "Fix the highlighted fields before saving",
+      "ttsRequired": "A cascade agent needs a speech synthesis provider and model",
+      "brainModelRequired": "Select the brain's provider and model",
+      "historyTurnsRange": "Enter a whole number from 2 to 400",
+      "minSilenceRange": "Enter a value from 64 to 2000 ms",
+      "maxSilenceRange": "Enter a value from 200 to 5000 ms",
+      "maxSilenceBelowMin": "Max silence must not be below min silence",
+      "smartTurnThresholdRange": "Enter a value between 0 and 1 (exclusive)",
+      "prerollRange": "Enter a value from 0 to 1000 ms"
+    },
+    "modes": {
+      "realtime": {
+        "title": "Realtime model",
+        "description": "One speech-to-speech model listens and answers. Lowest latency, fewest settings."
+      },
+      "cascade": {
+        "title": "Cascade",
+        "short": "Cascade",
+        "description": "Recognition → any LLM → speech synthesis. Pick each part yourself; usually cheaper."
+      }
     }
   },
   "schemaBuilder": {
@@ -1534,7 +1578,62 @@
       "tokens": "{{input}} in / {{output}} out tokens",
       "you": "Caller",
       "agent": "Agent",
-      "loadError": "Failed to load the call"
+      "loadError": "Failed to load the call",
+      "latency": "Latency",
+      "stage": "Stage",
+      "ms": "{{ms}} ms",
+      "smartTurn_one": "Smart Turn {{prob}} · {{count}} ask",
+      "smartTurn_other": "Smart Turn {{prob}} · {{count}} asks",
+      "speculative": "Speculative"
+    },
+    "stages": {
+      "eouMs": "End of turn",
+      "sttFinalMs": "STT",
+      "brainFirstTokenMs": "LLM",
+      "ttsFirstAudioMs": "TTS",
+      "totalMs": "Total",
+      "ttsGapMaxMs": "Max gap",
+      "ttsLeadingSilenceMs": "Lead-in silence",
+      "ttsFirstAudibleMs": "Audible first audio",
+      "llmOverlapMs": "LLM in pause"
+    },
+    "llm": {
+      "title": "LLM call",
+      "model": "Model",
+      "effectiveModel": "Answered by",
+      "tokens": "Tokens",
+      "cached": "Cached input",
+      "cost": "Cost",
+      "ttft": "First token",
+      "duration": "Duration",
+      "outcomeLabel": "Outcome",
+      "params": "Parameters",
+      "messages_one": "{{count}} message sent",
+      "messages_other": "{{count}} messages sent",
+      "systemRef": "System instructions — the same for every turn, shown above the transcript",
+      "roleUser": "User",
+      "roleAssistant": "Assistant",
+      "response": "Response",
+      "instructions": "System instructions",
+      "historyTurns_one": "history: {{count}} message",
+      "historyTurns_other": "history: {{count}} messages",
+      "chipStt": "STT",
+      "chipLlm": "LLM",
+      "chipTts": "TTS",
+      "sttEstimateHint": "Estimate: {{seconds}} s of audio for this turn. STT is billed per stream in 15-second units.",
+      "ttsCharsHint": "{{chars}} characters synthesized",
+      "seconds": "{{seconds}} s",
+      "chars": "{{chars}} chars",
+      "providersTotal": "Providers",
+      "platformFee": "Platform fee",
+      "marginCredits": "+ {{credits}} usage on system keys",
+      "outcome": {
+        "ok": "OK",
+        "cancelled": "Interrupted",
+        "brain_timeout": "Timed out",
+        "brain_failed": "Failed",
+        "speculative_discarded": "Discarded (caller went on)"
+      }
     }
   }
 }
