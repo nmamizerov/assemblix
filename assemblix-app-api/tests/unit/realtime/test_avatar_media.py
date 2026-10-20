@@ -7,6 +7,7 @@ import jwt
 import pytest
 
 from assemblix_api.core.settings import get_settings
+from assemblix_api.external.avatar.base import VendorSession
 from assemblix_api.external.avatar.errors import AvatarBusy, AvatarUnavailable
 from assemblix_api.realtime.livekit import session as media_module
 from assemblix_api.services.avatar_service import ResolvedAvatar
@@ -72,9 +73,9 @@ async def test_joins_as_agent_and_starts_the_vendor_with_the_public_url(_livekit
     room = _ready_room()
     vendor_calls: list[dict] = []
 
-    async def start_vendor(**kwargs: Any) -> str:
+    async def start_vendor(**kwargs: Any) -> VendorSession:
         vendor_calls.append(kwargs)
-        return "s-1"
+        return VendorSession("s-1")
 
     media = await media_module.open_avatar_media(
         room_name="va-1",
@@ -96,7 +97,7 @@ async def test_joins_as_agent_and_starts_the_vendor_with_the_public_url(_livekit
 async def test_vendor_refusal_cleans_up_and_propagates(_livekit) -> None:
     room = _ready_room()
 
-    async def start_vendor(**kwargs: Any) -> str:
+    async def start_vendor(**kwargs: Any) -> VendorSession:
         raise AvatarBusy("429")
 
     with pytest.raises(AvatarBusy):
@@ -114,8 +115,8 @@ async def test_vendor_refusal_cleans_up_and_propagates(_livekit) -> None:
 async def test_avatar_that_never_shows_up_is_unavailable(_livekit) -> None:
     room = _Room({"user": _Remote([_Pub(media_module.KIND_AUDIO)])})
 
-    async def start_vendor(**kwargs: Any) -> str:
-        return "s-3"
+    async def start_vendor(**kwargs: Any) -> VendorSession:
+        return VendorSession("s-3")
 
     with pytest.raises(AvatarUnavailable):
         await media_module.open_avatar_media(
@@ -137,8 +138,8 @@ async def test_a_livekit_connect_that_hangs_is_bounded_by_the_join_timeout(_live
 
     room = _HangingRoom({})
 
-    async def start_vendor(**kwargs: Any) -> str:
-        return "s-4"
+    async def start_vendor(**kwargs: Any) -> VendorSession:
+        return VendorSession("s-4")
 
     # Act
     with pytest.raises(AvatarUnavailable):
@@ -168,8 +169,8 @@ async def test_closing_media_gives_up_on_a_hanging_disconnect(_livekit, monkeypa
 
     room = _HangingDisconnect(_ready_room().remote_participants)
 
-    async def start_vendor(**kwargs: Any) -> str:
-        return "s-5"
+    async def start_vendor(**kwargs: Any) -> VendorSession:
+        return VendorSession("s-5")
 
     media = await media_module.open_avatar_media(
         room_name="va-5",
@@ -191,9 +192,9 @@ async def test_the_vendor_gets_the_public_url_as_a_websocket_url(_livekit, monke
     monkeypatch.setattr(get_settings(), "livekit_public_url", "https://rtc.example.com")
     vendor_calls: list[dict] = []
 
-    async def start_vendor(**kwargs: Any) -> str:
+    async def start_vendor(**kwargs: Any) -> VendorSession:
         vendor_calls.append(kwargs)
-        return "s-6"
+        return VendorSession("s-6")
 
     # Act
     await media_module.open_avatar_media(
@@ -212,9 +213,9 @@ async def test_the_token_factory_publishes_on_behalf_of_the_agent(_livekit) -> N
     # Arrange
     vendor_calls: list[dict] = []
 
-    async def start_vendor(**kwargs: Any) -> str:
+    async def start_vendor(**kwargs: Any) -> VendorSession:
         vendor_calls.append(kwargs)
-        return "s-7"
+        return VendorSession("s-7")
 
     # Act
     await media_module.open_avatar_media(
@@ -232,3 +233,104 @@ async def test_the_token_factory_publishes_on_behalf_of_the_agent(_livekit) -> N
     assert claims["sub"] == "avatar"
     assert claims["video"]["room"] == "va-7"
     assert claims["attributes"] == {"lk.publish_on_behalf": "agent", "agent_id": "A1"}
+
+
+async def test_vendor_output_replaces_the_data_stream_output(_livekit) -> None:
+    # Arrange
+    output = object()
+
+    async def start_vendor(**kwargs: Any) -> VendorSession:
+        return VendorSession("s-8", output=output)  # type: ignore[arg-type]
+
+    # Act
+    media = await media_module.open_avatar_media(
+        room_name="va-8",
+        avatar=_AVATAR,
+        timeout=1,
+        start_vendor=start_vendor,
+        room_factory=_ready_room,
+    )
+
+    # Assert
+    assert media.output is output
+
+
+async def test_close_stops_the_vendor_before_deleting_the_room(_livekit, monkeypatch) -> None:
+    # Arrange
+    order: list[str] = []
+
+    async def _delete(room: str) -> None:
+        order.append("delete_room")
+
+    monkeypatch.setattr(media_module, "delete_room", _delete)
+
+    async def stop() -> None:
+        order.append("stop")
+
+    async def start_vendor(**kwargs: Any) -> VendorSession:
+        return VendorSession("s-9", stop=stop)
+
+    media = await media_module.open_avatar_media(
+        room_name="va-9",
+        avatar=_AVATAR,
+        timeout=1,
+        start_vendor=start_vendor,
+        room_factory=_ready_room,
+    )
+
+    # Act
+    await media.close()
+
+    # Assert
+    assert order == ["stop", "delete_room"]
+
+
+async def test_close_deletes_the_room_when_stop_hangs(_livekit, monkeypatch) -> None:
+    # Arrange
+    monkeypatch.setattr(media_module, "_TEARDOWN_TIMEOUT_SECONDS", 0.05)
+
+    async def stop() -> None:
+        await asyncio.sleep(3600)
+
+    async def start_vendor(**kwargs: Any) -> VendorSession:
+        return VendorSession("s-10", stop=stop)
+
+    media = await media_module.open_avatar_media(
+        room_name="va-10",
+        avatar=_AVATAR,
+        timeout=1,
+        start_vendor=start_vendor,
+        room_factory=_ready_room,
+    )
+
+    # Act
+    await asyncio.wait_for(media.close(), timeout=2)
+
+    # Assert
+    assert _livekit == ["va-10"]
+
+
+async def test_failed_join_stops_a_started_vendor(_livekit) -> None:
+    # Arrange
+    room = _Room({"user": _Remote([_Pub(media_module.KIND_AUDIO)])})
+    stops: list[str] = []
+
+    async def stop() -> None:
+        stops.append("stop")
+
+    async def start_vendor(**kwargs: Any) -> VendorSession:
+        return VendorSession("s-11", stop=stop)
+
+    # Act
+    with pytest.raises(AvatarUnavailable):
+        await media_module.open_avatar_media(
+            room_name="va-11",
+            avatar=_AVATAR,
+            timeout=0.2,
+            start_vendor=start_vendor,
+            room_factory=lambda: room,
+        )
+
+    # Assert
+    assert stops == ["stop"]
+    assert _livekit == ["va-11"]

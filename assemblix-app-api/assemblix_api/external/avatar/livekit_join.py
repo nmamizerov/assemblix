@@ -9,7 +9,8 @@ from __future__ import annotations
 
 from collections.abc import Callable
 
-from assemblix_api.external.avatar import anam, bithuman
+from assemblix_api.external.avatar import anam, bithuman, liveavatar
+from assemblix_api.external.avatar.base import VendorSession
 from assemblix_api.external.avatar.errors import AvatarUnavailable
 
 
@@ -22,20 +23,30 @@ async def start_vendor_session(
     livekit_url: str,
     room_name: str,
     make_livekit_token: Callable[[dict[str, str]], str],
-) -> str:
+) -> VendorSession:
     if provider == "anam":
-        return await anam.start_livekit_session(
+        session_id = await anam.start_livekit_session(
             api_key=api_key,
             avatar_id=avatar_id,
             avatar_model=avatar_model,
             livekit_url=livekit_url,
             livekit_token=make_livekit_token({}),
         )
+        return VendorSession(session_id)
     if provider == "bithuman":
-        return await bithuman.start_livekit_session(
+        await bithuman.start_livekit_session(
             api_key=api_key,
             avatar_id=avatar_id,
             avatar_model=avatar_model,
+            livekit_url=livekit_url,
+            room_name=room_name,
+            make_livekit_token=make_livekit_token,
+        )
+        return VendorSession("")
+    if provider == "liveavatar":
+        return await liveavatar.start_livekit_session(
+            api_key=api_key,
+            avatar_id=avatar_id,
             livekit_url=livekit_url,
             room_name=room_name,
             make_livekit_token=make_livekit_token,

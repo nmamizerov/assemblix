@@ -250,3 +250,54 @@ async def test_avatars_400_for_a_non_avatar_credential(
     )
     resp = await client.get(f"/api/avatar/credentials/{cred.id}/avatars", headers=auth_headers)
     assert resp.status_code == 400
+
+
+async def test_liveavatar_avatars_listing_ignores_model(
+    client, auth_user, auth_headers, mocker, db_session
+) -> None:
+    # Arrange
+    from assemblix_api.external.avatar.liveavatar import LiveAvatarAvatar
+
+    cred = await _make_credential(
+        db_session, auth_user.project_id, cred_type=CredentialsType.LIVEAVATAR_TOKEN, value="la"
+    )
+
+    async def _fake(api_key):
+        assert api_key == "la"
+        return [LiveAvatarAvatar(id="L1", name="Wayne")]
+
+    mocker.patch("assemblix_api.external.avatar.liveavatar.list_avatars", side_effect=_fake)
+    url = f"/api/avatar/credentials/{cred.id}/avatars"
+
+    # Act
+    plain = await client.get(url, headers=auth_headers)
+    with_model = await client.get(url, params={"model": "lite"}, headers=auth_headers)
+
+    # Assert
+    assert plain.json() == [{"id": "L1", "name": "Wayne"}]
+    assert with_model.json() == [{"id": "L1", "name": "Wayne"}]
+
+
+async def test_mint_session_400_for_liveavatar(client, auth_user, auth_headers, db_session) -> None:
+    # Arrange
+    cred = await _make_credential(
+        db_session, auth_user.project_id, cred_type=CredentialsType.LIVEAVATAR_TOKEN, value="la"
+    )
+    wf = await _make_workflow(
+        db_session,
+        auth_user.project_id,
+        config={
+            "avatar": {
+                "provider": "liveavatar",
+                "avatarModel": "lite",
+                "avatarId": "L1",
+                "credentialId": str(cred.id),
+            }
+        },
+    )
+
+    # Act
+    resp = await client.post(f"/api/workflows/{wf.id}/avatar/session", headers=auth_headers)
+
+    # Assert
+    assert resp.status_code == 400

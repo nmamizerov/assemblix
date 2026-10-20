@@ -114,8 +114,8 @@ async def test_dispatch_routes_anam_and_rejects_unknown(monkeypatch) -> None:
         return "lk-token"
 
     assert (
-        await start_vendor_session(provider="anam", make_livekit_token=make, **_SEAM_ARGS) == "s-2"
-    )
+        await start_vendor_session(provider="anam", make_livekit_token=make, **_SEAM_ARGS)
+    ).session_id == "s-2"
     with pytest.raises(AvatarUnavailable):
         await start_vendor_session(provider="nobody", make_livekit_token=make, **_SEAM_ARGS)
 
