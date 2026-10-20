@@ -205,3 +205,56 @@ async def test_the_vendor_gets_the_public_url_as_a_websocket_url(_livekit, monke
 
     # Assert
     assert vendor_calls[0]["livekit_url"] == "wss://rtc.example.com"
+
+
+async def _timeout_message(room: _Room, start_vendor: Any) -> str:
+    with pytest.raises(AvatarUnavailable) as caught:
+        await asyncio.wait_for(
+            media_module.open_avatar_media(
+                room_name="va-7",
+                avatar=_AVATAR,
+                timeout=0.2,
+                start_vendor=start_vendor,
+                room_factory=lambda: room,
+            ),
+            timeout=2,
+        )
+    return str(caught.value)
+
+
+async def _started(**kwargs: Any) -> str:
+    return "s-7"
+
+
+async def test_timeout_names_a_hanging_livekit_connect(_livekit) -> None:
+    class _HangingRoom(_Room):
+        async def connect(self, url: str, token: str) -> None:
+            await asyncio.sleep(3600)
+
+    assert "livekit connect" in await _timeout_message(_HangingRoom({}), _started)
+
+
+async def test_timeout_names_a_hanging_vendor_start(_livekit) -> None:
+    async def hanging_vendor(**kwargs: Any) -> str:
+        await asyncio.sleep(3600)
+        return "never"
+
+    assert "vendor start" in await _timeout_message(_ready_room(), hanging_vendor)
+
+
+async def test_timeout_names_the_missing_avatar_video(_livekit) -> None:
+    room = _Room({"user": _Remote([_Pub(media_module.KIND_AUDIO)])})
+
+    message = await _timeout_message(room, _started)
+
+    assert "avatar video" in message
+    assert "caller mic" not in message
+
+
+async def test_timeout_names_the_missing_caller_mic(_livekit) -> None:
+    room = _Room({"avatar": _Remote([_Pub(media_module.KIND_VIDEO)])})
+
+    message = await _timeout_message(room, _started)
+
+    assert "caller mic" in message
+    assert "avatar video" not in message
