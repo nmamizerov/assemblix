@@ -5,6 +5,27 @@ All notable changes to this project are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.45](https://github.com/nmamizerov/assemblix/compare/v0.2.44...v0.2.45) (2026-10-20)
+
+
+### Features
+
+* **api:** re-ask Smart Turn with a decaying threshold and signal pauses ([fee4a73](https://github.com/nmamizerov/assemblix/commit/fee4a73b107dfbb35b535ddafdbd27c872567041))
+* **api:** start cascade replies speculatively during pauses ([5c44809](https://github.com/nmamizerov/assemblix/commit/5c44809bfe49d49c7deb02cf38b1cf4787980a0f))
+* speculative replies and decaying Smart Turn for faster cascade turn-taking ([ff3b87b](https://github.com/nmamizerov/assemblix/commit/ff3b87b8681e98078980b9d365c0baf7e030bf84))
+* **web:** show speculative turn-taking details and add its toggle ([01c5ff8](https://github.com/nmamizerov/assemblix/commit/01c5ff84358199c602e005f7c0714b68c49abeb9))
+
+
+### Bug Fixes
+
+* **agent:** close history ending with a model turn with a user turn ([543ab51](https://github.com/nmamizerov/assemblix/commit/543ab51573bbec113cd7d7cb63c70e4902cafd7a))
+* **agent:** close history ending with a model turn with a user turn ([a62af56](https://github.com/nmamizerov/assemblix/commit/a62af56c85a971369aad5fc3e364d0c15b2844db))
+* **agent:** raise chat history limit from 20 to 60 messages ([50e00db](https://github.com/nmamizerov/assemblix/commit/50e00dbd8d678921a6206436343763246fa9f39b))
+* **agent:** raise chat history limit from 20 to 60 messages ([118bd41](https://github.com/nmamizerov/assemblix/commit/118bd413315664831516ad0c7964b2da1022073b))
+* **api:** harden speculative cascade turn-taking ([29b3f29](https://github.com/nmamizerov/assemblix/commit/29b3f2901578fb727cb2a422e1a90edfb0e6644d))
+* **api:** name the stalled stage when an avatar join times out ([6f5c6ae](https://github.com/nmamizerov/assemblix/commit/6f5c6aed17dae87912cae46b08d9cb92d7ff1f24))
+* **api:** name the stalled stage when an avatar join times out ([e5524e8](https://github.com/nmamizerov/assemblix/commit/e5524e82564fec27e69364a5dcc8afa144a27d10))
+
 ## [0.2.44](https://github.com/nmamizerov/assemblix/compare/v0.2.43...v0.2.44) (2026-10-03)
 
 
