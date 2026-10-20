@@ -26,7 +26,7 @@ from assemblix_api.dto.responses.avatar import (
     AvatarProviderListItem,
     AvatarSessionResponse,
 )
-from assemblix_api.external.avatar import anam, bithuman
+from assemblix_api.external.avatar import anam, bithuman, liveavatar
 from assemblix_api.external.avatar.avatar_catalog import (
     AVATAR_PROVIDER_LABELS,
     AVATAR_WORKFLOW_PROVIDERS,
@@ -82,7 +82,11 @@ async def list_credential_avatars(
     """List the avatars available to a stored avatar-provider credential."""
     credentials = await credentials_service.get_by_id(credentials_id)
     await project_service.authorize_project_access(auth, credentials.project_id)
-    if credentials.type not in (CredentialsType.ANAM_TOKEN, CredentialsType.BITHUMAN_TOKEN):
+    if credentials.type not in (
+        CredentialsType.ANAM_TOKEN,
+        CredentialsType.BITHUMAN_TOKEN,
+        CredentialsType.LIVEAVATAR_TOKEN,
+    ):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="This credential is not an avatar provider token",
@@ -92,6 +96,10 @@ async def list_credential_avatars(
     )
     if credentials.type == CredentialsType.ANAM_TOKEN:
         return [AvatarListItem(id=a.id, name=a.name) for a in await anam.list_avatars(api_key)]
+    if credentials.type == CredentialsType.LIVEAVATAR_TOKEN:
+        return [
+            AvatarListItem(id=a.id, name=a.name) for a in await liveavatar.list_avatars(api_key)
+        ]
     return [
         AvatarListItem(id=a.id, name=a.name)
         for a in await bithuman.list_avatars(api_key)

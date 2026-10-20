@@ -1,0 +1,11 @@
+{
+  "models": [
+    {
+      "id": "lite",
+      "label": "LITE",
+      "description": "Our voice drives the avatar. Session length is capped by your LiveAvatar plan.",
+      "avatar_model": "lite",
+      "cost_per_minute": null
+    }
+  ]
+}

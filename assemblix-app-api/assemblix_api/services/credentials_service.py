@@ -171,6 +171,7 @@ class CredentialsService(BaseService[Credentials, CredentialsRepository]):
     _AVATAR_PROVIDER_TO_CREDENTIALS_TYPE = {
         "anam": CredentialsType.ANAM_TOKEN,
         "bithuman": CredentialsType.BITHUMAN_TOKEN,
+        "liveavatar": CredentialsType.LIVEAVATAR_TOKEN,
     }
 
     async def get_avatar_api_key_with_fallback(

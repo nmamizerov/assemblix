@@ -39,3 +39,10 @@ def test_bithuman_is_registered_for_voice_agents_only():
     ]
     assert "anam" in AVATAR_WORKFLOW_PROVIDERS
     assert "bithuman" not in AVATAR_WORKFLOW_PROVIDERS
+
+
+def test_liveavatar_is_registered_for_voice_agents_only():
+    assert AVATAR_PROVIDER_LABELS["liveavatar"] == "LiveAvatar"
+    assert "liveavatar" in list_avatar_providers()
+    assert [m.avatar_model for m in list_avatar_models("liveavatar")] == ["lite"]
+    assert "liveavatar" not in AVATAR_WORKFLOW_PROVIDERS
