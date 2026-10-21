@@ -5,6 +5,35 @@ All notable changes to this project are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.46](https://github.com/nmamizerov/assemblix/compare/v0.2.45...v0.2.46) (2026-10-21)
+
+
+### Features
+
+* **api:** add a LiveAvatar LITE avatar adapter ([b73abf1](https://github.com/nmamizerov/assemblix/commit/b73abf1fb5bbffe9b4937202c3ae13d526de92d5))
+* **api:** register LiveAvatar as a voice-agent avatar provider ([5fd58ae](https://github.com/nmamizerov/assemblix/commit/5fd58aef8734173e76e0f3471c4387b67b0e296d))
+* **api:** stream avatar audio to LiveAvatar over its session socket ([62fb02e](https://github.com/nmamizerov/assemblix/commit/62fb02e8961d431b2c837b06f281201bfe8e63de))
+* bitHuman avatars for voice agents ([ee6df99](https://github.com/nmamizerov/assemblix/commit/ee6df9921bbf9f144c65e26bb2a0a72e0f5a967b))
+* LiveAvatar avatars for voice agents ([974e024](https://github.com/nmamizerov/assemblix/commit/974e02440d0eb23f6c345999ba7577edec1df5cc))
+* **web:** pick LiveAvatar avatars for voice agents ([d472dd2](https://github.com/nmamizerov/assemblix/commit/d472dd2686c924796eb20d6e5eb27e820dd0d2d9))
+
+
+### Bug Fixes
+
+* **api:** always stop a LiveAvatar session before closing its socket ([3df9dc0](https://github.com/nmamizerov/assemblix/commit/3df9dc0e7c2053fb73cf4ef9638c62d62bc2cca4))
+* give avatar joins 45 s and let the browser wait on the server's timeout ([9a14b56](https://github.com/nmamizerov/assemblix/commit/9a14b56223d1af4622b5eb319486d4ff2acc4a59))
+* give avatar joins 45 s and let the browser wait on the server's timeout ([d54d244](https://github.com/nmamizerov/assemblix/commit/d54d244a16d52dd0f4ebeac9550367722fa65a31))
+
+
+### Documentation
+
+* explain LiveAvatar avatars for voice agents ([bf07a85](https://github.com/nmamizerov/assemblix/commit/bf07a850b42fa55942cacba2d12c87934ee0f4ba))
+
+
+### Refactoring
+
+* **api:** let avatar vendors supply their own audio output and stop hook ([8c64b5e](https://github.com/nmamizerov/assemblix/commit/8c64b5e9d71b25f5ad54dce3a898a26fcf4f501c))
+
 ## [0.2.45](https://github.com/nmamizerov/assemblix/compare/v0.2.44...v0.2.45) (2026-10-20)
 
 
