@@ -107,3 +107,19 @@ def test_room_claim_round_trips() -> None:
         voice_agent_id=uuid4(), project_id=uuid4(), is_debug=True, room="va-abc"
     )
     assert verify_session_token(token).room == "va-abc"
+
+
+async def test_media_tells_the_caller_how_long_the_avatar_join_may_take(
+    client, db_session, auth_user, auth_headers, livekit_on, monkeypatch
+) -> None:
+    # Arrange
+    from assemblix_api.core.settings import get_settings
+
+    monkeypatch.setattr(get_settings(), "avatar_join_timeout_seconds", 42.0)
+    agent = await _agent(db_session, auth_user, {**_BASE, "avatar": _AVATAR})
+
+    # Act
+    response = await client.post(f"/api/voice-agents/{agent.id}/sessions", headers=auth_headers)
+
+    # Assert
+    assert response.json()["media"]["joinTimeoutSeconds"] == 42.0

@@ -188,8 +188,13 @@ When the agent has an avatar, the session response also carries `media`:
 
 ```json
 { "token": "…", "expiresIn": 60,
-  "media": { "transport": "livekit", "url": "wss://rtc.example.com", "token": "…" } }
+  "media": { "transport": "livekit", "url": "wss://rtc.example.com", "token": "…",
+             "joinTimeoutSeconds": 45 } }
 ```
+
+`joinTimeoutSeconds` is how long the server waits for your caller and the avatar to
+join (`AVATAR_JOIN_TIMEOUT_SECONDS`) before it ends the call with `avatar_unavailable`.
+If your client has its own connect timeout, keep it longer than this.
 
 The call's audio and video then flow through LiveKit, and the WebSocket carries
 only control frames (`session.ready` has `"media": "livekit"`; no binary audio is

@@ -17,6 +17,9 @@ class VoiceSessionMedia(DTOModel):
     transport: Literal["livekit"]
     url: str
     token: str
+    join_timeout_seconds: float = Field(
+        description="How long the server waits for the caller and the avatar to join"
+    )
 
 
 class VoiceSessionTokenResponse(DTOModel):
