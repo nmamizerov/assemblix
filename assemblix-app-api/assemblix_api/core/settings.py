@@ -274,7 +274,7 @@ class Settings(BaseSettings):
     livekit_public_url: str = os.getenv("LIVEKIT_PUBLIC_URL", "")
     livekit_api_key: str = os.getenv("LIVEKIT_API_KEY", "")
     livekit_api_secret: str = os.getenv("LIVEKIT_API_SECRET", "")
-    avatar_join_timeout_seconds: float = float(os.getenv("AVATAR_JOIN_TIMEOUT_SECONDS", "20"))
+    avatar_join_timeout_seconds: float = float(os.getenv("AVATAR_JOIN_TIMEOUT_SECONDS", "45"))
 
     @property
     def livekit_enabled(self) -> bool:

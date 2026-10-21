@@ -22,7 +22,9 @@ const CONNECT_TIMEOUT_MS = 15000;
 
 // Avatar calls also wait on the server's avatar-join timeout (20s) plus the
 // LiveKit provider's own connect time, so the client watchdog must outlast that.
-const AVATAR_CONNECT_TIMEOUT_MS = 30000;
+// Headroom over the server's join timeout for the provider connect and the WS
+// round trip, so the server reports a failed join before the browser gives up.
+const AVATAR_CONNECT_HEADROOM_MS = 15000;
 
 const AVATAR_IDENTITY = "avatar";
 
@@ -242,14 +244,11 @@ export const useVoiceCall = (voiceAgentId: string): UseVoiceCallResult => {
 
       if (media?.transport === "livekit") {
         setIsAvatar(true);
-        // Avatar joins wait on the server's own 20s timeout plus provider connect
-        // time, which outlasts the default watchdog — extend it before that budget
-        // could tick past its shorter deadline.
         if (watchdogRef.current) clearTimeout(watchdogRef.current);
         watchdogRef.current = setTimeout(() => {
           setError("timeout");
           teardown();
-        }, AVATAR_CONNECT_TIMEOUT_MS);
+        }, media.joinTimeoutSeconds * 1000 + AVATAR_CONNECT_HEADROOM_MS);
         const room = new Room({ adaptiveStream: true, dynacast: true });
         roomRef.current = room;
         room.on(RoomEvent.TrackSubscribed, (track, _publication, participant) => {

@@ -13,6 +13,7 @@ export interface VoiceSessionMedia {
   transport: "livekit";
   url: string;
   token: string;
+  joinTimeoutSeconds: number;
 }
 
 export interface VoiceSessionTokenResponse {

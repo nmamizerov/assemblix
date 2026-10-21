@@ -149,6 +149,7 @@ async def create_voice_session(
             token=participant_token(
                 room, USER_IDENTITY, ttl_seconds=_TOKEN_TTL_SECONDS, mic_only=True
             ),
+            join_timeout_seconds=settings.avatar_join_timeout_seconds,
         )
 
     return VoiceSessionTokenResponse(
