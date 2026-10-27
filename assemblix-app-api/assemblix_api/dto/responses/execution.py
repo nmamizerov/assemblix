@@ -1,3 +1,4 @@
+from datetime import date as date_type
 from datetime import datetime
 from typing import Literal, Optional
 from uuid import UUID
@@ -238,3 +239,30 @@ from assemblix_api.dto.responses.workflow import (
 # Rebuild models to resolve forward references
 ExecutionInfoResponse.model_rebuild()
 ExecutionDetailInfoResponse.model_rebuild()
+
+
+class DailyCostResponse(DTOModel):
+    """Runs and spend for one UTC day."""
+
+    date: date_type = Field(description="UTC calendar day")
+    runs: int = Field(description="Number of workflow runs started that day")
+    failed_runs: int = Field(description="Runs that ended in ERROR or FAILED")
+    credits: float = Field(description="Platform credits consumed")
+    own_key_cost_usd: float = Field(description="Provider cost in USD for runs on own API keys")
+    tokens_used: int = Field(description="LLM tokens used across all steps")
+
+
+class CostSummaryResponse(DTOModel):
+    """Runs and spend for a project over a date range, with a per-day breakdown.
+
+    Debug runs are excluded. Days are UTC and only days with runs are listed.
+    """
+
+    since: date_type = Field(description="First day of the range (inclusive)")
+    until: date_type | None = Field(default=None, description="Last day of the range (inclusive)")
+    total_runs: int = Field(description="Number of workflow runs in the range")
+    failed_runs: int = Field(description="Runs that ended in ERROR or FAILED")
+    total_credits: float = Field(description="Platform credits consumed")
+    own_key_cost_usd: float = Field(description="Provider cost in USD for runs on own API keys")
+    tokens_used: int = Field(description="LLM tokens used across all steps")
+    days: list[DailyCostResponse] = Field(description="Per-day breakdown, oldest first")

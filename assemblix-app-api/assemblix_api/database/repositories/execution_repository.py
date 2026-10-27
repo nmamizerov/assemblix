@@ -210,6 +210,53 @@ class ExecutionRepository(BaseRepository[Execution]):
         result = await self._session.execute(stmt)
         return list(result.scalars().all())
 
+    async def get_daily_costs(self, project_id: UUID, start: datetime, end: datetime) -> list[Any]:
+        """Per-UTC-day run counts and spend for non-debug runs created in [start, end).
+
+        Rows: (day, runs, failed_runs, credits, own_key_cost_usd, tokens_used), oldest first.
+        """
+        from assemblix_api.database.models.execution_step import ExecutionStep
+        from assemblix_api.database.models.workflow import Workflow
+
+        in_range = (
+            select(self._model.id)
+            .join(Workflow, self._model.workflow_id == Workflow.id)
+            .where(
+                Workflow.project_id == project_id,
+                self._model.is_debug.is_(False),
+                self._model.created_at >= start,
+                self._model.created_at < end,
+            )
+        )
+        tokens = (
+            select(
+                ExecutionStep.execution_id,
+                func.sum(ExecutionStep.tokens_used).label("tokens"),
+            )
+            .where(ExecutionStep.execution_id.in_(in_range))
+            .group_by(ExecutionStep.execution_id)
+            .subquery()
+        )
+        day = func.date(self._model.created_at)
+        stmt = (
+            select(
+                day.label("day"),
+                func.count(self._model.id).label("runs"),
+                func.count(self._model.id)
+                .filter(self._model.status.in_([ExecutionStatus.ERROR, ExecutionStatus.FAILED]))
+                .label("failed_runs"),
+                func.coalesce(func.sum(self._model.total_credits), 0).label("credits"),
+                func.coalesce(func.sum(self._model.own_key_cost_usd), 0).label("own_key_cost_usd"),
+                func.coalesce(func.sum(tokens.c.tokens), 0).label("tokens_used"),
+            )
+            .outerjoin(tokens, tokens.c.execution_id == self._model.id)
+            .where(self._model.id.in_(in_range))
+            .group_by(day)
+            .order_by(day)
+        )
+        result = await self._session.execute(stmt)
+        return list(result.all())
+
     async def find_resumable(self, older_than_seconds: int) -> list[Execution]:
         """Executions stuck in QUEUED/RUNNING past the cutoff — likely orphaned by a crash.
 

@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import asyncio
 import json
-from datetime import datetime
+from datetime import date, datetime
 from uuid import UUID
 
 import structlog
@@ -55,6 +55,7 @@ from assemblix_api.dto.requests.execution import (
     ExecutionFilters,
 )
 from assemblix_api.dto.responses.execution import (
+    CostSummaryResponse,
     ExecutionDetailInfoResponse,
     ExecutionErrorResponse,
     ExecutionInfoResponse,
@@ -772,6 +773,24 @@ async def in_flight_executions(
         List of InFlightExecutionResponse, ordered oldest-first (by created_at).
     """
     return await execution_service.get_in_flight(project_id=project_id_from_token)
+
+
+@execution_detail_router.get(
+    "/cost-summary",
+    response_model=CostSummaryResponse,
+    summary="Runs and spend since a date",
+)
+async def cost_summary(
+    since: date = Query(description="First day to count from (UTC, inclusive)"),
+    until: date | None = Query(default=None, description="Last day to count (UTC, inclusive)"),
+    project_id_from_token: UUID = Depends(get_project_id_from_token_with_access_check),
+    execution_service: ExecutionService = Depends(get_execution_service),
+) -> CostSummaryResponse:
+    """Number of workflow runs, credits, own-key USD cost and LLM tokens for the caller's
+    project, totalled and broken down per UTC day. Debug runs are excluded."""
+    return await execution_service.get_cost_summary(
+        project_id=project_id_from_token, since=since, until=until
+    )
 
 
 @execution_detail_router.get("/", response_model=PaginatedResponse[ExecutionInfoResponse])
