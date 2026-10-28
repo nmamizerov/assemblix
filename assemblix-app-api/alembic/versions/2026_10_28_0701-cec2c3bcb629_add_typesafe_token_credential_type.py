@@ -5,12 +5,13 @@ Revises: d4a8e2f61b07
 Create Date: 2026-10-28 07:01:20.026656
 
 """
+
 from alembic import op
 
 
 # revision identifiers, used by Alembic.
-revision = 'cec2c3bcb629'
-down_revision = 'd4a8e2f61b07'
+revision = "cec2c3bcb629"
+down_revision = "d4a8e2f61b07"
 branch_labels = None
 depends_on = None
 
@@ -25,4 +26,3 @@ def upgrade() -> None:
 def downgrade() -> None:
     # Postgres cannot DROP an enum value; no-op (matches existing enum migrations).
     pass
-

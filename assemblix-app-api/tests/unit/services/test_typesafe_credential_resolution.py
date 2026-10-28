@@ -63,9 +63,7 @@ async def test_wrong_type_raises_400(db_session, auth_user) -> None:
 async def test_foreign_project_raises(db_session, auth_user) -> None:
     # Arrange
     service = _service(db_session)
-    cred = await _make_credential(
-        db_session, auth_user.project_id, CredentialsType.TYPESAFE_TOKEN
-    )
+    cred = await _make_credential(db_session, auth_user.project_id, CredentialsType.TYPESAFE_TOKEN)
     # Act / Assert
     with pytest.raises(HTTPException) as exc:
         await service.get_typesafe_api_key(cred.id, uuid.uuid4())

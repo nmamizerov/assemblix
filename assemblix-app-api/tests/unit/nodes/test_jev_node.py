@@ -20,7 +20,12 @@ CHOICE = {
         {"name": "support", "description": "Help"},
     ],
 }
-SCORE = {"name": "urgency", "type": "score", "instructions": "How urgent?", "levels": ["a", "b", "c"]}
+SCORE = {
+    "name": "urgency",
+    "type": "score",
+    "instructions": "How urgent?",
+    "levels": ["a", "b", "c"],
+}
 
 RESPONSE = {
     "model": "jev-1.14.0",
@@ -203,9 +208,7 @@ def test_descriptor_describes_full_config() -> None:
     assert descriptor.type == "jev"
     assert descriptor.branching is False
     props = {p.name: p for p in descriptor.properties}
-    assert {"credentialId", "model", "state", "questions", "longContext", "outputKey"} <= set(
-        props
-    )
+    assert {"credentialId", "model", "state", "questions", "longContext", "outputKey"} <= set(props)
     fields = {f.name: f for f in props["questions"].fields}
     assert {
         "name",
