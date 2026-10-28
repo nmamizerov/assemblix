@@ -1,3 +1,4 @@
+import re
 from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, Annotated, Any, ClassVar, Literal
 
@@ -240,6 +241,73 @@ class HTTPRequestNodeConfig(DTOModel):
     # How many times to retry transient failures (timeouts, 429, 5xx) via tenacity.
     # None → settings default (`http_node_num_retries`). Retries are ON by default.
     max_retries: int | None = Field(default=None, ge=0, le=10)
+
+
+_JEV_NAME_RE = re.compile(r"^[a-zA-Z_][a-zA-Z0-9_]*$")
+_JEV_MAX_CHOICE_OPTIONS = 255
+_JEV_MIN_SCORE_LEVELS = 2
+_JEV_MAX_SCORE_LEVELS = 10
+
+
+class JevChoiceOption(DTOModel):
+    name: str
+    description: str = ""
+
+
+class JevQuestionConfig(DTOModel):
+    name: str
+    type: Literal["noul", "choice", "score"]
+    instructions: str = ""
+    true_criteria: str | None = None
+    false_criteria: str | None = None
+    options: list[JevChoiceOption] = []
+    levels: list[str] = []
+
+
+class JevNodeConfig(DTOModel):
+    """Config for the `jev` node — one TypeSafe System One request."""
+
+    credential_id: str | None = None
+    model: str = "jev-latest"
+    state: str = "{{ input.message }}"
+    questions: list[JevQuestionConfig] = []
+    long_context: bool = False
+    output_key: str = "jev"
+
+    def validation_errors(self) -> list[str]:
+        """Return config problems without raising, so drafts can still be saved."""
+        errors: list[str] = []
+        if not self.credential_id:
+            errors.append("A TypeSafe credential is required")
+        if not self.questions:
+            errors.append("At least one question is required")
+        names = [q.name for q in self.questions]
+        if len(names) != len(set(names)):
+            errors.append("Question names must be unique")
+        for q in self.questions:
+            if not _JEV_NAME_RE.match(q.name):
+                errors.append(
+                    f"{q.name!r}: name must start with a letter or underscore "
+                    "and contain only letters, digits and underscores"
+                )
+            if q.type == "choice":
+                if not q.options:
+                    errors.append(f"{q.name}: a choice needs at least one option")
+                elif len(q.options) > _JEV_MAX_CHOICE_OPTIONS:
+                    errors.append(
+                        f"{q.name}: a choice allows at most {_JEV_MAX_CHOICE_OPTIONS} options"
+                    )
+                option_names = [o.name for o in q.options]
+                if len(option_names) != len(set(option_names)):
+                    errors.append(f"{q.name}: option names must be unique")
+            if q.type == "score" and not (
+                _JEV_MIN_SCORE_LEVELS <= len(q.levels) <= _JEV_MAX_SCORE_LEVELS
+            ):
+                errors.append(
+                    f"{q.name}: a score needs "
+                    f"{_JEV_MIN_SCORE_LEVELS}-{_JEV_MAX_SCORE_LEVELS} levels"
+                )
+        return errors
 
 
 class BaseNodeSchema(DTOModel):
