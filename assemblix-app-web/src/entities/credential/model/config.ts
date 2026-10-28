@@ -7,6 +7,7 @@ import AnamIcon from "../assets/anam.svg";
 import BithumanIcon from "../assets/bithuman.svg";
 import LiveAvatarIcon from "../assets/liveavatar.svg";
 import YandexIcon from "../assets/yandex.svg";
+import TypeSafeIcon from "../assets/typesafe.svg";
 
 export interface CredentialTypeConfigItem {
   type: CredentialType;
@@ -66,6 +67,12 @@ export const CREDENTIAL_TYPE_CONFIG: Record<
     label: "Yandex SpeechKit",
     icon: YandexIcon,
     color: "text-red-600",
+  },
+  [CredentialType.TYPESAFE_TOKEN]: {
+    type: CredentialType.TYPESAFE_TOKEN,
+    label: "TypeSafe (Jev)",
+    icon: TypeSafeIcon,
+    color: "text-emerald-600",
   },
 };
 

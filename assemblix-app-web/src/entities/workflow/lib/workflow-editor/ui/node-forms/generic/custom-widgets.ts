@@ -12,6 +12,7 @@
  *   set_variable — dynamic update-variable list with type-aware value pickers.
  *   http_request — raw headers/body/query-params editing, credential selection.
  *   transcribe  — required voiceModel provider/model/credential picker.
+ *   jev         — question list with per-type editors (options, levels, criteria).
  *
  * start / sticker / condition are kept as custom widgets because:
  *   - start: also manages workflow-level state variables (not part of node config).
@@ -28,6 +29,7 @@ import { StartNodeForm } from "../start-node-form";
 import { StickerNodeForm } from "../sticker-node-form";
 import { ConditionNodeForm } from "../condition-node-form";
 import { TranscribeNodeForm } from "../transcribe-node-form";
+import { JevNodeForm } from "../jev-node-form";
 
 // Shared props subset that every custom widget must accept.
 // The dispatcher passes these from nodeEditor.tsx.
@@ -50,4 +52,5 @@ export const customWidgets: Record<string, ComponentType<any>> = {
   sticker: StickerNodeForm,
   condition: ConditionNodeForm,
   transcribe: TranscribeNodeForm,
+  jev: JevNodeForm,
 };

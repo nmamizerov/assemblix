@@ -838,6 +838,30 @@
       "body": "Cuerpo de la solicitud",
       "bodyPlaceholder": "{\"key\": \"value\"}",
       "timeout": "Tiempo de espera (seg)"
+    },
+    "jev": {
+      "title": "Jev",
+      "credential": "Credencial de TypeSafe",
+      "selectCredential": "Selecciona una credencial de TypeSafe",
+      "model": "Modelo",
+      "state": "Estado",
+      "stateHint": "Lo que evalúan todas las preguntas. Admite plantillas CEL; el JSON válido se envía como JSON.",
+      "questions": "Preguntas",
+      "questionName": "Nombre (para condiciones)",
+      "instructions": "Pregunta o afirmación",
+      "typeNoul": "Sí / no",
+      "typeChoice": "Opción",
+      "typeScore": "Puntuación",
+      "trueCriteria": "Cuenta como sí (opcional)",
+      "falseCriteria": "Cuenta como no (opcional)",
+      "options": "Opciones",
+      "optionName": "Nombre",
+      "optionDescription": "Cuándo aplica",
+      "levels": "Niveles (de menor a mayor)",
+      "levelDescription": "Descripción del nivel",
+      "longContext": "Contexto largo",
+      "longContextHint": "Hasta 262k tokens. Más lento y menos preciso.",
+      "outputKey": "Clave de salida"
     }
   },
   "debug": {

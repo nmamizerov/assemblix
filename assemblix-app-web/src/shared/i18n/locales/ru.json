@@ -840,6 +840,30 @@
       "body": "Тело запроса",
       "bodyPlaceholder": "{\"key\": \"value\"}",
       "timeout": "Таймаут (сек)"
+    },
+    "jev": {
+      "title": "Jev",
+      "credential": "Ключ TypeSafe",
+      "selectCredential": "Выберите ключ TypeSafe",
+      "model": "Модель",
+      "state": "Что оцениваем",
+      "stateHint": "Текст, к которому относятся все вопросы. Поддерживает CEL-шаблоны; валидный JSON отправляется как JSON.",
+      "questions": "Вопросы",
+      "questionName": "Имя (для условий)",
+      "instructions": "Вопрос или утверждение",
+      "typeNoul": "Да / нет",
+      "typeChoice": "Выбор",
+      "typeScore": "Шкала",
+      "trueCriteria": "Что считать «да» (необязательно)",
+      "falseCriteria": "Что считать «нет» (необязательно)",
+      "options": "Варианты",
+      "optionName": "Имя",
+      "optionDescription": "Когда подходит",
+      "levels": "Уровни (от низкого к высокому)",
+      "levelDescription": "Описание уровня",
+      "longContext": "Длинный контекст",
+      "longContextHint": "До 262k токенов. Медленнее и менее точно.",
+      "outputKey": "Ключ результата"
     }
   },
   "debug": {

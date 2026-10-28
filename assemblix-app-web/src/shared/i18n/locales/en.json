@@ -838,6 +838,30 @@
       "body": "Request Body",
       "bodyPlaceholder": "{\"key\": \"value\"}",
       "timeout": "Timeout (sec)"
+    },
+    "jev": {
+      "title": "Jev",
+      "credential": "TypeSafe credential",
+      "selectCredential": "Select a TypeSafe credential",
+      "model": "Model",
+      "state": "State",
+      "stateHint": "What every question is asked about. Supports CEL templates; valid JSON is sent as JSON.",
+      "questions": "Questions",
+      "questionName": "Name (used in conditions)",
+      "instructions": "Question or statement",
+      "typeNoul": "Yes / no",
+      "typeChoice": "Choice",
+      "typeScore": "Score",
+      "trueCriteria": "Counts as yes (optional)",
+      "falseCriteria": "Counts as no (optional)",
+      "options": "Options",
+      "optionName": "Name",
+      "optionDescription": "When it applies",
+      "levels": "Levels (low to high)",
+      "levelDescription": "Level description",
+      "longContext": "Long context",
+      "longContextHint": "Up to 262k tokens. Slower and less accurate.",
+      "outputKey": "Output key"
     }
   },
   "debug": {
