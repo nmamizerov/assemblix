@@ -11,6 +11,7 @@ from .condition_node import ConditionNode  # noqa: F401
 from .delay_node import DelayNode  # noqa: F401
 from .end_node import EndNode  # noqa: F401
 from .http_request_node import HTTPRequestNode  # noqa: F401
+from .jev_node import JevNode  # noqa: F401
 from .set_variable_node import SetVariableNode  # noqa: F401
 from .start_node import StartNode  # noqa: F401
 from .transcribe_node import TranscribeNode  # noqa: F401
@@ -24,4 +25,5 @@ __all__ = [
     "HTTPRequestNode",
     "DelayNode",
     "TranscribeNode",
+    "JevNode",
 ]

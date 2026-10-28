@@ -243,6 +243,7 @@ class HTTPRequestNodeConfig(DTOModel):
     max_retries: int | None = Field(default=None, ge=0, le=10)
 
 
+JEV_DEFAULT_STATE = "{{ input.message }}"
 _JEV_NAME_RE = re.compile(r"^[a-zA-Z_][a-zA-Z0-9_]*$")
 _JEV_MAX_CHOICE_OPTIONS = 255
 _JEV_MIN_SCORE_LEVELS = 2
@@ -269,7 +270,7 @@ class JevNodeConfig(DTOModel):
 
     credential_id: str | None = None
     model: str = "jev-latest"
-    state: str = "{{ input.message }}"
+    state: str = JEV_DEFAULT_STATE
     questions: list[JevQuestionConfig] = []
     long_context: bool = False
     output_key: str = "jev"
