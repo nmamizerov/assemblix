@@ -8,6 +8,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query, status
 
+from assemblix_api.api.rest._scope import resolve_project_id
 from assemblix_api.core.auth_context import AuthContext
 from assemblix_api.database.models.credentials import CredentialsType
 from assemblix_api.dependencies import (
@@ -28,7 +29,11 @@ router = APIRouter(prefix="/credentials", tags=["Credentials"])
 
 @router.get("/", response_model=list[CredentialsResponse])
 async def list_credentials(
-    project_id: UUID = Query(..., description="Project ID"),
+    project_id: UUID | None = Query(
+        default=None,
+        description="Project ID. Optional when authenticated with a project-scoped "
+        "API key — defaults to the key's project.",
+    ),
     skip: int = Query(default=0, ge=0, description="Number of records to skip"),
     limit: int = Query(default=100, ge=1, le=1000, description="Maximum number of records"),
     type: CredentialsType | None = Query(default=None, description="Filter by provider type"),
@@ -41,9 +46,10 @@ async def list_credentials(
 
     IMPORTANT: API key values are NEVER returned, for security.
     """
-    await project_service.authorize_project_access(auth, project_id)
+    effective_project_id = resolve_project_id(project_id, auth)
+    await project_service.authorize_project_access(auth, effective_project_id)
     credentials = await service.get_project_credentials(
-        project_id,
+        effective_project_id,
         skip=skip,
         limit=limit,
         type=type,
