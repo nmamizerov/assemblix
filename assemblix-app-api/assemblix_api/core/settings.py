@@ -227,6 +227,8 @@ class Settings(BaseSettings):
     elevenlabs_api_base_url: str = os.getenv(
         "ELEVENLABS_API_BASE_URL", "https://api.elevenlabs.io/v1"
     )
+    # TypeSafe (Jev node) API base URL. Override to route through a proxy/gateway.
+    typesafe_api_base_url: str = os.getenv("TYPESAFE_API_BASE_URL", "https://api.typesafe.ai")
     # Hard ceiling on characters sent to TTS per END node (bounds payload + cost).
     voice_output_max_chars: int = int(os.getenv("VOICE_OUTPUT_MAX_CHARS", "2000"))
 
