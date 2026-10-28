@@ -1,6 +1,7 @@
 import re
 from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, Annotated, Any, ClassVar, Literal
+from uuid import UUID
 
 from pydantic import Field, TypeAdapter, WrapValidator, model_validator
 
@@ -280,6 +281,11 @@ class JevNodeConfig(DTOModel):
         errors: list[str] = []
         if not self.credential_id:
             errors.append("A TypeSafe credential is required")
+        else:
+            try:
+                UUID(self.credential_id)
+            except ValueError:
+                errors.append("credentialId is not a valid credential id")
         if not self.questions:
             errors.append("At least one question is required")
         names = [q.name for q in self.questions]

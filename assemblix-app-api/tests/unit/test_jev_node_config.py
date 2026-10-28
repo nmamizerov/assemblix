@@ -19,7 +19,9 @@ def _score(n_levels: int, name: str = "s") -> dict:
     return {"name": name, "type": "score", "levels": [f"l{i}" for i in range(n_levels)]}
 
 
-def _config(questions: list[dict], credential_id: str | None = "cred") -> JevNodeConfig:
+def _config(
+    questions: list[dict], credential_id: str | None = "00000000-0000-0000-0000-000000000001"
+) -> JevNodeConfig:
     return JevNodeConfig(**{"credentialId": credential_id, "questions": questions})
 
 
@@ -54,6 +56,7 @@ def test_defaults() -> None:
     ("cfg", "expected"),
     [
         (_config([_noul()], credential_id=None), "credential"),
+        (_config([_noul()], credential_id="<placeholder>"), "credential"),
         (_config([]), "question"),
         (_config([_noul("a"), _noul("a")]), "unique"),
         (_config([_noul("1bad")]), "name"),

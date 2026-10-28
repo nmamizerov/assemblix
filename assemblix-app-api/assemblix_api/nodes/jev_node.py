@@ -7,6 +7,7 @@ CONDITION node does the branching (e.g. ``input.jev.relevant.noul > 0.7``).
 from __future__ import annotations
 
 import json
+import re
 import time
 from decimal import Decimal
 from typing import Any
@@ -16,7 +17,6 @@ from assemblix_api.core.node_registry import register_node
 from assemblix_api.external.typesafe import TypeSafeError, system_one
 from assemblix_api.schemas.execution import NodeInput, NodeOutput
 from assemblix_api.schemas.node import (
-    JEV_DEFAULT_STATE,
     BaseNode,
     JevNodeConfig,
     JevQuestionConfig,
@@ -29,6 +29,8 @@ from assemblix_api.schemas.node_descriptor import (
 )
 
 JEV_INPUT_PRICE_PER_TOKEN = Decimal("0.042") / 1_000_000
+_DEFAULT_STATE_RE = re.compile(r"\{\{\s*input\.message\s*\}\}")
+_SINGLE_EXPRESSION_RE = re.compile(r"\{\{(.+?)\}\}")
 
 
 def _parse_state(rendered: str) -> Any:
@@ -48,6 +50,9 @@ class JevNode(BaseNode):
 
     async def execute(self, node_input: NodeInput) -> NodeOutput:
         cfg = self.typed_config
+        errors = cfg.validation_errors()
+        if errors:
+            raise ValueError(f"Invalid Jev node config: {'; '.join(errors)}")
         context = node_input.context
         assert context.credential_service is not None
         api_key = await context.credential_service.get_typesafe_api_key(
@@ -57,18 +62,31 @@ class JevNode(BaseNode):
         def render(template: str) -> str:
             return context.templates.render(template, context, node_input.data)
 
+        template = cfg.state.strip()
+        single = _SINGLE_EXPRESSION_RE.fullmatch(template)
+        state: Any
         # The default template must not fail on runs whose input has no message.
-        if cfg.state == JEV_DEFAULT_STATE:
-            rendered_state = str(node_input.data.get("message", ""))
+        if _DEFAULT_STATE_RE.fullmatch(template):
+            state = str(node_input.data.get("message", ""))
+        elif single:
+            # A lone expression keeps its value's structure (dict/list go out as JSON).
+            assert context.cel_evaluator is not None
+            state = context.cel_evaluator.evaluate(
+                single.group(1).strip(), context, node_input.data
+            )
+            if isinstance(state, str):
+                state = _parse_state(state)
+            elif not isinstance(state, (dict, list)):
+                state = str(state)
         else:
-            rendered_state = render(cfg.state)
+            state = _parse_state(render(cfg.state))
         questions = {q.name: self._question_body(q, render) for q in cfg.questions}
         started = time.monotonic()
         try:
             response = await system_one(
                 api_key=api_key,
                 model=cfg.model,
-                state=_parse_state(rendered_state),
+                state=state,
                 questions=questions,
                 long_context=cfg.long_context,
             )
@@ -88,7 +106,9 @@ class JevNode(BaseNode):
                 "model": response.get("model", cfg.model),
                 "usage": usage,
                 "latency_ms": int((time.monotonic() - started) * 1000),
+                "tokens": usage.get("input_tokens", 0) + usage.get("output_tokens", 0),
                 "cost": float(cost),
+                "own_key_cost_usd": float(cost),
                 "used_system_key": False,
             },
         )
@@ -145,7 +165,7 @@ class JevNode(BaseNode):
                     name="state",
                     display_name="State",
                     type="text",
-                    default=JEV_DEFAULT_STATE,
+                    default="{{ input.message }}",
                     description=(
                         "The content every question is asked about. Supports {{ cel }} "
                         "templates; a result that is valid JSON is sent as JSON."

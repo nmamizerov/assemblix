@@ -225,3 +225,50 @@ def test_descriptor_describes_full_config() -> None:
 def test_registered() -> None:
     # Act / Assert
     assert NodeRegistry().is_registered("jev")
+
+
+async def test_invalid_config_fails_before_request(client, context) -> None:
+    # Arrange: duplicate names would silently drop a question in the request map.
+    node = _node(questions=[NOUL, {**CHOICE, "name": "relevant"}])
+    # Act / Assert
+    with pytest.raises(ValueError, match="unique"):
+        await node.execute(node_input({"message": "hi"}, context))
+    client.assert_not_awaited()
+
+
+async def test_placeholder_credential_id_is_readable_error(client, context) -> None:
+    # Arrange
+    node = _node(credentialId="<typesafe-credential-id from list_credentials>")
+    # Act / Assert
+    with pytest.raises(ValueError, match="credential"):
+        await node.execute(node_input({"message": "hi"}, context))
+    client.assert_not_awaited()
+
+
+async def test_single_expression_state_keeps_structure(client, context) -> None:
+    # Arrange
+    node = _node(state="{{ input.ticket }}")
+    # Act
+    await node.execute(node_input({"ticket": {"subject": "hi", "urgent": True}}, context))
+    # Assert
+    assert client.await_args.kwargs["state"] == {"subject": "hi", "urgent": True}
+
+
+@pytest.mark.parametrize("state", ["{{input.message}}", "  {{ input.message }}\n"])
+async def test_default_state_variants_tolerate_missing_message(client, context, state) -> None:
+    # Arrange
+    node = _node(state=state)
+    # Act
+    await node.execute(node_input({}, context))
+    # Assert
+    assert client.await_args.kwargs["state"] == ""
+
+
+async def test_metadata_visible_in_step_log(client, context) -> None:
+    # Arrange
+    node = _node()
+    # Act
+    out = await node.execute(node_input({}, context))
+    # Assert
+    assert out.metadata["tokens"] == 1_000_003
+    assert out.metadata["own_key_cost_usd"] == pytest.approx(0.042)
