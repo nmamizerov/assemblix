@@ -5,6 +5,46 @@ All notable changes to this project are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.46](https://github.com/nmamizerov/assemblix/compare/v0.2.45...v0.2.46) (2026-10-29)
+
+
+### Features
+
+* add Jev classification node ([0472b4a](https://github.com/nmamizerov/assemblix/commit/0472b4aeb161106ebcc2e608e49c084cd7365be5))
+* **api:** add a LiveAvatar LITE avatar adapter ([b73abf1](https://github.com/nmamizerov/assemblix/commit/b73abf1fb5bbffe9b4937202c3ae13d526de92d5))
+* **api:** add execution cost summary endpoint ([12b741f](https://github.com/nmamizerov/assemblix/commit/12b741f303a9eb8eeee9158595df82a0465a4d90))
+* **api:** add execution cost summary endpoint ([f36a215](https://github.com/nmamizerov/assemblix/commit/f36a2151088e35cf8a5ce3026d7966883f20ff70))
+* **api:** add Jev node config schema ([9486037](https://github.com/nmamizerov/assemblix/commit/948603779ae6a1bea6081732d86d48b3166b84d2))
+* **api:** add Jev system node ([9e98f39](https://github.com/nmamizerov/assemblix/commit/9e98f3913a4f2b5e97bab65b8c20561f3ae6a601))
+* **api:** add TypeSafe credential type for the Jev node ([9323c99](https://github.com/nmamizerov/assemblix/commit/9323c9917c3cac03f3ceced8ba467c6097894b15))
+* **api:** add TypeSafe System One client ([882d394](https://github.com/nmamizerov/assemblix/commit/882d3948e767333f89f2a4d799b840afa7a53ea4))
+* **api:** default credential listing to the API key's project ([0445261](https://github.com/nmamizerov/assemblix/commit/0445261b85da8354756f953ed262ce706d9731ec))
+* **api:** register LiveAvatar as a voice-agent avatar provider ([5fd58ae](https://github.com/nmamizerov/assemblix/commit/5fd58aef8734173e76e0f3471c4387b67b0e296d))
+* **api:** stream avatar audio to LiveAvatar over its session socket ([62fb02e](https://github.com/nmamizerov/assemblix/commit/62fb02e8961d431b2c837b06f281201bfe8e63de))
+* bitHuman avatars for voice agents ([ee6df99](https://github.com/nmamizerov/assemblix/commit/ee6df9921bbf9f144c65e26bb2a0a72e0f5a967b))
+* LiveAvatar avatars for voice agents ([974e024](https://github.com/nmamizerov/assemblix/commit/974e02440d0eb23f6c345999ba7577edec1df5cc))
+* **web:** add Jev node form and TypeSafe credential type ([ab26098](https://github.com/nmamizerov/assemblix/commit/ab26098d15ac6de64bed9e2668b35ebf8bffa483))
+* **web:** pick LiveAvatar avatars for voice agents ([d472dd2](https://github.com/nmamizerov/assemblix/commit/d472dd2686c924796eb20d6e5eb27e820dd0d2d9))
+
+
+### Bug Fixes
+
+* **api:** always stop a LiveAvatar session before closing its socket ([3df9dc0](https://github.com/nmamizerov/assemblix/commit/3df9dc0e7c2053fb73cf4ef9638c62d62bc2cca4))
+* **api:** validate Jev config at run time and keep structured state ([7e74b29](https://github.com/nmamizerov/assemblix/commit/7e74b293e2a2240098344f1e925ba75442b2b21b))
+* give avatar joins 45 s and let the browser wait on the server's timeout ([9a14b56](https://github.com/nmamizerov/assemblix/commit/9a14b56223d1af4622b5eb319486d4ff2acc4a59))
+* give avatar joins 45 s and let the browser wait on the server's timeout ([d54d244](https://github.com/nmamizerov/assemblix/commit/d54d244a16d52dd0f4ebeac9550367722fa65a31))
+
+
+### Documentation
+
+* document the Jev node ([649a37c](https://github.com/nmamizerov/assemblix/commit/649a37cb8e5a26b6284b9ab47277bc53c7f1357a))
+* explain LiveAvatar avatars for voice agents ([bf07a85](https://github.com/nmamizerov/assemblix/commit/bf07a850b42fa55942cacba2d12c87934ee0f4ba))
+
+
+### Refactoring
+
+* **api:** let avatar vendors supply their own audio output and stop hook ([8c64b5e](https://github.com/nmamizerov/assemblix/commit/8c64b5e9d71b25f5ad54dce3a898a26fcf4f501c))
+
 ## [0.2.45](https://github.com/nmamizerov/assemblix/compare/v0.2.44...v0.2.45) (2026-10-20)
 
 
