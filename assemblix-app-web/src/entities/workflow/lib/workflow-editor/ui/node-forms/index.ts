@@ -6,6 +6,7 @@ export { SetVariableNodeForm } from "./set-variable-node-form";
 export { EndNodeForm } from "./end-node-form";
 export { HTTPRequestNodeForm } from "./http-request-node-form";
 export { TranscribeNodeForm } from "./transcribe-node-form";
+export { JevNodeForm } from "./jev-node-form";
 export { useNodeDataChange } from "./useNodeDataChange";
 export { GenericNodeForm } from "./generic/generic-node-form";
 export { customWidgets } from "./generic/custom-widgets";

@@ -204,6 +204,21 @@ class CredentialsService(BaseService[Credentials, CredentialsRepository]):
             )
         return await self.get_decrypted_api_key(credentials_id, project_id)
 
+    async def get_typesafe_api_key(self, credentials_id: UUID | None, project_id: UUID) -> str:
+        """Resolve the TypeSafe (Jev) API key. BYO-only: no system key."""
+        if not credentials_id:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="A TypeSafe credential is required for the Jev node",
+            )
+        credentials = await self._check_ownership(credentials_id, project_id)
+        if credentials.type != CredentialsType.TYPESAFE_TOKEN:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Credentials type is not compatible with the Jev node",
+            )
+        return await self.get_decrypted_api_key(credentials_id, project_id)
+
     def _get_voice_system_key(self, voice_provider: str, settings) -> str:
         """Return the configured system key for a voice provider, or raise 503.
 

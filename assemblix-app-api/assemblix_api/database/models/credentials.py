@@ -25,6 +25,7 @@ class CredentialsType(str, Enum):
     BITHUMAN_TOKEN = "bithuman_token"
     LIVEAVATAR_TOKEN = "liveavatar_token"
     YANDEX_SPEECHKIT_TOKEN = "yandex_speechkit_token"
+    TYPESAFE_TOKEN = "typesafe_token"
 
 
 class Credentials(UUIDMixin, TimestampMixin, Base):

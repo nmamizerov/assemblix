@@ -22,6 +22,7 @@ same ones you'll see there and on the wire. For the mechanics of running a graph
 | `CONDITION` | ✔ | Branch the flow based on the data/state so far. |
 | `SET_VARIABLE` | ✔ | Read/compute values and write them into shared state. |
 | `HTTP_REQUEST` | ✔ | Call an external API mid-run. |
+| `JEV` | ✔ | Classify, validate or route text with fast typed answers (no LLM). |
 | `END` | ✔ | Finish the graph and shape the reply that's returned. |
 | `STICKER` | — | Leave a note on the canvas (never executed). |
 | `DELAY` | ✔ | Pause the run (reference SDK example node). |
@@ -95,6 +96,53 @@ opt in) and automatic retries on transient failures.
 
 - **`url` / `method` / `headers` / `body` / `queryParams`** — the request to send.
 - **`timeout` / `maxRetries`** — how long to wait and how hard to retry.
+
+## JEV
+
+Asks [Jev](https://docs.typesafe.ai) — TypeSafe's decision model — typed questions about a
+piece of text and writes the answers into the node's output. Jev doesn't generate text: it
+returns probabilities, which makes it a fast and cheap fit for **validation** ("is this
+message on-topic and meaningful?"), **routing** ("which stage is the user in?") and
+**scoring**. All questions go out in one request (~100 ms). The node itself doesn't branch:
+put a `CONDITION` after it.
+
+Jev needs your own TypeSafe API key: add it under **Credentials** as *TypeSafe (Jev)*.
+
+- **`credentialId`** — the TypeSafe credential.
+- **`model`** — `jev-latest` by default, or a pinned version such as `jev-1.14.0`.
+- **`state`** — what every question is about. Defaults to `{{ input.message }}`; supports CEL
+  templates, and a result that is valid JSON is sent as JSON.
+- **`questions`** — any mix of:
+    - **Yes / no** (`noul`) — a question or statement, optionally with what counts as yes / no.
+    - **Choice** (`choice`) — 1–255 named options, each with a description of when it applies.
+    - **Score** (`score`) — 2–10 ordered level descriptions; the first level is 0.
+- **`longContext`** — raises the limit from 64k to 262k tokens (slower, less accurate).
+- **`outputKey`** — where answers go in the output (`jev` by default).
+
+Each answer is available to later nodes as `input.<outputKey>.<question name>`:
+
+```json
+{
+  "relevant": {"type": "noul", "noul": 0.93, "confidence": 0.86},
+  "stage": {"type": "choice", "choice": "billing", "confidence": 0.8,
+            "probabilities": {"billing": 0.9, "onboarding": 0.07, "other": 0.03}},
+  "urgency": {"type": "score", "score": 1.7, "confidence": 0.55,
+              "legend": {"0": "Can wait", "1": "This week", "2": "Today"},
+              "probabilities": {"0": 0.1, "1": 0.1, "2": 0.8}}
+}
+```
+
+**Topic validator** — a yes/no question `relevant`: *"The message is about our product and is
+meaningful text"*, then a `CONDITION` with `input.jev.relevant.noul > 0.7` → continue, else →
+ask the user to rephrase.
+
+**State router** — a choice question `stage` with your states, then `CONDITION` branches on
+`input.jev.stage.choice == "billing"`, `… == "onboarding"`, plus a fallback for
+`input.jev.stage.confidence < 0.5` (Jev isn't sure — ask a clarifying question).
+
+Tips: start with a yes threshold around 0.7 and a confidence floor around 0.5, then tune on
+real messages. Questions written in English work best. Jev is weaker at arithmetic, comparing
+dates and multi-step reasoning — keep each question about one thing.
 
 ## END
 

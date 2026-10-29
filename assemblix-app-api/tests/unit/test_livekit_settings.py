@@ -19,4 +19,4 @@ def test_livekit_enabled_only_when_all_four_are_set(monkeypatch) -> None:
 
 
 def test_avatar_join_timeout_default() -> None:
-    assert get_settings().avatar_join_timeout_seconds == 20.0
+    assert get_settings().avatar_join_timeout_seconds == 45.0
