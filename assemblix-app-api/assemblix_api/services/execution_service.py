@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import date, datetime, time, timedelta
 from decimal import Decimal
 from typing import TYPE_CHECKING
 from uuid import UUID
@@ -18,6 +18,8 @@ from assemblix_api.database.repositories.execution_repository import ExecutionRe
 from assemblix_api.dto.requests.execution import ExecutionFilters
 from assemblix_api.dto.responses.chat_session import ChatSessionBaseResponse
 from assemblix_api.dto.responses.execution import (
+    CostSummaryResponse,
+    DailyCostResponse,
     ExecutionDetailInfoResponse,
     ExecutionErrorResponse,
     ExecutionInfoResponse,
@@ -302,6 +304,35 @@ class ExecutionService(BaseService[Execution, ExecutionRepository]):
             )
             for row in rows
         ]
+
+    async def get_cost_summary(
+        self, project_id: UUID, since: date, until: date | None = None
+    ) -> CostSummaryResponse:
+        end = until + timedelta(days=1) if until else datetime.utcnow() + timedelta(days=1)
+        rows = await self._repository.get_daily_costs(
+            project_id, datetime.combine(since, time.min), datetime.combine(end, time.min)
+        )
+        days = [
+            DailyCostResponse(
+                date=row.day,
+                runs=row.runs,
+                failed_runs=row.failed_runs,
+                credits=float(row.credits),
+                own_key_cost_usd=float(row.own_key_cost_usd),
+                tokens_used=int(row.tokens_used),
+            )
+            for row in rows
+        ]
+        return CostSummaryResponse(
+            since=since,
+            until=until,
+            total_runs=sum(d.runs for d in days),
+            failed_runs=sum(d.failed_runs for d in days),
+            total_credits=float(sum(Decimal(r.credits) for r in rows)),
+            own_key_cost_usd=float(sum(Decimal(r.own_key_cost_usd) for r in rows)),
+            tokens_used=sum(d.tokens_used for d in days),
+            days=days,
+        )
 
     async def get_task_result(
         self,
