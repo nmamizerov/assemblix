@@ -5,6 +5,14 @@ All notable changes to this project are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.47](https://github.com/nmamizerov/assemblix/compare/v0.2.46...v0.2.47) (2026-11-17)
+
+
+### Features
+
+* add Yandex AI Studio as an LLM provider ([d3f9781](https://github.com/nmamizerov/assemblix/commit/d3f97819208a235453cc3971ab5f862b2d3180f0))
+* add Yandex AI Studio as an LLM provider ([7b7a7a4](https://github.com/nmamizerov/assemblix/commit/7b7a7a4c23110d01ddc837ff1413823590cb213b))
+
 ## [0.2.46](https://github.com/nmamizerov/assemblix/compare/v0.2.45...v0.2.46) (2026-10-29)
 
 
