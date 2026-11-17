@@ -76,6 +76,9 @@ class Settings(BaseSettings):
     gemini_api_base_url: str = os.getenv(
         "GEMINI_API_BASE_URL", "https://gemini-proxy.skillslab.center"
     )
+    yandex_ai_studio_api_base_url: str = os.getenv(
+        "YANDEX_AI_STUDIO_API_BASE_URL", "https://ai.api.cloud.yandex.net/v1"
+    )
 
     # Tools Config
     tavily_api_key: str = os.getenv(
@@ -87,6 +90,9 @@ class Settings(BaseSettings):
     system_openai_api_key: str = os.getenv("SYSTEM_OPENAI_API_KEY", "")
     system_gemini_api_key: str = os.getenv("SYSTEM_GEMINI_API_KEY", "")
     system_deepseek_api_key: str = os.getenv("SYSTEM_DEEPSEEK_API_KEY", "")
+    # Yandex AI Studio needs an API key and a folder id (both, or neither).
+    system_yandex_ai_studio_api_key: str = os.getenv("SYSTEM_YANDEX_AI_STUDIO_API_KEY", "")
+    system_yandex_ai_studio_folder_id: str = os.getenv("SYSTEM_YANDEX_AI_STUDIO_FOLDER_ID", "")
 
     # Credit System Config (all prices in USD!)
     credit_value_usd: float = float(

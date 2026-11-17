@@ -20,6 +20,7 @@ class CredentialsType(str, Enum):
     ANTHROPIC_TOKEN = "anthropic_token"
     GEMINI_TOKEN = "gemini_token"
     DEEPSEEK_TOKEN = "deepseek_token"
+    YANDEX_AI_STUDIO_TOKEN = "yandex_ai_studio_token"
     ELEVENLABS_TOKEN = "elevenlabs_token"
     ANAM_TOKEN = "anam_token"
     BITHUMAN_TOKEN = "bithuman_token"

@@ -73,6 +73,7 @@ class AgentProvider(str, Enum):
     OPENAI = "openai"
     GEMINI = "gemini"
     DEEPSEEK = "deepseek"
+    YANDEX_AI_STUDIO = "yandex_ai_studio"
 
 
 class PlanTier(str, Enum):

@@ -27,6 +27,7 @@ from pydantic_ai.providers.openai import OpenAIProvider
 
 from assemblix_api.core.settings import get_settings
 from assemblix_api.external.llm.provider_config import get_provider_config
+from assemblix_api.external.voice.providers.yandex import split_credential
 
 # litellm must not flood our logs with debug output.
 litellm.set_verbose = False
@@ -169,6 +170,7 @@ class LiteLLMModel(OpenAIChatModel):
         ssl_verify: bool = True,
         env_overrides: dict[str, str] | None = None,
         api_key_env_var: str | None = None,
+        extra_headers: dict[str, str] | None = None,
         response_format: dict[str, Any] | None = None,
         params: dict[str, Any] | None = None,
         timeout: float | None = None,
@@ -186,6 +188,8 @@ class LiteLLMModel(OpenAIChatModel):
             defaults["api_key"] = api_key
         if api_base:
             defaults["api_base"] = api_base
+        if extra_headers:
+            defaults["extra_headers"] = extra_headers
         # Reliability (Phase 3): litellm handles per-call timeout and transient-error retries
         # itself — we only forward the knobs. `num_retries` retries retryable errors with
         # backoff; `timeout` caps a single completion (seconds). See plan: we deliberately do
@@ -234,6 +238,10 @@ def build_litellm_model(
     What the factory does per provider (the data lives in `provider_config.py`):
     - **openai**: `openai/` prefix + `api_base` from `openai_api_base_url`.
     - **deepseek**: only the `deepseek/` prefix (OpenAI-compatible endpoint).
+    - **yandex_ai_studio**: OpenAI-compatible endpoint (`openai/` prefix + `api_base`
+      from `yandex_ai_studio_api_base_url`). The credential is `"<folderId>:<apiKey>"`;
+      the model becomes `gpt://<folderId>/<model>` and the folder is sent as the
+      `OpenAI-Project` header.
     - **gemini**: `gemini/` prefix + `api_base` from `gemini_api_base_url` (our
       proxy). IMPORTANT about Gemini: thinking parameters are not set here — they come
       in `params` from the node config (`reasoning_effort` or `thinking_budget`/
@@ -261,6 +269,12 @@ def build_litellm_model(
     cfg = get_provider_config(provider)
     settings = get_settings()
 
+    extra_headers: dict[str, str] | None = None
+    if cfg.folder_scoped:
+        folder_id, api_key = split_credential(api_key)
+        model = f"gpt://{folder_id}/{model}"
+        extra_headers = {"OpenAI-Project": folder_id}
+
     litellm_model = f"{cfg.litellm_prefix}{model}"
     api_base = getattr(settings, cfg.api_base_setting) if cfg.api_base_setting else None
     ssl_verify = getattr(settings, cfg.ssl_verify_setting) if cfg.ssl_verify_setting else True
@@ -275,6 +289,7 @@ def build_litellm_model(
         ssl_verify=ssl_verify,
         env_overrides=env_overrides,
         api_key_env_var=cfg.api_key_env_var,
+        extra_headers=extra_headers,
         response_format=response_format,
         params=params,
         timeout=timeout if timeout is not None else settings.llm_request_timeout_seconds,

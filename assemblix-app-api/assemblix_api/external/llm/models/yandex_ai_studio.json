@@ -1,0 +1,100 @@
+{
+  "paramSchema": [
+    {
+      "name": "temperature",
+      "label": "Temperature",
+      "type": "number",
+      "default": 0.3,
+      "min": 0,
+      "max": 1,
+      "description": "Controls randomness of the output."
+    },
+    {
+      "name": "max_tokens",
+      "label": "Max Tokens",
+      "type": "number",
+      "default": 4096,
+      "min": 1,
+      "description": "Maximum number of tokens to generate."
+    },
+    {
+      "name": "response_format",
+      "label": "Response Format",
+      "type": "select",
+      "default": "text",
+      "options": [
+        {
+          "label": "Text",
+          "value": "text"
+        },
+        {
+          "label": "JSON object",
+          "value": "json_object"
+        }
+      ],
+      "description": "Force the model to return plain text or JSON."
+    }
+  ],
+  "models": [
+    {
+      "id": "aliceai-llm",
+      "label": "Alice AI LLM",
+      "description": "Yandex flagship model behind Alice AI.",
+      "contextWindow": 131072,
+      "maxOutputTokens": 8192,
+      "inputCostPerMillion": 4.09836,
+      "outputCostPerMillion": 9.836064,
+      "capabilities": {}
+    },
+    {
+      "id": "aliceai-llm-flash",
+      "label": "Alice AI LLM Flash",
+      "description": "Fast, low-cost Alice AI model.",
+      "contextWindow": 65536,
+      "maxOutputTokens": 8192,
+      "inputCostPerMillion": 0.819672,
+      "outputCostPerMillion": 1.639344,
+      "capabilities": {}
+    },
+    {
+      "id": "yandexgpt-5.1",
+      "label": "YandexGPT Pro 5.1",
+      "description": "YandexGPT Pro 5.1.",
+      "contextWindow": 32768,
+      "maxOutputTokens": 8192,
+      "inputCostPerMillion": 6.557376,
+      "outputCostPerMillion": 6.557376,
+      "capabilities": {}
+    },
+    {
+      "id": "yandexgpt-5-pro",
+      "label": "YandexGPT Pro 5",
+      "description": "YandexGPT Pro 5.",
+      "contextWindow": 32768,
+      "maxOutputTokens": 8192,
+      "inputCostPerMillion": 9.836064,
+      "outputCostPerMillion": 9.836064,
+      "capabilities": {}
+    },
+    {
+      "id": "deepseek-v4.1-flash",
+      "label": "DeepSeek V4.1 Flash",
+      "description": "DeepSeek V4.1 Flash hosted in Yandex AI Studio, 1M context.",
+      "contextWindow": 1048576,
+      "maxOutputTokens": 8192,
+      "inputCostPerMillion": 2.459016,
+      "outputCostPerMillion": 4.09836,
+      "capabilities": {}
+    },
+    {
+      "id": "qwen3.6-35b-a3b",
+      "label": "Qwen3.6 35B",
+      "description": "Qwen3.6 35B (A3B MoE) hosted in Yandex AI Studio, accepts images.",
+      "contextWindow": 262144,
+      "maxOutputTokens": 8192,
+      "inputCostPerMillion": 1.639344,
+      "outputCostPerMillion": 2.459016,
+      "capabilities": {}
+    }
+  ]
+}

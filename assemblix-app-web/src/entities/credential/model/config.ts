@@ -38,6 +38,12 @@ export const CREDENTIAL_TYPE_CONFIG: Record<
     icon: DeepSeekIcon,
     color: "text-purple-600",
   },
+  [CredentialType.YANDEX_AI_STUDIO_TOKEN]: {
+    type: CredentialType.YANDEX_AI_STUDIO_TOKEN,
+    label: "Yandex AI Studio",
+    icon: YandexIcon,
+    color: "text-red-600",
+  },
   [CredentialType.ELEVENLABS_TOKEN]: {
     type: CredentialType.ELEVENLABS_TOKEN,
     label: "ElevenLabs Token",

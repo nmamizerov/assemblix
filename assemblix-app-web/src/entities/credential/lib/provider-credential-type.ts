@@ -15,6 +15,7 @@ const PROVIDER_TO_CREDENTIAL_TYPE: Record<string, CredentialType> = {
   openai: CredentialType.OPENAI_TOKEN,
   gemini: CredentialType.GEMINI_TOKEN,
   deepseek: CredentialType.DEEPSEEK_TOKEN,
+  yandex_ai_studio: CredentialType.YANDEX_AI_STUDIO_TOKEN,
   // Voice (TTS) provider — used by the END-node voice-output credential picker.
   elevenlabs: CredentialType.ELEVENLABS_TOKEN,
   // Avatar provider — used by the AGENT-node avatar-output credential picker.

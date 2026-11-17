@@ -29,6 +29,9 @@ class ProviderConfig:
     # If set — api_key is duplicated into this env variable (for providers that
     # authenticate via env, not via the api_key kwarg).
     api_key_env_var: str | None = None
+    # Yandex AI Studio: the credential is "<folderId>:<apiKey>"; the folder goes into
+    # the model URI (gpt://<folderId>/<model>) and the OpenAI-Project header.
+    folder_scoped: bool = False
 
 
 PROVIDER_CONFIGS: dict[str, ProviderConfig] = {
@@ -41,6 +44,11 @@ PROVIDER_CONFIGS: dict[str, ProviderConfig] = {
     "gemini": ProviderConfig(
         litellm_prefix="gemini/",
         api_base_setting="gemini_api_base_url",
+    ),
+    "yandex_ai_studio": ProviderConfig(
+        litellm_prefix="openai/",
+        api_base_setting="yandex_ai_studio_api_base_url",
+        folder_scoped=True,
     ),
 }
 
