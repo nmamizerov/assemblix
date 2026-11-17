@@ -5,6 +5,16 @@ All notable changes to this project are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.48](https://github.com/nmamizerov/assemblix/compare/v0.2.47...v0.2.48) (2026-11-17)
+
+
+### Bug Fixes
+
+* **api:** accept fractional and boolean cascade timings in voice transcripts ([a17baa5](https://github.com/nmamizerov/assemblix/commit/a17baa5501cc3ac9562b5a3a7777fb75c2f082b1))
+* **api:** accept fractional and boolean cascade timings in voice transcripts ([995add2](https://github.com/nmamizerov/assemblix/commit/995add2634d5da12a5add397b9ebd35bb4621954))
+* **api:** pace outbound voice audio so long replies don't drop the call ([9314690](https://github.com/nmamizerov/assemblix/commit/93146903a260b14fd4407d4cb416fc279fbd684b))
+* **api:** pace outbound voice audio so long replies don't drop the call ([1671ca4](https://github.com/nmamizerov/assemblix/commit/1671ca44e19343ebf31583de0a34de913eba313c))
+
 ## [0.2.47](https://github.com/nmamizerov/assemblix/compare/v0.2.46...v0.2.47) (2026-11-17)
 
 
