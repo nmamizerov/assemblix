@@ -95,8 +95,12 @@ class VoiceSessionTurnUsage(DTOModel):
 class VoiceSessionTranscriptLine(DTOModel):
     role: str = Field(description="user | assistant")
     text: str = Field(description="What was said")
-    timings: dict[str, int] | None = Field(
-        default=None, description="Cascade stage durations (ms) of the turn this reply ended"
+    timings: dict[str, bool | int | float] | None = Field(
+        default=None,
+        description=(
+            "Cascade metrics of the turn this reply ended: stage durations (ms), "
+            "flags such as speculative, and smartTurnProb (0..1)"
+        ),
     )
     llm_call: VoiceSessionLlmCall | None = Field(
         default=None, description="The LLM call behind this cascade turn"
