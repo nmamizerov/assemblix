@@ -55,6 +55,7 @@ from assemblix_api.realtime.livekit.tokens import (
     participant_token,
     ws_url,
 )
+from assemblix_api.realtime.paced_audio import PacedAudioSender
 from assemblix_api.realtime.runtime import VoiceSessionRuntime
 from assemblix_api.realtime.session_token import (
     InvalidSessionToken,
@@ -181,18 +182,27 @@ class _WebSocketChannel:
 
     media = "ws"
 
-    def __init__(self, websocket: WebSocket) -> None:
+    def __init__(self, websocket: WebSocket, *, output_sample_rate: int) -> None:
         self._ws = websocket
+        self._audio = PacedAudioSender(websocket.send_bytes, sample_rate=output_sample_rate)
 
     async def send_json(self, data: dict) -> None:
+        if data.get("type") == "speech.started":
+            # The browser flushes its playback on this frame; audio queued behind
+            # it would otherwise play after the flush.
+            self._audio.drop()
         await self._ws.send_json(data)
 
     async def send_bytes(self, data: bytes) -> None:
-        await self._ws.send_bytes(data)
+        self._audio.push(data)
 
     async def interrupt_playback(self) -> int | None:
         # The browser owns playback and flushes on `speech.started`.
+        self._audio.drop()
         return None
+
+    async def aclose(self) -> None:
+        await self._audio.aclose()
 
     async def end_of_utterance(self) -> None:
         return None
@@ -257,7 +267,7 @@ async def stream_voice_session(websocket: WebSocket, token: str) -> None:
 
     mismatch = avatar_call_mismatch(scope.room, setup.avatar)
     avatar_call = scope.room is not None and setup.avatar is not None
-    ws_channel = _WebSocketChannel(websocket)
+    ws_channel = _WebSocketChannel(websocket, output_sample_rate=bridge.output_sample_rate)
     client: Any = LiveKitChannel(ws_channel) if avatar_call else ws_channel
     media: Any = None
 
@@ -328,6 +338,7 @@ async def stream_voice_session(websocket: WebSocket, token: str) -> None:
             close_reason = "avatar_unavailable"
     finally:
         await close_media()
+        await ws_channel.aclose()
         input_tokens, output_tokens = runtime.usage
         tts_cost_usd = (
             speech_out.cost_usd(setup.tts, runtime.speech_chars)
