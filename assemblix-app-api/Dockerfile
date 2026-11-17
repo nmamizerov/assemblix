@@ -35,8 +35,9 @@ EXPOSE 8000
 # Binaries resolve from /app/.venv/bin (on PATH) — no `uv run` needed at runtime.
 # Shell form so ${WEB_CONCURRENCY} expands at runtime (uvicorn --workers). Scale the
 # API tier by raising WEB_CONCURRENCY or running more replicas. The worker service
-# overrides this command with `arq ... WorkerSettings` in compose.
-CMD ["sh", "-c", "uvicorn assemblix_api.main:app --host 0.0.0.0 --port 8000 --workers ${WEB_CONCURRENCY:-1}"]
+# overrides this command with `arq ... WorkerSettings` in compose. A voice call's pong
+# can trail its outbound audio on a slow link, so the keepalive allows it 60 s.
+CMD ["sh", "-c", "uvicorn assemblix_api.main:app --host 0.0.0.0 --port 8000 --workers ${WEB_CONCURRENCY:-1} --ws-ping-timeout 60"]
 
 # --- development image (autoreload) ----------------------------------------
 FROM base AS dev
