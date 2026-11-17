@@ -22,6 +22,7 @@ PROVIDER_LABELS: dict[str, str] = {
     "openai": "OpenAI",
     "deepseek": "DeepSeek",
     "gemini": "Google Gemini",
+    "yandex_ai_studio": "Yandex AI Studio",
 }
 
 

@@ -249,6 +249,12 @@ class CredentialsService(BaseService[Credentials, CredentialsRepository]):
             AgentProvider.OPENAI: settings.system_openai_api_key,
             AgentProvider.GEMINI: settings.system_gemini_api_key,
             AgentProvider.DEEPSEEK: settings.system_deepseek_api_key,
+            AgentProvider.YANDEX_AI_STUDIO: (
+                f"{settings.system_yandex_ai_studio_folder_id}:{settings.system_yandex_ai_studio_api_key}"
+                if settings.system_yandex_ai_studio_api_key
+                and settings.system_yandex_ai_studio_folder_id
+                else ""
+            ),
         }
 
         api_key = key_map.get(provider, "")
@@ -268,6 +274,7 @@ class CredentialsService(BaseService[Credentials, CredentialsRepository]):
             AgentProvider.OPENAI: CredentialsType.OPENAI_TOKEN,
             AgentProvider.GEMINI: CredentialsType.GEMINI_TOKEN,
             AgentProvider.DEEPSEEK: CredentialsType.DEEPSEEK_TOKEN,
+            AgentProvider.YANDEX_AI_STUDIO: CredentialsType.YANDEX_AI_STUDIO_TOKEN,
         }
 
         return compatibility_map.get(provider) == credentials_type
@@ -277,6 +284,7 @@ class CredentialsService(BaseService[Credentials, CredentialsRepository]):
             CredentialsType.OPENAI_TOKEN: AgentProvider.OPENAI,
             CredentialsType.GEMINI_TOKEN: AgentProvider.GEMINI,
             CredentialsType.DEEPSEEK_TOKEN: AgentProvider.DEEPSEEK,
+            CredentialsType.YANDEX_AI_STUDIO_TOKEN: AgentProvider.YANDEX_AI_STUDIO,
         }
 
         provider = type_to_provider.get(credentials_type)
@@ -293,6 +301,7 @@ class CredentialsService(BaseService[Credentials, CredentialsRepository]):
             AgentProvider.OPENAI: CredentialsType.OPENAI_TOKEN,
             AgentProvider.GEMINI: CredentialsType.GEMINI_TOKEN,
             AgentProvider.DEEPSEEK: CredentialsType.DEEPSEEK_TOKEN,
+            AgentProvider.YANDEX_AI_STUDIO: CredentialsType.YANDEX_AI_STUDIO_TOKEN,
         }
 
         credentials_type = provider_to_type.get(provider)

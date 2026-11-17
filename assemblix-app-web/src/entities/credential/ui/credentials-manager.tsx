@@ -52,10 +52,16 @@ type FormValues = {
   type: CredentialType;
   name: string;
   value?: string;
-  // Yandex SpeechKit needs two secrets; they are joined into `value` on submit.
+  // Yandex credentials need two secrets; they are joined into `value` on submit.
   apiKey?: string;
   folderId?: string;
 };
+
+// Yandex Cloud credentials stored as "<folderId>:<apiKey>".
+const YANDEX_FOLDER_TYPES = new Set<CredentialType>([
+  CredentialType.YANDEX_SPEECHKIT_TOKEN,
+  CredentialType.YANDEX_AI_STUDIO_TOKEN,
+]);
 
 type CredentialsManagerProps = {
   className?: string;
@@ -220,14 +226,13 @@ const CredentialEditForm = ({
     },
   });
 
-  const isYandex =
-    form.watch("type") === CredentialType.YANDEX_SPEECHKIT_TOKEN;
+  const isYandex = YANDEX_FOLDER_TYPES.has(form.watch("type"));
 
   const onSubmit = async (values: FormValues) => {
     try {
       // Yandex stores two secrets in one credential as "<folderId>:<apiKey>".
       let value = values.value;
-      if (values.type === CredentialType.YANDEX_SPEECHKIT_TOKEN) {
+      if (YANDEX_FOLDER_TYPES.has(values.type)) {
         const apiKey = (values.apiKey ?? "").trim();
         const folderId = (values.folderId ?? "").trim();
         if (isEditing && !apiKey && !folderId) {

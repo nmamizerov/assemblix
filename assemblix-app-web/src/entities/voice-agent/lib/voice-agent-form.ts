@@ -29,7 +29,12 @@ export const DEFAULT_PROVIDER = "openai";
 export const DEFAULT_MODEL = "gpt-realtime-2.1";
 
 // Brain providers the cascade accepts (backend `AgentProvider`).
-export const BRAIN_PROVIDERS = ["openai", "gemini", "deepseek"];
+export const BRAIN_PROVIDERS = [
+  "openai",
+  "gemini",
+  "deepseek",
+  "yandex_ai_studio",
+];
 export const DEFAULT_BRAIN_PROVIDER = "gemini";
 export const DEFAULT_BRAIN_MODEL = "gemini-3.1-flash-lite";
 // What `voiceBrainDefaults` yields for the default brain model.

@@ -80,7 +80,7 @@ your own infrastructure with a single `docker compose up`.
   background, while the conversation keeps going.
 - **It remembers, and it knows your docs.** State lives in Postgres and survives restarts
   and deploys; knowledge bases ground answers in your own material, with citations.
-- **Bring your own everything.** OpenAI · Gemini · DeepSeek for reasoning, OpenAI Realtime ·
+- **Bring your own everything.** OpenAI · Gemini · DeepSeek · Yandex AI Studio for reasoning, OpenAI Realtime ·
   Gemini Live for speech-to-speech, ElevenLabs · Yandex SpeechKit for synthesis, Anam for
   avatars. Your keys, swappable, with retries and fallback built in.
 - **Own your stack.** Self-host the entire thing with Postgres only; Redis + a worker queue
@@ -168,7 +168,7 @@ and links straight into the execution viewer.
 | | |
 |---|---|
 | 🎨 **Visual canvas** | Drag-and-drop dialogue editor (React Flow) with undo/redo, live debug panel, and per-node execution traces. |
-| 🤖 **Multi-LLM agents** | `AGENT` nodes run tool-calling loops against OpenAI · Gemini · DeepSeek, with fallback and backoff. |
+| 🤖 **Multi-LLM agents** | `AGENT` nodes run tool-calling loops against OpenAI · Gemini · DeepSeek · Yandex AI Studio, with fallback and backoff. |
 | 🎙️ **Realtime voice agents** | Speech-to-speech conversations on OpenAI Realtime or Gemini Live — sub-second replies, interruptible, recorded. |
 | 🗣️ **Voice in workflows** | `TRANSCRIBE` node for speech input; agent voice output via ElevenLabs or Yandex SpeechKit, buffered or streamed. |
 | 🧑‍💼 **AI avatars** | Drive a lip-synced talking persona (Anam) from an agent's output. |
@@ -186,7 +186,7 @@ and links straight into the execution viewer.
 
 **Bring your own providers**
 
-<sub>**Reasoning** — OpenAI&nbsp;·&nbsp;Google Gemini&nbsp;·&nbsp;DeepSeek</sub><br/>
+<sub>**Reasoning** — OpenAI&nbsp;·&nbsp;Google Gemini&nbsp;·&nbsp;DeepSeek&nbsp;·&nbsp;Yandex AI Studio</sub><br/>
 <sub>**Realtime speech** — OpenAI Realtime&nbsp;·&nbsp;Gemini Live</sub><br/>
 <sub>**Speech synthesis & transcription** — ElevenLabs&nbsp;·&nbsp;Yandex SpeechKit</sub><br/>
 <sub>**Avatars** — Anam</sub>

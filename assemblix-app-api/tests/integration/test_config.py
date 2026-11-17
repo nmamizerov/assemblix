@@ -15,6 +15,7 @@ async def test_get_config(client, auth_user, auth_headers) -> None:
         "openai",
         "gemini",
         "deepseek",
+        "yandex_ai_studio",
         "elevenlabs",
         "yandex",
     }

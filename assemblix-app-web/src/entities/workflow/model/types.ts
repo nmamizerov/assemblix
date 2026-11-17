@@ -76,6 +76,7 @@ export enum Provider {
   OPENAI = "openai",
   GEMINI = "gemini",
   DEEPSEEK = "deepseek",
+  YANDEX_AI_STUDIO = "yandex_ai_studio",
 }
 
 export interface FallbackModelConfig {
